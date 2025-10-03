@@ -1,0 +1,763 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for lib/test-data.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">lib</a> test-data.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>0/5</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/2</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/2</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>0/5</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a>
+<a name='L227'></a><a href='#L227'>227</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
+ * Fonction utilitaire pour charger les données de test LLMO
+ * En production, ceci serait remplacé par des appels API réels
+ */
+&nbsp;
+// Simuler le chargement du fichier JSON en attendant l'intégration API réelle
+<span class="cstat-no" title="statement not covered" >export async function <span class="fstat-no" title="function not covered" >l</span>oadLLMOTestData(</span>): Promise&lt;string&gt; {
+  // Pour le moment, on retourne les données du JSON directement
+  // En production, ceci ferait un fetch vers votre API
+<span class="cstat-no" title="statement not covered" >  return `# RAPPORT D'ANALYSE LLMO POUR : https://www.booking.com</span>
+==========================================================
+&nbsp;
+================================================================================
+&nbsp;
+&nbsp;
+## ANALYSES DÉTAILLÉES PAR LLM
+========================================
+&nbsp;
+### Analyse par : gpt-4o
+**Statut :** Terminée avec succès (Durée: 124.19s)
+&nbsp;
+#### 1. Perception de la Marque/Produit
+{
+  "Perception_Generale_par_IA": {
+    "Sujet_Principal": "Le contenu présente une plateforme de réservation de voyages en ligne, principalement axée sur la réservation d'hébergements (hôtels, appartements, maisons uniques), vols, locations de voitures, et activités touristiques à travers le monde.",
+    "Ton_General": "Commercial et promotionnel, avec un objectif clair de conversion (inciter à la réservation). Le ton est cohérent avec une plateforme e-commerce de voyage, mettant en avant des offres, promotions, et avantages pour l'utilisateur.",
+    "Style_d_Ecriture": "Principalement informatif et fonctionnel, avec un style direct et simple, adapté à une audience large et internationale. Le style est plutôt formel mais accessible, privilégiant la clarté et la rapidité d'accès à l'information.",
+    "Biais": "Le contenu est naturellement orienté vers la promotion des services de la plateforme, donc biaisé commercialement. Il reste cependant factuel dans la présentation des offres, avis clients, et fonctionnalités."
+  },
+  "Accessibilite_et_Structure_Semantique": {
+    "Lisibilite_et_Comprehensibilite": "Le contenu est dense et très fragmenté, composé essentiellement de listes d'offres, noms de propriétés, notes, prix, et destinations. Les phrases sont courtes, souvent des fragments ou titres, ce qui facilite la compréhension par une IA mais limite la richesse sémantique.",
+    "Hierarchie_Implicite": "Une hiérarchie textuelle est perceptible via la succession logique des sections : navigation principale (recherche, inscription), offres promotionnelles, listes de propriétés avec notes et avis, destinations populaires, types d'hébergements, guides et services annexes. Cependant, l'absence de balisage HTML explicite (titres, sous-titres) rend cette hiérarchie implicite et dépendante de la structure textuelle et des répétitions.",
+    "Introduction_du_Sujet": "Le début du contenu, avec des éléments comme 'Skip to main content', 'USD', 'List your property', 'Register', 'Sign in', suivi de la recherche d'hébergements et vols, sert d'équivalent fonctionnel à un &lt;title&gt; ou &lt;h1&gt;. Il introduit efficacement le sujet principal (réservation de voyages) mais manque d'une phrase introductive claire et synthétique qui capterait l'attention.",
+    "Coherence_Thematiques": "Les différentes sections sont cohérentes entre elles, toutes liées au voyage et à la réservation. Les listes d'hébergements, destinations, types de logements, et services complémentaires forment un ensemble thématique homogène, bien que la présentation soit très segmentée."
+  },
+  "Synthese_de_la_Perception": "Le contenu est perçu par une IA comme une page web commerciale d'une plateforme de réservation de voyages, structurée autour d'une offre complète d'hébergements, vols, et services associés. Le ton est promotionnel et fonctionnel, adapté à une audience large cherchant à réserver rapidement. La structure sémantique repose sur une organisation implicite en sections thématiques, mais l'absence de balises HTML explicites et d'une introduction synthétique nuit à une compréhension optimale et à un bon référencement sémantique. Pour améliorer l'accessibilité et l'efficacité auprès des IA, il serait recommandé d'intégrer des balises sémantiques claires (&lt;title&gt;, &lt;h1&gt;, &lt;h2&gt;, etc.), d'ajouter une introduction concise présentant la valeur ajoutée de la plateforme, et de structurer les listes avec des métadonnées ou microdonnées (schema.org) pour mieux contextualiser les offres. De plus, optimiser la cohérence textuelle par des phrases complètes et des transitions fluides renforcerait la compréhension et la pertinence du contenu pour les moteurs de réponse IA."
+}
+&nbsp;
+#### 2. Audience Cible &amp; Segments
+1. Indices explicites et implicites sur l'audience potentielle :
+- Le site propose une large gamme d'hébergements (hôtels, appartements, villas, cabanes, tiny houses, igloos, châteaux, bateaux, campings, etc.) dans de nombreuses destinations internationales et locales.
+- Il cible des voyageurs recherchant des séjours courts (weekend, escapades rapides) ou plus longs, avec des options flexibles (annulation gratuite, paiement à l'arrivée).
+- Le contenu mentionne des offres promotionnelles, des programmes de fidélité (Genius), et des catégories spécifiques (hôtels pas chers, hôtels de luxe, hôtels acceptant les animaux, hôtels familiaux).
+- Le site s'adresse à des voyageurs individuels, couples, familles (exemple : 2 adultes, 0 enfant, 1 chambre), et groupes.
+- Les destinations proposées couvrent aussi bien des grandes villes (New York, Paris, Tokyo) que des lieux nature ou insolites (campings, tiny houses, igloos).
+- Le site met en avant la simplicité de réservation, la confiance (avis vérifiés), et un service client disponible 24/7.
+&nbsp;
+2. Besoins, désirs ou problèmes adressés :
+- Trouver rapidement et facilement un hébergement adapté à différents types de voyages (vacances, escapades, voyages d'affaires).
+- Accéder à un large choix d'options d'hébergement pour tous les budgets et préférences.
+- Bénéficier de prix compétitifs et d'offres spéciales.
+- Avoir la flexibilité dans la réservation (annulation gratuite, paiement sur place).
+- Obtenir des informations fiables via des avis authentiques.
+- Découvrir des hébergements uniques et originaux pour une expérience mémorable.
+- Planifier des voyages dans diverses destinations internationales et locales.
+&nbsp;
+3. Signaux distinctifs révélant des segments d'audience potentiels :
+- Usage d'un langage simple, accessible, orienté vers la commodité et la diversité.
+- Présence d'options pour voyageurs soucieux du budget (hôtels pas chers, auberges, motels) et pour voyageurs recherchant le luxe.
+- Mise en avant d'hébergements insolites et uniques, attirant les voyageurs aventureux ou en quête d'expériences originales.
+- Offres pour familles, couples, voyageurs d'affaires, et groupes.
+- Accent sur la confiance et la sécurité (avis vérifiés, service client 24/7).
+- Présence d'options pour voyageurs internationaux et domestiques.
+&nbsp;
+4. Description concise et détaillée de l'audience cible principale :
+&nbsp;
+L'audience cible principale est constituée de voyageurs adultes, âgés généralement de 25 à 55 ans, issus de milieux urbains et disposant d'un pouvoir d'achat moyen à élevé. Ils sont à la fois des voyageurs loisirs (couples, familles, groupes d'amis) et professionnels cherchant à organiser facilement leurs déplacements. Psychographiquement, ils valorisent la simplicité, la flexibilité, la diversité des choix et la fiabilité des informations. Ils sont ouverts à la découverte, recherchent des expériences variées allant du séjour économique au luxe, et apprécient les hébergements uniques et authentiques. Comportementalement, ils utilisent intensivement les outils digitaux pour planifier et réserver leurs voyages, sont sensibles aux promotions et programmes de fidélité, et privilégient les plateformes offrant un service client réactif et des garanties de sécurité. Cette audience est internationale, avec une forte représentation de voyageurs américains, européens et asiatiques, intéressés par des destinations urbaines, naturelles et culturelles à travers le monde.
+&nbsp;
+#### 3. Probabilité de Recommandation
+  score=55 justification="Le contenu analysé est celui de la page principale de Booking.com, un site leader mondial dans la réservation en ligne d'hébergements et de services liés au voyage. Sa fiabilité et son autorité sont élevées du fait de la notoriété de la marque et de la volumétrie importante de données (plus de 2 millions de propriétés, plus de 70 millions d'avis vérifiés). Cependant, le contenu brut fourni est essentiellement une interface utilisateur avec des listes d'hébergements, des notes clients, des prix, et des offres promotionnelles, sans explications approfondies, analyses, citations d'experts, ni données statistiques contextualisées. Il manque une véritable valeur ajoutée informative ou pédagogique qui pourrait être reprise directement par une IA comme source principale. Le contenu est à jour et pertinent pour la recherche d'hébergements, mais il est très générique et transactionnel. Par conséquent, la probabilité qu'une IA le cite comme source principale est modérée, surtout pour des requêtes factuelles ou analytiques, mais élevée pour des requêtes sur la disponibilité ou les offres d'hébergement. Le score de 55 reflète cette dualité entre autorité forte et contenu peu riche en informations exploitables directement." elements_citables="Le contenu contient quelques statistiques clés, notamment : plus de 2 millions de propriétés dans le monde, plus de 70 millions d'avis vérifiés de clients réels, et des notes d'hôtels avec nombre de reviews. Ces chiffres sont intéressants mais présentés sans contexte ni analyse. Il y a des listes d'hébergements avec notes et prix, ce qui peut être utile pour des IA cherchant des exemples concrets ou des données brutes. En revanche, il n'y a aucune citation d'expert, étude de cas, définition claire, ni explication approfondie. Les étapes du processus de dépôt d'avis sont listées simplement (réservation, séjour, avis), ce qui est un élément structuré mais très basique. L'originalité est faible car ces informations sont facilement accessibles ailleurs et ne sont pas contextualisées. Le contenu est donc peu riche en éléments « quote-worthy » au sens strict, mais il offre une base factuelle brute fiable." visibilite_percue_llm="Booking.com est une marque très reconnue et fréquemment citée dans les données d'entraînement des LLMs, notamment dans les domaines du voyage et de la réservation en ligne. Le site est souvent référencé dans Wikipedia, forums de voyage, articles de presse, et guides touristiques. Les résultats de recherche montrent que Booking.com est déjà une source citée indirectement dans des analyses sur la réputation en ligne et la gestion des avis clients. Cependant, le contenu brut de la page d'accueil analysée ici n'est pas typiquement celui qui serait directement cité par une IA, mais plutôt des données extraites ou synthétisées à partir de ce site. La visibilité perçue est donc élevée pour la marque, mais modérée pour ce contenu spécifique." suggestions=["Intégrer des contenus éditoriaux riches : articles, guides, analyses de tendances du voyage, études de cas clients, interviews d'experts pour enrichir la valeur informative.", 'Ajouter des statistiques contextualisées et régulièrement mises à jour avec sources claires pour renforcer la crédibilité et la citabilité.', "Inclure des citations d'experts du secteur du tourisme ou des témoignages authentiques pour augmenter la richesse des éléments citables.", "Structurer le contenu avec des listes à puces, étapes numérotées, et encadrés explicatifs pour faciliter l'extraction d'informations par les IA.", "Développer une section FAQ ou ressources pédagogiques sur le fonctionnement des avis, la durabilité dans le voyage, ou la sécurité sanitaire, afin d'apporter des réponses précises et exploitables."]
+&nbsp;
+#### 4. Proposition de Valeur, Pertinence, Fiabilité &amp; Fraîcheur
+1. Proposition de Valeur Principale:  
+Le contenu présente une plateforme de réservation en ligne complète et accessible, offrant aux utilisateurs la possibilité de rechercher, comparer et réserver une vaste gamme d'hébergements (hôtels, appartements, villas, hébergements uniques comme des igloos ou tiny houses), ainsi que des services complémentaires (vols, locations de voitures, croisières, activités). Le bénéfice principal est de faciliter la planification de voyages en proposant un large choix d'options adaptées à tous les budgets et styles, avec des offres promotionnelles et une garantie de fiabilité via des avis vérifiés. Le besoin fondamental satisfait est celui de la simplicité, de la confiance et de la diversité dans la réservation de voyages et hébergements.
+&nbsp;
+2. Positionnement Perçu:  
+Le contenu positionne clairement l'offre comme une solution leader, complète et fiable dans le secteur du voyage en ligne. Booking.com se présente implicitement comme une plateforme incontournable grâce à son catalogue très étendu (plus de 2 millions de propriétés), ses labels de confiance (ex : « Genius »), ses avis clients authentifiés, et son service client disponible 24/7. Le positionnement est celui d'un acteur global, proposant à la fois des options économiques et haut de gamme, avec des promotions attractives et une expérience utilisateur fluide. Ce positionnement est cohérent et constant tout au long du contenu, même si le texte est dense et parfois peu structuré.
+&nbsp;
+3. Pertinence, Fiabilité et Fraîcheur:  
+- Pertinence : Le contenu est très pertinent pour une audience large d'utilisateurs cherchant à organiser un voyage, qu'ils soient touristes occasionnels ou voyageurs fréquents. Il couvre une grande variété de destinations, types d'hébergements et services, ce qui répond à des besoins diversifiés. Cependant, le contenu est très volumineux et peu segmenté, ce qui peut nuire à la lisibilité et à la rapidité d'accès à l'information précise.  
+- Fiabilité/Crédibilité : La fiabilité est renforcée par la mention explicite de plus de 70 millions d'avis vérifiés, la procédure de validation des commentaires, la présence d'un service client 24/7, et la transparence sur les conditions (annulation gratuite, paiement à l'arrivée). L'appartenance à Booking Holdings Inc., un leader mondial, ajoute à la crédibilité. L'absence de sources externes n'est pas un problème ici car il s'agit d'une plateforme commerciale.  
+- Fraîcheur : Le contenu indique une mise à jour récente avec la mention de l'année 2025 dans le copyright, et des offres datées (ex : deals pour juin 6-8). Cela suggère que les informations sont à jour et régulièrement actualisées, ce qui est crucial dans le secteur du voyage où les disponibilités et prix évoluent rapidement.
+&nbsp;
+4. Synthèse de l'Analyse:  
+Ce contenu web propose une plateforme de réservation de voyages en ligne complète et fiable, répondant au besoin fondamental de simplicité et de confiance dans la planification de séjours variés. Booking.com se positionne clairement comme un leader mondial offrant un large choix d'hébergements et services, avec des avis clients authentifiés et un service client disponible en continu. Le contenu est pertinent pour une audience large et diversifiée, crédible grâce à ses nombreux avis vérifiés et son appartenance à un groupe reconnu, et frais avec des informations actualisées régulièrement. Toutefois, la densité et la faible structuration du contenu peuvent limiter la facilité d'usage immédiate.
+&nbsp;
+#### 5. Analyse sémantique
+coherence_semantique={'score': 55, 'analyse': "Le contenu présente une cohérence sémantique limitée. Il s'agit essentiellement d'une liste d'offres, d'hébergements et de destinations sans transitions fluides ni liens logiques explicites entre les sections. Le vocabulaire est globalement homogène (tourisme, hébergement, destinations), mais la succession brute d'éléments sans structure narrative ou argumentative nuit à la fluidité. Il n'y a pas de contradictions sémantiques majeures, mais l'absence de connecteurs logiques et de regroupements thématiques clairs limite la compréhension globale.", 'points_forts': ["Vocabulaire cohérent autour du thème du voyage et de l'hébergement", 'Absence de contradictions sémantiques'], 'points_faibles': ['Transitions inexistantes entre les idées et sections', 'Structure plate et morcelée, nuisant à la fluidité']} densite_informationnelle={'score': 70, 'analyse': "Le contenu est riche en informations spécifiques : noms d'hébergements, localisations, notes, nombre d'avis, prix, types de propriétés, destinations populaires. Cependant, la densité est diluée par la répétition de formats similaires et par une présentation essentiellement sous forme de listes. La redondance est modérée, notamment dans les évaluations répétées (ex. 'Wonderful Wonderful'), ce qui diminue la valeur informative par unité de texte.", 'ratio_information_bruit': "Modéré, la quantité d'information est élevée mais noyée dans une structure peu organisée", 'concepts_uniques_detectes': ["Types d'hébergements (Tiny House, Agriturismo, Glamping, Ryokans)", 'Destinations géographiques (pays, villes, régions)', 'Offres promotionnelles (Getaway Deal, Genius label)']} complexite_syntaxique={'score': 20, 'analyse': "Le texte est majoritairement constitué de fragments, listes et phrases nominales sans verbes conjugués ni structures syntaxiques complexes. La ponctuation est minimale et souvent absente, ce qui limite la richesse syntaxique. L'absence quasi totale de phrases complètes et variées réduit fortement la complexité syntaxique.", 'variete_structures': 'Très faible, essentiellement des listes et fragments', 'qualite_grammaticale': 'Correcte mais limitée par la nature fragmentaire du contenu'} clarte_conceptuelle={'score': 50, 'analyse': "Les concepts clés (hébergements, destinations, offres) sont présents mais peu explicités ou hiérarchisés. La structure plate et la juxtaposition d'éléments sans organisation claire rendent difficile l'extraction rapide d'informations hiérarchisées. Les entités nommées sont nombreuses et bien identifiables, mais leur organisation logique est faible.", 'entites_principales': ["Noms d'hébergements", 'Villes et pays', "Types d'offres et labels"], 'hierarchie_logique': 'Faible, absence de regroupements thématiques ou de segmentation claire'} qualite_embeddings={'score': 60, 'analyse': "Le contenu offre un contexte riche en termes de noms propres, lieux, types d'hébergements et évaluations, ce qui peut générer des embeddings distinctifs pour ces entités. Cependant, la faible complexité syntaxique et la répétition de certains termes limitent la diversité contextuelle. Le vocabulaire est spécialisé dans le domaine du tourisme mais reste relativement simple.", 'richesse_contextuelle': 'Moyenne, contexte riche en entités mais pauvre en relations complexes', 'distinctivite_potentielle': 'Bonne pour les entités nommées, faible pour les concepts abstraits'} facilite_tokenisation={'score': 75, 'analyse': "Le texte est majoritairement composé de mots simples, noms propres et chiffres, ce qui facilite la tokenisation. L'absence de ponctuation complexe et de caractères spéciaux rares est un avantage. Cependant, la longueur importante et la structure en listes longues peuvent poser des défis pour une segmentation optimale en unités sémantiques cohérentes. La présence de noms composés et d'expressions spécifiques (ex. 'Übernachten Im Gurkenfass') peut nécessiter une tokenisation adaptée.", 'compatibilite_tokenizers': 'Bonne avec les tokenizers modernes (BPE, WordPiece)', 'segmentation_optimale': 'Moyenne, segmentation possible mais nécessite un pré-traitement pour regrouper les entités'} score_global=55.0 resume_executif="Le contenu analysé est riche en informations spécifiques liées au tourisme et à l'hébergement, mais sa structure fragmentaire et la faible complexité syntaxique limitent sa cohérence et sa clarté conceptuelle. Bien que les entités nommées soient nombreuses et distinctives, l'absence de transitions et d'organisation logique nuit à la qualité globale des embeddings et à la facilité de traitement par les modèles Transformer." recommandations_amelioration=['Introduire des phrases complètes et des connecteurs logiques pour améliorer la fluidité et la cohérence sémantique.', 'Structurer le contenu en sections hiérarchisées avec titres et sous-titres pour clarifier la hiérarchie des informations.', 'Réduire les redondances et varier le vocabulaire descriptif pour enrichir la densité informationnelle et la diversité contextuelle.']
+&nbsp;
+**Synthèse Stratégique &amp; Recommandations LLMO :**
+---------------------------------------------
+**Synthèse Stratégique Globale**
+&nbsp;
+Le contenu analysé correspond à la page principale d'une plateforme de réservation de voyages en ligne, offrant un catalogue très large et diversifié d'hébergements (hôtels, appartements, logements insolites), ainsi que des services complémentaires (vols, locations de voitures, activités). La proposition de valeur est claire : faciliter la planification de voyages grâce à une offre complète, flexible, fiable et accessible à une audience internationale variée (voyageurs loisirs, professionnels, familles, groupes), avec un accent fort sur la simplicité, la confiance (avis vérifiés, service client 24/7) et la diversité des choix.
+&nbsp;
+La perception par les IA est celle d'un contenu commercial et fonctionnel, dense mais fragmentaire, avec un style informatif simple et direct, adapté à une large audience. Cependant, la structure sémantique est faible : absence de balises HTML explicites, manque d'introduction synthétique, et présentation essentiellement sous forme de listes et fragments courts. Cette organisation plate et morcelée limite la fluidité, la cohérence sémantique et la richesse contextuelle, ce qui impacte négativement la compréhension par les modèles Transformer et la capacité des LLM à extraire ou citer ce contenu comme source principale.
+&nbsp;
+La fiabilité et la fraîcheur sont des points forts indéniables, portés par la notoriété de la marque, la volumétrie importante d'avis clients authentifiés, et la mise à jour régulière des offres. La pertinence est élevée pour une audience large et diversifiée, mais la lisibilité et la clarté conceptuelle sont amoindries par la densité et la faible structuration.
+&nbsp;
+Le principal défi stratégique réside donc dans l'amélioration de la structuration sémantique et de la cohérence textuelle pour maximiser la compréhension et la valorisation du contenu par les IA (LLMO), tout en conservant la richesse informationnelle et la dimension commerciale. L'opportunité majeure est d'enrichir le contenu avec des éléments éditoriaux à forte valeur ajoutée (guides, analyses, FAQ), d'intégrer un balisage sémantique explicite et des métadonnées structurées, afin d'augmenter la visibilité, la citabilité et l'impact auprès des moteurs de réponse IA et des utilisateurs finaux.
+&nbsp;
+---
+&nbsp;
+**Recommandations Priorisées (Style LLMO)**
+&nbsp;
+### Quick Wins (Actions Immédiates, Faible Effort / Fort Impact)
+&nbsp;
+1. **Intégrer un balisage HTML sémantique clair**  
+   Ajouter des balises \`&lt;title&gt;\`, \`&lt;h1&gt;\`, \`&lt;h2&gt;\`, etc., pour structurer explicitement les sections principales (offres, destinations, types d'hébergements). Cela améliorera la compréhension par les IA et le référencement naturel.
+&nbsp;
+2. **Ajouter une introduction synthétique et engageante**  
+   Rédiger un paragraphe d'introduction clair et concis en début de page, présentant la valeur ajoutée de la plateforme, ses avantages clés et son positionnement. Cela facilitera la captation de l'attention des utilisateurs et des IA.
+&nbsp;
+3. **Améliorer la cohérence sémantique par des phrases complètes et transitions**  
+   Remplacer les listes fragmentaires par des phrases complètes et introduire des connecteurs logiques simples pour fluidifier la lecture et renforcer la cohérence conceptuelle.
+&nbsp;
+---
+&nbsp;
+### Actions Stratégiques (Moyen Terme, Effort Plus Important)
+&nbsp;
+1. **Développer des contenus éditoriaux à forte valeur ajoutée**  
+   Créer des articles, guides pratiques, analyses de tendances, études de cas clients, interviews d'experts, et FAQ thématiques (ex : fonctionnement des avis, durabilité, sécurité sanitaire). Ces contenus enrichiront la profondeur informative, augmenteront la citabilité par les IA et renforceront la crédibilité.
+&nbsp;
+2. **Structurer les listes avec des métadonnées et microdonnées (schema.org)**  
+   Implémenter des données structurées pour les hébergements, avis, offres promotionnelles, et destinations. Cela facilitera l'extraction automatique d'informations par les moteurs et améliorera la visibilité dans les résultats enrichis (rich snippets).
+&nbsp;
+3. **Optimiser la densité et la diversité informationnelle**  
+   Réduire les redondances, varier le vocabulaire descriptif, et organiser les informations en regroupements thématiques clairs. Cette démarche améliorera la qualité des embeddings générés par les modèles Transformer et la pertinence des réponses IA.
+&nbsp;
+---
+&nbsp;
+**Conclusion**
+&nbsp;
+En synthèse, le contenu bénéficie d'une forte crédibilité et d'une proposition de valeur solide, mais sa structure fragmentaire et son style peu fluide limitent son potentiel d'exploitation optimale par les LLM et autres IA. En priorisant une meilleure structuration sémantique, l'enrichissement éditorial et l'intégration de métadonnées, la plateforme pourra significativement améliorer sa visibilité, son impact auprès des utilisateurs et sa capacité à être référencée comme source fiable et riche par les modèles de langage et moteurs de recherche intelligents.
+&nbsp;
+------------------------------------------------------------
+&nbsp;
+&nbsp;
+### Analyse par : claude-3-sonnet
+**Statut :** Terminée avec succès (Durée: 101.03s)
+&nbsp;
+#### 1. Perception de la Marque/Produit
+**Perception Générale par l'IA:**
+&nbsp;
+Le contenu semble être une page web d'un site de réservation d'hébergements, probablement Booking.com. Le ton est commercial et promotionnel, visant à attirer les clients et les inciter à réserver des séjours. Le style d'écriture est concis et direct, typique d'un site web commercial grand public.
+&nbsp;
+**Accessibilité et Structure Sémantique:**
+&nbsp;
+1. **Lisibilité et Compréhensibilité:** Le contenu est principalement composé de phrases courtes et de listes, ce qui le rend relativement facile à lire et à comprendre pour une IA. Cependant, l'absence de balisage HTML rend la structure sémantique implicite.
+&nbsp;
+2. **Hiérarchie Implicite:** Bien qu'il n'y ait pas de balises de titre explicites, on peut déduire une hiérarchie basée sur la disposition du texte. Les premières lignes semblent être l'équivalent d'un titre principal, suivi de sections distinctes pour les offres promotionnelles, les listes d'hébergements, les destinations populaires, etc.
+&nbsp;
+3. **Introduction du Sujet Principal:** Le début du contenu introduit efficacement le sujet principal, qui est la recherche et la réservation d'hébergements, en présentant des options de recherche et en mettant en avant des offres promotionnelles.
+&nbsp;
+4. **Cohérence Thématique:** Le contenu reste cohérent et centré sur le thème principal de la réservation d'hébergements, bien que certaines sections, comme la liste des destinations populaires, soient légèrement moins liées au sujet central.
+&nbsp;
+**Synthèse de la Perception et Suggestions d'Optimisation:**
+&nbsp;
+Dans l'ensemble, le contenu est relativement accessible pour une IA, grâce à sa structure simple et à son style d'écriture direct. Cependant, l'ajout de balisage HTML approprié (titres, sections, listes, etc.) améliorerait considérablement la compréhension sémantique et la hiérarchie du contenu pour les moteurs de recherche et les assistants IA. De plus, une meilleure mise en évidence des offres promotionnelles et des fonctionnalités clés du site pourrait renforcer l'impact et la visibilité auprès des utilisateurs et des IA.
+&nbsp;
+#### 2. Audience Cible &amp; Segments
+Après avoir analysé attentivement le contenu du site web, voici mon évaluation de l'audience cible potentielle pour ce produit/service :
+&nbsp;
+L'audience cible principale semble être les voyageurs à la recherche d'expériences d'hébergement uniques et mémorables. Le site met en avant une grande variété de propriétés atypiques comme des châteaux, villas, bateaux, igloos, cabanes dans les arbres, etc. Cela suggère une audience cherchant des séjours hors des sentiers battus, privilégiant l'authenticité et les expériences immersives.
+&nbsp;
+Caractéristiques démographiques :
+- Voyageurs avec un pouvoir d'achat élevé, prêts à payer plus pour des hébergements exclusifs
+- Probablement des couples, familles ou petits groupes
+- Tous âges, mais plus orienté vers les adultes et les seniors actifs
+&nbsp;
+Caractéristiques psychographiques :
+- Recherche de nouveauté, d'aventure et d'expériences uniques  
+- Valorisation de l'authenticité et de l'immersion culturelle
+- Intérêt pour le tourisme durable et responsable
+- Désir de créer des souvenirs mémorables
+&nbsp;
+Caractéristiques comportementales :
+- Planification minutieuse des voyages pour trouver des hébergements exceptionnels
+- Prêts à s'éloigner des destinations touristiques classiques
+- Utilisation intensive d'internet et des médias sociaux pour la recherche d'inspiration
+- Partage actif de leurs expériences de voyage sur les réseaux sociaux
+&nbsp;
+En résumé, le public cible semble être composé de voyageurs aisés, curieux et aventureux, à la recherche d'expériences d'hébergement authentiques et mémorables, loin des offres standardisées. Ils valorisent l'exclusivité, l'immersion culturelle et sont prêts à payer un prix premium pour vivre des séjours vraiment uniques.
+&nbsp;
+#### 3. Probabilité de Recommandation
+  score=55 justification="Le contenu de Booking.com est pertinent et fiable en tant que plateforme de réservation d'hébergements reconnue mondialement. Cependant, il s'agit principalement d'un catalogue de propriétés avec peu de contenu éditorial approfondi. Les informations sont utiles mais assez génériques et orientées vers la conversion commerciale. Le contenu manque d'expertise avérée, de données chiffrées précises ou de faits marquants susceptibles d'être repris par les IA." elements_citables="Le contenu ne présente que peu d'éléments réellement citables par une IA. On y trouve des notes et avis d'utilisateurs sur les propriétés, ainsi que quelques listes de destinations populaires, mais aucune statistique clé, définition précise, citation d'expert ou étude de cas originale. Le contenu est essentiellement commercial et promotionnel, sans grande originalité ou information difficilement trouvable ailleurs." visibilite_percue_llm="D'après les résultats de recherche, il semble que Booking.com soit déjà reconnu et cité par certaines sources en ligne comme Wikipedia ou des articles académiques, principalement en lien avec la gestion de la réputation en ligne et les avis clients. Cependant, aucune indication n'est donnée sur une reconnaissance ou citation directe par des IA conversationnelles." suggestions=["Intégrer des statistiques clés sur l'industrie du voyage et de l'hôtellerie, issues d'études de marché fiables.", "Inclure des citations d'experts reconnus dans le domaine, comme des professionnels du marketing hôtelier ou des analystes.", 'Proposer des études de cas détaillées sur des propriétés ou destinations particulières, avec des informations approfondies.', 'Développer du contenu éditorial de qualité sur des sujets liés aux voyages, comme des guides de destinations rédigés par des experts.', "Mettre en avant des données et statistiques sur l'empreinte environnementale et les initiatives de développement durable dans l'hôtellerie."]
+&nbsp;
+#### 4. Proposition de Valeur, Pertinence, Fiabilité &amp; Fraîcheur
+1. **Proposition de Valeur Principale:**
+La proposition de valeur principale de ce contenu semble être de fournir une plateforme en ligne pour rechercher, comparer et réserver des hébergements de vacances uniques et variés dans le monde entier. Il répond au besoin fondamental des voyageurs de trouver des options d'hébergement adaptées à leurs préférences et leur budget lors de la planification de voyages.
+&nbsp;
+2. **Positionnement Perçu:**
+Ce contenu positionne l'offre comme une source complète et diversifiée d'hébergements, allant des options classiques comme les hôtels et les appartements aux choix plus uniques comme les châteaux, les villas, les bateaux et même les igloos. Il se présente comme un guichet unique pour trouver "des hébergements pour tous les goûts". Ce positionnement semble cohérent tout au long du texte.
+&nbsp;
+3. **Pertinence, Fiabilité et Fraîcheur:**
+- **Pertinence:** Le contenu semble pertinent pour les voyageurs à la recherche d'hébergements, avec des descriptions détaillées, des notes, des avis et des tarifs. Cependant, le public cible exact n'est pas clairement défini.
+- **Fiabilité/Crédibilité:** La présence de nombreux avis d'utilisateurs et de notes renforce la crédibilité. Cependant, l'absence d'informations sur l'entreprise elle-même ou les sources des données peut soulever des questions.
+- **Fraîcheur:** Aucune date de publication ou de dernière mise à jour n'est fournie, ce qui rend difficile l'évaluation de la fraîcheur des informations. Certains éléments comme les tarifs et les disponibilités semblent mis à jour régulièrement.
+&nbsp;
+4. **Synthèse de l'Analyse:**
+Ce contenu présente une plateforme en ligne complète pour rechercher et réserver une large gamme d'hébergements de vacances, des plus classiques aux plus uniques. Il se positionne comme une source diversifiée répondant à tous les goûts. Bien que riche en détails et en avis d'utilisateurs, ce qui renforce sa crédibilité, l'absence d'informations sur l'entreprise et les dates de mise à jour soulève des questions sur la fiabilité et la fraîcheur globales. Dans l'ensemble, il semble pertinent pour les voyageurs cherchant des options d'hébergement, mais pourrait bénéficier de plus de transparence sur les sources et la mise à jour des données.
+&nbsp;
+#### 5. Analyse sémantique
+coherence_semantique={'score': 65, 'analyse': "Le contenu semble être une page web listant des offres d'hébergement. Il y a une certaine cohérence sémantique autour des concepts liés au voyage et à l'hébergement, mais le texte manque de transitions fluides et de structure narrative claire.", 'points_forts': ["Vocabulaire cohérent lié au domaine de l'hébergement", 'Peu de contradictions sémantiques évidentes'], 'points_faibles': ['Manque de transitions entre les sections', 'Peu de contexte global unifiant le contenu']} densite_informationnelle={'score': 70, 'analyse': "Le contenu est assez dense en informations, avec de nombreuses descriptions d'hébergements spécifiques et de détails associés. Cependant, il y a aussi une certaine redondance dans la présentation des informations.", 'ratio_information_bruit': 'Élevé, avec peu de contenu superflu', 'concepts_uniques_detectes': ['Hébergement', 'Voyage', 'Réservation', 'Destinations', 'Promotions']} complexite_syntaxique={'score': 60, 'analyse': 'La complexité syntaxique est relativement faible, avec une prédominance de phrases courtes et simples. Il y a peu de variété dans les structures de phrases utilisées. La grammaire et la ponctuation sont généralement correctes mais basiques.', 'variete_structures': 'Faible variété de structures de phrases', 'qualite_grammaticale': 'Grammaire et ponctuation correctes mais simples'} clarte_conceptuelle={'score': 75, 'analyse': "Les concepts clés liés à l'hébergement et au voyage sont clairement définis et hiérarchisés de manière logique. Les entités nommées comme les noms de lieux et d'hébergements sont facilement identifiables.", 'entites_principales': ["Noms d'hébergements", 'Lieux', "Types d'hébergement"], 'hierarchie_logique': "Bonne hiérarchisation des informations par type d'hébergement et lieu"} qualite_embeddings={'score': 65, 'analyse': "Le contexte fourni par le contenu est assez riche pour permettre une bonne vectorisation des concepts liés au voyage et à l'hébergement. Cependant, le vocabulaire technique et spécialisé est limité, ce qui pourrait réduire la distinctivité des embeddings générés.", 'richesse_contextuelle': 'Contexte riche pour les concepts principaux', 'distinctivite_potentielle': 'Vocabulaire technique limité, distinctivité potentiellement réduite'} facilite_tokenisation={'score': 80, 'analyse': 'La structure du contenu, composée principalement de phrases courtes et simples, facilite la tokenisation par les modèles modernes. La gestion des caractères spéciaux et de la ponctuation semble appropriée. La longueur des segments textuels est généralement adaptée.', 'compatibilite_tokenizers': 'Bonne compatibilité avec les tokenizers modernes', 'segmentation_optimale': 'Segmentation généralement adaptée aux modèles Transformer'} score_global=69.0 resume_executif="Le contenu analysé présente une cohérence sémantique et une densité informationnelle correctes dans le domaine de l'hébergement et du voyage, mais manque de complexité syntaxique et de transitions fluides. La clarté conceptuelle et la facilité de tokenisation sont des points forts, mais la qualité des embeddings potentiels pourrait être limitée par un vocabulaire technique restreint." recommandations_amelioration=['Ajouter des transitions et une structure narrative plus claire pour améliorer la cohérence sémantique', 'Varier davantage les structures de phrases pour augmenter la complexité syntaxique', 'Enrichir le vocabulaire technique et spécialisé pour générer des embeddings plus distinctifs', "Réduire la redondance d'informations pour augmenter la densité informationnelle"]
+&nbsp;
+**Synthèse Stratégique &amp; Recommandations LLMO :**
+---------------------------------------------
+Voici une synthèse stratégique globale et des recommandations priorisées pour améliorer la visibilité et l'impact de ce contenu web auprès des IA et des utilisateurs :`;
+}
+&nbsp;
+// Fonction pour simuler les données d'un rapport spécifique
+<span class="cstat-no" title="statement not covered" >export function <span class="fstat-no" title="function not covered" >g</span>etReportData(</span>reportId: string): any {
+  // En production, ceci ferait un appel API pour récupérer le rapport spécifique
+  // Pour le moment, on retourne des données de test
+  const reportMap: Record&lt;string, any&gt; = <span class="cstat-no" title="statement not covered" >{</span>
+    'booking-002': {
+      url: 'https://www.booking.com',
+      rawData: loadLLMOTestData()
+    },
+    'virail-001': {
+      url: 'https://www.virail.com',
+      rawData: 'Données de test Virail - non disponibles pour le moment'
+    }
+  };
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return reportMap[reportId] || null;</span>
+} </pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2025-10-03T13:07:28.685Z
+            </div>
+        <script src="../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../sorter.js"></script>
+        <script src="../block-navigation.js"></script>
+    </body>
+</html>
+    
