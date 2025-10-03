@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+date: Tue, 02 Sep 2025 14:46:07 GMT
+server: uvicorn
+content-length: 368
+content-type: application/json
+set-cookie: access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInRva2VuX3R5cGUiOiJhY2Nlc3MiLCJleHAiOjE3NTY4MjYxNjh9.rB71mx-E5fBhY-ozUl0pFkW1SodIbS_J1hjfGnryEp4; HttpOnly; Max-Age=1800; Path=/; SameSite=lax
+set-cookie: refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInRva2VuX3R5cGUiOiJyZWZyZXNoIiwiZXhwIjoxNzU3NDI5MTY4fQ.DEc3gitzkRrO624RmT1trm8fnARobar-0jZTF4QXj64; HttpOnly; Max-Age=604800; Path=/; SameSite=lax
+

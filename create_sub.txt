@@ -1,0 +1,7 @@
+HTTP/1.1 200 OK
+date: Thu, 28 Aug 2025 09:49:26 GMT
+server: uvicorn
+content-length: 334
+content-type: application/json
+
+{"subscription":{"id":"sub_7a5fc8d3_1756374566","status":"pending","end_date":"2025-09-27T09:49:26.809341","stripe_subscription_id":null,"updated_at":"2025-08-28T09:49:26.799993","user_id":8,"plan_id":"standard","start_date":"2025-08-28T09:49:26.809341","auto_renew":true,"created_at":"2025-08-28T09:49:26.799993"},"status":"created"}

@@ -1,0 +1,111 @@
+{
+    "brand": {
+      "name": "Meetmind.ai",
+      "personality": "Modern, minimal, collaborative",
+      "tone_and_feel": "Clean, friendly, and productivity-focused",
+      "target_users": "Professionals and teams managing online meetings"
+    },
+    "colors": {
+      "primary": "#1A3AFF",
+      "primary_dark": "#0C1A33",
+      "softBlue": "#2E4CFF",
+      "lightGray": "#F5F7FA",
+      "mediumGray": "#C8C9CC",
+      "darkGray": "#2E2E3E",
+      "white": "#FFFFFF",
+      "greenAccent": "#4CAF50"
+    },
+    "typography": {
+      "font_family": ["Inter", "Poppins"],
+      "headings": {
+        "weight": "600-700",
+        "size": "18-24px",
+        "line_height": "1.5"
+      },
+      "body": {
+        "weight": "400",
+        "size": "14-16px",
+        "line_height": "1.5"
+      },
+      "labels_buttons": {
+        "weight": "500",
+        "size": "13-14px"
+      },
+      "small_text": {
+        "weight": "400",
+        "size": "12px"
+      }
+    },
+    "components": {
+      "navigation": {
+        "style": "left sidebar",
+        "active_item_highlight": "#1A3AFF",
+        "icons": "minimal, outlined"
+      },
+      "buttons": {
+        "primary": {
+          "background": "#1A3AFF",
+          "text_color": "#FFFFFF"
+        },
+        "secondary": {
+          "background": "#2E4CFF",
+          "text_color": "#FFFFFF"
+        },
+        "tertiary": {
+          "background": "transparent",
+          "text_color": "#1A3AFF"
+        },
+        "border_radius": "12-16px",
+        "hover_effect": "slight shadow + lighter shade"
+      },
+      "cards": {
+        "background": "#0C0F1A",
+        "border_radius": "16px",
+        "shadow": "0px 4px 12px rgba(0,0,0,0.25)"
+      },
+      "toggles": {
+        "shape": "rounded pill",
+        "active_color": "#1A3AFF",
+        "inactive_color": "#3A3A3A"
+      },
+      "search_bar": {
+        "style": "full-width, rounded input",
+        "shadow": "subtle",
+        "icon_position": "left"
+      }
+    },
+    "layout": {
+      "grid": "12-column responsive",
+      "card_padding": "16-24px",
+      "section_gaps": "24-32px",
+      "consistency": "Maintain visual breathing room"
+    },
+    "iconography": {
+      "style": "minimal, outlined, rounded edges",
+      "default_color": "#C8C9CC",
+      "active_color": "#1A3AFF",
+      "sizes": {
+        "navigational": "18-24px",
+        "inline": "16px"
+      }
+    },
+    "shadows": {
+      "card_shadow": "0px 4px 12px rgba(0,0,0,0.25)",
+      "hover_shadow": "0px 6px 16px rgba(0,0,0,0.35)"
+    },
+    "avatars": {
+      "style": "rounded with soft borders",
+      "size": "32-40px",
+      "fallback": "user initials with soft color background"
+    },
+    "microinteractions": {
+      "hover_transition": "150-200ms",
+      "toggle_animation": "subtle, smooth",
+      "button_hover_scale": "slightly scales up"
+    },
+    "accessibility": {
+      "contrast_ratio": "WCAG AA compliant",
+      "minimum_font_size": "12px",
+      "color_coding": "Icons or labels should support color changes"
+    }
+  }
