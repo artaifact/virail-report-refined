@@ -185,7 +185,7 @@ const RecommendationsPanel = ({ data }: RecommendationsPanelProps) => {
         <CardContent className="space-y-6">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-700 font-medium">Score LLMO global</span>
+              <span className="text-gray-700 font-medium">Score GEO global</span>
               <span className="text-2xl font-bold text-blue-600">72/100</span>
             </div>
             <Progress value={72} className="h-3" />

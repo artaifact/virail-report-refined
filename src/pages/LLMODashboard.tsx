@@ -7,6 +7,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TrendingUp, TrendingDown, Target, Zap, ArrowRight, ChevronDown, CheckCircle, Circle, Users, Download } from "lucide-react";
 import { useReport } from "@/hooks/useReports";
 import { mapApiDataToMatrix } from "@/services/matrixMapper";
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
+import { ChartTooltip } from '@/components/ui/chart';
 
 const LLMODashboard = () => {
   const location = useLocation();
@@ -19,6 +21,33 @@ const LLMODashboard = () => {
 
   // État pour la checklist dynamique basée sur les données du rapport
   const [checklistItems, setChecklistItems] = useState<Array<{ id: number, text: string, completed: boolean }>>([]);
+  
+  // Fonction pour sauvegarder l'état de la checklist dans localStorage
+  const saveChecklistState = (items: Array<{ id: number, text: string, completed: boolean }>) => {
+    if (selectedReportId) {
+      localStorage.setItem(`checklist_${selectedReportId}`, JSON.stringify(items));
+    }
+  };
+
+  // Fonction pour charger l'état de la checklist depuis localStorage
+  const loadChecklistState = (items: Array<{ id: number, text: string, completed: boolean }>) => {
+    if (selectedReportId) {
+      const saved = localStorage.getItem(`checklist_${selectedReportId}`);
+      if (saved) {
+        try {
+          const savedItems = JSON.parse(saved);
+          // Fusionner les données sauvegardées avec les nouveaux items
+          return items.map(item => {
+            const savedItem = savedItems.find((s: any) => s.id === item.id && s.text === item.text);
+            return savedItem ? { ...item, completed: savedItem.completed } : item;
+          });
+        } catch (e) {
+          console.log('Erreur lors du chargement de la checklist:', e);
+        }
+      }
+    }
+    return items;
+  };
   
   // État pour les recommandations de la matrice
   const [matrixRecommendations, setMatrixRecommendations] = useState<any[]>([]);
@@ -54,21 +83,25 @@ const LLMODashboard = () => {
         const geoPlanItems = analysisWithGeoPlan.modules.audit_geo.plan_action_geo.map((item: string, index: number) => ({
           id: index + 1,
           text: item,
-          completed: false
+          completed: false // Les actions sont par défaut non complétées - l'utilisateur peut les marquer
         }));
 
         console.log('🔍 Items de checklist générés:', geoPlanItems);
-        setChecklistItems(geoPlanItems);
+        // Charger l'état sauvegardé si disponible
+        const itemsWithSavedState = loadChecklistState(geoPlanItems);
+        setChecklistItems(itemsWithSavedState);
       } else {
         console.log('⚠️ Aucun plan GEO trouvé, utilisation du fallback');
         // Fallback vers la checklist par défaut si pas de plan GEO
-        setChecklistItems([
+        const fallbackItems = [
           { id: 1, text: "Ajouter JSON-LD 'SoftwareApplication' sur /, /features, /pricing", completed: false },
           { id: 2, text: "Normaliser H1/H2 (1 H1/page, mots-clés)", completed: false },
           { id: 3, text: "Publier '/llms.txt' (routes & résumé produit)", completed: false },
           { id: 4, text: "Planifier 2 mises à jour/mois (changelog public)", completed: false },
           { id: 5, text: "Insérer 3 preuves chiffrées (cas client, % CTR)", completed: false }
-        ]);
+        ];
+        const fallbackWithSavedState = loadChecklistState(fallbackItems);
+        setChecklistItems(fallbackWithSavedState);
       }
     }
   }, [report]);
@@ -76,10 +109,18 @@ const LLMODashboard = () => {
   const completedCount = checklistItems.filter(item => item.completed).length;
   const progressPercentage = checklistItems.length > 0 ? (completedCount / checklistItems.length) * 100 : 0;
 
+  // Sauvegarder l'état de la checklist quand elle change
+  useEffect(() => {
+    if (checklistItems.length > 0) {
+      saveChecklistState(checklistItems);
+    }
+  }, [checklistItems, selectedReportId]);
+
   // Debug pour voir l'état de la checklist
   useEffect(() => {
     console.log('🔍 Checklist items actuels:', checklistItems);
     console.log('🔍 Nombre d\'items dans la checklist:', checklistItems.length);
+    console.log('🔍 Items complétés:', checklistItems.filter(item => item.completed).length);
   }, [checklistItems]);
 
 
@@ -436,7 +477,7 @@ const LLMODashboard = () => {
           <Card className="bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">SCORE LLMO GLOBAL</span>
+                <span className="text-sm font-medium text-muted-foreground">SCORE GEO GLOBAL</span>
                 <span className="text-xs text-muted-foreground">en direct</span>
               </div>
               {(() => {
@@ -640,7 +681,7 @@ const LLMODashboard = () => {
                           };
                           if (score < 60) return {
                             label: 'À améliorer',
-                            color: 'bg-muted/500 hover:bg-orange-600',
+                            color: 'bg-orange-500 hover:bg-orange-600',
                             description: 'Amélioration nécessaire'
                           };
                           if (score < 80) return {
@@ -755,187 +796,148 @@ const LLMODashboard = () => {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Matrice Impact / Effort */}
+              {/* Graphique Radar - Performance par Métriques */}
               <Card className="bg-card border border-border shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-foreground text-xl">
-                    Matrice Impact / Effort
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-foreground text-xl">
+                      Performance par Métriques
+                    </CardTitle>
+                    <div className="text-xs text-muted-foreground">Analyse multidimensionnelle</div>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="relative h-80 bg-background rounded-lg p-4">
-                    {/* Grille de fond avec des carrés */}
-                    <div className="absolute inset-4 grid grid-cols-16 grid-rows-16 h-full gap-0.5 opacity-20">
-                      {[...Array(256)].map((_, i) => (
-                        <div key={i} className="bg-muted-foreground/20 rounded-sm"></div>
-                      ))}
-                    </div>
+                  <div className="h-80 w-full relative overflow-hidden bg-card rounded-2xl border border-border p-4 shadow-lg">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart
+                        data={(() => {
+                          // Données par défaut si pas de rapport
+                          if (!report?.analyses) {
+                            return [
+                              { metric: 'Schema.org', Score: 65 },
+                              { metric: 'HTML sémantique', Score: 78 },
+                              { metric: 'Métadonnées', Score: 82 },
+                              { metric: 'Contenu', Score: 75 },
+                              { metric: 'Accessibilité', Score: 88 },
+                              { metric: 'Performance', Score: 85 }
+                            ];
+                          }
 
-                    {/* Grille 2x2 */}
-                    <div className="absolute inset-4 grid grid-cols-2 grid-rows-2 h-full z-10">
-                      {/* Quadrant Projets majeurs (haut-gauche) */}
-                      <div className="relative border-r border-b border-dashed border-blue-400 p-3">
-                        <div className="absolute -top-1 -left-1">
-                          <div className="bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                            <span>🚀</span>
-                            Projets majeurs
-                          </div>
-                        </div>
-                        {/* Points dynamiques dans ce quadrant */}
-                        {matrixRecommendations
-                          .filter(rec => rec.category_type === 'major_project')
-                          .map((rec, index) => (
-                            <div 
-                              key={rec.id}
-                              className="absolute w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-md cursor-pointer group relative"
-                              style={{
-                                top: `${20 + (index * 15)}%`,
-                                left: `${20 + (index * 10)}%`
-                              }}
-                            >
-                              {rec.title.substring(0, 3)}
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                {rec.title}<br />
-                                Impact: {rec.impact_score}%<br />
-                                Effort: {rec.effort_score}%
-                              </div>
-                            </div>
-                          ))}
-                      </div>
+                          // Récupérer les scores depuis le rapport
+                          const analysis = report.analyses.find(a => a.llm_name === 'gpt-5');
+                          const auditGeo = analysis?.modules?.audit_geo;
 
-                      {/* Quadrant Quick Wins (haut-droit) */}
-                      <div className="relative border-b border-dashed border-blue-400 p-3">
-                        <div className="absolute -top-1 -right-1">
-                          <div className="bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                            <span>⚡</span>
-                            Quick Wins
-                          </div>
-                        </div>
-                        {/* Points dynamiques dans ce quadrant */}
-                        {matrixRecommendations
-                          .filter(rec => rec.category_type === 'quick_win')
-                          .map((rec, index) => (
-                            <div 
-                              key={rec.id}
-                              className="absolute w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-md cursor-pointer group relative"
-                              style={{
-                                top: `${20 + (index * 15)}%`,
-                                right: `${20 + (index * 10)}%`
-                              }}
-                            >
-                              {rec.title.substring(0, 3)}
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                {rec.title}<br />
-                                Impact: {rec.impact_score}%<br />
-                                Effort: {rec.effort_score}%
-                              </div>
-                            </div>
-                          ))}
-                      </div>
+                          return [
+                            { 
+                              metric: 'Schema.org', 
+                              Score: auditGeo?.donnees_score || 65 
+                            },
+                            { 
+                              metric: 'HTML sémantique', 
+                              Score: auditGeo?.html_score || 78 
+                            },
+                            { 
+                              metric: 'Métadonnées', 
+                              Score: auditGeo?.meta_score || 82 
+                            },
+                            { 
+                              metric: 'Contenu', 
+                              Score: auditGeo?.contenu_score || 75 
+                            },
+                            { 
+                              metric: 'Accessibilité', 
+                              Score: auditGeo?.accessibilite_score || 88 
+                            },
+                            { 
+                              metric: 'Performance', 
+                              Score: auditGeo?.performance_score || 85 
+                            }
+                          ];
+                        })()}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                      >
+                        <PolarGrid stroke="#e5e7eb" strokeOpacity={0.3} />
+                        <PolarAngleAxis
+                          dataKey="metric"
+                          tick={{ fontSize: 11, fill: '#6b7280', fontWeight: 500 }}
+                        />
+                        <PolarRadiusAxis
+                          angle={90}
+                          domain={[0, 100]}
+                          tick={{ fontSize: 10, fill: '#9ca3af' }}
+                          tickCount={6}
+                        />
 
-                      {/* Quadrant Éviter (bas-gauche) */}
-                      <div className="relative border-r border-dashed border-blue-400 p-3">
-                        <div className="absolute -bottom-1 -left-1">
-                          <div className="bg-pink-100 text-pink-800 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                            <span>❌</span>
-                            Éviter
-                          </div>
-                        </div>
-                        {/* Points dynamiques dans ce quadrant - Limité à 2 */}
-                        {matrixRecommendations
-                          .filter(rec => rec.category_type === 'avoid')
-                          .slice(0, 2)
-                          .map((rec, index) => (
-                            <div 
-                              key={rec.id}
-                              className="absolute w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-md cursor-pointer group relative"
-                              style={{
-                                bottom: `${20 + (index * 15)}%`,
-                                left: `${20 + (index * 10)}%`
-                              }}
-                            >
-                              {rec.title.substring(0, 3)}
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                {rec.title}<br />
-                                Impact: {rec.impact_score}%<br />
-                                Effort: {rec.effort_score}%
-                              </div>
-                            </div>
-                          ))}
-                      </div>
+                        {/* Radar principal */}
+                        <Radar
+                          name="Score"
+                          dataKey="Score"
+                          stroke="#3b82f6"
+                          fill="#3b82f6"
+                          fillOpacity={0.2}
+                          strokeWidth={2}
+                          dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                        />
 
-                      {/* Quadrant Fill-ins (bas-droit) */}
-                      <div className="relative p-3">
-                        <div className="absolute -bottom-1 -right-1">
-                          <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                            <span>⏳</span>
-                            Fill-ins
-                          </div>
-                        </div>
-                        {/* Points dynamiques dans ce quadrant */}
-                        {matrixRecommendations
-                          .filter(rec => rec.category_type === 'fill_in')
-                          .map((rec, index) => (
-                            <div 
-                              key={rec.id}
-                              className="absolute w-6 h-6 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-md cursor-pointer group relative"
-                              style={{
-                                bottom: `${20 + (index * 15)}%`,
-                                right: `${20 + (index * 10)}%`
-                              }}
-                            >
-                              {rec.title.substring(0, 3)}
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                {rec.title}<br />
-                                Impact: {rec.impact_score}%<br />
-                                Effort: {rec.effort_score}%
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-
-                    {/* Axes */}
-                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-xs text-muted-foreground">
-                      Effort
-                    </div>
-                    <div className="absolute top-1/2 left-0 transform -translate-y-1/2 -rotate-90 text-xs text-muted-foreground">
-                      Impact
-                    </div>
+                        <ChartTooltip
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="bg-white/95 backdrop-blur-sm p-3 border border-neutral-300 rounded-xl shadow-2xl">
+                                  <p className="font-semibold text-neutral-900 mb-2">{label}</p>
+                                  {payload.map((entry, index) => (
+                                    <div key={index} className="flex items-center justify-between gap-3 py-0.5">
+                                      <div className="flex items-center gap-2">
+                                        <div
+                                          className="w-3 h-3 rounded-sm"
+                                          style={{ backgroundColor: entry.color }}
+                                        />
+                                        <span className="text-sm text-neutral-700">Score</span>
+                                      </div>
+                                      <span className="font-bold text-neutral-900 text-sm">{entry.value}%</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
                   </div>
-
 
                   {/* Légende */}
                   <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-1">
                     {/* Colonne gauche */}
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
                         <span className="text-sm text-foreground">Schema.org</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-muted/500 rounded-full"></div>
-                        <span className="text-sm text-foreground">Fraîcheur</span>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <span className="text-sm text-foreground">HTML sémantique</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-primary rounded-full"></div>
-                        <span className="text-sm text-foreground">Ilms.txt</span>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <span className="text-sm text-foreground">Métadonnées</span>
                       </div>
                     </div>
 
                     {/* Colonne droite */}
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-muted/500 rounded-full"></div>
-                        <span className="text-sm text-foreground">Balises Hn</span>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <span className="text-sm text-foreground">Contenu</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-muted/500 rounded-full"></div>
-                        <span className="text-sm text-foreground">Preuves</span>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <span className="text-sm text-foreground">Accessibilité</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-primary rounded-full"></div>
-                        <span className="text-sm text-foreground">Métadonnées</span>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <span className="text-sm text-foreground">Performance</span>
                       </div>
                     </div>
                   </div>
@@ -948,7 +950,7 @@ const LLMODashboard = () => {
                   <CardTitle className="text-foreground text-xl">
                     Checklist exécutable
                   </CardTitle>
-                  <span className="text-sm text-muted-foreground">{completedCount}/5 complétées</span>
+                  <span className="text-sm text-muted-foreground">{completedCount}/{checklistItems.length} complétées</span>
                 </CardHeader>
                 <CardContent className="space-y-3 pt-4">
                   {/* Barre de progression */}
@@ -992,195 +994,148 @@ const LLMODashboard = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
                   {/* Carte Schema.org */}
-                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-4o') && (
-                    <div className="bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200 rounded-lg p-4">
+                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-5') && (
+                    <div className="bg-card border border-border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-pink-800 text-lg font-medium">Schema.org</h3>
-                        <span className="text-sm font-bold text-pink-700">
-                          {report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.donnees_score || 0}/100
+                        <h3 className="text-foreground text-lg font-medium">Schema.org</h3>
+                        <span className="text-sm font-bold text-blue-600">
+                          {report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.donnees_score || 0}/100
                         </span>
                       </div>
-                      <div className="w-20 h-2 bg-pink-200 rounded-full mb-4">
+                      <div className="w-20 h-2 bg-blue-100 rounded-full mb-4">
                         <div
-                          className="h-2 bg-red-500 rounded-full"
+                          className="h-2 bg-blue-600 rounded-full"
                           style={{
-                            width: `${(report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.donnees_score || 0)}%`
+                            width: `${(report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.donnees_score || 0)}%`
                           }}
                         ></div>
                       </div>
                       <div className="space-y-3">
-                        <div className="flex items-start gap-2">
+                        <div className="space-y-1">
                           <p className="text-sm font-medium text-foreground">Pourquoi :</p>
                           <p className="text-sm text-muted-foreground">LLM indexent mieux les entités.</p>
                         </div>
-                        <div className="flex items-start gap-2">
+                        <div className="space-y-1">
                           <p className="text-sm font-medium text-foreground">Gain attendu :</p>
                           <p className="text-sm text-muted-foreground">+10-15 pts visibilité.</p>
                         </div>
-                        <div className="flex items-start gap-2">
-                          <p className="text-sm font-medium text-foreground flex-shrink-0">Action :</p>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-foreground">Action :</p>
                           <p className="text-sm text-muted-foreground">
-                            {report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.plan_action_geo?.[2] ||
+                            {report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.plan_action_geo?.[2] ||
                               "Ajouter @type: SoftwareApplication en JSON-LD."}
                           </p>
-                        </div>
-                        <div className="flex justify-between pt-2 border-t border-pink-200">
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground">Owner</p>
-                            <p className="text-sm text-foreground">SEO</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground">ETA</p>
-                            <p className="text-sm text-foreground">0,5 j</p>
-                          </div>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {/* Carte HTML sémantique */}
-                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-4o') && (
-                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-200 rounded-lg p-4">
+                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-5') && (
+                    <div className="bg-card border border-border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-yellow-800 text-lg font-medium">HTML sémantique</h3>
-                        <span className="text-sm font-bold text-yellow-700">
-                          {report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.html_score || 0}/100
+                        <h3 className="text-foreground text-lg font-medium">HTML sémantique</h3>
+                        <span className="text-sm font-bold text-blue-600">
+                          {report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.html_score || 0}/100
                         </span>
                       </div>
-                      <div className="w-20 h-2 bg-yellow-200 rounded-full mb-4">
+                      <div className="w-20 h-2 bg-blue-100 rounded-full mb-4">
                         <div
-                          className="h-2 bg-muted/500 rounded-full"
+                          className="h-2 bg-blue-600 rounded-full"
                           style={{
-                            width: `${(report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.html_score || 0)}%`
+                            width: `${(report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.html_score || 0)}%`
                           }}
                         ></div>
                       </div>
                       <div className="space-y-3">
-                        <div className="flex items-start gap-2">
+                        <div className="space-y-1">
                           <p className="text-sm font-medium text-foreground">Pourquoi :</p>
                           <p className="text-sm text-muted-foreground">Structure claire pour les crawlers.</p>
                         </div>
-                        <div className="flex items-start gap-2">
+                        <div className="space-y-1">
                           <p className="text-sm font-medium text-foreground">Gain attendu :</p>
                           <p className="text-sm text-muted-foreground">+5-8 pts compréhension.</p>
                         </div>
-                        <div className="flex items-start gap-2">
-                          <p className="text-sm font-medium text-foreground flex-shrink-0">Action :</p>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-foreground">Action :</p>
                           <p className="text-sm text-muted-foreground">
-                            {report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.plan_action_geo?.[1] ||
+                            {report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.plan_action_geo?.[1] ||
                               "Normaliser H1/H2 + sections."}
                           </p>
-                        </div>
-                        <div className="flex justify-between pt-2 border-t border-yellow-200">
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground">Owner</p>
-                            <p className="text-sm text-foreground">Dev</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground">ETA</p>
-                            <p className="text-sm text-foreground">1 j</p>
-                          </div>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {/* Carte Métadonnées */}
-                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-4o') && (
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-5') && (
+                    <div className="bg-card border border-border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-muted-foreground text-lg font-medium">Métadonnées</h3>
-                        <span className="text-sm font-bold text-green-700">
-                          {report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.meta_score || 0}/100
+                        <h3 className="text-foreground text-lg font-medium">Métadonnées</h3>
+                        <span className="text-sm font-bold text-blue-600">
+                          {report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.meta_score || 0}/100
                         </span>
                       </div>
-                      <div className="w-20 h-2 bg-green-200 rounded-full mb-4 relative">
+                      <div className="w-20 h-2 bg-blue-100 rounded-full mb-4">
                         <div
-                          className="h-2 bg-primary rounded-full"
+                          className="h-2 bg-blue-600 rounded-full"
                           style={{
-                            width: `${(report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.meta_score || 0)}%`
+                            width: `${(report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.meta_score || 0)}%`
                           }}
                         ></div>
-                        {(report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.meta_score || 0) > 70 && (
-                          <div className="absolute -right-1 top-0 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                            <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                        )}
                       </div>
                       <div className="space-y-3">
-                        <div className="flex items-start gap-2">
+                        <div className="space-y-1">
                           <p className="text-sm font-medium text-foreground">Pourquoi :</p>
                           <p className="text-sm text-muted-foreground">Informations riches pour LLM.</p>
                         </div>
-                        <div className="flex items-start gap-2">
+                        <div className="space-y-1">
                           <p className="text-sm font-medium text-foreground">Gain attendu :</p>
                           <p className="text-sm text-muted-foreground">+3-5 pts précision.</p>
                         </div>
-                        <div className="flex items-start gap-2">
-                          <p className="text-sm font-medium text-foreground flex-shrink-0">Action :</p>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-foreground">Action :</p>
                           <p className="text-sm text-muted-foreground">
                             {report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.plan_action_geo?.[3] ||
                               "Enrichir descriptions + OpenGraph."}
                           </p>
-                        </div>
-                        <div className="flex justify-between pt-2 border-t border-green-200">
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground">Owner</p>
-                            <p className="text-sm text-foreground">Marketing</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground">ETA</p>
-                            <p className="text-sm text-foreground">0,3 j</p>
-                          </div>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {/* Carte Contenu */}
-                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-4o') && (
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-5') && (
+                    <div className="bg-card border border-border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-muted-foreground text-lg font-medium">Contenu</h3>
-                        <span className="text-sm font-bold text-blue-700">
-                          {report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.contenu_score || 0}/100
+                        <h3 className="text-foreground text-lg font-medium">Contenu</h3>
+                        <span className="text-sm font-bold text-blue-600">
+                          {report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.contenu_score || 0}/100
                         </span>
                       </div>
-                      <div className="w-20 h-2 bg-blue-200 rounded-full mb-4">
+                      <div className="w-20 h-2 bg-blue-100 rounded-full mb-4">
                         <div
-                          className="h-2 bg-muted/500 rounded-full"
+                          className="h-2 bg-blue-600 rounded-full"
                           style={{
-                            width: `${(report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.contenu_score || 0)}%`
+                            width: `${(report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.contenu_score || 0)}%`
                           }}
                         ></div>
                       </div>
                       <div className="space-y-3">
-                        <div className="flex items-start gap-2">
+                        <div className="space-y-1">
                           <p className="text-sm font-medium text-foreground">Pourquoi :</p>
                           <p className="text-sm text-muted-foreground">Qualité et pertinence du contenu.</p>
                         </div>
-                        <div className="flex items-start gap-2">
+                        <div className="space-y-1">
                           <p className="text-sm font-medium text-foreground">Gain attendu :</p>
                           <p className="text-sm text-muted-foreground">+8-12 pts engagement.</p>
                         </div>
-                        <div className="flex items-start gap-2">
-                          <p className="text-sm font-medium text-foreground flex-shrink-0">Action :</p>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-foreground">Action :</p>
                           <p className="text-sm text-muted-foreground">
-                            {report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.plan_action_geo?.[4] ||
+                            {report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.plan_action_geo?.[4] ||
                               "Améliorer la qualité du contenu."}
                           </p>
-                        </div>
-                        <div className="flex justify-between pt-2 border-t border-blue-200">
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground">Owner</p>
-                            <p className="text-sm text-foreground">Content</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-muted-foreground">ETA</p>
-                            <p className="text-sm text-foreground">2 j</p>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -1292,7 +1247,7 @@ const LLMODashboard = () => {
                           <h4 className="font-semibold text-foreground mb-2">Schema.org (depuis l'API)</h4>
                           {(() => {
                             const analyses = report?.analyses || [];
-                            const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-3-sonnet', 'gemini-2.5-pro', 'mixtral-3.1', 'sonar'];
+                            const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-4-sonnet', 'gemini-2.5-pro', 'mixtral-3.1', 'sonar'];
                             let schemaVal: any = null;
                             for (const model of preferredModels) {
                               const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
@@ -1408,7 +1363,7 @@ const LLMODashboard = () => {
                           <h4 className="font-semibold text-foreground mb-2">Meta tags (depuis l'API)</h4>
                           {(() => {
                             const analyses = report?.analyses || [];
-                            const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-3-sonnet', 'gemini-2.5-pro', 'mixtral-3.1', 'sonar'];
+                            const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-4-sonnet', 'gemini-2.5-pro', 'mixtral-3.1', 'sonar'];
                             let metaVal: any = null;
                             for (const model of preferredModels) {
                               const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
@@ -1452,7 +1407,7 @@ const LLMODashboard = () => {
                           <h4 className="font-semibold text-foreground mb-2">Open Graph (depuis l'API)</h4>
                           {(() => {
                             const analyses = report?.analyses || [];
-                            const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-3-sonnet', 'gemini-2.5-pro', 'mixtral-3.1', 'sonar'];
+                            const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-4-sonnet', 'gemini-2.5-pro', 'mixtral-3.1', 'sonar'];
                             let ogVal: any = null;
                             for (const model of preferredModels) {
                               const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
@@ -1570,7 +1525,7 @@ const LLMODashboard = () => {
                           <h4 className="font-semibold text-foreground mb-2">llms.txt (depuis l'API)</h4>
                           {(() => {
                             const analyses = report?.analyses || [];
-                            const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-3-sonnet', 'gemini-2.5-pro', 'mixtral-3.1', 'sonar'];
+                            const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-4-sonnet', 'gemini-2.5-pro', 'mixtral-3.1', 'sonar'];
                             let llmsVal: any = null;
                             for (const model of preferredModels) {
                               const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
@@ -1627,64 +1582,70 @@ const LLMODashboard = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                   {/* Section GPT */}
-                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-4o') && (
+                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-5') && (
                     <div className="bg-muted/50 p-4 rounded-lg space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-semibold">GPT</span>
-                        </div>
-                        <span className="font-bold text-foreground">ChatGPT Analysis</span>
+                        <img
+                          src="/prompt-model-openai-for-light.svg"
+                          alt="GPT-5"
+                          className="w-8 h-8"
+                        />
+                        <span className="font-bold text-foreground">GPT-5</span>
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        {report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.resume_executif_geo ||
+                        {report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.resume_executif_geo ||
                           "Manque de structure sémantique claire. Les balises H1/H2 ne suivent pas une hiérarchie logique. Recommande l'ajout de Schema.org pour améliorer la compréhension du contenu."}
                       </p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>Durée: {report.analyses.find(a => a.llm_name === 'gpt-4o')?.duree}s</span>
+                        <span>Durée: {report.analyses.find(a => a.llm_name === 'gpt-5')?.duree}s</span>
                         <span>•</span>
-                        <span>Score GEO: {report.analyses.find(a => a.llm_name === 'gpt-4o')?.modules?.audit_geo?.score_global_geo || 0}/100</span>
+                        <span>Score GEO: {report.analyses.find(a => a.llm_name === 'gpt-5')?.modules?.audit_geo?.score_global_geo || 0}/100</span>
                       </div>
                     </div>
                   )}
 
                   {/* Section Claude */}
-                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'claude-3-sonnet') && (
+                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'claude-4-sonnet') && (
                     <div className="bg-muted/50 p-4 rounded-lg space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-muted/500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-semibold">C</span>
-                        </div>
-                        <span className="font-bold text-foreground">Claude Analysis</span>
+                        <img
+                          src="/prompt-model-claude.svg"
+                          alt="Claude"
+                          className="w-8 h-8"
+                        />
+                        <span className="font-bold text-foreground">Claude 4 Sonnet</span>
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        {report.analyses.find(a => a.llm_name === 'claude-3-sonnet')?.modules?.audit_geo?.resume_executif_geo ||
+                        {report.analyses.find(a => a.llm_name === 'claude-4-sonnet')?.modules?.audit_geo?.resume_executif_geo ||
                           "Contenu de qualité mais présentation fragmentée. Suggère l'ajout de preuves chiffrées et de témoignages clients pour renforcer la crédibilité."}
                       </p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>Durée: {report.analyses.find(a => a.llm_name === 'claude-3-sonnet')?.duree}s</span>
+                        <span>Durée: {report.analyses.find(a => a.llm_name === 'claude-4-sonnet')?.duree}s</span>
                         <span>•</span>
-                        <span>Score GEO: {report.analyses.find(a => a.llm_name === 'claude-3-sonnet')?.modules?.audit_geo?.score_global_geo || 0}/100</span>
+                        <span>Score GEO: {report.analyses.find(a => a.llm_name === 'claude-4-sonnet')?.modules?.audit_geo?.score_global_geo || 0}/100</span>
                       </div>
                     </div>
                   )}
 
                   {/* Section Gemini */}
-                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gemini-pro') && (
+                  {report && report.analyses && report.analyses.find(a => a.llm_name === 'gemini-2.5-pro') && (
                     <div className="bg-muted/50 p-4 rounded-lg space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-muted/500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-semibold">G</span>
-                        </div>
-                        <span className="font-bold text-foreground">Gemini Analysis</span>
+                        <img
+                          src="/prompt-model-gemini.svg"
+                          alt="Gemini"
+                          className="w-8 h-8"
+                        />
+                        <span className="font-bold text-foreground">Gemini 2.5 Pro</span>
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        {report.analyses.find(a => a.llm_name === 'gemini-pro')?.modules?.audit_geo?.resume_executif_geo ||
+                        {report.analyses.find(a => a.llm_name === 'gemini-2.5-pro')?.modules?.audit_geo?.resume_executif_geo ||
                           "Analyse technique approfondie avec focus sur l'optimisation SEO et l'accessibilité. Recommandations précises pour améliorer la visibilité."}
                       </p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>Durée: {report.analyses.find(a => a.llm_name === 'gemini-pro')?.duree}s</span>
+                        <span>Durée: {report.analyses.find(a => a.llm_name === 'gemini-2.5-pro')?.duree}s</span>
                         <span>•</span>
-                        <span>Score GEO: {report.analyses.find(a => a.llm_name === 'gemini-pro')?.modules?.audit_geo?.score_global_geo || 0}/100</span>
+                        <span>Score GEO: {report.analyses.find(a => a.llm_name === 'gemini-2.5-pro')?.modules?.audit_geo?.score_global_geo || 0}/100</span>
                       </div>
                     </div>
                   )}
@@ -1693,10 +1654,12 @@ const LLMODashboard = () => {
                   {report && report.analyses && report.analyses.find(a => a.llm_name === 'mixtral-8x7b') && (
                     <div className="bg-muted/50 p-4 rounded-lg space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-muted/500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-semibold">M</span>
-                        </div>
-                        <span className="font-bold text-foreground">Mixtral Analysis</span>
+                        <img
+                          src="/Mistral.png"
+                          alt="Mistral"
+                          className="w-8 h-8"
+                        />
+                        <span className="font-bold text-foreground">Mistral 3.1</span>
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {report.analyses.find(a => a.llm_name === 'mixtral-8x7b')?.modules?.audit_geo?.resume_executif_geo ||
@@ -1714,10 +1677,12 @@ const LLMODashboard = () => {
                   {report && report.analyses && report.analyses.find(a => a.llm_name === 'sonar') && (
                     <div className="bg-muted/50 p-4 rounded-lg space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-muted/500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-semibold">S</span>
-                        </div>
-                        <span className="font-bold text-foreground">Sonar Analysis</span>
+                        <img
+                          src="/prompt-model-perplexity.svg"
+                          alt="Perplexity"
+                          className="w-8 h-8"
+                        />
+                        <span className="font-bold text-foreground">Perplexity Sonar</span>
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {report.analyses.find(a => a.llm_name === 'sonar')?.modules?.audit_geo?.resume_executif_geo ||
@@ -1748,7 +1713,7 @@ const LLMODashboard = () => {
                 <CardTitle className="text-foreground text-xl">
                   Checklist exécutable
                 </CardTitle>
-                <span className="text-sm text-muted-foreground">{completedCount}/5 complétées</span>
+                <span className="text-sm text-muted-foreground">{completedCount}/{checklistItems.length} complétées</span>
               </CardHeader>
               <CardContent className="space-y-3 pt-4">
                 {/* Barre de progression */}
@@ -1788,8 +1753,8 @@ const LLMODashboard = () => {
               </CardHeader> */}
               <CardContent>
                 {(() => {
-                  // Prioriser l'analyse Claude-4-Sonnet, puis Claude-3-Sonnet, sinon fallback sur la première disponible
-                  const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-3-sonnet'];
+                  // Prioriser l'analyse Claude-4-Sonnet, puis claude-4-sonnet, sinon fallback sur la première disponible
+                  const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-4-sonnet'];
                   const analyses = report?.analyses || [];
 
                   try {
@@ -2144,7 +2109,7 @@ const LLMODashboard = () => {
                   {(() => {
                     // Récupérer directement performance_impact du module GEO
                     const analyses = report?.analyses || [];
-                    const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-3-sonnet'];
+                    const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-4-sonnet'];
                     let perf: any | null = null;
                     for (const model of preferredModels) {
                       const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
@@ -2196,7 +2161,7 @@ const LLMODashboard = () => {
                 <CardContent className="space-y-3">
                   {(() => {
                     const analyses = report?.analyses || [];
-                    const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-3-sonnet'];
+                    const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-4-sonnet'];
                     let perf: any | null = null;
                     for (const model of preferredModels) {
                       const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);

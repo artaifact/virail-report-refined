@@ -115,6 +115,23 @@ export interface TargetPositioning {
   }>;
 }
 
+export interface LLMAnalysis {
+  forces_principales: string[];
+  faiblesses_principales: string[];
+  positionnement: string;
+  differenciateurs: string[];
+  opportunites_differenciation: string[];
+  score_menace: number;
+  analyse_resume: string;
+}
+
+export interface MiniLLMResult {
+  competitor_name: string;
+  competitor_url: string;
+  llm_analysis: LLMAnalysis;
+  status: string;
+}
+
 export interface CompetitorAnalysisResponse {
   analysis_id: number;
   url: string;
@@ -122,6 +139,7 @@ export interface CompetitorAnalysisResponse {
   description: string;
   models_analysis: ModelAnalysis[];
   consolidated_competitors: ConsolidatedCompetitor[];
+  mini_llm_results?: MiniLLMResult[];
   target_positioning: TargetPositioning;
   global_stats: {
     total_models_executed: number;

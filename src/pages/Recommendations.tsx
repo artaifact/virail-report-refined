@@ -207,7 +207,7 @@ const Recommendations = () => {
                     </div>
                     Score Performance
                   </CardTitle>
-                  <CardDescription className="mt-2">Votre score LLMO global ce mois</CardDescription>
+                  <CardDescription className="mt-2">Votre score GEO global ce mois</CardDescription>
                 </div>
                 <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
                   <TrendingUp className="w-3 h-3 mr-1" />

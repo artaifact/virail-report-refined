@@ -35,7 +35,8 @@ import {
   Trophy,
   Rocket,
   Star,
-  Zap
+  Zap,
+  Brain
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCompetitiveAnalysis } from "@/hooks/useCompetitiveAnalysis";
@@ -43,7 +44,8 @@ import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import CompetitiveAnalysisDisplay from "@/components/competitive-analysis/CompetitiveAnalysisDisplay";
 import DetailedCompetitiveAnalysis from "@/components/competitive-analysis/DetailedCompetitiveAnalysis";
-import { listCompetitorAnalyses, getCompetitorAnalysisById, startCompetitorAnalysis, extractDomain, CompetitorAnalysisResponse, CompetitorAnalysisSummary } from '@/services/competitorAnalysisService';
+import MiniLLMAnalysis from "@/components/competitive-analysis/MiniLLMAnalysis";
+import { listCompetitorAnalyses, getCompetitorAnalysisById, startCompetitorAnalysis, extractDomain, CompetitorAnalysisResponse, CompetitorAnalysisSummary, MiniLLMResult } from '@/services/competitorAnalysisService';
 
 const Competition = () => {
   const [userUrl, setUserUrl] = useState("");
@@ -56,6 +58,10 @@ const Competition = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [loadingSavedAnalyses, setLoadingSavedAnalyses] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // État pour les analyses LLM détaillées
+  const [miniLLMResults, setMiniLLMResults] = useState<MiniLLMResult[]>([]);
+  const [loadingMiniLLM, setLoadingMiniLLM] = useState(false);
 
   const { usageLimits, canUseFeature } = usePayment() as any;
 
@@ -101,6 +107,11 @@ const Competition = () => {
 
       setCurrentAnalysis(analysis);
       
+      // Charger les données mini_llm_results si disponibles
+      if (analysis.mini_llm_results && analysis.mini_llm_results.length > 0) {
+        setMiniLLMResults(analysis.mini_llm_results);
+      }
+      
       // Recharger la liste des analyses
       const updatedAnalyses = await listCompetitorAnalyses();
       setCompetitorAnalyses(updatedAnalyses);
@@ -138,6 +149,11 @@ const Competition = () => {
       // Charger l'analyse depuis l'API
       const analysis = await getCompetitorAnalysisById(analysisId);
       setCurrentAnalysis(analysis);
+      
+      // Charger les données mini_llm_results si disponibles
+      if (analysis.mini_llm_results && analysis.mini_llm_results.length > 0) {
+        setMiniLLMResults(analysis.mini_llm_results);
+      }
       
       toast({
         title: "Analyse chargée",
@@ -1138,6 +1154,26 @@ const Competition = () => {
                   </Card>
                 ) : null}
               </div>
+            )}
+
+            {/* Analyses LLM détaillées */}
+            {!isAnalyzing && currentAnalysis && miniLLMResults.length > 0 && (
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-xl font-bold text-foreground">
+                    Analyses  Détaillées
+                  </CardTitle>
+                  <p className="text-muted-foreground">
+                    Analyses approfondies de vos concurrents principaux
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <MiniLLMAnalysis 
+                    data={miniLLMResults} 
+                    isLoading={loadingMiniLLM}
+                  />
+                </CardContent>
+              </Card>
             )}
 
             {/* Affichage détaillé de l'analyse concurrentielle */}
