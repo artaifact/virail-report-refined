@@ -427,7 +427,7 @@ class ApiService {
     created_at: string;
   }> {
     try {
-      return await this.request('/api/v3/competitors/analyze', {
+      return await this.request('/api/v1/competitors/analyze', {
         method: 'POST',
         body: JSON.stringify({
           url,

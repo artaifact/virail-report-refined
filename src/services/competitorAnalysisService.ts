@@ -206,7 +206,7 @@ export const startCompetitorAnalysis = async (request: CompetitorAnalysisRequest
 
     console.log('🚀 Lancement analyse concurrentielle (payload):', payload);
 
-    const response = await fetch(`${API_BASE_URL}/api/v3/competitors/analyze`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/competitors/analyze`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -239,7 +239,7 @@ export const getCompetitorAnalysisById = async (analysisId: number): Promise<Com
   try {
     console.log('🔍 Récupération analyse:', analysisId);
     
-    const response = await fetch(`${API_BASE_URL}/api/v3/competitors/${analysisId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/competitors/analyses/${analysisId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -271,7 +271,7 @@ export const listCompetitorAnalyses = async (): Promise<CompetitorAnalysisSummar
   try {
     console.log('📋 Récupération liste des analyses');
     
-    const response = await fetch(`${API_BASE_URL}/api/v3/competitors/`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/competitors/analyses`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

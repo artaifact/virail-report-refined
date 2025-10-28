@@ -853,125 +853,202 @@ const Competition = () => {
                     <CardTitle className="text-lg text-foreground">🤖 Détails par Modèle IA</CardTitle>
                   </CardHeader>
                   <CardContent className="text-foreground">
-                    <div className="space-y-3">
-                      {currentAnalysis.models_analysis?.map((model, modelIdx) => (
-                        <details key={modelIdx} className="group border border-border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                          <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-card border border-border/50 flex items-center justify-center overflow-hidden">
-                                {(() => {
-                                  const modelName = model.model_info?.display_name?.toLowerCase() || '';
-                                  if (modelName.includes('claude')) {
-                                    return <img src="/prompt-model-claude.svg" alt="Claude" className="w-6 h-6" />;
-                                  } else if (modelName.includes('gpt') || modelName.includes('openai')) {
-                                    return <img src="/prompt-model-openai-for-light.svg" alt="OpenAI" className="w-6 h-6" />;
-                                  } else if (modelName.includes('gemini')) {
-                                    return <img src="/prompt-model-gemini.svg" alt="Gemini" className="w-6 h-6" />;
-                                  } else if (modelName.includes('mistral')) {
-                                    return <img src="/Mistral.png" alt="Mistral" className="w-6 h-6" />;
-                                  } else if (modelName.includes('perplexity')) {
-                                    return <img src="/prompt-model-perplexity.svg" alt="Perplexity" className="w-6 h-6" />;
-                                  } else {
-                                    return <span className="text-sm font-bold text-primary">🤖</span>;
-                                  }
-                                })()}
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-foreground text-lg">
-                                  {(() => {
-                                    const displayName = model.model_info?.display_name || '';
-                                    // Nettoyer et formater le nom du modèle
-                                    if (displayName.toLowerCase().includes('claude')) {
-                                      return 'Claude';
-                                    } else if (displayName.toLowerCase().includes('gpt')) {
-                                      // Extraire la version du modèle (ex: GPT-5, GPT-4, etc.)
-                                      const versionMatch = displayName.match(/gpt-?(\d+)/i);
-                                      if (versionMatch) {
-                                        return `GPT-${versionMatch[1]}`;
-                                      }
-                                      return 'GPT';
-                                    } else if (displayName.toLowerCase().includes('gemini')) {
-                                      return 'Gemini';
-                                    } else if (displayName.toLowerCase().includes('mistral')) {
-                                      return 'Mistral';
-                                    } else if (displayName.toLowerCase().includes('perplexity')) {
-                                      return 'Perplexity';
-                                    } else {
-                                      // Nettoyer les noms génériques
-                                      return displayName
-                                        .replace(/\([^)]*\)/g, '') // Supprimer les parenthèses
-                                        .replace(/\/.*$/, '') // Supprimer tout après le slash
-                                        .trim();
-                                    }
-                                  })()}
-                                </h4>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <span className="flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-primary rounded-full"></span>
-                                    {model.model_info?.competitors_found || 0} concurrents
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                    {Math.round((model.model_info?.average_score || 0) * 100)}% score
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant={model.model_info?.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
-                                {model.model_info?.status}
-                              </Badge>
-                              <svg className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </div>
-                          </summary>
-                          
-                          <div className="px-4 pb-4 border-t border-border/50">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4">
-                              <div className="text-center p-3 bg-card rounded-lg border border-border/50">
-                                <div className="text-xl font-bold text-foreground">{model.model_info?.competitors_found || 0}</div>
-                                <div className="text-sm text-muted-foreground">Concurrents trouvés</div>
-                              </div>
-                              <div className="text-center p-3 bg-card rounded-lg border border-border/50">
-                                <div className="text-xl font-bold text-foreground">{Math.round((model.model_info?.average_score || 0) * 100)}%</div>
-                                <div className="text-sm text-muted-foreground">Score moyen</div>
-                              </div>
-                              <div className="text-center p-3 bg-card rounded-lg border border-border/50">
-                                <div className="text-xl font-bold text-foreground">
-                                  {Math.round((model.model_info?.min_score || 0) * 100)}% - {Math.round((model.model_info?.max_score || 0) * 100)}%
-                                </div>
-                                <div className="text-sm text-muted-foreground">Score min-max</div>
-                              </div>
-                            </div>
+                    <div className="space-y-4">
+                      {/* Grouper les concurrents par modèle utilisé */}
+                      {(() => {
+                        const competitorsByModel = {};
+                        
+                        // Grouper les concurrents par modèle
+                        const competitors = (currentAnalysis as any)?.competitors;
+                        if (competitors && Array.isArray(competitors)) {
+                          competitors.forEach((competitor: any) => {
+                            if (competitor.sources && Array.isArray(competitor.sources)) {
+                              competitor.sources.forEach((source: string) => {
+                                if (!competitorsByModel[source]) {
+                                  competitorsByModel[source] = [];
+                                }
+                                competitorsByModel[source].push(competitor);
+                              });
+                            }
+                          });
+                        }
 
-                            {model.competitors && model.competitors.length > 0 && (
-                              <div>
-                                <h5 className="font-medium mb-3 text-foreground">Concurrents identifiés:</h5>
-                                <div className="space-y-2 max-h-60 overflow-y-auto">
-                                  {model.competitors.map((competitor, compIdx) => (
-                                    <div key={compIdx} className="flex items-center justify-between p-3 bg-card rounded-lg border border-border/50 hover:bg-muted/30 transition-colors">
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-foreground truncate">{competitor.name}</div>
-                                        <div className="text-sm text-muted-foreground truncate">{competitor.url}</div>
+                        return Object.entries(competitorsByModel).map(([model, competitors]) => (
+                          <Card key={model} className="bg-muted/30 border border-border shadow-sm">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <img
+                                    src={(() => {
+                                      const modelLower = model.toLowerCase();
+                                      if (modelLower.includes('mistral') || modelLower.includes('mixtral')) return '/Mistral.png';
+                                      const id = modelLower.includes('gpt') || modelLower.includes('openai')
+                                        ? 'openai-for-light'
+                                        : modelLower.includes('claude')
+                                          ? 'claude'
+                                          : modelLower.includes('gemini')
+                                            ? 'gemini'
+                                            : modelLower.includes('sonar') || modelLower.includes('perplexity')
+                                              ? 'perplexity'
+                                              : 'claude';
+                                      return `/prompt-model-${id}.svg`;
+                                    })()}
+                                    alt="Model"
+                                    className="w-6 h-6"
+                                  />
+                                  <div>
+                                    <h4 className="font-semibold text-foreground text-sm">
+                                      {model.replace('-', ' ').toUpperCase()}
+                                    </h4>
+                                    <p className="text-xs text-muted-foreground">
+                                      {Array.isArray(competitors) ? competitors.length : 0} concurrents trouvés
+                                    </p>
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  Score moyen: {Array.isArray(competitors) && competitors.length > 0 
+                                    ? Math.round((competitors.reduce((acc, c) => acc + c.average_score, 0) / competitors.length) * 100)
+                                    : 0}/100
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <div className="space-y-2">
+                                {Array.isArray(competitors) && competitors.slice(0, 5).map((competitor: any, index: number) => (
+                                  <div key={index} className="flex items-center justify-between p-2 bg-card rounded-lg border border-border">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 bg-muted rounded flex items-center justify-center">
+                                        <span className="text-xs font-semibold text-muted-foreground">#{index + 1}</span>
                                       </div>
-                                      <div className="text-right ml-3">
-                                        <div className="text-sm font-bold text-foreground">
-                                          {Math.round((competitor.similarity_score || 0) * 100)}%
+                                      <div>
+                                        <span className="text-sm font-medium text-foreground font-semibold">{competitor.name}</span>
+                                        <div className="text-xs text-muted-foreground">
+                                          {competitor.url}
                                         </div>
-                                        <div className="text-xs text-muted-foreground">Score</div>
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
+                                    <div className="text-right">
+                                      <Badge variant="outline" className="text-xs">
+                                        Score: {Math.round(competitor.average_score * 100)}/100
+                                      </Badge>
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        Mentions: {competitor.mentions}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            )}
-                          </div>
-                        </details>
-                      ))}
+                            </CardContent>
+                          </Card>
+                        ));
+                      })() || (
+                        <Card className="bg-card border border-border shadow-sm">
+                          <CardContent className="flex flex-col items-center justify-center py-8">
+                            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="font-semibold text-foreground mb-2">Aucun concurrent trouvé</h3>
+                            <p className="text-sm text-muted-foreground text-center">
+                              Les concurrents seront affichés ici une fois l'analyse terminée.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Analyses détaillées LLM */}
+                {currentAnalysis.mini_llm_results && currentAnalysis.mini_llm_results.length > 0 && (
+                  <Card className="bg-card border border-border">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-foreground">🧠 Analyses détaillées LLM</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-foreground">
+                      <div className="space-y-4">
+                        {currentAnalysis.mini_llm_results
+                          .filter(result => result.llm_analysis && result.llm_analysis.forces_principales)
+                          .slice(0, 3)
+                          .map((result, index) => (
+                            <Card key={index} className="bg-muted/30 border border-border shadow-sm">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-semibold text-foreground text-sm">{result.competitor_name}</h4>
+                                    <p className="text-xs text-muted-foreground">{result.competitor_url}</p>
+                                  </div>
+                                  <Badge variant="outline" className="text-xs">
+                                    Menace: {result.llm_analysis.score_menace}/10
+                                  </Badge>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                {/* Forces principales */}
+                                {result.llm_analysis.forces_principales && result.llm_analysis.forces_principales.length > 0 && (
+                                  <div>
+                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
+                                      <TrendingUp className="h-3 w-3 text-green-500" />
+                                      Forces principales
+                                    </h5>
+                                    <ul className="space-y-1">
+                                      {result.llm_analysis.forces_principales.slice(0, 3).map((force, idx) => (
+                                        <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
+                                          <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                                          {force}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {/* Faiblesses principales */}
+                                {result.llm_analysis.faiblesses_principales && result.llm_analysis.faiblesses_principales.length > 0 && (
+                                  <div>
+                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
+                                      <TrendingDown className="h-3 w-3 text-red-500" />
+                                      Faiblesses principales
+                                    </h5>
+                                    <ul className="space-y-1">
+                                      {result.llm_analysis.faiblesses_principales.slice(0, 3).map((weakness, idx) => (
+                                        <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
+                                          <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                                          {weakness}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {/* Positionnement */}
+                                {result.llm_analysis.positionnement && (
+                                  <div>
+                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
+                                      <Target className="h-3 w-3 text-blue-500" />
+                                      Positionnement
+                                    </h5>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                      {result.llm_analysis.positionnement}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Résumé */}
+                                {result.llm_analysis.analyse_resume && result.llm_analysis.analyse_resume.trim() !== " " && (
+                                  <div className="pt-2 border-t border-border">
+                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
+                                      <Brain className="h-3 w-3 text-purple-500" />
+                                      Analyse résumée
+                                    </h5>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                      {result.llm_analysis.analyse_resume}
+                                    </p>
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Positionnement cible */}
                 {currentAnalysis.target_positioning && (

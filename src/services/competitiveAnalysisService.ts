@@ -368,8 +368,8 @@ export const getCompetitiveAnalyses = async (): Promise<CompetitiveAnalysisResul
     console.log('🌐 Utilisation de l\'API:', API_BASE_URL);
 
     // Requête GET vers votre API
-    console.log('🍪 Envoi des cookies avec la requête vers /api/v3/competitors/');
-    const response = await fetch(`${API_BASE_URL}/api/v3/competitors/`, {
+    console.log('🍪 Envoi des cookies avec la requête vers /api/v1/competitors/');
+    const response = await fetch(`${API_BASE_URL}/api/v1/competitors/analyses`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -448,7 +448,7 @@ export const getCompetitiveAnalysisById = async (id: string): Promise<Competitiv
     console.log('🧹 ID nettoyé:', cleanId);
 
     // Requête GET vers votre API pour une analyse spécifique
-    const enrichedUrl = `${API_BASE_URL}/api/v3/competitors/${cleanId}`;
+    const enrichedUrl = `${API_BASE_URL}/api/v1/competitors/analyses/${cleanId}`;
     console.log('➡️ GET analyse spécifique:', enrichedUrl);
     console.log('🍪 Envoi des cookies avec la requête vers /api/v3/competitors/' + cleanId);
     const response = await fetch(enrichedUrl, {

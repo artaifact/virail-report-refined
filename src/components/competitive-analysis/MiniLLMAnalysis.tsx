@@ -158,12 +158,12 @@ const MiniLLMAnalysis = ({ data, isLoading = false }: MiniLLMAnalysisProps) => {
                     <AccordionTrigger className="text-sm font-medium text-foreground hover:no-underline py-2">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-gray-600" />
-                        Forces principales ({item.llm_analysis.forces_principales.length})
+                        Forces principales ({item.llm_analysis.forces_principales?.length || 0})
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-2">
                       <ul className="space-y-1">
-                        {item.llm_analysis.forces_principales.map((strength, idx) => (
+                        {(item.llm_analysis.forces_principales || []).map((strength, idx) => (
                           <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
                             <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
                             {strength}
@@ -177,12 +177,12 @@ const MiniLLMAnalysis = ({ data, isLoading = false }: MiniLLMAnalysisProps) => {
                     <AccordionTrigger className="text-sm font-medium text-foreground hover:no-underline py-2">
                       <div className="flex items-center gap-2">
                         <TrendingDown className="h-4 w-4 text-red-500" />
-                        Faiblesses ({item.llm_analysis.faiblesses_principales.length})
+                        Faiblesses ({item.llm_analysis.faiblesses_principales?.length || 0})
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-2">
                       <ul className="space-y-1">
-                        {item.llm_analysis.faiblesses_principales.map((weakness, idx) => (
+                        {(item.llm_analysis.faiblesses_principales || []).map((weakness, idx) => (
                           <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
                             <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
                             {weakness}
@@ -196,12 +196,12 @@ const MiniLLMAnalysis = ({ data, isLoading = false }: MiniLLMAnalysisProps) => {
                     <AccordionTrigger className="text-sm font-medium text-foreground hover:no-underline py-2">
                       <div className="flex items-center gap-2">
                         <Star className="h-4 w-4 text-yellow-500" />
-                        Différenciateurs ({item.llm_analysis.differenciateurs.length})
+                        Différenciateurs ({item.llm_analysis.differenciateurs?.length || 0})
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-2">
                       <ul className="space-y-1">
-                        {item.llm_analysis.differenciateurs.map((diff, idx) => (
+                        {(item.llm_analysis.differenciateurs || []).map((diff, idx) => (
                           <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
                             <Award className="h-3 w-3 text-yellow-500 mt-0.5 flex-shrink-0" />
                             {diff}
@@ -215,12 +215,12 @@ const MiniLLMAnalysis = ({ data, isLoading = false }: MiniLLMAnalysisProps) => {
                     <AccordionTrigger className="text-sm font-medium text-foreground hover:no-underline py-2">
                       <div className="flex items-center gap-2">
                         <Lightbulb className="h-4 w-4 text-blue-500" />
-                        Opportunités ({item.llm_analysis.opportunites_differenciation.length})
+                        Opportunités ({item.llm_analysis.opportunites_differenciation?.length || 0})
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-2">
                       <ul className="space-y-1">
-                        {item.llm_analysis.opportunites_differenciation.map((opp, idx) => (
+                        {(item.llm_analysis.opportunites_differenciation || []).map((opp, idx) => (
                           <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
                             <Zap className="h-3 w-3 text-blue-500 mt-0.5 flex-shrink-0" />
                             {opp}
