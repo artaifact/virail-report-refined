@@ -9,7 +9,6 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart, CartesianGrid, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { AuthService } from "@/services/authService";
-import { useCompetitiveAnalysis } from "@/hooks/useCompetitiveAnalysis";
 import { useReports, useReport } from "@/hooks/useReports";
 import { mapLLMOReportData } from "@/lib/llmo-mapper";
 import { useTextualOptimization } from "@/hooks/useTextualOptimization";
@@ -491,7 +490,7 @@ const Index = () => {
   return (
     <div className="flex-1 min-h-screen bg-background text-foreground">
       {/* Hero Header Section */}
-      <div className="relative bg-card px-8 py-4 border-b border-border">
+      <div className="relative bg-card px-8 py-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground mb-1">
@@ -510,7 +509,7 @@ const Index = () => {
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-muted-foreground">Organisation:</span>
                   <Select value={selectedSourceAnalysisId} onValueChange={setSelectedSourceAnalysisId}>
-                    <SelectTrigger className="bg-card border-border w-64">
+                    <SelectTrigger className="bg-card w-64">
                       <SelectValue placeholder="Choisir une analyse" />
                     </SelectTrigger>
                     <SelectContent>
@@ -550,7 +549,7 @@ const Index = () => {
       <div className="px-8 py-8 space-y-8 max-w-6xl mx-auto">
 
         {/* Section principale avec système d'onglets */}
-        <Card className="bg-card border border-border shadow-sm">
+        <Card className="bg-card shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-center">
               <CardTitle className="text-2xl font-normal text-foreground">
@@ -627,7 +626,7 @@ const Index = () => {
                   </div>
 
                   {/* Légende visible et lisible */}
-                  <div className="mb-4 p-4 bg-card rounded-lg shadow-sm">
+                  <div className="mb-4 p-4 bg-transparent">
                     <div className="flex flex-wrap gap-6 justify-center">
                       <div className="flex items-center gap-3">
                         <img
@@ -672,84 +671,121 @@ const Index = () => {
                     </div>
                   </div>
 
-                  <div className="h-[32rem] w-full relative overflow-hidden bg-card rounded-2xl border border-border p-6 shadow-sm">
+                  <div className="h-[32rem] w-full relative overflow-hidden bg-transparent p-6">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={(() => {
-                          // Utiliser les vraies données de l'API
-                          if (!selectedSourceAnalysis?.target_positioning?.trends_by_model) {
+                          // Utiliser les average_score réels des concurrents par modèle IA
+                          if (!selectedCompetitorAnalysis || !selectedCompetitorAnalysis.models_analysis) {
                             return [];
                           }
 
-                          const trendsByModel = selectedSourceAnalysis.target_positioning.trends_by_model;
-
-                          // Fonction pour créer une évolution progressive de 0 vers la valeur finale
-                          const createProgressiveEvolution = (finalScore: number, periods: number, offset: number = 0) => {
-                            const data = [];
-                            const step = finalScore / periods;
-
-                            for (let i = 0; i < periods; i++) {
-                              const currentScore = step * (i + 1) + offset;
-                              const volatility = finalScore * 0.15; // 15% de volatilité pour beaucoup plus d'écart
-
-                              // Ajouter une variation beaucoup plus importante pour bien écarter les lignes
-                              const variation = (Math.random() - 0.5) * volatility;
-                              const open = Math.max(0, currentScore - variation);
-                              const close = Math.max(0, Math.min(100, currentScore + variation));
-                              const high = Math.max(open, close) + Math.random() * 8;
-                              const low = Math.min(open, close) - Math.random() * 8;
-
-                              data.push({
-                                period: `${i + 1}`,
-                                open: Math.max(0, Math.min(100, open)),
-                                high: Math.max(0, Math.min(100, high)),
-                                low: Math.max(0, Math.min(100, low)),
-                                close: Math.max(0, Math.min(100, close)),
-                                volume: Math.floor(Math.random() * 1000) + 500
-                              });
+                          // Extraire les concurrents par modèle avec leurs average_score
+                          const modelData: Record<string, number[]> = {};
+                          
+                          selectedCompetitorAnalysis.models_analysis.forEach((modelAnalysis: any) => {
+                            const modelName = modelAnalysis.model_info?.model_name || 
+                                            modelAnalysis.model_info?.provider || 
+                                            modelAnalysis.model_info?.display_name || '';
+                            
+                            // Normaliser le nom du modèle
+                            let normalizedModel = '';
+                            const nameLower = modelName.toLowerCase();
+                            if (nameLower.includes('gpt') || nameLower.includes('openai')) {
+                              normalizedModel = 'gpt5';
+                            } else if (nameLower.includes('claude') || nameLower.includes('anthropic')) {
+                              normalizedModel = 'claude4';
+                            } else if (nameLower.includes('gemini') || nameLower.includes('google')) {
+                              normalizedModel = 'gemini25';
+                            } else if (nameLower.includes('mistral') || nameLower.includes('mixtral')) {
+                              normalizedModel = 'mistral31';
+                            } else if (nameLower.includes('sonar') || nameLower.includes('perplexity')) {
+                              normalizedModel = 'sonar';
                             }
 
-                            return data;
-                          };
-
-                          // Récupérer les scores finaux réels pour chaque modèle
-                          const modelFinalScores = {};
-                          Object.entries(trendsByModel).forEach(([modelKey, modelData]) => {
-                            let finalScore = 0;
-                            if (modelData.points && modelData.points.length > 0) {
-                              const latestPoint = modelData.points[modelData.points.length - 1];
-                              finalScore = latestPoint.geo_score || latestPoint.global_score || 0;
+                            if (normalizedModel && modelAnalysis.competitors && modelAnalysis.competitors.length > 0) {
+                              // Extraire les scores (average_score pour consolidated, similarity_score pour par modèle)
+                              const scores = modelAnalysis.competitors
+                                .slice(0, 10) // Top 10 concurrents
+                                .map((comp: any) => Math.round((comp.similarity_score || comp.average_score || 0) * 100));
+                              
+                              if (scores.length > 0) {
+                                modelData[normalizedModel] = scores;
+                              }
                             }
-                            modelFinalScores[modelKey] = finalScore;
                           });
 
-                          // Créer les données d'évolution progressive avec des décalages beaucoup plus importants pour bien écarter les lignes
-                          const gpt5Data = createProgressiveEvolution(modelFinalScores['openai/gpt-5'] || 0, 10, 0);
-                          const claudeData = createProgressiveEvolution(modelFinalScores['anthropic/claude-sonnet-4'] || 0, 10, -15);
-                          const geminiData = createProgressiveEvolution(modelFinalScores['google/gemini-2.5-pro'] || 0, 10, 10);
-                          const mistralData = createProgressiveEvolution(modelFinalScores['mistralai/mistral-medium-3.1'] || 0, 10, -20);
-                          const sonarData = createProgressiveEvolution(modelFinalScores['perplexity/sonar'] || 0, 10, 5);
-
-                          // Combiner toutes les données pour un graphique multi-lignes
-                          const allData = [];
-                          for (let i = 0; i < 10; i++) {
-                            allData.push({
-                              period: `${i + 1}`,
-                              gpt5: gpt5Data[i].close,
-                              claude4: claudeData[i].close,
-                              gemini25: geminiData[i].close,
-                              mistral31: mistralData[i].close,
-                              sonar: sonarData[i].close,
-                              // Données de chandelier pour le tooltip
-                              gpt5Candle: gpt5Data[i],
-                              claude4Candle: claudeData[i],
-                              gemini25Candle: geminiData[i],
-                              mistral31Candle: mistralData[i],
-                              sonarCandle: sonarData[i]
-                            });
+                          // Si pas de données par modèle, utiliser consolidated_competitors
+                          if (Object.keys(modelData).length === 0 && selectedCompetitorAnalysis.consolidated_competitors) {
+                            const consolidatedScores = selectedCompetitorAnalysis.consolidated_competitors
+                              .slice(0, 10)
+                              .map((comp: any) => Math.round((comp.average_score || 0) * 100));
+                            
+                            if (consolidatedScores.length > 0) {
+                              // Répartir les scores entre les modèles pour visualisation
+                              const perModel = Math.ceil(consolidatedScores.length / 5);
+                              const models = ['gpt5', 'claude4', 'gemini25', 'mistral31', 'sonar'];
+                              models.forEach((model, idx) => {
+                                const start = idx * perModel;
+                                const end = Math.min(start + perModel, consolidatedScores.length);
+                                if (end > start) {
+                                  modelData[model] = consolidatedScores.slice(start, end);
+                                }
+                              });
+                            }
                           }
 
-                          return allData;
+                          // Créer une courbe cumulative unique comme sur la photo (une seule ligne)
+                          const maxLength = Math.max(...Object.values(modelData).map(scores => scores.length), 0);
+                          
+                          if (maxLength === 0) return [];
+
+                          // Combiner tous les scores de tous les modèles et créer une seule série cumulative
+                          // Utiliser les concurrents consolidés si disponibles, sinon prendre tous les scores de tous les modèles
+                          const allScores: number[] = [];
+                          
+                          // Si on a des concurrents consolidés, les utiliser
+                          if (selectedCompetitorAnalysis.consolidated_competitors && selectedCompetitorAnalysis.consolidated_competitors.length > 0) {
+                            selectedCompetitorAnalysis.consolidated_competitors.forEach((comp: any) => {
+                              const score = Math.round((comp.average_score || 0) * 100);
+                              allScores.push(score);
+                            });
+                          } else {
+                            // Sinon, utiliser les scores de tous les modèles (déjà extraits dans modelData)
+                            // Convertir modelData en tableau de scores uniques
+                            const uniqueScores = new Set<number>();
+                            
+                            Object.entries(modelData).forEach(([model, scores]) => {
+                              scores.forEach((score) => {
+                                uniqueScores.add(score);
+                              });
+                            });
+                            
+                            // Convertir en tableau trié par score décroissant
+                            const sortedScores = Array.from(uniqueScores).sort((a, b) => b - a);
+                            allScores.push(...sortedScores);
+                          }
+                          
+                          // Calculer la progression cumulative en pourcentage
+                          const total = allScores.reduce((sum, score) => sum + score, 0);
+                          
+                          if (total === 0) return [];
+                          
+                          const cumulativeData: any[] = [];
+                          let runningTotal = 0;
+                          
+                          allScores.forEach((score, index) => {
+                            runningTotal += score;
+                            const percentage = Math.round((runningTotal / total) * 100);
+                            
+                            cumulativeData.push({
+                              period: `${index + 1}`,
+                              rank: index + 1,
+                              score: percentage
+                            });
+                          });
+                          
+                          return cumulativeData;
                         })()}
                         margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                       >
@@ -778,100 +814,59 @@ const Index = () => {
                         </defs>
 
                         <CartesianGrid
-                          strokeDasharray="2 4"
-                          stroke="hsl(var(--muted))"
-                          strokeOpacity={0.3}
+                          strokeDasharray="3 3"
+                          stroke="#e5e7eb"
+                          strokeOpacity={0.6}
                           horizontal={true}
-                          vertical={false}
+                          vertical={true}
                           strokeWidth={1}
                         />
                         <XAxis
                           dataKey="period"
+                          type="number"
+                          scale="linear"
                           axisLine={false}
                           tickLine={false}
                           tick={{
-                            fontSize: 11,
-                            fill: 'hsl(var(--muted-foreground))',
+                            fontSize: 12,
+                            fill: '#000',
                             fontWeight: 500,
                             fontFamily: 'system-ui, -apple-system, sans-serif'
                           }}
                           tickMargin={10}
+                          interval={0}
+                          domain={[0, 'dataMax']}
+                          label={{ value: 'Nb d\'IPA (ordre amont - aval)', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: '#000', fontSize: '13px', fontWeight: 500 } }}
                         />
                         <YAxis
                           axisLine={false}
                           tickLine={false}
                           tick={{
-                            fontSize: 11,
-                            fill: 'hsl(var(--muted-foreground))',
+                            fontSize: 12,
+                            fill: '#000',
                             fontWeight: 500,
                             fontFamily: 'system-ui, -apple-system, sans-serif'
                           }}
                           domain={[0, 100]}
-                          tickFormatter={(value) => `${value}%`}
+                          tickFormatter={(value) => `${value}`}
                           tickMargin={10}
+                          label={{ value: 'Proportion de la richesse totale (%)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#000', fontSize: '13px', fontWeight: 500 } }}
                         />
                         <ChartTooltip
                           content={({ active, payload, label }) => {
                             if (active && payload && payload.length) {
+                              const data = payload[0]?.payload;
+                              const percentage = Number(payload[0]?.value) || 0;
+                              const rank = data?.rank || label;
+                              
                               return (
-                                <div className="bg-card backdrop-blur-md p-4 border border-border rounded-xl shadow-2xl min-w-[300px]">
-                                  <p className="font-semibold text-foreground mb-3 text-sm">Période: {label}</p>
-                                  <div className="space-y-3">
-                                    {payload.map((entry, index) => {
-                                      const candleData = entry.payload[`${entry.dataKey}Candle`];
-                                      const isPositive = candleData.close >= candleData.open;
-                                      return (
-                                        <div key={index} className="border border-border rounded-lg p-3 bg-muted/30">
-                                          <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-2">
-                                              <div
-                                                className="w-3 h-3 rounded-full shadow-sm"
-                                                style={{ backgroundColor: entry.color }}
-                                              />
-                                              <span className="text-foreground text-sm font-medium">
-                                                {entry.name}
-                                              </span>
-                                            </div>
-                                            <span className={`font-bold text-sm px-2 py-1 rounded-md ${isPositive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                              }`}>
-                                              {candleData.close.toFixed(1)}%
-                                            </span>
-                                          </div>
-
-                                          {/* Données du chandelier */}
-                                          <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                                            <div className="flex justify-between">
-                                              <span>Ouverture:</span>
-                                              <span className="font-medium">{candleData.open.toFixed(1)}%</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                              <span>Fermeture:</span>
-                                              <span className="font-medium">{candleData.close.toFixed(1)}%</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                              <span>Plus haut:</span>
-                                              <span className="font-medium text-green-600">{candleData.high.toFixed(1)}%</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                              <span>Plus bas:</span>
-                                              <span className="font-medium text-red-600">{candleData.low.toFixed(1)}%</span>
-                                            </div>
-                                          </div>
-
-                                          {/* Variation */}
-                                          <div className="mt-2 pt-2 border-t border-border">
-                                            <div className="flex justify-between text-xs">
-                                              <span>Variation:</span>
-                                              <span className={`font-medium ${isPositive ? 'text-green-600' : 'text-red-600'
-                                                }`}>
-                                                {isPositive ? '+' : ''}{(candleData.close - candleData.open).toFixed(1)}%
-                                              </span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
+                                <div className="bg-white rounded-lg shadow-lg p-3 min-w-[180px]">
+                                  <p className="font-semibold text-gray-900 mb-2 text-sm">
+                                    Rang: {rank}
+                                  </p>
+                                  <p className="font-bold text-gray-900 text-base">
+                                    {percentage}%
+                                  </p>
                                 </div>
                               );
                             }
@@ -879,58 +874,23 @@ const Index = () => {
                           }}
                         />
 
-                        {/* Lignes d'évolution pour chaque modèle - Couleurs distinctes */}
+                        {/* Une seule ligne cumulative - Style exact comme sur la photo */}
                         <Line
-                          type="monotone"
-                          dataKey="gpt5"
+                          type="linear"
+                          dataKey="score"
                           stroke="#3b82f6"
-                          strokeWidth={3}
-                          dot={false}
-                          activeDot={{ r: 8, stroke: '#3b82f6', strokeWidth: 2, fill: '#fff' }}
-                          name="GPT-5"
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="claude4"
-                          stroke="#dc2626"
-                          strokeWidth={3}
-                          dot={false}
-                          activeDot={{ r: 8, stroke: '#dc2626', strokeWidth: 2, fill: '#fff' }}
-                          name="Claude 4"
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="gemini25"
-                          stroke="#059669"
-                          strokeWidth={3}
-                          dot={false}
-                          activeDot={{ r: 8, stroke: '#059669', strokeWidth: 2, fill: '#fff' }}
-                          name="Gemini 2.5"
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="mistral31"
-                          stroke="#7c3aed"
-                          strokeWidth={3}
-                          dot={false}
-                          activeDot={{ r: 8, stroke: '#7c3aed', strokeWidth: 2, fill: '#fff' }}
-                          name="Mistral 3.1"
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="sonar"
-                          stroke="#db2777"
-                          strokeWidth={3}
-                          dot={false}
-                          activeDot={{ r: 8, stroke: '#db2777', strokeWidth: 2, fill: '#fff' }}
-                          name="Sonar"
+                          strokeWidth={2.5}
+                          dot={{ fill: '#3b82f6', r: 5, strokeWidth: 2, stroke: '#fff' }}
+                          activeDot={{ r: 7, stroke: '#3b82f6', strokeWidth: 2, fill: '#fff' }}
+                          name="Proportion cumulative"
+                          connectNulls={true}
                         />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                <Card className="bg-card border border-border shadow-sm">
+                <Card className="bg-card shadow-sm">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg text-foreground font-semibold flex items-center gap-2">
@@ -942,7 +902,7 @@ const Index = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-muted-foreground">Modèle:</span>
                         <Select value={selectedLLMModel} onValueChange={setSelectedLLMModel}>
-                          <SelectTrigger className="bg-card border-border w-48">
+                          <SelectTrigger className="bg-card w-48">
                             <SelectValue placeholder="Modèle" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1145,24 +1105,129 @@ const Index = () => {
 
                               {/* Concurrents par modèle LLM */}
                               {(() => {
+                                // Normaliser le modèle sélectionné pour la recherche
+                                const normalizeForSearch = (model: string): string[] => {
+                                  const lower = model.toLowerCase();
+                                  const variants: string[] = [lower];
+                                  
+                                  // Extraire les variantes possibles
+                                  if (lower.includes('/')) {
+                                    const parts = lower.split('/');
+                                    variants.push(parts[0]); // provider
+                                    variants.push(parts[1]); // name
+                                    variants.push(parts[1].split('-')[0]); // premier mot du nom
+                                  } else {
+                                    variants.push(lower.split('-')[0]); // premier mot
+                                  }
+                                  
+                                  // Ajouter des alias communs
+                                  if (lower.includes('gpt-5') || lower.includes('gpt5')) {
+                                    variants.push('gpt-5', 'gpt5', 'openai/gpt-5');
+                                  }
+                                  if (lower.includes('claude') || lower.includes('sonnet')) {
+                                    variants.push('claude-4-sonnet', 'claude-sonnet-4', 'anthropic/claude-4-sonnet');
+                                  }
+                                  if (lower.includes('gemini')) {
+                                    variants.push('gemini-2.5-pro', 'google/gemini-2.5-pro');
+                                  }
+                                  if (lower.includes('mistral') || lower.includes('mixtral')) {
+                                    variants.push('mixtral-3.1', 'mistral-3.1', 'mistralai/mistral-medium-3.1');
+                                  }
+                                  if (lower.includes('sonar') || lower.includes('perplexity')) {
+                                    variants.push('sonar', 'perplexity/sonar');
+                                  }
+                                  
+                                  return [...new Set(variants)]; // Supprimer les doublons
+                                };
+
+                                const searchVariants = normalizeForSearch(selectedLLMModel || '');
+                                
                                 // Trouver l'analyse du modèle sélectionné (robuste aux alias provider/model_name)
                                 const modelAnalysis = analysis.models_analysis?.find((ma) => {
                                   const prov = (ma.model_info?.provider || '').toLowerCase();
                                   const name = (ma.model_info?.model_name || '').toLowerCase();
                                   const disp = (ma.model_info?.display_name || '').toLowerCase();
-                                  const selected = (selectedLLMModel || '').toLowerCase();
-                                  return (
-                                    prov === selected ||
-                                    name === selected ||
-                                    disp === selected ||
-                                    prov.includes(selected) ||
-                                    name.includes(selected) ||
-                                    selected.includes(prov) ||
-                                    selected.includes(name)
+                                  
+                                  // Vérifier toutes les variantes
+                                  return searchVariants.some(variant => 
+                                    prov === variant ||
+                                    name === variant ||
+                                    disp === variant ||
+                                    prov.includes(variant) ||
+                                    name.includes(variant) ||
+                                    disp.includes(variant) ||
+                                    variant.includes(prov) ||
+                                    variant.includes(name) ||
+                                    variant.includes(disp)
                                   );
                                 });
 
+                                // Debug: logger les informations pour diagnostiquer
+                                console.log('🔍 Recherche modèle:', {
+                                  selectedLLMModel,
+                                  searchVariants,
+                                  availableModels: analysis.models_analysis?.map(m => ({
+                                    provider: m.model_info?.provider,
+                                    name: m.model_info?.model_name,
+                                    display: m.model_info?.display_name,
+                                    competitorsCount: m.competitors?.length || 0
+                                  })),
+                                  foundModelAnalysis: !!modelAnalysis,
+                                  modelAnalysisCompetitors: modelAnalysis?.competitors?.length || 0,
+                                  consolidatedCompetitorsCount: analysis.consolidated_competitors?.length || 0
+                                });
+
+                                // Si aucun modèle spécifique trouvé, utiliser tous les concurrents consolidés
                                 if (!modelAnalysis || !modelAnalysis.competitors || modelAnalysis.competitors.length === 0) {
+                                  // Fallback: afficher les concurrents consolidés si disponibles
+                                  const fallbackCompetitors = analysis.consolidated_competitors || [];
+                                  
+                                  if (fallbackCompetitors.length > 0) {
+                                    return (
+                                      <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                          <h4 className="text-sm font-medium text-neutral-600">
+                                            Top 5 Concurrents
+                                          </h4>
+                                          <Badge variant="outline" className="text-xs">
+                                            {fallbackCompetitors.length} concurrents
+                                          </Badge>
+                                        </div>
+
+                                        {fallbackCompetitors.slice(0, 5).map((competitor, index) => {
+                                          const score = Math.round(competitor.average_score * 100);
+                                          const scoreColor = score >= 80 ? 'text-green-600' :
+                                            score >= 60 ? 'text-yellow-600' : 'text-red-600';
+                                          return (
+                                            <div key={index} className="flex items-center justify-between p-3 bg-card rounded-lg hover:shadow-sm transition-shadow">
+                                              <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
+                                                  <span className="text-sm font-semibold text-muted-foreground">#{competitor.global_rank || index + 1}</span>
+                                                </div>
+                                                <div>
+                                                  <span className="text-sm font-medium text-foreground">{competitor.name}</span>
+                                                  <div className="text-xs text-muted-foreground">
+                                                    {extractDomain(competitor.primary_url)}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <div className="text-right">
+                                                <Badge variant="outline" className={`text-xs ${scoreColor}`}>
+                                                  Score: {score}/100
+                                                </Badge>
+                                                {competitor.source_models && competitor.source_models.length > 0 && (
+                                                  <div className="text-xs text-muted-foreground mt-1">
+                                                    {competitor.source_models.length} modèle{competitor.source_models.length > 1 ? 's' : ''}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    );
+                                  }
+                                  
                                   return (
                                     <div className="text-center py-6 bg-muted rounded-lg">
                                       <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center mx-auto mb-3">
@@ -1170,6 +1235,9 @@ const Index = () => {
                                       </div>
                                       <p className="text-muted-foreground text-sm">
                                         Aucun concurrent trouvé pour ce modèle
+                                      </p>
+                                      <p className="text-muted-foreground text-xs mt-2">
+                                        Modèles disponibles: {analysis.models_analysis?.map(m => m.model_info?.display_name || m.model_info?.model_name).join(', ') || 'Aucun'}
                                       </p>
                                     </div>
                                   );
@@ -1191,7 +1259,7 @@ const Index = () => {
                                       const scoreColor = score >= 80 ? 'text-green-600' :
                                         score >= 60 ? 'text-yellow-600' : 'text-red-600';
                                       return (
-                                        <div key={index} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:shadow-sm transition-shadow">
+                                        <div key={index} className="flex items-center justify-between p-3 bg-card rounded-lg hover:shadow-sm transition-shadow">
                                           <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
                                               <span className="text-sm font-semibold text-muted-foreground">#{competitor.model_rank}</span>
@@ -1243,7 +1311,7 @@ const Index = () => {
                               })()}
 
                               {/* Action */}
-                              <div className="pt-4 border-t border-border flex justify-center">
+                              <div className="pt-4 flex justify-center">
                                 <Button
                                   onClick={() => navigate(`/competition`)}
                                   className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm px-4 py-2 rounded-lg transition-colors"
@@ -1260,10 +1328,86 @@ const Index = () => {
                   </CardContent>
                 </Card>
 
+                {/* Votre Position parmi les Concurrents */}
+                {selectedCompetitorAnalysis && (selectedCompetitorAnalysis as any).your_position && (
+                  <Card className="bg-card shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg font-semibold text-foreground">
+                        Votre Position parmi les Concurrents
+                      </CardTitle>
+                      <CardDescription className="text-xs text-muted-foreground">
+                        {(selectedCompetitorAnalysis as any).your_position.position_text}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="text-center p-4 rounded-lg">
+                          <div className="text-2xl font-bold text-primary mb-1">
+                            {(selectedCompetitorAnalysis as any).your_position.rank}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Rang sur {(selectedCompetitorAnalysis as any).your_position.total_competitors}</div>
+                        </div>
+                        <div className="text-center p-4 rounded-lg">
+                          <div className="text-2xl font-bold text-foreground mb-1">
+                            {(() => {
+                              const benchmarkScore = (selectedCompetitorAnalysis as any).benchmark_results?.benchmark?.classement?.find((c: any) => c.url === selectedCompetitorAnalysis.url)?.score;
+                              if (benchmarkScore !== undefined) return benchmarkScore;
+                              const targetScore = selectedCompetitorAnalysis.target_positioning?.target_benchmark_score;
+                              return targetScore ? Math.round(typeof targetScore === 'number' ? targetScore : Number(targetScore)) : 'N/A';
+                            })()}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Score Benchmark</div>
+                        </div>
+                      </div>
+
+                      {/* Écarts vs cible */}
+                      {(selectedCompetitorAnalysis as any).your_position.ecarts_vs_cible && (selectedCompetitorAnalysis as any).your_position.ecarts_vs_cible.length > 0 && (
+                        <div className="mt-6">
+                          <h4 className="text-lg font-semibold text-foreground mb-4">Écarts vs votre position</h4>
+                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                            {(selectedCompetitorAnalysis as any).your_position.ecarts_vs_cible.slice(0, 10).map((entry: any, idx: number) => {
+                              const competitor = (selectedCompetitorAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
+                              const isYourSite = entry.url === selectedCompetitorAnalysis.url;
+                              return (
+                                <div 
+                                  key={idx} 
+                                  className="flex items-center justify-between p-3 rounded-lg"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold bg-muted text-muted-foreground">
+                                      {isYourSite ? '👤' : '#'}
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-foreground">
+                                        {isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url))}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">{extractDomain(entry.url)}</div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="font-bold text-foreground">Score: {entry.score}/100</div>
+                                    {!isYourSite && (
+                                      <div className={`text-xs font-medium ${
+                                        entry.ecart_vs_cible > 0 ? 'text-red-600' : 'text-green-600'
+                                      }`}>
+                                        {entry.ecart_vs_cible > 0 ? '+' : ''}{entry.ecart_vs_cible} pts
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
                 <div className="max-w-4xl mx-auto px-4">
                   <div className="grid gap-6 lg:grid-cols-1">
                   {/* Sources Analytics (à gauche) */}
-                  <Card className="bg-card border border-border shadow-sm">
+                  <Card className="bg-card shadow-sm">
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-base text-foreground font-semibold flex items-center gap-2">
@@ -1280,7 +1424,7 @@ const Index = () => {
 
                             {/* Tooltip */}
                             {showTooltip && (
-                              <div className="absolute left-0 top-4 z-50 w-72 p-2 bg-white border border-gray-200 rounded-lg shadow-lg">
+                              <div className="absolute left-0 top-4 z-50 w-72 p-2 bg-white rounded-lg shadow-lg">
                                 <div className="text-xs">
                                   <p className="font-medium text-gray-900 mb-1">Évolution de Votre Score Global</p>
                                   <p className="text-gray-600 leading-relaxed">
@@ -1303,7 +1447,7 @@ const Index = () => {
                                   </div>
                                 </div>
                                 {/* Flèche du tooltip */}
-                                <div className="absolute left-3 -top-1 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
+                                <div className="absolute left-3 -top-1 w-2 h-2 bg-white transform rotate-45"></div>
                               </div>
                             )}
                           </div>
@@ -1448,14 +1592,14 @@ const Index = () => {
                           return (
                             <>
                               {/* Légende de l'évolution - Scores Global & GEO */}
-                              <div className="flex flex-wrap gap-4 mb-6 p-4 bg-muted rounded-xl border border-border">
+                              <div className="flex flex-wrap gap-4 mb-6 p-4 bg-muted rounded-xl">
                                 {availableModels.length > 0 ? (
                                   availableModels.map((model, index) => {
                                     const color = modelColors[model] || '#6b7280';
                                     const delta = (selectedAnalysis as any)?.target_positioning?.trends_by_model?.[model]?.delta_30d || 0;
 
                                     return (
-                                      <div key={model} className="flex items-center gap-2 px-2 py-1 bg-card rounded border border-border">
+                                      <div key={model} className="flex items-center gap-2 px-2 py-1 bg-card rounded">
                                         <img
                                           src={(() => {
                                             const key = (model || '').toLowerCase();
@@ -1497,7 +1641,7 @@ const Index = () => {
                                     );
                                   })
                                 ) : (
-                                  <div className="text-muted-foreground italic bg-card px-4 py-2 rounded-lg border border-border">
+                                  <div className="text-muted-foreground italic bg-card px-4 py-2 rounded-lg">
                                     <span className="flex items-center gap-2">
                                       Aucune donnée d'évolution disponible
                                     </span>
@@ -1638,7 +1782,7 @@ const Index = () => {
 
 
                       {/* Tableau des Modèles IA Utilisés */}
-                      <div className="overflow-hidden border border-border rounded-lg bg-card">
+                      <div className="overflow-hidden rounded-lg bg-card">
                         <table className="w-full">
                           <thead className="bg-muted">
                             <tr>
@@ -1650,7 +1794,7 @@ const Index = () => {
                               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Temps</th>
                             </tr>
                           </thead>
-                          <tbody className="bg-card divide-y divide-border">
+                          <tbody className="bg-card">
                             {(() => {
                               if (!selectedSourceAnalysis?.models_analysis || selectedSourceAnalysis.models_analysis.length === 0) {
                                 return (
@@ -2181,7 +2325,7 @@ const Index = () => {
                     }
 
                     return improvements.map((item, index) => (
-                      <div key={index} className="p-4 bg-muted rounded-lg border border-border">
+                      <div key={index} className="p-4 bg-muted rounded-lg">
                         <div className="flex items-start gap-3">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-card ${item.color}`}>
                             <item.icon className="w-4 h-4" />
@@ -2193,15 +2337,15 @@ const Index = () => {
                                 {item.priorite && (
                                   <Badge
                                     variant="outline"
-                                    className={`text-xs ${item.priorite === 'Élevée' ? 'bg-red-50 text-red-700 border-red-200' :
-                                        item.priorite === 'Moyenne' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                                          'bg-gray-50 text-gray-700 border-gray-200'
+                                    className={`text-xs ${item.priorite === 'Élevée' ? 'bg-red-50 text-red-700' :
+                                        item.priorite === 'Moyenne' ? 'bg-yellow-50 text-yellow-700' :
+                                          'bg-gray-50 text-gray-700'
                                       }`}
                                   >
                                     {item.priorite}
                                   </Badge>
                                 )}
-                                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
                                   +{item.improvement}
                                 </Badge>
                               </div>
@@ -2227,7 +2371,7 @@ const Index = () => {
                             )}
 
                             {/* Actions du guide d'implémentation */}
-                            <div className="mt-3 pt-3 border-t border-border">
+                            <div className="mt-3 pt-3">
                               <div className="flex items-center justify-between mb-2">
                                 <h6 className="text-xs font-medium text-foreground">Actions recommandées :</h6>
                                 {item.actions && item.actions.length > 0 && (
@@ -2279,7 +2423,7 @@ const Index = () => {
 
 
                 {/* Tableau des recommandations spécifiques */}
-                <div className="overflow-hidden border border-border rounded-lg bg-card">
+                <div className="overflow-hidden rounded-lg bg-card">
 
 
                   <table className="w-full">
@@ -2449,7 +2593,7 @@ const Index = () => {
 
         {/* Analyses Optimiser */}
         <div className="max-w-4xl mx-auto">
-          <Card className="bg-white border border-neutral-200 shadow-lg">
+          <Card className="bg-white shadow-lg">
             {/* <CardHeader className="pb-6 px-8 py-6"> */}
             {/* <div className="flex items-center justify-between">
                 <CardTitle className="text-2xl text-neutral-900 font-semibold flex items-center gap-4">
@@ -2700,8 +2844,8 @@ const Index = () => {
 
       {/* Enhanced Quick Actions */}
       <div className="max-w-4xl mx-auto">
-        <Card className="border border-border shadow-sm bg-card overflow-hidden">
-        <CardHeader className="bg-muted border-b border-border">
+        <Card className="shadow-sm bg-card overflow-hidden">
+        <CardHeader className="bg-muted">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-3 text-xl">
@@ -2712,7 +2856,7 @@ const Index = () => {
               </CardTitle>
               <CardDescription className="mt-2 text-muted-foreground">Optimisations recommandées</CardDescription>
             </div>
-            <Badge variant="outline" className="text-muted-foreground border-border">
+            <Badge variant="outline" className="text-muted-foreground">
               <Star className="w-3 h-3 mr-1" />
               Recommandé
             </Badge>
@@ -2737,7 +2881,7 @@ const Index = () => {
               <Button
                 key={index}
                 variant="ghost"
-                className="h-auto p-4 flex flex-col items-start text-left hover:shadow-sm transition-all duration-300 bg-card border border-border rounded-lg group"
+                className="h-auto p-4 flex flex-col items-start text-left hover:shadow-sm transition-all duration-300 bg-card rounded-lg group"
                 onClick={action.action}
               >
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-muted group-hover:bg-muted/80 transition-colors">

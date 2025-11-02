@@ -562,7 +562,7 @@ const Competition = () => {
           <TabsContent value="results" className="space-y-6 mt-8">
             {/* Enhanced Header avec informations sur l'analyse chargée */}
             {currentAnalysis && (
-              <Card className="border-0 shadow-xl bg-muted overflow-hidden">
+              <Card className="border border-border shadow-sm bg-card overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -850,13 +850,13 @@ const Competition = () => {
                 {/* Détails par modèle */}
                 <Card className="bg-card border border-border">
                   <CardHeader>
-                    <CardTitle className="text-lg text-foreground">🤖 Détails par Modèle IA</CardTitle>
+                    <CardTitle className="text-lg text-foreground">Détails par Modèle IA</CardTitle>
                   </CardHeader>
                   <CardContent className="text-foreground">
                     <div className="space-y-4">
                       {/* Grouper les concurrents par modèle utilisé */}
                       {(() => {
-                        const competitorsByModel = {};
+                        const competitorsByModel: Record<string, any[]> = {};
                         
                         // Grouper les concurrents par modèle
                         const competitors = (currentAnalysis as any)?.competitors;
@@ -931,6 +931,12 @@ const Competition = () => {
                                       <Badge variant="outline" className="text-xs">
                                         Score: {Math.round(competitor.average_score * 100)}/100
                                       </Badge>
+                                      {/* Afficher score_details si disponible */}
+                                      {competitor.score_details && competitor.score_details[model] && (
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                          {model}: {Math.round(competitor.score_details[model] * 100)}/100
+                                        </div>
+                                      )}
                                       <div className="text-xs text-muted-foreground mt-1">
                                         Mentions: {competitor.mentions}
                                       </div>
@@ -1230,6 +1236,154 @@ const Competition = () => {
                     </CardContent>
                   </Card>
                 ) : null}
+
+                {/* Position de l'utilisateur - Tout en bas */}
+                {(currentAnalysis as any).your_position && (
+                  <Card className="bg-card border border-border shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg font-semibold text-foreground">
+                        Votre Position parmi les Concurrents
+                      </CardTitle>
+                      <CardDescription className="text-xs text-muted-foreground">
+                        {(currentAnalysis as any).your_position.position_text}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="text-center p-4 bg-muted rounded-lg border border-border">
+                          <div className="text-2xl font-bold text-primary mb-1">
+                            {(currentAnalysis as any).your_position.rank}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Rang sur {(currentAnalysis as any).your_position.total_competitors}</div>
+                        </div>
+                        <div className="text-center p-4 bg-muted rounded-lg border border-border">
+                          <div className="text-2xl font-bold text-foreground mb-1">
+                            {(() => {
+                              const benchmarkScore = (currentAnalysis as any).benchmark_results?.benchmark?.classement?.find((c: any) => c.url === currentAnalysis.url)?.score;
+                              if (benchmarkScore !== undefined) return benchmarkScore;
+                              const targetScore = currentAnalysis.target_positioning?.target_benchmark_score;
+                              return targetScore ? Math.round(typeof targetScore === 'number' ? targetScore : Number(targetScore)) : 'N/A';
+                            })()}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Score Benchmark</div>
+                        </div>
+                      </div>
+
+                      {/* Écarts vs cible */}
+                      {(currentAnalysis as any).your_position.ecarts_vs_cible && (currentAnalysis as any).your_position.ecarts_vs_cible.length > 0 && (
+                        <div className="mt-6">
+                          <h4 className="text-lg font-semibold text-foreground mb-4">Écarts vs votre position</h4>
+                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                            {(currentAnalysis as any).your_position.ecarts_vs_cible.slice(0, 10).map((entry: any, idx: number) => {
+                              const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
+                              const isYourSite = entry.url === currentAnalysis.url;
+                              return (
+                                <div 
+                                  key={idx} 
+                                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                                    isYourSite 
+                                      ? 'bg-primary/10 border-primary/30' 
+                                      : entry.ecart_vs_cible > 0 
+                                        ? 'bg-red-50 border-red-200' 
+                                        : 'bg-green-50 border-green-200'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${
+                                      isYourSite ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                                    }`}>
+                                      {isYourSite ? '👤' : '#'}
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-foreground">
+                                        {isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url))}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">{extractDomain(entry.url)}</div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="font-bold text-foreground">Score: {entry.score}/100</div>
+                                    {!isYourSite && (
+                                      <div className={`text-xs font-medium ${
+                                        entry.ecart_vs_cible > 0 ? 'text-red-600' : 'text-green-600'
+                                      }`}>
+                                        {entry.ecart_vs_cible > 0 ? '+' : ''}{entry.ecart_vs_cible} pts
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Données Benchmark - Tout en bas */}
+                {(currentAnalysis as any).benchmark_results?.benchmark && (
+                  <Card className="bg-card border border-border">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5" />
+                        Analyse Benchmark
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        {(currentAnalysis as any).benchmark_results.benchmark.comparaison}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-foreground">
+                      <div className="space-y-4">
+                        {/* Classement complet */}
+                        <div>
+                          <h4 className="font-semibold text-foreground mb-3">Classement complet</h4>
+                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {(currentAnalysis as any).benchmark_results.benchmark.classement.map((entry: any, idx: number) => {
+                              const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
+                              const isYourSite = entry.url === currentAnalysis.url;
+                              return (
+                                <div 
+                                  key={idx}
+                                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                                    isYourSite 
+                                      ? 'bg-primary/10 border-primary/30' 
+                                      : idx < 3
+                                        ? 'bg-yellow-50 border-yellow-200'
+                                        : 'bg-card border-border'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
+                                      isYourSite ? 'bg-primary text-primary-foreground' : 
+                                      idx === 0 ? 'bg-yellow-400 text-yellow-900' :
+                                      idx === 1 ? 'bg-gray-300 text-gray-900' :
+                                      idx === 2 ? 'bg-amber-400 text-amber-900' :
+                                      'bg-muted text-muted-foreground'
+                                    }`}>
+                                      {isYourSite ? '👤' : idx + 1}
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-foreground">
+                                        {isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url))}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">{extractDomain(entry.url)}</div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <Badge variant="outline" className="text-sm font-semibold">
+                                      {entry.score}/100
+                                    </Badge>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
 
@@ -1265,7 +1419,7 @@ const Competition = () => {
                 {console.log('🔍 Debug first model competitors length:', currentAnalysis.models_analysis?.[0]?.competitors?.length || 0)}
                 {console.log('🔍 Debug target_positioning:', currentAnalysis.target_positioning)}
                 {console.log('🔍 Debug global_stats:', currentAnalysis.global_stats)}
-                <DetailedCompetitiveAnalysis 
+                {/* <DetailedCompetitiveAnalysis 
                   competitors={(() => {
                     console.log('🔍 Fallback logic - consolidated_competitors length:', currentAnalysis.consolidated_competitors?.length || 0);
                     
@@ -1320,7 +1474,8 @@ const Competition = () => {
                     }
                   })()} 
                   isLoading={false}
-                />
+                /> */}
+               
               </>
             )}
           </TabsContent>
