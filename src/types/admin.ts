@@ -9,6 +9,7 @@ export interface AdminUser {
   is_active: boolean;
   is_verified: boolean;
   is_admin: boolean;
+  approval_status?: 'pending' | 'approved' | 'rejected';
   created_at: string;
   last_login?: string;
   total_reports?: number;
@@ -46,6 +47,7 @@ export interface AdminUserFilters {
   is_active?: boolean;
   is_admin?: boolean;
   is_verified?: boolean;
+  approval_status?: 'pending' | 'approved' | 'rejected';
   created_after?: string;
   created_before?: string;
 }

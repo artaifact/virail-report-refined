@@ -5,13 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { apiService } from "@/services/apiService";
 import { AdminService } from "@/services/adminService";
-import { Loader2, Users, BarChart3, Shield, UserCheck, ArrowLeft, Mail, CreditCard } from "lucide-react";
+import { Loader2, Users, BarChart3, Shield, UserCheck, ArrowLeft, Mail, CreditCard, Clock } from "lucide-react";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { UserDetails } from "@/components/admin/UserDetails";
 import { MessageManagement } from "@/components/admin/MessageManagement";
 import { MessageDetails } from "@/components/admin/MessageDetails";
 import { SubscriptionManagement } from "@/components/admin/SubscriptionManagement";
 import { SubscriptionDetails } from "@/components/admin/SubscriptionDetails";
+import { PendingUsersManagement } from "@/components/admin/PendingUsersManagement";
 
 type WaitlistEntry = {
   id: number;
@@ -38,7 +39,7 @@ export default function AdminWaitlist() {
   const [query, setQuery] = useState("");
 
   // États pour la gestion des utilisateurs
-  const [activeTab, setActiveTab] = useState<'waitlist' | 'users' | 'create-admin' | 'messages' | 'subscriptions'>('waitlist');
+  const [activeTab, setActiveTab] = useState<'waitlist' | 'users' | 'pending-users' | 'create-admin' | 'messages' | 'subscriptions'>('waitlist');
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<number | null>(null);
@@ -226,6 +227,23 @@ export default function AdminWaitlist() {
                   <span>Utilisateurs</span>
                 </div>
                 {activeTab === 'users' && (
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary-foreground rounded-full" />
+                )}
+              </button>
+
+              <button
+                onClick={() => setActiveTab('pending-users')}
+                className={`group relative px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'pending-users'
+                    ? 'bg-primary text-primary-foreground shadow-md'
+                    : 'bg-white dark:bg-slate-800 text-muted-foreground hover:text-foreground hover:shadow-sm'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  <span>En attente</span>
+                </div>
+                {activeTab === 'pending-users' && (
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary-foreground rounded-full" />
                 )}
               </button>
@@ -421,6 +439,13 @@ export default function AdminWaitlist() {
               onUserSelect={handleUserSelect}
             />
           )}
+        </div>
+      )}
+
+      {/* Onglet Utilisateurs en attente */}
+      {activeTab === 'pending-users' && (
+        <div className="space-y-6">
+          <PendingUsersManagement className="w-full" />
         </div>
       )}
 

@@ -116,6 +116,9 @@ export class AdminService {
         if (filters.is_verified !== undefined) {
           searchParams.append('is_verified', filters.is_verified.toString());
         }
+        if (filters.approval_status) {
+          searchParams.append('approval_status', filters.approval_status);
+        }
         if (filters.created_after) {
           searchParams.append('created_after', filters.created_after);
         }
@@ -141,6 +144,114 @@ export class AdminService {
       return adaptedData;
     } catch (error) {
       console.error('❌ Erreur lors de la récupération des utilisateurs:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * GET /admin/users/pending - Liste des utilisateurs en attente d'approbation
+   */
+  static async getPendingUsers(
+    page: number = 1,
+    perPage: number = 20
+  ): Promise<AdminUsersResponse> {
+    try {
+      console.log('📄 Récupération des utilisateurs en attente...', { page, perPage });
+      
+      const searchParams = new URLSearchParams();
+      searchParams.append('limit', perPage.toString());
+      
+      if (page > 1) {
+        searchParams.append('offset', ((page - 1) * perPage).toString());
+      }
+
+      const endpoint = `/admin/users/pending?${searchParams.toString()}`;
+      console.log('🔗 Appel API:', `${API_BASE_URL}${endpoint}`);
+      
+      const data = await this.makeAdminRequest<any>(endpoint);
+      
+      console.log('✅ Réponse API reçue:', data);
+      
+      // Gérer différentes structures de réponse possibles
+      let users: AdminUser[] = [];
+      let total = 0;
+      let limit = perPage;
+      
+      // Si la réponse est directement un tableau
+      if (Array.isArray(data)) {
+        users = data;
+        total = data.length;
+      }
+      // Si la réponse a une structure { users: [...], total: ... }
+      else if (data.users && Array.isArray(data.users)) {
+        users = data.users;
+        total = data.total || data.count || data.total_count || data.users.length;
+        limit = data.limit || data.per_page || perPage;
+      }
+      // Si la réponse a une structure { items: [...] } ou autre
+      else if (data.items && Array.isArray(data.items)) {
+        users = data.items;
+        total = data.total || data.count || data.total_count || data.items.length;
+        limit = data.limit || data.per_page || perPage;
+      }
+      // Si la réponse a une structure { data: [...] }
+      else if (data.data && Array.isArray(data.data)) {
+        users = data.data;
+        total = data.total || data.count || data.total_count || data.data.length;
+        limit = data.limit || data.per_page || perPage;
+      }
+      
+      const adaptedData: AdminUsersResponse = {
+        users: users,
+        total: total,
+        page: data.page || page,
+        per_page: limit,
+        total_pages: Math.ceil(total / limit)
+      };
+      
+      console.log('✅ Données adaptées:', adaptedData);
+      
+      return adaptedData;
+    } catch (error) {
+      console.error('❌ Erreur lors de la récupération des utilisateurs en attente:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * PUT /admin/users/{user_id}/approve - Approuver ou rejeter un utilisateur
+   */
+  static async approveUser(
+    userId: number,
+    approved: boolean,
+    notes?: string
+  ): Promise<AdminUser> {
+    try {
+      console.log(`📝 ${approved ? 'Approbation' : 'Rejet'} de l'utilisateur ${userId}...`);
+      
+      const requestBody: any = {
+        action: approved ? 'approve' : 'reject'
+      };
+      
+      if (notes && notes.trim()) {
+        requestBody.notes = notes.trim();
+      }
+
+      console.log('📤 Body de la requête:', requestBody);
+
+      const data = await this.makeAdminRequest<AdminUser>(
+        `/admin/users/${userId}/approve`,
+        {
+          method: 'PUT',
+          body: JSON.stringify(requestBody)
+        }
+      );
+      
+      console.log(`✅ Utilisateur ${approved ? 'approuvé' : 'rejeté'} avec succès:`, data);
+      
+      return data;
+    } catch (error) {
+      console.error(`❌ Erreur lors de l'${approved ? 'approbation' : 'rejet'} de l'utilisateur:`, error);
       throw error;
     }
   }
