@@ -7,7 +7,7 @@
 // En développement, utiliser les chemins relatifs pour profiter du proxy Vite (port 8081)
 const API_BASE_URL = import.meta.env.DEV
   ? ''
-  : (import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio');
+  : (import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com');
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000');
 
 // Types pour les réponses API

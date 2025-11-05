@@ -2,7 +2,7 @@ import { AdminUser, AdminUsersResponse, AdminUserStats, AdminUserSearchParams, A
 import { AuthService } from './authService';
 import { apiService } from './apiService';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
 
 /**
  * Service pour la gestion administrative des utilisateurs

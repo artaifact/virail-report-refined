@@ -73,7 +73,7 @@ const SiteUrlsOverview: React.FC = () => {
       // console.log('🔍 Récupération des sites depuis /optimize...');
 
       // Récupérer les sites depuis l'endpoint /optimize
-              const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+              const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
               const optimizeResponse = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/optimize`);
       
       if (optimizeResponse.ok) {

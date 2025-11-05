@@ -75,7 +75,7 @@ function mapApiResponseToAnalysisResult(apiData, originalUrl) {
 }
 
 // Configuration API
-const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.viraill.com';
 
 function getAuthToken() {
   // Récupérer le token d'authentification depuis le localStorage ou context

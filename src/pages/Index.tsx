@@ -415,7 +415,7 @@ const Index = () => {
         setLoadingAnalyses(true);
         setErrorAnalyses(null);
 
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
         const response = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/llmo/reports`);
 
         if (!response.ok) {
@@ -2285,42 +2285,24 @@ const Index = () => {
                       }
                     }
 
-                    // Si pas de guide, utiliser les données par défaut
+                    // Si aucune donnée exploitable, afficher un état vide au lieu de mocks
                     if (improvements.length === 0) {
-                      console.log('[Index] Aucun guide trouvé, utilisation des données par défaut');
-                      improvements.push(
-                        {
-                          title: "Visibilité moteurs génératifs",
-                          description: perf?.visibilite_moteurs_generatifs?.description || "Amélioration de la visibilité dans ChatGPT, Perplexity, etc.",
-                          improvement: perf?.visibilite_moteurs_generatifs?.amélioration || "35-50%",
-                          icon: Brain,
-                          color: "text-blue-600",
-                          actions: ["Optimiser les métadonnées pour les moteurs génératifs", "Améliorer la structure sémantique du contenu"]
-                        },
-                        {
-                          title: "Indexation IA",
-                          description: perf?.indexation_ia?.description || "Meilleure indexation par les crawlers IA",
-                          improvement: perf?.indexation_ia?.amélioration || "40-60%",
-                          icon: Globe,
-                          color: "text-green-600",
-                          actions: ["Implémenter Schema.org pour l'indexation", "Optimiser robots.txt pour les crawlers IA"]
-                        },
-                        {
-                          title: "Compréhension du contenu",
-                          description: perf?.comprehension_contenu?.description || "Amélioration de la compréhension du contenu par l'IA",
-                          improvement: perf?.comprehension_contenu?.amélioration || "30-45%",
-                          icon: FileText,
-                          color: "text-purple-600",
-                          actions: ["Enrichir le contenu avec des entités nommées", "Améliorer la hiérarchie des titres H1-H6"]
-                        },
-                        {
-                          title: "Autorité sémantique",
-                          description: perf?.autorite_semantique?.description || "Renforcement de l'autorité sémantique du site",
-                          improvement: perf?.autorite_semantique?.amélioration || "25-40%",
-                          icon: Shield,
-                          color: "text-orange-600",
-                          actions: ["Ajouter des liens de confiance vers des sources autoritaires", "Implémenter des données structurées de confiance"]
-                        }
+                      return (
+                        <div className="p-4 bg-muted rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-card text-muted-foreground">
+                              <HelpCircle className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-medium text-foreground text-sm">Aucune amélioration estimée disponible</h5>
+                              </div>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                Importez une analyse contenant un guide d'implémentation pour voir des actions recommandées.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       );
                     }
 
@@ -2449,6 +2431,29 @@ const Index = () => {
 
                         const geoData = analysisWithGeoPlan?.modules?.audit_geo;
                         const planActions = geoData?.plan_action_geo || [];
+
+                        // État vide si aucune analyse disponible
+                        const hasAnalyses = (selectedGeoReport?.analyses?.length || 0) > 0;
+                        if (!hasAnalyses) {
+                          return (
+                            <tr>
+                              <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                                Aucune analyse disponible
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        // État vide si pas de données GEO exploitables
+                        if (!geoData) {
+                          return (
+                            <tr>
+                              <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                                Aucune recommandation disponible pour le moment
+                              </td>
+                            </tr>
+                          );
+                        }
 
                         // Fonctions de calcul comme dans LLMODashboard
                         const getImpact = (score: number) => {

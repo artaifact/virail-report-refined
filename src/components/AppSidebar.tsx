@@ -112,7 +112,7 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r-0 bg-sidebar shadow-xl text-sidebar-foreground">
       {/* Header avec logo et branding */}
-      <SidebarHeader className="p-4 border-b border-sidebar-border">
+      <SidebarHeader className="p-4">
         <div className="flex items-center justify-center mb-6">
           {/* <div className="w-12 h-12 bg-neutral-200 rounded-xl flex items-center justify-center shadow-lg">
             <Sparkles className="w-6 h-6 text-neutral-700" />
@@ -146,9 +146,7 @@ export function AppSidebar() {
       
       <SidebarContent className="px-4 pt-4 pb-0 flex-1 overflow-y-auto">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70 uppercase text-xs font-bold px-3 py-2 mb-2 tracking-wider">
-            Navigation
-          </SidebarGroupLabel>
+        
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
               {allItems.map((item) => {
@@ -242,7 +240,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="px-4 pt-4 pb-2 border-t border-sidebar-border mt-auto">
+      <SidebarFooter className="px-4 pt-4 pb-2 mt-auto">
         {/* Plan actuel */}
         <div className="mb-3 flex items-center justify-between">
           <span className="text-xs text-sidebar-foreground/70">Plan actuel</span>

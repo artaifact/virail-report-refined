@@ -9,7 +9,7 @@ const getApiBaseUrl = (): string => {
   if (import.meta.env.DEV || window.location.hostname === 'localhost') {
     return 'http://localhost:8000';
   }
-  return 'https://api.virail.studio';
+  return 'https://api.viraill.com';
 };
 
 interface CompetitiveAnalysisState {

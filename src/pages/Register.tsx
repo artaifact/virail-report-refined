@@ -72,7 +72,7 @@ export default function Register() {
             <p className="text-muted-foreground">Créez votre compte et découvrez nos analyses IA</p>
           </div>
 
-          <Card className="shadow-sm border border-border bg-card">
+          <Card className="shadow-sm border-none bg-card">
             <CardContent className="p-8">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

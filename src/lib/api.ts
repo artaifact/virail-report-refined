@@ -7,7 +7,7 @@ import { AuthService } from '@/services/authService';
 
 // Configuration pour le développement
 const isDevelopment = import.meta.env.DEV;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
 
 console.log('🔧 Configuration API:', {
   isDevelopment,

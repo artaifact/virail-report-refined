@@ -41,7 +41,7 @@ const Analyses = () => {
 
     try {
       const response = await AuthService.makeAuthenticatedRequest(
-        `${import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio'}/llmo/analyze`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com'}/llmo/analyze`,
         {
           method: 'POST',
           headers: {

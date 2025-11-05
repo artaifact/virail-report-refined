@@ -135,7 +135,7 @@ const MiniLLMAnalysis = ({ data, isLoading = false }: MiniLLMAnalysisProps) => {
 
   if (!data || data.length === 0) {
     return (
-      <Card className="border-dashed">
+      <Card className="border-none">
         <CardContent className="flex flex-col items-center justify-center py-12">
           <Brain className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold text-muted-foreground mb-2">

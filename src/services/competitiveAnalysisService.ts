@@ -101,7 +101,7 @@ const getApiBaseUrl = (): string => {
     return 'http://localhost:8000';
   }
   // En production, utiliser l'API de production
-  return 'https://api.virail.studio';
+  return 'https://api.viraill.com';
 };
 
 /**

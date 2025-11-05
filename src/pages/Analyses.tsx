@@ -134,7 +134,7 @@ const Analyses = () => {
       }, 500);
 
       // Appel direct à l'endpoint /optimize
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
       const response = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/optimize`, {
         method: 'POST',
         headers: {
@@ -217,7 +217,7 @@ const Analyses = () => {
             <ArrowLeft className="h-4 w-4" />
             Retour
           </Button>
-          <Card className="border border-border shadow-sm bg-card">
+          <Card className="border-none shadow-sm bg-card">
             <CardContent className="p-8 text-center">
               <h3 className="text-xl font-bold text-foreground mb-2">Erreur de chargement</h3>
               <p className="text-muted-foreground">{reportError || 'Impossible de charger les détails du rapport.'}</p>
@@ -246,7 +246,7 @@ const Analyses = () => {
 
         <BreadcrumbCustom items={breadcrumbItems} />
 
-        <Card className="border border-border shadow-sm bg-card">
+        <Card className="border-none shadow-sm bg-card">
           <Tabs defaultValue="overview" className="w-full">
             <div className="border-b border-border px-6 pt-6">
               <TabsList className="grid w-full max-w-md grid-cols-3 bg-muted p-1 rounded-xl">
@@ -559,8 +559,8 @@ const Analyses = () => {
         </div>
         
         {/* Enhanced Reports List */}
-        <Card className="border border-border shadow-sm bg-card overflow-hidden">
-          <CardHeader className="bg-muted border-b border-border">
+        <Card className="border-none shadow-sm bg-card overflow-hidden">
+          <CardHeader className="bg-muted">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-3 text-xl text-foreground">

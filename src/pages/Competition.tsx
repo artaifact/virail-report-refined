@@ -288,7 +288,7 @@ const Competition = () => {
 
           <TabsContent value="saved" className="space-y-6 mt-8">
             <Card className="border border-border shadow-sm bg-card overflow-hidden">
-              <CardHeader className="bg-muted border-b border-border">
+              <CardHeader className="bg-muted">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-3 text-xl">
@@ -450,7 +450,7 @@ const Competition = () => {
 
           <TabsContent value="setup" className="space-y-6 mt-8">
             <Card className="border-0 shadow-xl bg-card backdrop-blur-sm overflow-hidden">
-              <CardHeader className="bg-muted border-b border-border">
+              <CardHeader className="bg-muted">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-3 text-xl">

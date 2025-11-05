@@ -6,8 +6,8 @@
 set -e
 
 # Configuration spécifique
-DOMAIN="app.virail.studio"
-API_DOMAIN="api.virail.studio"
+DOMAIN="app.viraill.com"
+API_DOMAIN="api.viraill.com"
 PROJECT_NAME="llmo-report"
 APP_DIR="/home/root/virail-report-refined"
 

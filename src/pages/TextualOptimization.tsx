@@ -252,8 +252,8 @@ const TextualOptimization: React.FC = () => {
             {currentOptimization && (
               <div className="space-y-6">
                 {/* Informations générales */}
-                <Card className="bg-card border border-border shadow-sm">
-                  <CardHeader className="bg-muted border-b border-border">
+                <Card className="bg-card border-none shadow-sm">
+                  <CardHeader className="bg-muted">
             <div className="flex items-center justify-between">
               <div>
                         <CardTitle className="flex items-center gap-3 text-xl text-foreground">
@@ -289,7 +289,7 @@ const TextualOptimization: React.FC = () => {
         </Card>
 
                 {/* Texte optimisé */}
-                <Card className="bg-card border border-border shadow-sm">
+                <Card className="bg-card border-none shadow-sm">
               <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-foreground">
                       Texte Optimisé
@@ -308,7 +308,7 @@ const TextualOptimization: React.FC = () => {
             </Card>
 
                 {/* Checklist de conformité */}
-                <Card className="bg-card border border-border shadow-sm">
+                <Card className="bg-card border-none shadow-sm">
               <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-foreground">
                       Checklist de Conformité
@@ -343,7 +343,7 @@ const TextualOptimization: React.FC = () => {
             {/* Onglet Modifications */}
         {activeTab === 'Modifications' && (
           <div className="mt-8">
-            <Card className="bg-card border border-border shadow-sm">
+            <Card className="bg-card border-none shadow-sm">
                 <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   Modifications Apportées
@@ -404,7 +404,7 @@ const TextualOptimization: React.FC = () => {
         {/* Onglet Analyse */}
         {activeTab === 'Analyse' && (
           <div className="mt-8">
-            <Card className="bg-card border border-border shadow-sm">
+            <Card className="bg-card border-none shadow-sm">
                 <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-xl">
                   Analyse des Optimisations

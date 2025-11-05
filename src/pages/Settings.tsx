@@ -116,7 +116,7 @@ const Settings = () => {
         <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
           {/* User Profile */}
           <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted border-b border-border">
+            <CardHeader className="bg-muted">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-3 text-xl text-foreground">
@@ -221,7 +221,7 @@ const Settings = () => {
           
           {/* Notifications */}
           <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted border-b border-border">
+            <CardHeader className="bg-muted">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-3 text-xl text-foreground">
@@ -283,7 +283,7 @@ const Settings = () => {
           
           {/* Security */}
           <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted border-b border-border">
+            <CardHeader className="bg-muted">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-3 text-xl text-foreground">
@@ -361,7 +361,7 @@ const Settings = () => {
           
           {/* Display Preferences */}
           <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted border-b border-border">
+            <CardHeader className="bg-muted">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-3 text-xl text-foreground">

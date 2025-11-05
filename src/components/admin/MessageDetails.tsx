@@ -81,20 +81,12 @@ export function MessageDetails({ messageId, onBack, className = '' }: MessageDet
         updateData.tags = tags.split(',').map((t) => t.trim()).filter(Boolean);
       }
 
-      const result = await AdminService.updateMessage(messageId, updateData);
-
-      if (result.success) {
-        setSaveMessage({
-          type: 'success',
-          text: 'Message mis à jour avec succès',
-        });
-        loadMessage();
-      } else {
-        setSaveMessage({
-          type: 'error',
-          text: result.message || 'Erreur lors de la mise à jour',
-        });
-      }
+      await AdminService.updateMessage(messageId, updateData);
+      setSaveMessage({
+        type: 'success',
+        text: 'Message mis à jour avec succès',
+      });
+      loadMessage();
     } catch (error) {
       setSaveMessage({
         type: 'error',
@@ -274,7 +266,7 @@ export function MessageDetails({ messageId, onBack, className = '' }: MessageDet
 
       {/* Formulaire de mise à jour */}
       <Card className="border-none shadow-sm">
-        <CardHeader className="border-b">
+        <CardHeader>
           <CardTitle className="text-base">Mettre à jour le message</CardTitle>
         </CardHeader>
         <CardContent className="pt-6 space-y-6">

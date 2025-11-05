@@ -48,7 +48,7 @@ const SiteOptimization: React.FC = () => {
       setStatsError(null);
 
       // Récupérer les données depuis /optimize
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
       console.log('🔄 Chargement des statistiques depuis:', `${API_BASE_URL}/optimize`);
       const optimizeResponse = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/optimize`);
       
@@ -96,7 +96,7 @@ const SiteOptimization: React.FC = () => {
         
         // Tentative avec l'endpoint des optimisations textuelles
         try {
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
           const textualOptResponse = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/textual-optimizations`);
           
           if (textualOptResponse.ok) {
@@ -168,7 +168,7 @@ const SiteOptimization: React.FC = () => {
       }, 500);
 
       // Appel direct et indépendant à l'endpoint /optimize
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
       const response = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/optimize`, {
         method: 'POST',
         headers: {
@@ -380,7 +380,7 @@ const SiteOptimization: React.FC = () => {
 
         {/* Enhanced Guide */}
         <Card className="border border-border shadow-sm bg-card overflow-hidden">
-          <CardHeader className="bg-muted border-b border-border">
+          <CardHeader className="bg-muted">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-3 text-xl text-foreground">

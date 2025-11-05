@@ -48,7 +48,7 @@ function AppHeader() {
   const { user, logout } = useAuthContext();
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border px-6 supports-[backdrop-filter]:bg-background/80 bg-background/90 backdrop-blur-sm">
+    <header className="flex h-16 shrink-0 items-center gap-4 px-6 supports-[backdrop-filter]:bg-background/80 bg-background/90 backdrop-blur-sm">
       <SidebarTrigger className="-ml-1 text-muted-foreground" />
       <div className="flex-1 flex items-center justify-between">
         <div className="relative max-w-md w-full">
