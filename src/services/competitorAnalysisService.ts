@@ -575,8 +575,6 @@ export const listCompetitorAnalyses = async (): Promise<CompetitorAnalysisSummar
   const API_BASE_URL = getApiBaseUrl();
   
   try {
-    console.log('📋 Récupération liste des analyses');
-    
     const response = await fetch(`${API_BASE_URL}/api/v1/competitors/analyses`, {
       method: 'GET',
       headers: {
@@ -591,11 +589,9 @@ export const listCompetitorAnalyses = async (): Promise<CompetitorAnalysisSummar
     }
 
     const data = await response.json();
-    console.log('✅ Liste des analyses récupérée:', data);
     
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('❌ Erreur lors de la récupération de la liste:', error);
     throw error;
   }
 };

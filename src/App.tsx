@@ -5,13 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Search, Bell, LogOut } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { AuthProvider, useAuthContext } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { PaymentProvider } from "@/contexts/PaymentContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Analyses from "./pages/Analyses";
@@ -43,48 +39,11 @@ import AdminMessages from "./pages/AdminMessages";
 
 const queryClient = new QueryClient();
 
-// Composant Header avec authentification
+// Composant Header simplifié
 function AppHeader() {
-  const { user, logout } = useAuthContext();
-
   return (
-    <header className="flex h-16 shrink-0 items-center gap-4 px-6 supports-[backdrop-filter]:bg-background/80 bg-background/90 backdrop-blur-sm">
-      <SidebarTrigger className="-ml-1 text-muted-foreground" />
-      <div className="flex-1 flex items-center justify-between">
-        <div className="relative max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Rechercher (Ctrl+K)" 
-            className="pl-10 bg-background text-foreground placeholder:text-muted-foreground border-border focus:border-primary"
-            onFocus={(e) => {
-              e.preventDefault();
-              e.target.blur();
-              document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
-            }}
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5 text-muted-foreground" />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full"></div>
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium">
-                {user?.username.charAt(0).toUpperCase() || 'U'}
-              </span>
-            </div>
-            <div className="text-sm">
-              <div className="font-medium text-foreground">{user?.username || 'Utilisateur'}</div>
-              <div className="text-muted-foreground">{user?.email || 'user@example.com'}</div>
-            </div>
-            <Button variant="ghost" size="icon" onClick={logout} title="Se déconnecter">
-              <LogOut className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </div>
-        </div>
-      </div>
+    <header className="flex h-8 shrink-0 items-center gap-4 px-6 supports-[backdrop-filter]:bg-background/80 bg-background/90 backdrop-blur-sm">
+      <SidebarTrigger className="-ml-1 text-muted-foreground h-7 w-7" />
     </header>
   );
 }

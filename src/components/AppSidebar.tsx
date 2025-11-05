@@ -10,10 +10,10 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar"
-import { LayoutDashboard, LineChart, Settings, CircleHelp, Trophy, ChevronRight, Globe2, Sparkles, Crown, ShieldCheck, UserCog, BadgeDollarSign } from "lucide-react"
+import { LayoutDashboard, LineChart, Settings, CircleHelp, ChevronRight, Globe2, Sparkles, Crown, ShieldCheck, UserCog, BadgeDollarSign, Plus, LogOut, FileText } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
 import { usePayment } from '@/contexts/PaymentContext'
-import { useLocation, Link } from "react-router-dom"
+import { useLocation, Link, useNavigate } from "react-router-dom"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
 import { useAuthContext } from "@/contexts/AuthContext"
@@ -44,7 +44,7 @@ const navigationItems = [
   {
     title: "Analyse concurrentielle",
     url: "/competition",
-    icon: Trophy,
+    icon: FileText,
     gradient: "",
   },
   {
@@ -84,7 +84,8 @@ const bottomItems = [
 
 export function AppSidebar() {
   const location = useLocation()
-  const { user } = useAuthContext()
+  const navigate = useNavigate()
+  const { user, logout } = useAuthContext()
   const { userPlan, isLoading } = usePayment()
   const localUser = AuthService.getUser?.() as any
   const isAdmin = (localUser?.is_admin || localUser?.isAdmin) ?? ((user as any)?.is_admin || (user as any)?.isAdmin)
@@ -112,8 +113,8 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r-0 bg-sidebar shadow-xl text-sidebar-foreground">
       {/* Header avec logo et branding */}
-      <SidebarHeader className="p-4">
-        <div className="flex items-center justify-center mb-6">
+      <SidebarHeader className="p-4 pb-0">
+        <div className="flex items-center justify-center mb-0">
           {/* <div className="w-12 h-12 bg-neutral-200 rounded-xl flex items-center justify-center shadow-lg">
             <Sparkles className="w-6 h-6 text-neutral-700" />
           </div> */}
@@ -144,12 +145,23 @@ export function AppSidebar() {
         {/* </div> */}
       </SidebarHeader>
       
-      <SidebarContent className="px-4 pt-4 pb-0 flex-1 overflow-y-auto">
+      <SidebarContent className="px-4 pt-0 pb-0 flex-1 overflow-y-auto">
         <SidebarGroup>
-        
+          {/* Bouton Nouvelle Analyse */}
+      
+          {/* Bouton Tableau de bord */}
+          <div className="px-2 mb-2">
+            <Button
+              onClick={() => navigate('/')}
+              className="w-full bg-primary text-primary-foreground hover:opacity-90 shadow-sm font-bold h-10 justify-start"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              Tableau de bord
+            </Button>
+          </div>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
-              {allItems.map((item) => {
+              {allItems.filter(item => item.title !== 'Tableau de bord').map((item) => {
                 const isActive = location.pathname === item.url || 
                   ((item as any).urlPrefix && location.pathname.startsWith((item as any).urlPrefix))
                 
@@ -178,7 +190,7 @@ export function AppSidebar() {
                               )}>
                                 <item.icon className="h-4 w-4" />
                               </div>
-                              <span className="text-xs font-medium flex-1 text-left">{item.title}</span>
+                              <span className="text-xs font-bold flex-1 text-left">{item.title}</span>
                               <ChevronRight className={cn(
                                 "h-4 w-4 transition-transform duration-200", 
                                 openMenus[item.title] && "rotate-90"
@@ -228,7 +240,7 @@ export function AppSidebar() {
                           )}>
                             <item.icon className="h-4 w-4" />
                           </div>
-                          <span className="text-xs font-medium">{item.title}</span>
+                          <span className="text-xs font-bold">{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
                     )}
@@ -240,16 +252,39 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="px-4 pt-4 pb-2 mt-auto">
+      <SidebarFooter className="px-4 pt-4 pb-2 mt-auto space-y-3">
+        {/* Informations utilisateur */}
+        <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/50">
+          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center shrink-0">
+            <span className="text-sm font-medium">
+              {user?.username?.charAt(0).toUpperCase() || 'U'}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-medium text-sidebar-foreground truncate">
+              {user?.username || 'Utilisateur'}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-sidebar-foreground/70 truncate">
+                {user?.email || 'user@example.com'}
+              </div>
+              <Button variant="ghost" size="icon" onClick={logout} title="Se déconnecter" className="h-6 w-6 shrink-0">
+                <LogOut className="h-3 w-3 text-sidebar-foreground/70" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+
         {/* Plan actuel */}
-        <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center justify-between pt-2 border-t border-sidebar-border">
           <span className="text-xs text-sidebar-foreground/70">Plan actuel</span>
           <Badge variant="secondary" className="text-[10px]">
             {isLoading ? 'Chargement…' : (userPlan?.currentPlan?.name || 'Inconnu')}
           </Badge>
         </div>
         {/* Footer branding */}
-        <div className="mt-2 pt-1">
+        <div className="pt-1">
           <p className="text-xs text-sidebar-foreground/60 text-center">
             © 2025 Virail Studio
           </p>

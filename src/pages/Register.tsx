@@ -64,12 +64,12 @@ export default function Register() {
               <img 
                 src="/LOGO BLEU FOND TRANSPARENT (1).png" 
                 alt="BPC Logo" 
-                className="h-12 w-auto"
+                className="h-40 w-auto"
               />
-              <h1 className="text-2xl font-bold text-foreground">Virail Studio</h1>
+              <h1 className="text-2xl font-bold text-foreground">Viraill</h1>
             </div>
             <h2 className="text-3xl font-bold text-foreground mb-2">Rejoignez-nous !</h2>
-            <p className="text-muted-foreground">Créez votre compte et découvrez nos analyses IA</p>
+            <p className="text-muted-foreground">Créez votre compte et découvrez nos analyses GEO</p>
           </div>
 
           <Card className="shadow-sm border-none bg-card">
@@ -207,9 +207,9 @@ export default function Register() {
                 </div>
               </div>
 
-              <div className="mt-6">
+              {/* <div className="mt-6">
                 <GoogleButton isLoading={isLoading} />
-              </div>
+              </div> */}
 
               <div className="mt-8 text-center">
                 <p className="text-muted-foreground">
@@ -226,7 +226,7 @@ export default function Register() {
           </Card>
 
           <div className="mt-8 text-center text-sm text-muted-foreground">
-            <p>© 2024 Virail Studio. Tous droits réservés.</p>
+            <p>© 2025 Viraill. Tous droits réservés.</p>
           </div>
         </div>
       </div>
@@ -240,9 +240,9 @@ export default function Register() {
             <img 
               src="/LOGO BLEU FOND TRANSPARENT (1).png" 
               alt="BPC Logo" 
-              className="h-12 w-auto"
+              className="h-40 w-auto"
             />
-            <h1 className="text-2xl font-bold text-foreground">Virail Studio</h1>
+           
           </div>
           <h2 className="text-4xl font-bold text-foreground mb-4 leading-tight">
             Commencez votre
@@ -250,7 +250,7 @@ export default function Register() {
             analyse dès aujourd'hui
           </h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Rejoignez des milliers d'entreprises qui utilisent notre plateforme pour optimiser leur stratégie concurrentielle.
+            Rejoignez des milliers d'utilisateurs qui utilisent notre plateforme pour optimiser leur stratégie concurrentielle.
           </p>
         </div>
 

@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TrendingUp, TrendingDown, AlertTriangle, Clock, Zap, Shield, Target, BarChart3, Calendar, ArrowRight, CheckCircle, XCircle, Minus, CheckSquare, Brain, FileText, Globe, Globe2, Users, Activity, Plus, Loader2, Sparkles, Star, Rocket, Download, Building2, HelpCircle } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart, CartesianGrid, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart, CartesianGrid, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Cell } from "recharts";
 import { useNavigate } from "react-router-dom";
 import { AuthService } from "@/services/authService";
 import { useReports, useReport } from "@/hooks/useReports";
@@ -61,86 +61,68 @@ const Index = () => {
   // Fonction pour générer les améliorations depuis le guide d'implémentation
   const generateImprovementsFromGuide = () => {
     // Récupérer les données depuis l'API comme dans LLMODashboard
-    console.log('[Index] selectedGeoReport:', selectedGeoReport);
     const analyses = selectedGeoReport?.analyses || [];
-    console.log('[Index] Analyses disponibles:', analyses.length, analyses.map(a => (a as any)?.llm_name || (a as any)?.['llm_utilisé']));
     const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-4-sonnet'];
     let perf: any | null = null;
 
     // Fonction pour extraire les données de performance depuis l'analyse
     const extractPerformanceFromAnalysis = (analysis: any) => {
       if (!analysis) return null;
-      console.log('[Index] Extraction performance depuis:', (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé']);
 
       // Recherche dans modules.audit_geo.performance_impact
       const geoPackage = analysis.modules?.audit_geo;
       if (!geoPackage) {
-        console.log('[Index] Pas de GEO package pour analyse:', (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé']);
         return null;
       }
 
       const perfData = geoPackage.performance_impact;
       if (perfData) {
-        console.log('[Index] Performance trouvée:', perfData);
         return perfData;
       }
 
-      console.log('[Index] Aucune performance trouvée pour analyse:', (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé']);
       return null;
     };
 
     // Chercher les données de performance dans les analyses préférées
     for (const model of preferredModels) {
       const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
-      console.log('[Index] Test modèle', model, ':', a ? 'trouvé' : 'non trouvé');
       const extracted = extractPerformanceFromAnalysis(a);
       if (extracted) {
-        console.log('[Index] Performance trouvée via', model, ':', extracted);
         perf = extracted;
         break;
       }
     }
 
     if (!perf) {
-      console.log('[Index] Aucune performance via modèles préférés, test de toutes les analyses...');
       for (const a of analyses) {
         const extracted = extractPerformanceFromAnalysis(a);
         if (extracted) {
-          console.log('[Index] Performance trouvée via analyse:', extracted);
           perf = extracted;
           break;
         }
       }
     }
 
-    console.log('[Index] Performance final:', perf);
-
     // Chercher le guide d'implémentation
     let guideData: any = null;
-    console.log('[Index] Recherche du guide d\'implémentation...');
     for (const model of preferredModels) {
       const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
-      console.log('[Index] Test modèle', model, ':', a ? 'trouvé' : 'non trouvé');
       const extracted = extractGuideFromAnalysis(a);
       if (extracted) {
-        console.log('[Index] Guide trouvé via', model, ':', extracted);
         guideData = extracted.guide;
         break;
       }
     }
 
     if (!guideData) {
-      console.log('[Index] Aucun guide via modèles préférés, test de toutes les analyses...');
       for (const a of analyses) {
         const extracted = extractGuideFromAnalysis(a);
         if (extracted) {
-          console.log('[Index] Guide trouvé via analyse:', extracted);
           guideData = extracted.guide;
           break;
         }
       }
     }
-    console.log('[Index] Guide final:', guideData);
 
     // Helpers pour rechercher dynamiquement le guide d'implémentation dans la structure réelle
     // Deep search pour une clé type implementation_guide (avec alias possibles)
@@ -164,7 +146,6 @@ const Index = () => {
       ];
       for (const key of possibleKeys) {
         if (node[key]) {
-          console.log('[Index] Guide trouvé avec clé:', key);
           return node[key];
         }
       }
@@ -178,25 +159,20 @@ const Index = () => {
     // Fonction pour extraire le guide d'implémentation depuis une analyse
     function extractGuideFromAnalysis(analysis: any) {
       if (!analysis) return null;
-      console.log('[Index] Extraction guide depuis:', (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé']);
 
       // Recherche dans modules.audit_geo.implementation_guide
       const geoPackage = analysis.modules?.audit_geo;
       if (!geoPackage) {
-        console.log('[Index] Pas de GEO package pour analyse:', (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé']);
         return null;
       }
       let guide: any = null;
       if ((geoPackage as any).implementation_guide) {
-        console.log('[Index] implementation_guide trouvé direct dans GEO package');
         guide = (geoPackage as any).implementation_guide;
       }
       if (!guide) {
-        console.log('[Index] Recherche profonde du implementation_guide...');
         guide = deepFindImplementationGuide(geoPackage);
       }
       if (!guide) {
-        console.log('[Index] Aucun implementation_guide trouvé pour analyse:', (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé']);
         return null;
       }
       const source = (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé'] || 'inconnu';
@@ -207,7 +183,6 @@ const Index = () => {
     const improvements = [];
 
     if (guideData && guideData.etapes_implementation) {
-      console.log('[Index] Création des améliorations depuis implementation_guide:', guideData.etapes_implementation);
 
       // Mapping des étapes vers les améliorations
       const stepMapping = {
@@ -265,7 +240,6 @@ const Index = () => {
 
     // Si pas de guide, utiliser les données par défaut
     if (improvements.length === 0) {
-      console.log('[Index] Aucun guide trouvé, utilisation des données par défaut');
       improvements.push(
         {
           title: "Visibilité moteurs génératifs",
@@ -307,9 +281,7 @@ const Index = () => {
 
   // Debug: Vérifier selectedGeoReport
   useEffect(() => {
-    console.log('[Index] selectedGeoReport changed:', selectedGeoReport);
-    console.log('[Index] selectedGeoAnalysisId:', selectedGeoAnalysisId);
-    console.log('[Index] selectedGeoReportLoading:', selectedGeoReportLoading);
+    // Monitoring selectedGeoReport changes
   }, [selectedGeoReport, selectedGeoAnalysisId, selectedGeoReportLoading]);
 
   // Charger les analyses concurrentielles
@@ -322,15 +294,11 @@ const Index = () => {
 
         // Charger automatiquement la première analyse
         if (analyses.length > 0) {
-          console.log('🔍 Liste des analyses:', analyses);
           const firstAnalysis = await getCompetitorAnalysisById(analyses[0].analysis_id);
-          console.log('🔍 Première analyse chargée:', firstAnalysis);
           setSelectedCompetitorAnalysis(firstAnalysis);
-        } else {
-          console.log('⚠️ Aucune analyse trouvée');
         }
       } catch (error) {
-        console.error('Erreur lors du chargement des analyses concurrentielles:', error);
+        // Erreur silencieuse lors du chargement
       } finally {
         setLoadingCompetitiveAnalyses(false);
       }
@@ -489,79 +457,54 @@ const Index = () => {
 
   return (
     <div className="flex-1 min-h-screen bg-background text-foreground">
-      {/* Hero Header Section */}
-      <div className="relative bg-card px-8 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground mb-1">
-              Analyses GEO
-            </h1>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <BarChart3 className="w-4 h-4" />
-                <span className="text-sm font-medium">74 Score Productivité</span>
-              </div>
-              <Badge className="px-2 py-1 text-xs bg-primary/10 text-primary">
-                Premium
-              </Badge>
-              {/* Select Organisation */}
-              {!loadingCompetitiveAnalyses && competitorAnalyses.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground">Organisation:</span>
-                  <Select value={selectedSourceAnalysisId} onValueChange={setSelectedSourceAnalysisId}>
-                    <SelectTrigger className="bg-card w-64">
-                      <SelectValue placeholder="Choisir une analyse" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {competitorAnalyses.map((analysis) => {
-                        const domain = extractDomain(analysis.url);
-                        const date = new Date(analysis.created_at).toLocaleDateString('fr-FR');
-                        return (
-                          <SelectItem key={analysis.analysis_id} value={analysis.analysis_id.toString()}>
-                            <div className="flex items-center gap-3 py-1">
-                              <div>
-                                <span className="font-medium text-sm text-foreground">{domain}</span>
-                                <div className="text-xs text-muted-foreground">{date} • {analysis.total_competitors_found} concurrents</div>
-                              </div>
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => navigate('/analyses')}
-              className="bg-primary text-primary-foreground hover:opacity-90 shadow-sm font-medium px-4 py-2"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvelle Analyse
-            </Button>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content */}
-      <div className="px-8 py-8 space-y-8 max-w-6xl mx-auto">
+      <div className="px-8 py-1 space-y-2 max-w-6xl mx-auto">
 
         {/* Section principale avec système d'onglets */}
         <Card className="bg-card shadow-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-center">
-              <CardTitle className="text-2xl font-normal text-foreground">
-                {selectedGeoReport?.report?.url ? extractDomain(selectedGeoReport.report.url) : 'Aucune analyse disponible'}
-              </CardTitle>
+          <CardHeader className="pb-1 pt-2">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 flex-1">
+                <CardTitle className="text-2xl font-normal text-foreground">
+                  {selectedGeoReport?.report?.url 
+                    ? `Votre analyse GEO de ${extractDomain(selectedGeoReport.report.url)}` 
+                    : 'Aucune analyse disponible'}
+                </CardTitle>
+                {/* Select Organisation */}
+                {!loadingCompetitiveAnalyses && competitorAnalyses.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground">Organisation:</span>
+                    <Select value={selectedSourceAnalysisId} onValueChange={setSelectedSourceAnalysisId}>
+                      <SelectTrigger className="bg-card w-64">
+                        <SelectValue placeholder="Choisir une analyse" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {competitorAnalyses.map((analysis) => {
+                          const domain = extractDomain(analysis.url);
+                          const date = new Date(analysis.created_at).toLocaleDateString('fr-FR');
+                          return (
+                            <SelectItem key={analysis.analysis_id} value={analysis.analysis_id.toString()}>
+                              <div className="flex items-center gap-3 py-1">
+                                <div>
+                                  <span className="font-medium text-sm text-foreground">{domain}</span>
+                                  <div className="text-xs text-muted-foreground">{date} • {analysis.total_competitors_found} concurrents</div>
+                                </div>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-2 pt-1">
             {/* Jauge de performance circulaire */}
             <div className="flex items-center justify-center">
-              <div className="relative w-32 h-32">
-                <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
+              <div className="relative w-40 h-40">
+                <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 120 120">
                   {/* Cercle de fond */}
                   <circle
                     cx="60"
@@ -592,7 +535,7 @@ const Index = () => {
                         ? Math.round(selectedGeoReport.analyses[0].modules.audit_geo.score_global_geo) + '%'
                         : '0%'}
                     </div>
-                    <div className="text-xs text-muted-foreground">Score GEO</div>
+                    <div className="text-xs text-muted-foreground mt-1">Score GEO</div>
                   </div>
                 </div>
               </div>
@@ -624,6 +567,50 @@ const Index = () => {
                     <h3 className="text-sm font-medium text-muted-foreground">Score GEO par Modèle IA</h3>
                     <div className="text-xs text-muted-foreground">Scores d'optimisation génératif</div>
                   </div>
+                  <div className="flex items-center justify-between">
+                        <CardTitle className="text-base text-foreground font-semibold flex items-center gap-2">
+                          Sources
+                          <div className="relative">
+                            <div
+                              className="w-3 h-3 bg-muted-foreground rounded-full flex items-center justify-center cursor-help hover:bg-primary transition-colors"
+                              onMouseEnter={() => setShowTooltip(true)}
+                              onMouseLeave={() => setShowTooltip(false)}
+                            >
+                              <span className="text-white text-xs font-bold">i</span>
+                            </div>
+
+                            {/* Tooltip */}
+                            {showTooltip && (
+                              <div className="absolute left-0 top-4 z-50 w-72 p-2 bg-white rounded-lg shadow-lg">
+                                <div className="text-xs">
+                                  <p className="font-medium text-gray-900 mb-1">Évolution de Votre Score Global</p>
+                                  <p className="text-gray-600 leading-relaxed">
+                                    Ce graphique montre l'<span className="font-medium">évolution réelle de votre score</span> au fil du temps
+                                    selon les différents modèles IA. Plus le score est élevé, plus votre site est performant dans les analyses concurrentielles.
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <div className="flex items-center gap-1">
+                                      <img src="/prompt-model-openai-for-light.svg" alt="GPT-5" className="w-3 h-3" />
+                                      <span className="text-gray-500 text-xs">GPT-5</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <img src="/prompt-model-claude.svg" alt="Claude 4" className="w-3 h-3" />
+                                      <span className="text-gray-500 text-xs">Claude 4</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <img src="/prompt-model-gemini.svg" alt="Gemini" className="w-3 h-3" />
+                                      <span className="text-gray-500 text-xs">Gemini</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                {/* Flèche du tooltip */}
+                                <div className="absolute left-3 -top-1 w-2 h-2 bg-white transform rotate-45"></div>
+                              </div>
+                            )}
+                          </div>
+                        </CardTitle>
+              
+                      </div>
 
                   {/* Légende visible et lisible */}
                   <div className="mb-4 p-4 bg-transparent">
@@ -675,197 +662,118 @@ const Index = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={(() => {
-                          // Utiliser les average_score réels des concurrents par modèle IA
-                          if (!selectedCompetitorAnalysis || !selectedCompetitorAnalysis.models_analysis) {
+                          // Extraire les scores GEO par modèle depuis selectedGeoReport
+                          if (!selectedGeoReport?.analyses || selectedGeoReport.analyses.length === 0) {
                             return [];
                           }
 
-                          // Extraire les concurrents par modèle avec leurs average_score
-                          const modelData: Record<string, number[]> = {};
-                          
-                          selectedCompetitorAnalysis.models_analysis.forEach((modelAnalysis: any) => {
-                            const modelName = modelAnalysis.model_info?.model_name || 
-                                            modelAnalysis.model_info?.provider || 
-                                            modelAnalysis.model_info?.display_name || '';
-                            
-                            // Normaliser le nom du modèle
-                            let normalizedModel = '';
-                            const nameLower = modelName.toLowerCase();
+                          // Fonction pour normaliser le nom du modèle
+                          const normalizeModelName = (llmName: string): string => {
+                            const nameLower = llmName.toLowerCase();
                             if (nameLower.includes('gpt') || nameLower.includes('openai')) {
-                              normalizedModel = 'gpt5';
-                            } else if (nameLower.includes('claude') || nameLower.includes('anthropic')) {
-                              normalizedModel = 'claude4';
-                            } else if (nameLower.includes('gemini') || nameLower.includes('google')) {
-                              normalizedModel = 'gemini25';
+                              return 'GPT-5';
+                            } else if (nameLower.includes('claude')) {
+                              return 'Claude 4';
+                            } else if (nameLower.includes('gemini')) {
+                              return 'Gemini 2.5';
                             } else if (nameLower.includes('mistral') || nameLower.includes('mixtral')) {
-                              normalizedModel = 'mistral31';
+                              return 'Mistral 3.1';
                             } else if (nameLower.includes('sonar') || nameLower.includes('perplexity')) {
-                              normalizedModel = 'sonar';
+                              return 'Sonar';
                             }
+                            return llmName;
+                          };
 
-                            if (normalizedModel && modelAnalysis.competitors && modelAnalysis.competitors.length > 0) {
-                              // Extraire les scores (average_score pour consolidated, similarity_score pour par modèle)
-                              const scores = modelAnalysis.competitors
-                                .slice(0, 10) // Top 10 concurrents
-                                .map((comp: any) => Math.round((comp.similarity_score || comp.average_score || 0) * 100));
-                              
-                              if (scores.length > 0) {
-                                modelData[normalizedModel] = scores;
-                              }
+                          // Extraire les scores GEO par modèle
+                          const modelScores: Array<{ model: string; score: number }> = [];
+
+                          selectedGeoReport.analyses.forEach((analysis: any) => {
+                            const llmName = analysis.llm_name || '';
+                            const scoreGeo = analysis.modules?.audit_geo?.score_global_geo;
+                            
+                            if (scoreGeo !== undefined && scoreGeo !== null) {
+                              const normalizedModel = normalizeModelName(llmName);
+                              modelScores.push({
+                                model: normalizedModel,
+                                score: Math.round(scoreGeo)
+                              });
                             }
                           });
 
-                          // Si pas de données par modèle, utiliser consolidated_competitors
-                          if (Object.keys(modelData).length === 0 && selectedCompetitorAnalysis.consolidated_competitors) {
-                            const consolidatedScores = selectedCompetitorAnalysis.consolidated_competitors
-                              .slice(0, 10)
-                              .map((comp: any) => Math.round((comp.average_score || 0) * 100));
-                            
-                            if (consolidatedScores.length > 0) {
-                              // Répartir les scores entre les modèles pour visualisation
-                              const perModel = Math.ceil(consolidatedScores.length / 5);
-                              const models = ['gpt5', 'claude4', 'gemini25', 'mistral31', 'sonar'];
-                              models.forEach((model, idx) => {
-                                const start = idx * perModel;
-                                const end = Math.min(start + perModel, consolidatedScores.length);
-                                if (end > start) {
-                                  modelData[model] = consolidatedScores.slice(start, end);
-                                }
-                              });
-                            }
-                          }
-
-                          // Créer une courbe cumulative unique comme sur la photo (une seule ligne)
-                          const maxLength = Math.max(...Object.values(modelData).map(scores => scores.length), 0);
+                          // Trier par score décroissant
+                          modelScores.sort((a, b) => b.score - a.score);
                           
-                          if (maxLength === 0) return [];
-
-                          // Combiner tous les scores de tous les modèles et créer une seule série cumulative
-                          // Utiliser les concurrents consolidés si disponibles, sinon prendre tous les scores de tous les modèles
-                          const allScores: number[] = [];
-                          
-                          // Si on a des concurrents consolidés, les utiliser
-                          if (selectedCompetitorAnalysis.consolidated_competitors && selectedCompetitorAnalysis.consolidated_competitors.length > 0) {
-                            selectedCompetitorAnalysis.consolidated_competitors.forEach((comp: any) => {
-                              const score = Math.round((comp.average_score || 0) * 100);
-                              allScores.push(score);
-                            });
-                          } else {
-                            // Sinon, utiliser les scores de tous les modèles (déjà extraits dans modelData)
-                            // Convertir modelData en tableau de scores uniques
-                            const uniqueScores = new Set<number>();
-                            
-                            Object.entries(modelData).forEach(([model, scores]) => {
-                              scores.forEach((score) => {
-                                uniqueScores.add(score);
-                              });
-                            });
-                            
-                            // Convertir en tableau trié par score décroissant
-                            const sortedScores = Array.from(uniqueScores).sort((a, b) => b - a);
-                            allScores.push(...sortedScores);
-                          }
-                          
-                          // Calculer la progression cumulative en pourcentage
-                          const total = allScores.reduce((sum, score) => sum + score, 0);
-                          
-                          if (total === 0) return [];
-                          
-                          const cumulativeData: any[] = [];
-                          let runningTotal = 0;
-                          
-                          allScores.forEach((score, index) => {
-                            runningTotal += score;
-                            const percentage = Math.round((runningTotal / total) * 100);
-                            
-                            cumulativeData.push({
-                              period: `${index + 1}`,
-                              rank: index + 1,
-                              score: percentage
-                            });
-                          });
-                          
-                          return cumulativeData;
+                          return modelScores;
                         })()}
                         margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                       >
                         <defs>
-                          {/* Gradients pour les lignes - Couleurs distinctes et attrayantes */}
-                          <linearGradient id="gpt5-gradient" x1="0" y1="0" x2="1" y2="0">
+                          {/* Gradients pour les lignes */}
+                          <linearGradient id="gpt5-line-gradient" x1="0" y1="0" x2="1" y2="0">
                             <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
                             <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.4} />
                           </linearGradient>
-                          <linearGradient id="claude4-gradient" x1="0" y1="0" x2="1" y2="0">
+                          <linearGradient id="claude4-line-gradient" x1="0" y1="0" x2="1" y2="0">
                             <stop offset="0%" stopColor="#dc2626" stopOpacity={0.8} />
                             <stop offset="100%" stopColor="#dc2626" stopOpacity={0.4} />
                           </linearGradient>
-                          <linearGradient id="gemini25-gradient" x1="0" y1="0" x2="1" y2="0">
+                          <linearGradient id="gemini25-line-gradient" x1="0" y1="0" x2="1" y2="0">
                             <stop offset="0%" stopColor="#059669" stopOpacity={0.8} />
                             <stop offset="100%" stopColor="#059669" stopOpacity={0.4} />
                           </linearGradient>
-                          <linearGradient id="mistral31-gradient" x1="0" y1="0" x2="1" y2="0">
+                          <linearGradient id="mistral31-line-gradient" x1="0" y1="0" x2="1" y2="0">
                             <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.8} />
                             <stop offset="100%" stopColor="#7c3aed" stopOpacity={0.4} />
                           </linearGradient>
-                          <linearGradient id="sonar-gradient" x1="0" y1="0" x2="1" y2="0">
+                          <linearGradient id="sonar-line-gradient" x1="0" y1="0" x2="1" y2="0">
                             <stop offset="0%" stopColor="#db2777" stopOpacity={0.8} />
                             <stop offset="100%" stopColor="#db2777" stopOpacity={0.4} />
                           </linearGradient>
                         </defs>
 
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#e5e7eb"
-                          strokeOpacity={0.6}
-                          horizontal={true}
-                          vertical={true}
-                          strokeWidth={1}
-                        />
                         <XAxis
-                          dataKey="period"
-                          type="number"
-                          scale="linear"
+                          dataKey="model"
                           axisLine={false}
                           tickLine={false}
                           tick={{
                             fontSize: 12,
-                            fill: '#000',
+                            fill: '#6b7280',
                             fontWeight: 500,
                             fontFamily: 'system-ui, -apple-system, sans-serif'
                           }}
                           tickMargin={10}
-                          interval={0}
-                          domain={[0, 'dataMax']}
-                          label={{ value: 'Nb d\'IPA (ordre amont - aval)', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: '#000', fontSize: '13px', fontWeight: 500 } }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
                         />
                         <YAxis
                           axisLine={false}
                           tickLine={false}
                           tick={{
                             fontSize: 12,
-                            fill: '#000',
+                            fill: '#6b7280',
                             fontWeight: 500,
                             fontFamily: 'system-ui, -apple-system, sans-serif'
                           }}
                           domain={[0, 100]}
                           tickFormatter={(value) => `${value}`}
                           tickMargin={10}
-                          label={{ value: 'Proportion de la richesse totale (%)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#000', fontSize: '13px', fontWeight: 500 } }}
+                          label={{ value: 'Score GEO', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6b7280', fontSize: '13px', fontWeight: 500 } }}
                         />
                         <ChartTooltip
-                          content={({ active, payload, label }) => {
+                          content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                               const data = payload[0]?.payload;
-                              const percentage = Number(payload[0]?.value) || 0;
-                              const rank = data?.rank || label;
+                              const score = Number(payload[0]?.value) || 0;
+                              const model = data?.model || '';
                               
                               return (
-                                <div className="bg-white rounded-lg shadow-lg p-3 min-w-[180px]">
+                                <div className="bg-white rounded-lg shadow-lg p-3 min-w-[180px] border border-gray-200">
                                   <p className="font-semibold text-gray-900 mb-2 text-sm">
-                                    Rang: {rank}
+                                    {model}
                                   </p>
                                   <p className="font-bold text-gray-900 text-base">
-                                    {percentage}%
+                                    Score: {score}/100
                                   </p>
                                 </div>
                               );
@@ -873,8 +781,6 @@ const Index = () => {
                             return null;
                           }}
                         />
-
-                        {/* Une seule ligne cumulative - Style exact comme sur la photo */}
                         <Line
                           type="linear"
                           dataKey="score"
@@ -882,7 +788,6 @@ const Index = () => {
                           strokeWidth={2.5}
                           dot={{ fill: '#3b82f6', r: 5, strokeWidth: 2, stroke: '#fff' }}
                           activeDot={{ r: 7, stroke: '#3b82f6', strokeWidth: 2, fill: '#fff' }}
-                          name="Proportion cumulative"
                           connectNulls={true}
                         />
                       </LineChart>
@@ -894,7 +799,6 @@ const Index = () => {
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg text-foreground font-semibold flex items-center gap-2">
-                        <Globe2 className="w-5 h-5 text-muted-foreground" />
                         Analyse concurrentielle
                       </CardTitle>
 
@@ -1409,53 +1313,7 @@ const Index = () => {
                   {/* Sources Analytics (à gauche) */}
                   <Card className="bg-card shadow-sm">
                     <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-base text-foreground font-semibold flex items-center gap-2">
-                          <BarChart3 className="w-4 h-4 text-muted-foreground" />
-                          Sources
-                          <div className="relative">
-                            <div
-                              className="w-3 h-3 bg-muted-foreground rounded-full flex items-center justify-center cursor-help hover:bg-primary transition-colors"
-                              onMouseEnter={() => setShowTooltip(true)}
-                              onMouseLeave={() => setShowTooltip(false)}
-                            >
-                              <span className="text-white text-xs font-bold">i</span>
-                            </div>
-
-                            {/* Tooltip */}
-                            {showTooltip && (
-                              <div className="absolute left-0 top-4 z-50 w-72 p-2 bg-white rounded-lg shadow-lg">
-                                <div className="text-xs">
-                                  <p className="font-medium text-gray-900 mb-1">Évolution de Votre Score Global</p>
-                                  <p className="text-gray-600 leading-relaxed">
-                                    Ce graphique montre l'<span className="font-medium">évolution réelle de votre score</span> au fil du temps
-                                    selon les différents modèles IA. Plus le score est élevé, plus votre site est performant dans les analyses concurrentielles.
-                                  </p>
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <div className="flex items-center gap-1">
-                                      <img src="/prompt-model-openai-for-light.svg" alt="GPT-5" className="w-3 h-3" />
-                                      <span className="text-gray-500 text-xs">GPT-5</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <img src="/prompt-model-claude.svg" alt="Claude 4" className="w-3 h-3" />
-                                      <span className="text-gray-500 text-xs">Claude 4</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <img src="/prompt-model-gemini.svg" alt="Gemini" className="w-3 h-3" />
-                                      <span className="text-gray-500 text-xs">Gemini</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                {/* Flèche du tooltip */}
-                                <div className="absolute left-3 -top-1 w-2 h-2 bg-white transform rotate-45"></div>
-                              </div>
-                            )}
-                          </div>
-                        </CardTitle>
-                        <div className="flex items-center gap-4">
-                          {/* Export button removed per request */}
-                        </div>
-                      </div>
+                     
                     </CardHeader>
 
                     <CardContent className="py-3">
@@ -1592,184 +1450,7 @@ const Index = () => {
                           return (
                             <>
                               {/* Légende de l'évolution - Scores Global & GEO */}
-                              <div className="flex flex-wrap gap-4 mb-6 p-4 bg-muted rounded-xl">
-                                {availableModels.length > 0 ? (
-                                  availableModels.map((model, index) => {
-                                    const color = modelColors[model] || '#6b7280';
-                                    const delta = (selectedAnalysis as any)?.target_positioning?.trends_by_model?.[model]?.delta_30d || 0;
-
-                                    return (
-                                      <div key={model} className="flex items-center gap-2 px-2 py-1 bg-card rounded">
-                                        <img
-                                          src={(() => {
-                                            const key = (model || '').toLowerCase();
-                                            if (key.includes('mistral')) return '/Mistral.png';
-                                            const id = key.includes('openai') || key.includes('gpt')
-                                              ? 'openai-for-light'
-                                              : key.includes('anthropic') || key.includes('claude')
-                                                ? 'claude'
-                                                : key.includes('google') || key.includes('gemini')
-                                                  ? 'gemini'
-                                                  : key.includes('perplexity') || key.includes('sonar')
-                                                    ? 'perplexity'
-                                                    : 'claude';
-                                            return `/prompt-model-${id}.svg`;
-                                          })()}
-                                          alt="Model"
-                                          className="w-4 h-4"
-                                        />
-                                        <div className="flex flex-col">
-                                          <span className="font-medium text-foreground text-xs">
-                                            {(() => {
-                                              const key = (model || '').toLowerCase();
-                                              if (key.includes('openai/gpt-5') || key.includes('gpt-5') || key.includes('openai')) return 'GPT-5';
-                                              if (key.includes('anthropic/claude-sonnet-4') || key.includes('claude-4-sonnet') || key.includes('claude')) return 'Claude 4 Sonnet';
-                                              if (key.includes('google/gemini-2.5-pro') || key.includes('gemini-2.5-pro') || key.includes('gemini')) return 'Gemini 2.5 Pro';
-                                              if (key.includes('mistral') || key.includes('mistralai')) return 'Mistral 3.1';
-                                              if (key.includes('perplexity') || key.includes('sonar')) return 'Sonar';
-                                              return model;
-                                            })()}
-                                          </span>
-                                          <span className={`font-medium text-xs ${delta >= 0
-                                            ? 'text-green-600'
-                                            : 'text-red-600'
-                                            }`}>
-                                            {delta >= 0 ? '↗' : '↘'} {Math.abs(delta).toFixed(1)}%
-                                          </span>
-                                        </div>
-                                      </div>
-                                    );
-                                  })
-                                ) : (
-                                  <div className="text-muted-foreground italic bg-card px-4 py-2 rounded-lg">
-                                    <span className="flex items-center gap-2">
-                                      Aucune donnée d'évolution disponible
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-
-
-                              {/* Graphique Évolution - Ultra Dynamique - COMMENTÉ */}
-                              {/*
-                      <div className="h-80 w-full relative overflow-hidden bg-card rounded-2xl border border-border p-4 shadow-lg">
-                        <div className="absolute inset-0 opacity-5">
-                          <div className="absolute inset-0" style={{
-                            backgroundImage: `radial-gradient(circle at 25% 25%, #3b82f6 2px, transparent 2px),
-                                              radial-gradient(circle at 75% 75%, #10b981 2px, transparent 2px)`,
-                            backgroundSize: '30px 30px'
-                          }}></div>
-                        </div>
-
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            key={selectedAnalysis?.analysis_id || 'default'}
-                            data={chartData}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                          >
-                            <defs>
-                              <filter id="glow">
-                                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                                <feMerge>
-                                  <feMergeNode in="coloredBlur" />
-                                  <feMergeNode in="SourceGraphic" />
-                                </feMerge>
-                              </filter>
-                            </defs>
-
-                            <CartesianGrid
-                              strokeDasharray="1 2"
-                              stroke="#e5e7eb"
-                              strokeOpacity={0.4}
-                              horizontal={true}
-                              vertical={false}
-                              strokeWidth={0.5}
-                            />
-                            <XAxis
-                              dataKey="date"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 12, fill: '#6b7280', fontWeight: 500 }}
-                              tickMargin={10}
-                              tickFormatter={(value, index) => {
-                                const totalTicks = chartData.length;
-                                if (index === 0) return "30j dernier jours";
-                                if (index === totalTicks - 1) return "Aujourd'hui";
-                                return "";
-                              }}
-                            />
-                            <YAxis
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fontSize: 12, fill: '#6b7280', fontWeight: 500 }}
-                              domain={[40, 95]}
-                              tickFormatter={(value) => `${value}`}
-                              tickMargin={10}
-                            />
-                            <ChartTooltip
-                              content={({ active, payload }) => {
-                                if (active && payload && payload.length) {
-                                  return (
-                                    <div className="bg-white/95 backdrop-blur-sm p-3 border border-neutral-300 rounded-xl shadow-2xl">
-                                      {payload.map((entry, index) => (
-                                        <div key={index} className="flex items-center justify-between gap-3 py-0.5">
-                                          <div className="flex items-center gap-2">
-                                            <img
-                                              src={`/prompt-model-${(() => {
-                                                const key = String(entry.dataKey ?? '').toLowerCase();
-                                                if (key.includes('openai') || key.includes('gpt')) return 'openai-for-light';
-                                                if (key.includes('gemini') || key.includes('google')) return 'gemini';
-                                                if (key.includes('sonar') || key.includes('perplexity')) return 'perplexity';
-                                                return 'claude';
-                                              })()}.svg`}
-                                              alt="Model"
-                                              className="w-4 h-4"
-                                            />
-                                          </div>
-                                          <span className="font-bold text-neutral-900 text-sm">{Math.round(Number(entry.value))}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              }}
-                            />
-
-                            {availableModels.length > 0 && availableModels.map((model, index) => {
-                              const color = modelColors[model] || '#6b7280';
-
-                              return (
-                                <Line
-                                  key={model}
-                                  type="monotone"
-                                  dataKey={model}
-                                  stroke={color}
-                                  strokeWidth={1.5}
-                                  dot={{
-                                    fill: color,
-                                    strokeWidth: 1,
-                                    r: 3,
-                                    stroke: '#ffffff'
-                                  }}
-                                  activeDot={{
-                                    r: 6,
-                                    fill: color,
-                                    stroke: '#ffffff',
-                                    strokeWidth: 1.5,
-                                    filter: 'url(#glow)',
-                                    className: 'animate-bounce'
-                                  }}
-                                />
-                              );
-                            })}
-                          </LineChart>
-                        </ResponsiveContainer>
-
-                        <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-foreground/10 to-transparent pointer-events-none rounded-t-2xl"></div>
-                      </div>
-                      */}
+                             
                             </>
                           );
                         })()}

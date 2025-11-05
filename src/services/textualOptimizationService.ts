@@ -112,16 +112,8 @@ export interface OptimizationRequest {
  * Utilise le système d'authentification complet d'AuthService
  */
 async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
-  console.log('🔐 fetchWithAuth - URL:', url);
-  console.log('🔐 fetchWithAuth - Options:', options);
-  
   // Vérifier l'authentification
   const isAuthenticated = AuthService.isAuthenticated();
-  console.log('🔐 Utilisateur authentifié:', isAuthenticated);
-  
-  if (!isAuthenticated) {
-    console.warn('⚠️ Utilisateur non authentifié, requête sans authentification');
-  }
   
   // Préparer les options de requête avec authentification
   const requestOptions: RequestInit = {
@@ -140,9 +132,6 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
       ...requestOptions.headers,
       'Authorization': `Bearer ${accessToken}`,
     };
-    console.log('🔐 Token Bearer ajouté');
-  } else {
-    console.log('🔐 Authentification par cookies uniquement');
   }
   
   return fetch(url, requestOptions);
@@ -158,8 +147,6 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
  */
 export async function fetchOptimizationById(id: string): Promise<TextualOptimizationData> {
   try {
-    console.log(`📄 Récupération de l'optimisation ID: ${id} depuis ${API_BASE_URL}/optimize/${id}`);
-    
     const response = await fetchWithAuth(`${API_BASE_URL}/optimize/${id}`, {
       method: 'GET',
       headers: {
@@ -167,28 +154,21 @@ export async function fetchOptimizationById(id: string): Promise<TextualOptimiza
       },
     });
 
-    console.log(`📊 Status de la réponse: ${response.status}`);
-
     if (!response.ok) {
       if (response.status === 401) {
-        console.warn('⚠️ Non authentifié, utilisation des données mock');
         return getMockOptimization(id);
       }
       if (response.status === 404) {
-        console.warn('⚠️ Optimisation non trouvée, utilisation des données mock');
         return getMockOptimization(id);
       }
       throw new Error(`Erreur HTTP: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('✅ Optimisation récupérée depuis l\'API:', data);
     
     return data as TextualOptimizationData;
     
   } catch (error) {
-    console.error('❌ Erreur lors de la récupération de l\'optimisation:', error);
-    console.log('🔄 Utilisation des données mock en fallback');
     return getMockOptimization(id);
   }
 }
@@ -198,8 +178,6 @@ export async function fetchOptimizationById(id: string): Promise<TextualOptimiza
  */
 export async function listOptimizationsFromOptimize(): Promise<TextualOptimizationData[]> {
   try {
-    console.log(`📄 Récupération des optimisations depuis ${API_BASE_URL}/optimize`);
-    
     const response = await fetchWithAuth(`${API_BASE_URL}/optimize`, {
       method: 'GET',
       headers: {
@@ -207,19 +185,14 @@ export async function listOptimizationsFromOptimize(): Promise<TextualOptimizati
       },
     });
 
-    console.log(`📊 Status de la réponse: ${response.status}`);
-
     if (!response.ok) {
       if (response.status === 401) {
-        console.warn('⚠️ Non authentifié, utilisation des données mock');
         return getMockOptimizationsList();
       }
-      console.warn('⚠️ Erreur lors de la récupération des optimisations depuis /optimize');
       throw new Error(`Erreur HTTP: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('✅ Optimisations récupérées depuis l\'API:', data);
     
     let optimizationsList = [];
     if (Array.isArray(data)) {
@@ -229,16 +202,12 @@ export async function listOptimizationsFromOptimize(): Promise<TextualOptimizati
     } else if (data.results && Array.isArray(data.results)) {
       optimizationsList = data.results;
     } else {
-      console.warn('⚠️ Structure de données inattendue:', data);
       return getMockOptimizationsList();
     }
 
-    console.log(`📊 ${optimizationsList.length} optimisations récupérées`);
     return optimizationsList as TextualOptimizationData[];
     
   } catch (error) {
-    console.error('❌ Erreur lors de la récupération des optimisations:', error);
-    console.log('🔄 Utilisation des données mock en fallback');
     return getMockOptimizationsList();
   }
 }
@@ -250,7 +219,6 @@ export async function fetchOptimization(optimizationId: string): Promise<Textual
   try {
     return await fetchOptimizationById(optimizationId);
   } catch (error) {
-    console.warn('⚠️ Erreur lors de la récupération, utilisation des données mock');
     return getMockOptimization(optimizationId);
   }
 }
@@ -265,7 +233,7 @@ export async function listOptimizations(): Promise<TextualOptimizationData[]> {
       return newFormatData;
     }
   } catch (error) {
-    console.warn('⚠️ Nouvel endpoint non disponible, utilisation de l\'ancien...');
+    // Fallback vers des données mock
   }
 
   // Fallback vers des données mock
@@ -287,7 +255,6 @@ export async function startTextualOptimization(request: OptimizationRequest): Pr
 
     if (!response.ok) {
       if (response.status === 401) {
-        console.warn('⚠️ Non authentifié, simulation d\'une optimisation');
         return {
           optimizationId: 'mock-' + Date.now(),
           status: 'completed',
@@ -301,8 +268,6 @@ export async function startTextualOptimization(request: OptimizationRequest): Pr
     return data;
     
   } catch (error) {
-    console.error('❌ Erreur lors du démarrage de l\'optimisation:', error);
-    console.log('🔄 Simulation d\'une optimisation en fallback');
     return {
       optimizationId: 'mock-' + Date.now(),
       status: 'completed',
@@ -331,7 +296,6 @@ export async function checkOptimizationStatus(optimizationId: string): Promise<a
     return data;
     
   } catch (error) {
-    console.error('❌ Erreur lors de la vérification du statut:', error);
     throw error;
   }
 }

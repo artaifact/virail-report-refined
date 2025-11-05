@@ -116,8 +116,6 @@ class ApiService {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-    console.log(`🌐 apiService.request: ${options.method || 'GET'} ${this.baseURL}${endpoint}`);
-
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...options,
@@ -130,11 +128,9 @@ class ApiService {
       });
 
       clearTimeout(timeoutId);
-      console.log(`📡 apiService.request réponse: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`❌ apiService.request erreur ${response.status}:`, errorText);
 
         const errorData = await response.json().catch(() => ({
           detail: { message: `Erreur HTTP: ${response.status}` }
@@ -148,7 +144,6 @@ class ApiService {
       }
 
       const data = await response.json();
-      console.log(`✅ apiService.request succès:`, data);
       return data;
     } catch (error) {
       clearTimeout(timeoutId);
@@ -323,13 +318,10 @@ class ApiService {
    * Récupérer les quotas d'usage actuels
    */
   async getUsageLimits(): Promise<UsageLimitsResponse> {
-    console.log('🔄 apiService.getUsageLimits() appelé...');
     try {
       const result = await this.request('/api/v1/usage/limits');
-      console.log('✅ apiService.getUsageLimits() succès:', result);
       return result;
     } catch (error) {
-      console.error('❌ apiService.getUsageLimits() erreur:', error);
       throw error;
     }
   }

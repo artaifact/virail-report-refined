@@ -9,11 +9,7 @@ import { AuthService } from '@/services/authService';
 const isDevelopment = import.meta.env.DEV;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
 
-console.log('🔧 Configuration API:', {
-  isDevelopment,
-  API_BASE_URL,
-  NODE_ENV: import.meta.env.MODE
-});
+
 
 /**
  * Intercepteur pour ajouter automatiquement l'authentification aux requêtes
@@ -487,8 +483,6 @@ Optimisation possible de la structure sémantique et enrichissement du contenu �
  */
 export async function listReports(): Promise<ReportResponse[]> {
   try {
-    console.log('📄 Récupération de la liste des rapports depuis /llmo/reports...');
-
     // Appel authentifié vers votre backend
     const response = await fetchWithAuth(`${API_BASE_URL}/llmo/reports`, {
       method: 'GET',
@@ -498,16 +492,13 @@ export async function listReports(): Promise<ReportResponse[]> {
     });
 
     if (!response.ok) {
-      console.warn('⚠️ Erreur lors de la récupération des rapports, utilisation des données mock');
       // Fallback vers les données mock
       return getMockReports();
     }
 
     const data = await response.json();
-    console.log('✅ Rapports récupérés du backend:', data);
 
     if (!data.reports || !Array.isArray(data.reports)) {
-      console.warn('⚠️ Le format de la réponse API est incorrect, utilisation des données mock');
       return getMockReports();
     }
 

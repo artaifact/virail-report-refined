@@ -49,14 +49,11 @@ export const useTextualOptimization = (optimizationId?: string): UseTextualOptim
       setIsLoading(true);
       setError(null);
       
-      console.log('🔄 Chargement des optimisations depuis l\'API...');
       const data = await listOptimizations();
-      console.log('📊 Données récupérées depuis l\'API:', data);
       
       setOptimizations(data);
       
     } catch (err) {
-      console.error('❌ Erreur lors du chargement:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des optimisations');
       
       setOptimizations([]);
