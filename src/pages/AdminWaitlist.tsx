@@ -465,7 +465,7 @@ export default function AdminWaitlist() {
                   <label className="text-sm font-medium">Email</label>
                   <Input
                     type="email"
-                    placeholder="admin@virail.studio"
+                    placeholder="admin@viraill.com"
                     value={createAdminForm.email}
                     onChange={(e) => setCreateAdminForm(prev => ({ ...prev, email: e.target.value }))}
                   />

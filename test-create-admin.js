@@ -3,11 +3,11 @@
  * Utilise l'endpoint POST /auth/create-admin
  */
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.viraill.com';
 
 async function createAdmin() {
   const adminData = {
-    email: "admine@virail.studio",
+    email: "admin@viraill.com",
     username: "neeewadmin", 
     password: "password"
   };

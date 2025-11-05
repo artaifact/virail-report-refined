@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script de déploiement spécifique pour app.virail.studio
+# Script de déploiement spécifique pour app.viraill.com
 # Usage: ./scripts/deploy-app-virail.sh
 
 set -e
@@ -153,7 +153,7 @@ setup_ssl() {
     fi
     
     # Configurer SSL
-    if sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email admin@virail.studio; then
+    if sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email admin@viraill.com; then
         log_success "SSL configuré avec succès pour $DOMAIN"
     else
         log_warning "Configuration SSL échouée, l'application est accessible en HTTP"
@@ -191,7 +191,7 @@ health_check() {
 
 # Informations finales
 show_info() {
-    log_success "Déploiement terminé pour app.virail.studio!"
+    log_success "Déploiement terminé pour app.viraill.com!"
     echo
     log_info "🌐 URLs d'accès :"
     echo "  - Application: https://$DOMAIN"

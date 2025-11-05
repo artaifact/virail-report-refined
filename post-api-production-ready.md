@@ -5,7 +5,7 @@
 ### 🔧 **Variables d'Environnement**
 ```bash
 # Production Environment
-VITE_API_BASE_URL=https://api.virail.studio
+VITE_API_BASE_URL=https://api.viraill.com
 NODE_ENV=production
 VITE_AUTH_ENABLED=true
 VITE_RATE_LIMIT=100
@@ -17,7 +17,7 @@ VITE_CACHE_TTL=3600
 # /etc/nginx/sites-available/llmo-api
 server {
     listen 443 ssl http2;
-    server_name api.virail.studio;
+    server_name api.viraill.com;
     
     # SSL Configuration
     ssl_certificate /path/to/certificate.crt;
@@ -47,7 +47,7 @@ server {
 
 ### 🎯 **Analyse Concurrentielle Principale**
 ```http
-POST https://api.virail.studio/analyze/competitive
+POST https://api.viraill.com/analyze/competitive
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 Content-Type: application/json
 
@@ -62,7 +62,7 @@ Content-Type: application/json
 
 ### 📈 **Monitoring & Health Check**
 ```http
-GET https://api.virail.studio/health
+GET https://api.viraill.com/health
 {
   "status": "healthy",
   "version": "2.1.0",
@@ -74,7 +74,7 @@ GET https://api.virail.studio/health
 
 ### 🔍 **Status Check**
 ```http
-GET https://api.virail.studio/analyze/competitive/{analysis_id}/status
+GET https://api.viraill.com/analyze/competitive/{analysis_id}/status
 {
   "id": "comp_1704067200000",
   "status": "processing",
@@ -95,7 +95,7 @@ GET https://api.virail.studio/analyze/competitive/{analysis_id}/status
 class LLMOProductionClient {
   constructor(config) {
     this.apiKey = config.apiKey;
-    this.baseUrl = config.baseUrl || 'https://api.virail.studio';
+    this.baseUrl = config.baseUrl || 'https://api.viraill.com';
     this.timeout = config.timeout || 30000;
     this.retryAttempts = config.retryAttempts || 3;
   }
@@ -167,7 +167,7 @@ class LLMOProductionClient {
 // Utilisation
 const client = new LLMOProductionClient({
   apiKey: process.env.LLMO_API_KEY,
-  baseUrl: 'https://api.virail.studio',
+  baseUrl: 'https://api.viraill.com',
   timeout: 45000,
   retryAttempts: 3
 });

@@ -16,7 +16,7 @@ Ce guide explique comment créer un compte administrateur dans votre application
    - Cliquer sur l'onglet "Créer Admin" (visible uniquement pour les admins)
 
 3. **Remplir le formulaire** :
-   - **Email** : `admine@virail.studio`
+   - **Email** : `admin@viraill.com`
    - **Nom d'utilisateur** : `neeewadmin`
    - **Mot de passe** : `password`
 
@@ -40,7 +40,7 @@ Ce guide explique comment créer un compte administrateur dans votre application
 #### **Body de la requête** :
 ```json
 {
-  "email": "admine@virail.studio",
+  "email": "admin@viraill.com",
   "username": "neeewadmin",
   "password": "password"
 }
@@ -48,10 +48,10 @@ Ce guide explique comment créer un compte administrateur dans votre application
 
 #### **Exemple avec curl** :
 ```bash
-curl -X POST http://localhost:8000/auth/create-admin \
+curl -X POST https://api.viraill.com/auth/create-admin \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admine@virail.studio",
+    "email": "admin@viraill.com",
     "username": "neeewadmin",
     "password": "password"
   }'
@@ -59,14 +59,14 @@ curl -X POST http://localhost:8000/auth/create-admin \
 
 #### **Exemple avec JavaScript** :
 ```javascript
-const response = await fetch('http://localhost:8000/auth/create-admin', {
+const response = await fetch('https://api.viraill.com/auth/create-admin', {
   method: 'POST',
   credentials: 'include', // Important pour les cookies
   headers: {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    email: "admine@virail.studio",
+    email: "admin@viraill.com",
     username: "neeewadmin",
     password: "password"
   })
@@ -103,7 +103,7 @@ node test-create-admin.js
   "message": "Compte administrateur créé avec succès",
   "user": {
     "id": 123,
-    "email": "admine@virail.studio",
+    "email": "admin@viraill.com",
     "username": "neeewadmin",
     "is_admin": true,
     "is_active": true,

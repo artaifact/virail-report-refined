@@ -1,7 +1,7 @@
 import { LoginRequest, RegisterRequest, AuthResponse, User } from '@/types/auth';
 
 // Configuration dynamique de l'URL de base selon l'environnement
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
 const isDevelopment = import.meta.env.DEV;
 
 console.log('🔧 AuthService - Configuration:', {
