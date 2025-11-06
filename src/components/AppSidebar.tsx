@@ -93,11 +93,6 @@ export function AppSidebar() {
   const allItems = [...navigationItems, ...adminItems, ...bottomItems]
   const [openMenus, setOpenMenus] = React.useState<Record<string, boolean>>({})
 
-  React.useEffect(() => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-    console.log("[AppSidebar] isAdmin:", Boolean(isAdmin), { API_BASE_URL, localUser, user })
-  }, [isAdmin, localUser, user])
-
   // Auto-ouvrir le menu si on est sur une page enfant
   React.useEffect(() => {
     const newOpenMenus: Record<string, boolean> = {}
