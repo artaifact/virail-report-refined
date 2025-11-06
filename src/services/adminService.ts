@@ -19,9 +19,7 @@ export class AdminService {
       const response = await fetch(`${API_BASE_URL}/auth/me-bearer`, {
         method: 'GET',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        // Ne pas envoyer Content-Type pour GET
       });
 
       if (!response.ok) {

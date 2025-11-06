@@ -87,18 +87,14 @@ export class AuthService {
         let meResp = await fetch(`${API_BASE_URL}/auth/me-bearer`, {
           method: 'GET',
           credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          // Ne pas envoyer Content-Type pour GET
         });
         if (!meResp.ok) {
           // Repli cookies natifs
           meResp = await fetch(`${API_BASE_URL}/auth/me`, {
             method: 'GET',
             credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            // Ne pas envoyer Content-Type pour GET
           });
         }
         if (meResp.ok) {

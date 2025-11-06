@@ -117,12 +117,15 @@ class ApiService {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
+      const method = (options.method || 'GET').toUpperCase();
+      const isGetLike = method === 'GET' || method === 'HEAD';
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...options,
         credentials: 'include', // Important pour les cookies JWT
         headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
+          // Ne pas envoyer Content-Type pour GET/HEAD (évite un préflight CORS inutile)
+          ...(isGetLike ? {} : { 'Content-Type': 'application/json' }),
+          ...(options.headers || {}),
         },
         signal: controller.signal,
       });
