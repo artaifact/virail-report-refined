@@ -8,7 +8,11 @@ const isDevelopment = import.meta.env.DEV;
 const DEV_MODE = process.env.NODE_ENV === 'development';
 const USE_CREDENTIALS = true;
 
-let AUTH_MODE: 'cookies' | 'bearer' | 'auto' = 'cookies';
+// Autoriser le pilotage par env: VITE_AUTH_MODE=cookies|bearer|auto
+const ENV_AUTH_MODE = (import.meta.env?.VITE_AUTH_MODE as 'cookies' | 'bearer' | 'auto' | undefined);
+let AUTH_MODE: 'cookies' | 'bearer' | 'auto' = ENV_AUTH_MODE && ['cookies','bearer','auto'].includes(ENV_AUTH_MODE)
+  ? ENV_AUTH_MODE
+  : 'cookies';
 
 
 let CORS_CREDENTIALS_SUPPORTED: boolean | null = null;
@@ -43,7 +47,8 @@ export class AuthService {
       }
 
       const data = await response.json();
-      
+
+      // Construire un user minimal
       const user: User = {
         id: String(credentials.username),
         email: credentials.username + '@example.com',
@@ -54,6 +59,20 @@ export class AuthService {
       const accessToken = data.access_token || data.token || 'httponly-cookie';
       const refreshToken = data.refresh_token || 'httponly-cookie';
       
+      // Si on a un access_token JWT lisible, tenter d'extraire is_admin
+      if (accessToken && accessToken !== 'httponly-cookie') {
+        const payload = AuthService.decodeJwtPayload(accessToken);
+        if (payload) {
+          const isAdminFromJwt = Boolean(
+            payload.is_admin || payload.isAdmin || (Array.isArray(payload.roles) && payload.roles.includes('admin'))
+          );
+          (user as any).is_admin = isAdminFromJwt;
+          try {
+            console.log('[AuthService] JWT payload is_admin:', isAdminFromJwt, payload)
+          } catch {}
+        }
+      }
+
       const authResponse: AuthResponse = {
         access_token: accessToken,
         refresh_token: refreshToken,
@@ -63,15 +82,25 @@ export class AuthService {
       this.saveTokens(authResponse.access_token, authResponse.refresh_token);
       this.saveUser(authResponse.user);
 
-      // Tentative d'enrichissement immédiat depuis /auth/me-bearer pour récupérer is_admin en prod
+      // Tentative d'enrichissement immédiat depuis /auth/me-bearer (repli /auth/me) pour récupérer is_admin en prod
       try {
-        const meResp = await fetch(`${API_BASE_URL}/auth/me-bearer`, {
+        let meResp = await fetch(`${API_BASE_URL}/auth/me-bearer`, {
           method: 'GET',
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },
         });
+        if (!meResp.ok) {
+          // Repli cookies natifs
+          meResp = await fetch(`${API_BASE_URL}/auth/me`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+        }
         if (meResp.ok) {
           const meData = await meResp.json().catch(() => null);
           if (meData && (typeof meData.is_admin !== 'undefined' || typeof meData.isAdmin !== 'undefined')) {
@@ -89,6 +118,25 @@ export class AuthService {
         return this.login(credentials);
       }
       throw error;
+    }
+  }
+
+  /**
+   * Décoder de façon sûre le payload d'un JWT (base64url) sans vérifier la signature
+   */
+  private static decodeJwtPayload(token: string): any | null {
+    try {
+      const parts = token.split('.');
+      if (parts.length < 2) return null;
+      const base64 = parts[1]
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+      const json = decodeURIComponent(atob(base64).split('').map(c =>
+        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      ).join(''));
+      return JSON.parse(json);
+    } catch {
+      return null;
     }
   }
 

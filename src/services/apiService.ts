@@ -201,7 +201,12 @@ class ApiService {
     created_at: string;
   }> {
     // Utilise un chemin relatif pour rester en même origine et inclure les cookies httpOnly
-    return this.request('/auth/me-bearer', { method: 'GET' });
+    try {
+      return await this.request('/auth/me-bearer', { method: 'GET' });
+    } catch (e) {
+      // Repli cookies: certains backends exposent /auth/me (cookies) au lieu de /auth/me-bearer
+      return await this.request('/auth/me', { method: 'GET' });
+    }
   }
 
   /**

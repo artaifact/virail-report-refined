@@ -108,6 +108,14 @@ export function AppSidebar() {
     setOpenMenus(newOpenMenus)
   }, [location.pathname])
 
+  // Log de diagnostic pour voir la valeur retenue
+  React.useEffect(() => {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      console.log('[AppSidebar] isAdmin (final):', Boolean(isAdmin), { isProd, isAdminLocal, user, API_BASE_URL })
+    } catch {}
+  }, [isAdmin, isAdminLocal, isProd, user])
+
   const handleMenuToggle = (title: string, open: boolean) => {
     setOpenMenus(prev => ({ ...prev, [title]: open }))
   }
