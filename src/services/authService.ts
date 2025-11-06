@@ -62,6 +62,24 @@ export class AuthService {
       
       this.saveTokens(authResponse.access_token, authResponse.refresh_token);
       this.saveUser(authResponse.user);
+
+      // Tentative d'enrichissement immédiat depuis /auth/me-bearer pour récupérer is_admin en prod
+      try {
+        const meResp = await fetch(`${API_BASE_URL}/auth/me-bearer`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (meResp.ok) {
+          const meData = await meResp.json().catch(() => null);
+          if (meData && (typeof meData.is_admin !== 'undefined' || typeof meData.isAdmin !== 'undefined')) {
+            const mergedUser = { ...authResponse.user, ...meData } as User & { is_admin?: boolean };
+            this.saveUser(mergedUser as any);
+          }
+        }
+      } catch {}
       
       return authResponse;
     } catch (error) {
