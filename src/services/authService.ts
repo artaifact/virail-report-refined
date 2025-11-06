@@ -8,7 +8,11 @@ const isDevelopment = import.meta.env.DEV;
 const DEV_MODE = process.env.NODE_ENV === 'development';
 const USE_CREDENTIALS = true;
 
-let AUTH_MODE: 'cookies' | 'bearer' | 'auto' = 'cookies';
+// Permet de forcer le mode d'auth via env: VITE_AUTH_MODE=cookies|bearer|auto
+const ENV_AUTH_MODE = (import.meta.env?.VITE_AUTH_MODE as 'cookies' | 'bearer' | 'auto' | undefined);
+let AUTH_MODE: 'cookies' | 'bearer' | 'auto' = ENV_AUTH_MODE && ['cookies','bearer','auto'].includes(ENV_AUTH_MODE)
+  ? ENV_AUTH_MODE
+  : 'auto';
 let CORS_CREDENTIALS_SUPPORTED: boolean | null = null;
 
 export class AuthService {
