@@ -88,7 +88,11 @@ export function AppSidebar() {
   const { user, logout } = useAuthContext()
   const { userPlan, isLoading } = usePayment()
   const localUser = AuthService.getUser?.() as any
-  const isAdmin = (localUser?.is_admin || localUser?.isAdmin) ?? ((user as any)?.is_admin || (user as any)?.isAdmin)
+  const isProd = import.meta.env.PROD
+  const isAdminLocal = Boolean(localUser?.is_admin ?? localUser?.isAdmin)
+  const isAdmin = isProd 
+    ? isAdminLocal 
+    : (isAdminLocal || Boolean((user as any)?.is_admin || (user as any)?.isAdmin))
   const adminItems = isAdmin ? [{ title: "Admin • Waitlist", url: "/admin/waitlist", icon: ShieldCheck, gradient: "" }] : []
   const allItems = [...navigationItems, ...adminItems, ...bottomItems]
   const [openMenus, setOpenMenus] = React.useState<Record<string, boolean>>({})
