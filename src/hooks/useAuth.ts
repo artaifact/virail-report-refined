@@ -28,6 +28,13 @@ export function useAuth() {
           userFromApi = null;
         }
 
+        // Si on a un user frais depuis l'API, on le persiste pour que le reste de l'app (ex: AppSidebar) voie is_admin
+        if (userFromApi) {
+          try {
+            AuthService.saveUser(userFromApi as any);
+          } catch {}
+        }
+
         const mergedUser = userFromApi ?? AuthService.getUser();
         const isAuthenticated = !!mergedUser || isAuthenticatedLocal;
 
