@@ -130,7 +130,7 @@ const PaymentTest: React.FC = () => {
       </Card>
 
       {/* Quotas d'usage */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="h-5 w-5" />
@@ -174,7 +174,7 @@ const PaymentTest: React.FC = () => {
             <p className="text-gray-500">Aucune donnée de quota disponible</p>
           )}
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Tests de fonctionnalités */}
       <Card>

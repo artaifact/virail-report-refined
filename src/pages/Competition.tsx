@@ -302,7 +302,6 @@ const Competition = () => {
                     </CardDescription>
                   </div>
                   <Badge className="bg-primary/10 text-primary">
-                    <Trophy className="w-3 h-3 mr-1" />
                     {competitorAnalyses.length} analyse{competitorAnalyses.length > 1 ? 's' : ''}
                   </Badge>
                 </div>
@@ -318,7 +317,7 @@ const Competition = () => {
                 ) : competitorAnalyses.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-6">
-                      <Trophy className="h-10 w-10 text-muted-foreground" />
+                  
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-3">Aucune analyse sauvegardée</h3>
                     <p className="text-muted-foreground mb-6 max-w-md mx-auto">
@@ -346,9 +345,7 @@ const Competition = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-4 mb-4">
-                              <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                <Trophy className="h-6 w-6 text-foreground" />
-                              </div>
+                              
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
                                   <h4 className="text-lg font-bold text-foreground group-hover:text-foreground transition-colors">
@@ -370,13 +367,13 @@ const Competition = () => {
                             </div>
                             
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                                 <span>Analysé {formatDistanceToNow(new Date(analysis.created_at), { 
                                   addSuffix: true, 
                                   locale: fr 
                                 })}</span>
-                              </div>
+                              </div> */}
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Users className="h-4 w-4 text-muted-foreground" />
                                 <span>{analysis.total_competitors_found} concurrent{analysis.total_competitors_found > 1 ? 's' : ''} analysé{analysis.total_competitors_found > 1 ? 's' : ''}</span>
@@ -384,54 +381,11 @@ const Competition = () => {
                             </div>
 
                             {/* Enhanced insights preview */}
-                            <div className="bg-muted rounded-xl p-4 group-hover:bg-muted/60 transition-all border border-border">
-                              <div className="grid md:grid-cols-3 gap-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                                    <Award className="h-4 w-4 text-foreground" />
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-semibold text-foreground">
-                                      {analysis.total_models_executed} Modèles
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">IA utilisés</div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                                    <Clock className="h-4 w-4 text-foreground" />
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-semibold text-foreground">
-                                      {analysis.status === 'completed' ? 'Terminée' : 'En cours'}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">Statut</div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                                    <BarChart3 className="h-4 w-4 text-foreground" />
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-semibold text-foreground">
-                                      Analyse #{analysis.analysis_id}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">ID unique</div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+                           
                           </div>
                           
                           <div className="flex items-center gap-3 ml-6">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => handleDeleteAnalysis(analysis.analysis_id, e)}
-                              className="text-muted-foreground hover:text-foreground hover:bg-muted opacity-0 group-hover:opacity-100 transition-all hover:scale-110 w-10 h-10 p-0"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                
                             <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
                               <span className="text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
                                 Voir l'analyse
@@ -1059,10 +1013,10 @@ const Competition = () => {
                 {/* Positionnement cible */}
                 {currentAnalysis.target_positioning && (
                   <Card className="bg-card border border-border">
-                    <CardHeader>
+                    {/* <CardHeader>
                       <CardTitle className="text-lg text-foreground">Positionnement Cible</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-foreground">
+                    </CardHeader> */}
+                    {/* <CardContent className="text-foreground">
                       <div className="space-y-4">
                         {Object.entries(((currentAnalysis.target_positioning as any)?.trends_by_model || {})).map(([modelName, trends]) => {
                           const t: any = trends as any;
@@ -1139,7 +1093,7 @@ const Competition = () => {
                           );
                         })}
                       </div>
-                    </CardContent>
+                    </CardContent> */}
                   </Card>
                 )}
 
@@ -1269,54 +1223,8 @@ const Competition = () => {
                         </div>
                       </div>
 
-                      {/* Écarts vs cible */}
-                      {(currentAnalysis as any).your_position.ecarts_vs_cible && (currentAnalysis as any).your_position.ecarts_vs_cible.length > 0 && (
-                        <div className="mt-6">
-                          <h4 className="text-lg font-semibold text-foreground mb-4">Écarts vs votre position</h4>
-                          <div className="space-y-2 max-h-64 overflow-y-auto">
-                            {(currentAnalysis as any).your_position.ecarts_vs_cible.slice(0, 10).map((entry: any, idx: number) => {
-                              const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
-                              const isYourSite = entry.url === currentAnalysis.url;
-                              return (
-                                <div 
-                                  key={idx} 
-                                  className={`flex items-center justify-between p-3 rounded-lg border ${
-                                    isYourSite 
-                                      ? 'bg-primary/10 border-primary/30' 
-                                      : entry.ecart_vs_cible > 0 
-                                        ? 'bg-red-50 border-red-200' 
-                                        : 'bg-green-50 border-green-200'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${
-                                      isYourSite ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                                    }`}>
-                                      {isYourSite ? '👤' : '#'}
-                                    </div>
-                                    <div>
-                                      <div className="font-medium text-foreground">
-                                        {isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url))}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">{extractDomain(entry.url)}</div>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="font-bold text-foreground">Score: {entry.score}/100</div>
-                                    {!isYourSite && (
-                                      <div className={`text-xs font-medium ${
-                                        entry.ecart_vs_cible > 0 ? 'text-red-600' : 'text-green-600'
-                                      }`}>
-                                        {entry.ecart_vs_cible > 0 ? '+' : ''}{entry.ecart_vs_cible} pts
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
+                   
+                  
                     </CardContent>
                   </Card>
                 )}

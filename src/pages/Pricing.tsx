@@ -71,7 +71,7 @@ const Pricing: React.FC = () => {
       </section>
 
       {/* Quotas d'usage */}
-      <section className="mt-12 bg-card border border-border rounded-xl shadow-sm">
+      {/* <section className="mt-12 bg-card border border-border rounded-xl shadow-sm">
         <div className="px-5 py-4 border-b border-border">
           <h2 className="text-xl font-semibold text-foreground">Quotas d'usage</h2>
           <p className="text-sm text-muted-foreground">Suivez votre consommation et anticipez les dépassements.</p>
@@ -82,7 +82,7 @@ const Pricing: React.FC = () => {
             compact={false}
           />
         </div>
-      </section>
+      </section> */}
 
       {/* Bouton de test d'activation */}
       {/* <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">

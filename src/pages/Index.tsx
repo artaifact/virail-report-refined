@@ -1232,81 +1232,8 @@ const Index = () => {
                   </CardContent>
                 </Card>
 
-                {/* Votre Position parmi les Concurrents */}
-                {selectedCompetitorAnalysis && (selectedCompetitorAnalysis as any).your_position && (
-                  <Card className="bg-card shadow-sm">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg font-semibold text-foreground">
-                        Votre Position parmi les Concurrents
-                      </CardTitle>
-                      <CardDescription className="text-xs text-muted-foreground">
-                        {(selectedCompetitorAnalysis as any).your_position.position_text}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="text-center p-4 rounded-lg">
-                          <div className="text-2xl font-bold text-primary mb-1">
-                            {(selectedCompetitorAnalysis as any).your_position.rank}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Rang sur {(selectedCompetitorAnalysis as any).your_position.total_competitors}</div>
-                        </div>
-                        <div className="text-center p-4 rounded-lg">
-                          <div className="text-2xl font-bold text-foreground mb-1">
-                            {(() => {
-                              const benchmarkScore = (selectedCompetitorAnalysis as any).benchmark_results?.benchmark?.classement?.find((c: any) => c.url === selectedCompetitorAnalysis.url)?.score;
-                              if (benchmarkScore !== undefined) return benchmarkScore;
-                              const targetScore = selectedCompetitorAnalysis.target_positioning?.target_benchmark_score;
-                              return targetScore ? Math.round(typeof targetScore === 'number' ? targetScore : Number(targetScore)) : 'N/A';
-                            })()}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Score Benchmark</div>
-                        </div>
-                      </div>
-
-                      {/* Écarts vs cible */}
-                      {(selectedCompetitorAnalysis as any).your_position.ecarts_vs_cible && (selectedCompetitorAnalysis as any).your_position.ecarts_vs_cible.length > 0 && (
-                        <div className="mt-6">
-                          <h4 className="text-lg font-semibold text-foreground mb-4">Écarts vs votre position</h4>
-                          <div className="space-y-2 max-h-64 overflow-y-auto">
-                            {(selectedCompetitorAnalysis as any).your_position.ecarts_vs_cible.slice(0, 10).map((entry: any, idx: number) => {
-                              const competitor = (selectedCompetitorAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
-                              const isYourSite = entry.url === selectedCompetitorAnalysis.url;
-                              return (
-                                <div 
-                                  key={idx} 
-                                  className="flex items-center justify-between p-3 rounded-lg"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold bg-muted text-muted-foreground">
-                                      {isYourSite ? '👤' : '#'}
-                                    </div>
-                                    <div>
-                                      <div className="font-medium text-foreground">
-                                        {isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url))}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">{extractDomain(entry.url)}</div>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="font-bold text-foreground">Score: {entry.score}/100</div>
-                                    {!isYourSite && (
-                                      <div className={`text-xs font-medium ${
-                                        entry.ecart_vs_cible > 0 ? 'text-red-600' : 'text-green-600'
-                                      }`}>
-                                        {entry.ecart_vs_cible > 0 ? '+' : ''}{entry.ecart_vs_cible} pts
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
+             
+                
 
                 <div className="max-w-4xl mx-auto px-4">
                   <div className="grid gap-6 lg:grid-cols-1">

@@ -170,7 +170,7 @@ const Analyses = () => {
                       Rapports Récents
                     </CardTitle>
                     <CardDescription className="text-blue-100 text-lg">
-                      Dernières analyses LLMO effectuées
+                      Dernières analyses GEO effectuées
                     </CardDescription>
                   </div>
                 </div>

@@ -569,7 +569,7 @@ const Analyses = () => {
                   </div>
                   Rapports Récents
                 </CardTitle>
-                <CardDescription className="mt-2 text-muted-foreground">Dernières analyses LLMO effectuées</CardDescription>
+                <CardDescription className="mt-2 text-muted-foreground">Dernières analyses GEO effectuées</CardDescription>
               </div>
               <Badge className="bg-muted text-muted-foreground">IA</Badge>
             </div>

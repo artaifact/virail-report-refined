@@ -165,10 +165,24 @@ export function AppSidebar() {
           <div className="px-2 mb-2">
             <Button
               onClick={() => navigate('/')}
-              className="w-full bg-primary text-primary-foreground hover:opacity-90 shadow-sm font-bold h-10 justify-start"
+              className={cn(
+                "w-full shadow-sm font-bold h-10 justify-start transition-all duration-200 p-0",
+                location.pathname === '/' 
+                  ? "bg-primary text-primary-foreground hover:opacity-90" 
+                  : "bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:shadow-md"
+              )}
             >
-              <LayoutDashboard className="h-4 w-4" />
-              Tableau de bord
+              <div className="flex items-center gap-3 w-full pl-2 pr-3 py-2">
+                <div className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                  location.pathname === '/' 
+                    ? "bg-primary-foreground/10" 
+                    : "bg-sidebar-accent/50"
+                )}>
+                  <LayoutDashboard className="h-4 w-4" />
+                </div>
+                <span className="text-xs font-bold">Tableau de bord</span>
+              </div>
             </Button>
           </div>
           <SidebarGroupContent>
@@ -189,7 +203,7 @@ export function AppSidebar() {
                             className={cn(
                               "w-full justify-start group rounded-xl h-10 transition-all duration-200 hover:shadow-md",
                               isActive 
-                                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                                ? "bg-primary text-primary-foreground hover:opacity-90"
                                 : "hover:bg-sidebar-accent"
                             )}
                           >
@@ -197,7 +211,7 @@ export function AppSidebar() {
                               <div className={cn(
                                 "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
                                 isActive 
-                                  ? "bg-sidebar-primary-foreground/10" 
+                                  ? "bg-primary-foreground/10" 
                                   : "bg-sidebar-accent group-hover:bg-sidebar-accent/80"
                               )}>
                                 <item.icon className="h-4 w-4" />
@@ -219,7 +233,7 @@ export function AppSidebar() {
                                   className={cn(
                                     "w-full justify-start rounded-lg h-10 transition-all duration-200",
                                     location.pathname === child.url
-                                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                                      ? "bg-primary text-primary-foreground hover:opacity-90 shadow-sm"
                                       : "hover:bg-sidebar-accent"
                                   )}
                                 >
@@ -239,7 +253,7 @@ export function AppSidebar() {
                         className={cn(
                           "w-full justify-start group rounded-xl h-10 transition-all duration-200 hover:shadow-md",
                           isActive 
-                            ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                            ? "bg-primary text-primary-foreground hover:opacity-90"
                             : "hover:bg-sidebar-accent"
                         )}
                       >
@@ -247,7 +261,7 @@ export function AppSidebar() {
                           <div className={cn(
                             "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
                             isActive 
-                              ? "bg-sidebar-primary-foreground/10" 
+                              ? "bg-primary-foreground/10" 
                               : "bg-sidebar-accent group-hover:bg-sidebar-accent/80"
                           )}>
                             <item.icon className="h-4 w-4" />
