@@ -42,8 +42,8 @@ const queryClient = new QueryClient();
 // Composant Header simplifié
 function AppHeader() {
   return (
-    <header className="flex h-8 shrink-0 items-center gap-4 px-6 supports-[backdrop-filter]:bg-background/80 bg-background/90 backdrop-blur-sm">
-      <SidebarTrigger className="-ml-1 text-muted-foreground h-7 w-7" />
+    <header className="flex h-10 sm:h-12 shrink-0 items-center gap-4 px-4 sm:px-6 supports-[backdrop-filter]:bg-background/80 bg-background/90 backdrop-blur-sm border-b border-border">
+      <SidebarTrigger className="-ml-1 text-muted-foreground h-8 w-8 sm:h-7 sm:w-7" />
     </header>
   );
 }

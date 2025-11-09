@@ -30,14 +30,7 @@ const Pricing: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen bg-background text-foreground">
-      <div className="mb-10">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Plans et Tarifs</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Choisissez le plan qui correspond le mieux à vos besoins. Tous nos plans incluent un support client et des mises à jour régulières.
-          </p>
-        </div>
-      </div>
+      
       {/* <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Plans et Tarifs
@@ -57,18 +50,15 @@ const Pricing: React.FC = () => {
       </div>
 
       {/* Sélecteur de plans */}
-      <section className="bg-card border border-border rounded-xl shadow-sm">
-        <div className="px-5 py-4 border-b border-border">
-          <h2 className="text-xl font-semibold text-foreground">Choisissez votre plan</h2>
-          <p className="text-sm text-muted-foreground">Passez à un plan supérieur pour lever vos limites d'usage.</p>
-        </div>
+     
+    
         <div className="p-5">
         <PlanSelector 
           onPlanSelected={handlePlanSelected}
           showCurrentPlan={true}
         />
         </div>
-      </section>
+      
 
       {/* Quotas d'usage */}
       {/* <section className="mt-12 bg-card border border-border rounded-xl shadow-sm">

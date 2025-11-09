@@ -456,26 +456,26 @@ const Index = () => {
   };
 
   return (
-    <div className="flex-1 min-h-screen bg-background text-foreground">
+    <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 text-foreground">
       {/* Main Content */}
-      <div className="px-8 py-1 space-y-2 max-w-6xl mx-auto">
+      <div className="px-4 sm:px-6 md:px-8 py-6 space-y-6 max-w-6xl mx-auto">
 
         {/* Section principale avec système d'onglets */}
-        <Card className="bg-card shadow-sm">
-          <CardHeader className="pb-1 pt-2">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4 flex-1">
-                <CardTitle className="text-2xl font-normal text-foreground">
+        <Card className="bg-white shadow-lg border-2 border-blue-100/50 backdrop-blur-sm">
+          <CardHeader className="pb-1 pt-4 px-3 sm:px-6 bg-white border-b border-blue-100/50">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 flex-1 w-full">
+                <CardTitle className="text-lg sm:text-xl md:text-2xl font-normal text-foreground break-words">
                   {selectedGeoReport?.report?.url 
                     ? `Votre analyse GEO de ${extractDomain(selectedGeoReport.report.url)}` 
                     : 'Aucune analyse disponible'}
                 </CardTitle>
                 {/* Select Organisation */}
                 {!loadingCompetitiveAnalyses && competitorAnalyses.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-muted-foreground">Organisation:</span>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                    <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Organisation:</span>
                     <Select value={selectedSourceAnalysisId} onValueChange={setSelectedSourceAnalysisId}>
-                      <SelectTrigger className="bg-card w-64">
+                      <SelectTrigger className="bg-card w-full sm:w-64">
                         <SelectValue placeholder="Choisir une analyse" />
                       </SelectTrigger>
                       <SelectContent>
@@ -500,59 +500,74 @@ const Index = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2 pt-1">
+          <CardContent className="space-y-2 pt-1 px-3 sm:px-6">
             {/* Jauge de performance circulaire */}
-            <div className="flex items-center justify-center">
-              <div className="relative w-40 h-40">
-                <svg className="w-40 h-40 transform -rotate-90" viewBox="0 0 120 120">
+            <div className="flex items-center justify-center py-6">
+              <div className="relative w-32 h-32 sm:w-40 sm:h-40">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-100/50 to-indigo-100/50 rounded-full blur-xl"></div>
+                <svg className="relative w-32 h-32 sm:w-40 sm:h-40 transform -rotate-90" viewBox="0 0 120 120">
                   {/* Cercle de fond */}
                   <circle
                     cx="60"
                     cy="60"
                     r="50"
-                    stroke="hsl(var(--muted))"
+                    stroke="#e0e7ff"
                     strokeWidth="8"
                     fill="none"
                   />
-                  {/* Cercle de progression */}
+                  {/* Cercle de progression avec gradient */}
+                  <defs>
+                    <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#3b82f6" />
+                      <stop offset="100%" stopColor="#10b981" />
+                    </linearGradient>
+                  </defs>
                   <circle
                     cx="60"
                     cy="60"
                     r="50"
-                    stroke="#10b981"
+                    stroke="url(#scoreGradient)"
                     strokeWidth="8"
                     fill="none"
                     strokeDasharray={`${2 * Math.PI * 50}`}
                     strokeDashoffset={`${2 * Math.PI * 50 * (1 - (selectedGeoReport?.analyses?.[0]?.modules?.audit_geo?.score_global_geo || 0) / 100)}`}
                     strokeLinecap="round"
-                    className="transition-all duration-1000 ease-out"
+                    className="transition-all duration-1000 ease-out drop-shadow-lg"
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-foreground">
+                    <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                       {selectedGeoReport?.analyses?.[0]?.modules?.audit_geo?.score_global_geo 
                         ? Math.round(selectedGeoReport.analyses[0].modules.audit_geo.score_global_geo) + '%'
                         : '0%'}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">Score GEO</div>
+                    <div className="text-xs text-muted-foreground mt-1 font-medium">Score GEO</div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Boutons d'onglets */}
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-3 flex-wrap pb-4">
               <Button
                 variant={activeTab === 'details' ? 'default' : 'outline'}
-                className={`px-6 py-2 ${activeTab === 'details' ? 'bg-primary text-primary-foreground' : ''}`}
+                className={`px-6 sm:px-8 py-2.5 text-sm sm:text-base font-medium transition-all ${
+                  activeTab === 'details' 
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg scale-105' 
+                    : 'bg-white/80 border-2 border-blue-200 text-foreground hover:bg-blue-50/50 hover:border-blue-300'
+                }`}
                 onClick={() => setActiveTab('details')}
               >
                 Infos détaillées
               </Button>
               <Button
                 variant={activeTab === 'improve' ? 'default' : 'outline'}
-                className={`px-6 py-2 ${activeTab === 'improve' ? 'bg-primary text-primary-foreground' : ''}`}
+                className={`px-6 sm:px-8 py-2.5 text-sm sm:text-base font-medium transition-all ${
+                  activeTab === 'improve' 
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg scale-105' 
+                    : 'bg-white/80 text-foreground hover:bg-blue-50/50'
+                }`}
                 onClick={() => setActiveTab('improve')}
               >
                 Améliorer
@@ -562,13 +577,13 @@ const Index = () => {
             {/* Contenu conditionnel selon l'onglet actif */}
             {activeTab === 'details' && (
               <>
-                <div className="mb-6 max-w-4xl mx-auto px-4">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="mb-6 max-w-4xl mx-auto px-2 sm:px-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
                     <h3 className="text-sm font-medium text-muted-foreground">Score GEO par Modèle IA</h3>
                     <div className="text-xs text-muted-foreground">Scores d'optimisation génératif</div>
                   </div>
-                  <div className="flex items-center justify-between">
-                        <CardTitle className="text-base text-foreground font-semibold flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <CardTitle className="text-sm sm:text-base text-foreground font-semibold flex items-center gap-2">
                           Sources
                           <div className="relative">
                             <div
@@ -581,14 +596,14 @@ const Index = () => {
 
                             {/* Tooltip */}
                             {showTooltip && (
-                              <div className="absolute left-0 top-4 z-50 w-72 p-2 bg-white rounded-lg shadow-lg">
+                              <div className="absolute left-0 top-4 z-50 w-64 sm:w-72 p-2 bg-white rounded-lg shadow-lg border border-gray-200">
                                 <div className="text-xs">
                                   <p className="font-medium text-gray-900 mb-1">Évolution de Votre Score Global</p>
                                   <p className="text-gray-600 leading-relaxed">
                                     Ce graphique montre l'<span className="font-medium">évolution réelle de votre score</span> au fil du temps
                                     selon les différents modèles IA. Plus le score est élevé, plus votre site est performant dans les analyses concurrentielles.
                                   </p>
-                                  <div className="flex items-center gap-2 mt-2">
+                                  <div className="flex flex-wrap items-center gap-2 mt-2">
                                     <div className="flex items-center gap-1">
                                       <img src="/prompt-model-openai-for-light.svg" alt="GPT-5" className="w-3 h-3" />
                                       <span className="text-gray-500 text-xs">GPT-5</span>
@@ -604,7 +619,7 @@ const Index = () => {
                                   </div>
                                 </div>
                                 {/* Flèche du tooltip */}
-                                <div className="absolute left-3 -top-1 w-2 h-2 bg-white transform rotate-45"></div>
+                                <div className="absolute left-3 -top-1 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
                               </div>
                             )}
                           </div>
@@ -613,8 +628,8 @@ const Index = () => {
                       </div>
 
                   {/* Légende visible et lisible */}
-                  <div className="mb-4 p-4 bg-transparent">
-                    <div className="flex flex-wrap gap-6 justify-center">
+                  <div className="mb-4 p-3 sm:p-4 bg-white/50 backdrop-blur-sm rounded-lg border border-blue-100/50">
+                    <div className="flex flex-wrap gap-3 sm:gap-6 justify-center">
                       <div className="flex items-center gap-3">
                         <img
                           src="/prompt-model-openai-for-light.svg"
@@ -658,7 +673,7 @@ const Index = () => {
                     </div>
                   </div>
 
-                  <div className="h-[32rem] w-full relative overflow-hidden bg-transparent p-6">
+                  <div className="h-[20rem] sm:h-[28rem] md:h-[32rem] w-full relative overflow-hidden bg-white/30 backdrop-blur-sm rounded-lg border border-blue-100/50 p-2 sm:p-4 md:p-6">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={(() => {
@@ -795,18 +810,18 @@ const Index = () => {
                   </div>
                 </div>
 
-                <Card className="bg-card shadow-sm">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg text-foreground font-semibold flex items-center gap-2">
+                <Card className="bg-white shadow-md border border-blue-100/60">
+                  <CardHeader className="pb-4 px-3 sm:px-6 bg-white border-b border-blue-100/40">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <CardTitle className="text-base sm:text-lg text-foreground font-semibold">
                         Analyse concurrentielle
                       </CardTitle>
 
                       {/* Select Modèle LLM à droite du titre */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-muted-foreground">Modèle:</span>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                        <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Modèle:</span>
                         <Select value={selectedLLMModel} onValueChange={setSelectedLLMModel}>
-                          <SelectTrigger className="bg-card w-48">
+                          <SelectTrigger className="bg-card w-full sm:w-48">
                             <SelectValue placeholder="Modèle" />
                           </SelectTrigger>
                           <SelectContent>
@@ -847,7 +862,7 @@ const Index = () => {
 
                   </CardHeader>
 
-                  <CardContent>
+                  <CardContent className="px-3 sm:px-6">
                     {loadingCompetitiveAnalyses ? (
                       <div className="text-center py-8">
                         <div className="flex items-center justify-center gap-2 mb-4">
@@ -1103,10 +1118,10 @@ const Index = () => {
                                           const scoreColor = score >= 80 ? 'text-green-600' :
                                             score >= 60 ? 'text-yellow-600' : 'text-red-600';
                                           return (
-                                            <div key={index} className="flex items-center justify-between p-3 bg-card rounded-lg hover:shadow-sm transition-shadow">
+                                            <div key={index} className="flex items-center justify-between p-3 bg-white/70 backdrop-blur-sm rounded-lg border border-blue-100/50 hover:shadow-md hover:border-blue-200 transition-all">
                                               <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                                                  <span className="text-sm font-semibold text-muted-foreground">#{competitor.global_rank || index + 1}</span>
+                                                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-200/50">
+                                                  <span className="text-sm font-semibold text-blue-700">#{competitor.global_rank || index + 1}</span>
                                                 </div>
                                                 <div>
                                                   <span className="text-sm font-medium text-foreground">{competitor.name}</span>
@@ -1116,7 +1131,7 @@ const Index = () => {
                                                 </div>
                                               </div>
                                               <div className="text-right">
-                                                <Badge variant="outline" className={`text-xs ${scoreColor}`}>
+                                                <Badge variant="outline" className={`text-xs ${scoreColor} border-2`}>
                                                   Score: {score}/100
                                                 </Badge>
                                                 {competitor.source_models && competitor.source_models.length > 0 && (
@@ -1163,10 +1178,10 @@ const Index = () => {
                                       const scoreColor = score >= 80 ? 'text-green-600' :
                                         score >= 60 ? 'text-yellow-600' : 'text-red-600';
                                       return (
-                                        <div key={index} className="flex items-center justify-between p-3 bg-card rounded-lg hover:shadow-sm transition-shadow">
+                                        <div key={index} className="flex items-center justify-between p-3 bg-white/70 backdrop-blur-sm rounded-lg border border-blue-100/50 hover:shadow-md hover:border-blue-200 transition-all">
                                           <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                                              <span className="text-sm font-semibold text-muted-foreground">#{competitor.model_rank}</span>
+                                            <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-200/50">
+                                              <span className="text-sm font-semibold text-blue-700">#{competitor.model_rank}</span>
                                             </div>
                                             <div>
                                               <span className="text-sm font-medium text-foreground">{competitor.name}</span>
@@ -1176,7 +1191,7 @@ const Index = () => {
                                             </div>
                                           </div>
                                           <div className="text-right">
-                                            <Badge variant="outline" className={`text-xs ${scoreColor}`}>
+                                            <Badge variant="outline" className={`text-xs ${scoreColor} border-2`}>
                                               Score: {score}/100
                                             </Badge>
                                             <div className="text-xs text-muted-foreground mt-1">
@@ -1218,10 +1233,11 @@ const Index = () => {
                               <div className="pt-4 flex justify-center">
                                 <Button
                                   onClick={() => navigate(`/competition`)}
-                                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm px-4 py-2 rounded-lg transition-colors"
+                                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg transition-colors w-full sm:w-auto"
                                 >
-                                  <ArrowRight className="w-4 h-4 mr-2" />
-                                  Voir l'analyse concurrentielle complète
+                                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                                  <span className="hidden sm:inline">Voir l'analyse concurrentielle complète</span>
+                                  <span className="sm:hidden">Voir l'analyse</span>
                                 </Button>
                               </div>
                             </>
@@ -1232,22 +1248,85 @@ const Index = () => {
                   </CardContent>
                 </Card>
 
+                {/* Analyse Benchmark */}
+                {selectedCompetitorAnalysis && (selectedCompetitorAnalysis as any).benchmark_results?.benchmark && (
+                  <Card className="bg-white shadow-md border border-blue-100/60">
+                    <CardHeader className="bg-white border-b border-blue-100/40">
+                      <CardTitle className="text-base sm:text-lg text-foreground font-semibold flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5" />
+                        Analyse Benchmark
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        {(selectedCompetitorAnalysis as any).benchmark_results.benchmark.comparaison}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-foreground">
+                      <div className="space-y-4">
+                        {/* Classement complet */}
+                        <div>
+                          <h4 className="font-semibold text-foreground mb-3">Classement complet</h4>
+                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {(selectedCompetitorAnalysis as any).benchmark_results.benchmark.classement.map((entry: any, idx: number) => {
+                              const competitor = (selectedCompetitorAnalysis as any).consolidated_competitors?.find((c: any) => c.primary_url === entry.url || c.url === entry.url);
+                              const isYourSite = entry.url === selectedCompetitorAnalysis.url;
+                              return (
+                                <div 
+                                  key={idx}
+                                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                                    isYourSite 
+                                      ? 'bg-blue-50 border-blue-200' 
+                                      : idx < 3
+                                        ? 'bg-yellow-50 border-yellow-200'
+                                        : 'bg-white border-blue-100'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
+                                      isYourSite ? 'bg-blue-500 text-white' : 
+                                      idx === 0 ? 'bg-yellow-400 text-yellow-900' :
+                                      idx === 1 ? 'bg-gray-300 text-gray-900' :
+                                      idx === 2 ? 'bg-amber-400 text-amber-900' :
+                                      'bg-blue-50 text-blue-700'
+                                    }`}>
+                                      {isYourSite ? '👤' : idx + 1}
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-foreground">
+                                        {isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url))}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">{extractDomain(entry.url)}</div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <Badge variant="outline" className="text-sm font-semibold">
+                                      {entry.score}/100
+                                    </Badge>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
              
                 
 
-                <div className="max-w-4xl mx-auto px-4">
-                  <div className="grid gap-6 lg:grid-cols-1">
+                <div className="max-w-4xl mx-auto px-2 sm:px-4">
+                  <div className="grid gap-4 sm:gap-6 lg:grid-cols-1">
                   {/* Sources Analytics (à gauche) */}
-                  <Card className="bg-card shadow-sm">
-                    <CardHeader className="pb-2">
+                  <Card className="bg-white shadow-md border border-blue-100/60">
+                    <CardHeader className="pb-2 px-3 sm:px-6 bg-white border-b border-blue-100/40">
                      
                     </CardHeader>
 
-                    <CardContent className="py-3">
+                    <CardContent className="py-3 px-3 sm:px-6">
                       {/* Graphique Évolution du Chat */}
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-xs font-medium text-muted-foreground">Évolution GEO du site</h3>
                           {loadingSourceAnalysis ? (
                             <div className="text-xs text-muted-foreground flex items-center gap-2">
                               <Loader2 className="w-3 h-3 animate-spin" />
@@ -1390,19 +1469,19 @@ const Index = () => {
 
 
                       {/* Tableau des Modèles IA Utilisés */}
-                      <div className="overflow-hidden rounded-lg bg-card">
-                        <table className="w-full">
-                          <thead className="bg-muted">
+                      <div className="overflow-x-auto rounded-lg bg-white/80 backdrop-blur-sm border border-blue-100/50 shadow-sm">
+                        <table className="w-full min-w-[600px]">
+                          <thead className="bg-blue-50/40 border-b border-blue-100/40">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Modèle IA</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Concurrents</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Score Moyen</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Temps</th>
+                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
+                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Modèle IA</th>
+                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
+                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Concurrents</th>
+                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Score Moyen</th>
+                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Temps</th>
                             </tr>
                           </thead>
-                          <tbody className="bg-card">
+                          <tbody className="bg-white/50 divide-y divide-blue-100/30">
                             {(() => {
                               if (!selectedSourceAnalysis?.models_analysis || selectedSourceAnalysis.models_analysis.length === 0) {
                                 return (
@@ -1436,9 +1515,9 @@ const Index = () => {
                                 }
 
                                 return (
-                                  <tr key={index} className="hover:bg-muted/40">
-                                    <td className="px-4 py-3 text-sm text-foreground">{index + 1}</td>
-                                    <td className="px-4 py-3 text-sm">
+                                  <tr key={index} className="hover:bg-blue-50/40 transition-colors">
+                                    <td className="px-2 sm:px-4 py-3 text-sm text-foreground">{index + 1}</td>
+                                    <td className="px-2 sm:px-4 py-3 text-sm">
                                       <div className="flex items-center gap-2">
                                         <img
                                           src={(() => {
@@ -1457,26 +1536,26 @@ const Index = () => {
                                             return `/prompt-model-${id}.svg`;
                                           })()}
                                           alt="Model"
-                                          className="w-5 h-5"
+                                          className="w-4 h-4 sm:w-5 sm:h-5"
                                         />
                                         <div>
-                                          <div className="font-medium text-foreground">{displayName}</div>
-                                          <div className="text-xs text-muted-foreground">{modelInfo.provider}</div>
+                                          <div className="font-medium text-foreground text-xs sm:text-sm">{displayName}</div>
+                                          <div className="text-xs text-muted-foreground hidden sm:block">{modelInfo.provider}</div>
                                         </div>
                                       </div>
                                     </td>
-                                    <td className="px-4 py-3 text-sm">
+                                    <td className="px-2 sm:px-4 py-3 text-sm">
                                       <Badge className={`${statusColor} text-xs font-medium`}>
                                         {statusText}
                                       </Badge>
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-foreground text-center font-medium">
+                                    <td className="px-2 sm:px-4 py-3 text-sm text-foreground text-center font-medium">
                                       {competitorsCount}
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-foreground text-center">
+                                    <td className="px-2 sm:px-4 py-3 text-sm text-foreground text-center">
                                       <span className="font-semibold">{avgScore}/100</span>
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-muted-foreground text-center">
+                                    <td className="px-2 sm:px-4 py-3 text-sm text-muted-foreground text-center">
                                       {executionTime}s
                                     </td>
                                   </tr>
@@ -1500,10 +1579,13 @@ const Index = () => {
 
             {/* Contenu de l'onglet Améliorer */}
             {activeTab === 'improve' && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6 px-2 sm:px-4 bg-gradient-to-br from-amber-50/20 to-orange-50/20 rounded-lg p-4">
                 {/* Section Impact - Améliorations estimées */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-foreground">Impact - Améliorations estimées</h3>
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-1 h-8 bg-amber-500 rounded-full"></div>
+                    <h3 className="text-sm font-semibold text-foreground">Impact - Améliorations estimées</h3>
+                  </div>
 
                   {(() => {
                     // Récupérer les données depuis l'API comme dans LLMODashboard
@@ -1915,15 +1997,15 @@ const Index = () => {
                     }
 
                     return improvements.map((item, index) => (
-                      <div key={index} className="p-4 bg-muted rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-card ${item.color}`}>
-                            <item.icon className="w-4 h-4" />
+                      <div key={index} className="p-3 sm:p-4 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-start gap-2 sm:gap-3">
+                          <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center bg-card ${item.color} flex-shrink-0`}>
+                            <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <h5 className="font-medium text-foreground text-sm">{item.title}</h5>
-                              <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                              <h5 className="font-medium text-foreground text-sm break-words">{item.title}</h5>
+                              <div className="flex items-center gap-2 flex-wrap">
                                 {item.priorite && (
                                   <Badge
                                     variant="outline"
@@ -2013,22 +2095,20 @@ const Index = () => {
 
 
                 {/* Tableau des recommandations spécifiques */}
-                <div className="overflow-hidden rounded-lg bg-card">
-
-
-                  <table className="w-full">
-                    <thead className="bg-muted">
+                <div className="overflow-x-auto rounded-lg bg-white/80 backdrop-blur-sm shadow-sm">
+                  <table className="w-full min-w-[800px]">
+                    <thead className="bg-gradient-to-r from-amber-50/60 to-orange-50/40">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Priorité</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Impact</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Effort</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Pourquoi</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Prochaine action</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
+                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
+                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Priorité</th>
+                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Impact</th>
+                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Effort</th>
+                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">Pourquoi</th>
+                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Prochaine action</th>
+                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-card divide-y divide-border">
+                          <tbody className="bg-white/50 divide-y divide-amber-100/30">
                       {(() => {
                         // Récupérer les données depuis l'API comme dans LLMODashboard
                         const analysisWithGeoPlan = selectedGeoReport?.analyses?.find(analysis =>
@@ -2154,19 +2234,19 @@ const Index = () => {
                           const status = getStatus(priority.score);
 
                           return (
-                            <tr key={priority.id} className="hover:bg-muted/40">
-                              <td className="px-4 py-3 text-sm text-foreground">{priority.id}</td>
-                              <td className="px-4 py-3 text-sm">
+                            <tr key={priority.id} className="hover:bg-amber-50/40 transition-colors">
+                              <td className="px-2 sm:px-4 py-3 text-sm text-foreground">{priority.id}</td>
+                              <td className="px-2 sm:px-4 py-3 text-sm">
                                 <Badge className={`${impact >= 4 ? 'bg-green-100 text-green-800' : impact >= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'} text-xs font-medium`}>
                                   {impact >= 4 ? 'Élevée' : impact >= 3 ? 'Moyen' : 'Faible'}
                                 </Badge>
                               </td>
-                              <td className="px-4 py-3 text-sm">
+                              <td className="px-2 sm:px-4 py-3 text-sm">
                                 <Badge className={`${impact >= 4 ? 'bg-green-100 text-green-800' : impact >= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'} text-xs font-medium`}>
                                   {impact >= 4 ? 'Élevé' : impact >= 3 ? 'Moyen' : 'Faible'}
                                 </Badge>
                               </td>
-                              <td className="px-4 py-3 text-sm">
+                              <td className="px-2 sm:px-4 py-3 text-sm">
                                 <div className="flex items-center gap-1">
                                   {Array.from({ length: 5 }, (_, i) => (
                                     <div
@@ -2176,13 +2256,13 @@ const Index = () => {
                                   ))}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-sm text-foreground max-w-xs">
+                              <td className="px-2 sm:px-4 py-3 text-sm text-foreground max-w-xs hidden md:table-cell">
                                 <span className="text-xs">{priority.why}</span>
                               </td>
-                              <td className="px-4 py-3 text-sm text-foreground max-w-md">
+                              <td className="px-2 sm:px-4 py-3 text-sm text-foreground max-w-md hidden lg:table-cell">
                                 <span className="text-xs">{priority.action}</span>
                               </td>
-                              <td className="px-4 py-3 text-sm">
+                              <td className="px-2 sm:px-4 py-3 text-sm">
                                 <Badge className={`${status.color} text-xs font-medium`}>
                                   {status.label}
                                 </Badge>
@@ -2456,31 +2536,29 @@ const Index = () => {
 
 
       {/* Enhanced Quick Actions */}
-      <div className="max-w-4xl mx-auto">
-        <Card className="shadow-sm bg-card overflow-hidden">
-        <CardHeader className="bg-muted">
-          <div className="flex items-center justify-between">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
+        <Card className="shadow-lg bg-white border border-blue-100/60 overflow-hidden">
+        <CardHeader className="bg-white border-b border-blue-100/40">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <CardTitle className="flex items-center gap-3 text-xl">
-                <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
-                  <Rocket className="h-5 w-5 text-muted-foreground" />
-                </div>
+              <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
+                
                 <span className="text-foreground">Actions Rapides</span>
               </CardTitle>
-              <CardDescription className="mt-2 text-muted-foreground">Optimisations recommandées</CardDescription>
+              <CardDescription className="mt-2 text-muted-foreground text-sm">Optimisations recommandées</CardDescription>
             </div>
-            <Badge variant="outline" className="text-muted-foreground">
+            <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-200">
               <Star className="w-3 h-3 mr-1" />
               Recommandé
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="p-4">
-          <div className="grid gap-4 md:grid-cols-2">
+        <CardContent className="p-3 sm:p-4 bg-white">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
             {[
               {
                 title: "Analyser un nouveau site",
-                description: "Lancer une analyse LLMO complète",
+                description: "Lancer une analyse GEO complète",
                 action: () => navigate('/analyses'),
                 icon: Plus
               },
@@ -2494,15 +2572,15 @@ const Index = () => {
               <Button
                 key={index}
                 variant="ghost"
-                className="h-auto p-4 flex flex-col items-start text-left hover:shadow-sm transition-all duration-300 bg-card rounded-lg group"
+                className="h-auto p-4 flex flex-col items-start text-left hover:shadow-lg transition-all duration-300 bg-white rounded-lg border border-blue-100/50 group hover:border-blue-200 hover:scale-[1.02]"
                 onClick={action.action}
               >
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-muted group-hover:bg-muted/80 transition-colors">
-                  <action.icon className="h-5 w-5 text-muted-foreground" />
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-blue-50 border border-blue-200/50 group-hover:bg-blue-100 transition-all">
+                  <action.icon className="h-5 w-5 text-blue-600" />
                 </div>
                 <h4 className="font-semibold mb-1 text-sm text-foreground">{action.title}</h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
-                <ArrowRight className="h-3 w-3 text-muted-foreground group-hover:translate-x-1 transition-all mt-2 self-end" />
+                <ArrowRight className="h-3 w-3 text-blue-600 group-hover:translate-x-1 transition-all mt-2 self-end" />
               </Button>
             ))}
           </div>

@@ -112,7 +112,7 @@ const Settings = () => {
                     <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
                       <User className="h-5 w-5 text-foreground" />
                     </div>
-                    Profil Utilisateur
+                    Mon Profil
                   </CardTitle>
                   <CardDescription className="mt-2 text-muted-foreground">
                     Gérez vos informations personnelles et préférences de compte
@@ -166,7 +166,7 @@ const Settings = () => {
                   </div> */}
                   
                   {/* Informations du compte */}
-                  <div className="space-y-4 pt-4 border-t border-border">
+                  {/* <div className="space-y-4 pt-4 border-t border-border">
                     <h4 className="text-sm font-semibold text-foreground">Statut du compte</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
@@ -194,7 +194,7 @@ const Settings = () => {
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
                   
                   {/* <Button 
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 font-semibold"

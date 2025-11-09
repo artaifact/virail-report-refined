@@ -186,20 +186,20 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
     return currentPlan?.id === planId;
   };
 
-  const getPlanIcon = (planId: string) => {
-    switch (planId) {
-      case 'free':
-        return <Users className="h-5 w-5" />;
-      case 'standard':
-        return <BarChart3 className="h-5 w-5" />;
-      case 'premium':
-        return <Crown className="h-5 w-5" />;
-      case 'pro':
-        return <Sparkles className="h-5 w-5" />;
-      default:
-        return <Star className="h-5 w-5" />;
-    }
-  };
+  // const getPlanIcon = (planId: string) => {
+  //   switch (planId) {
+  //     case 'free':
+  //       return <Users className="h-5 w-5" />;
+  //     case 'standard':
+  //       return <BarChart3 className="h-5 w-5" />;
+  //     case 'premium':
+  //       return <Crown className="h-5 w-5" />;
+  //     case 'pro':
+  //       return <Sparkles className="h-5 w-5" />;
+  //     default:
+  //       return <Star className="h-5 w-5" />;
+  //   }
+  // };
 
   const getPlanColor = (planId: string) => {
     switch (planId) {
@@ -217,18 +217,8 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
   };
 
   const getPlanBorderColor = (planId: string) => {
-    switch (planId) {
-      case 'free':
-        return 'border-gray-200';
-      case 'standard':
-        return 'border-blue-200';
-      case 'premium':
-        return 'border-purple-200';
-      case 'pro':
-        return 'border-yellow-400';
-      default:
-        return 'border-gray-200';
-    }
+    // Toutes les bordures en bleu (couleur primaire)
+    return 'border-primary';
   };
 
   if (plans.length === 0) {
@@ -257,32 +247,30 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         {plans.map((plan) => (
           <Card 
             key={plan.id}
-            className={`relative bg-white border border-neutral-200 rounded-xl transition-all duration-200 hover:shadow-sm ${
-              isCurrentPlan(plan.id) ? 'ring-2 ring-green-500' : ''
+            className={`relative bg-white border border-primary rounded-xl transition-all duration-200 hover:shadow-sm flex flex-col h-full ${
+              isCurrentPlan(plan.id) ? 'ring-2 ring-primary' : ''
             }`}
           >
             {/* Badge recommandé */}
             {plan.id === 'standard' && (
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-orange-500 text-white px-3 py-1">
                   Recommandé
-                </Badge>
               </div>
             )}
 
             {/* Badge plan actuel */}
             {isCurrentPlan(plan.id) && showCurrentPlan && (
-              <div className="absolute -top-3 right-4">
-                <Badge className="bg-green-500 text-white px-3 py-1">
+              <div className="absolute -top-3 right-4 z-10">
+                <Badge className="bg-primary text-primary-foreground px-3 py-1 shadow-md">
                   Plan actuel
                 </Badge>
               </div>
             )}
 
             <CardHeader className="text-center pb-4">
-              <div className="flex items-center justify-center mb-2">
-                {getPlanIcon(plan.id)}
-              </div>
+              {/* <div className="flex items-center justify-center mb-2">
+                {(plan.id)}
+              </div> */}
               <CardTitle className="text-xl font-bold text-neutral-900">{plan.name}</CardTitle>
               <div className="mt-2">
                 <span className="text-3xl font-bold text-neutral-900">
@@ -293,48 +281,40 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                 </span>
               </div>
             </CardHeader>
-
-            <CardContent className="space-y-4">
-              {/* Fonctionnalités principales */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-green-600" />
-                  <span className="text-sm">
-                    {plan.maxAnalyses === -1 ? '∞' : plan.maxAnalyses} analyses
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-green-600" />
-                  <span className="text-sm">
-                    {plan.maxReports === -1 ? '∞' : plan.maxReports} rapports
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Crown className="h-4 w-4 text-green-600" />
-                  <span className="text-sm">Analyse de concurrents</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-green-600" />
-                  <span className="text-sm">Optimisation</span>
-                </div>
-              </div>
-
-              {/* Liste des fonctionnalités */}
-              <div className="space-y-2 pt-4 border-t border-neutral-200">
-                {plan.features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    <span className="text-sm text-neutral-700">{feature}</span>
+            <CardContent className="flex flex-col h-full">
+              <div className="flex-1 space-y-4">
+                {/* Fonctionnalités principales */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">
+                      {plan.maxAnalyses === -1 ? '∞' : plan.maxAnalyses}
+                    </span>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">
+                      {plan.maxReports === -1 ? '∞' : plan.maxReports} 
+                    </span>
+                  </div>
+                  
+                </div>
+
+                {/* Liste des fonctionnalités */}
+                <div className="space-y-2 pt-4 border-t border-primary">
+                  {plan.features.map((feature, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      <span className="text-sm text-neutral-700">{feature}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Bouton d'action */}
+              {/* Bouton d'action - aligné en bas */}
               <Button 
                 className={`w-full mt-6 ${
                   isCurrentPlan(plan.id) 
-                    ? 'bg-green-600 hover:bg-green-700 text-white' 
-                    : 'bg-neutral-900 hover:bg-neutral-800 text-white'
+                    ? 'bg-primary hover:bg-primary/90 text-primary-foreground' 
+                    : 'bg-primary hover:bg-primary/90 text-primary-foreground'
                 }`}
                 onClick={() => handlePlanSelection(plan.id)}
                 disabled={isCurrentPlan(plan.id) || isProcessing}
@@ -393,7 +373,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
               <Button 
                 onClick={handlePayment}
                 disabled={isProcessingPayment}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600"
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {isProcessingPayment ? (
                   <>

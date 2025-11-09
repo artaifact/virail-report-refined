@@ -151,9 +151,15 @@ const SiteOptimization: React.FC = () => {
       setIsAnalyzing(true);
       setAnalysisProgress(0);
       
+      // Ajouter le préfixe https:// si nécessaire
+      let urlToAnalyze = newAnalysisUrl.trim();
+      if (!urlToAnalyze.startsWith('http://') && !urlToAnalyze.startsWith('https://')) {
+        urlToAnalyze = `https://${urlToAnalyze}`;
+      }
+      
       toast({
         title: "Optimisation démarrée",
-        description: `Optimisation GEO de ${newAnalysisUrl} en cours...`,
+        description: `Optimisation GEO de ${urlToAnalyze} en cours...`,
       });
 
       // Simuler la progression
@@ -175,7 +181,7 @@ const SiteOptimization: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: newAnalysisUrl,
+          url: urlToAnalyze,
           model: 'gpt-4o',
           include_optimization: includeOptimization
         }),
@@ -199,7 +205,7 @@ const SiteOptimization: React.FC = () => {
 
         toast({
           title: "Optimisation terminée",
-          description: `L'optimisation GEO de ${extractDomainFromUrl(newAnalysisUrl)} a été effectuée avec succès.`,
+          description: `L'optimisation GEO de ${extractDomainFromUrl(urlToAnalyze)} a été effectuée avec succès.`,
         });
 
         // Recharger les statistiques après l'optimisation

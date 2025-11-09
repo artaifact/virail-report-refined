@@ -25,64 +25,61 @@ const PaymentSuccess: React.FC = () => {
     if (hasRun) return;
     setHasRun(true);
     const handleSuccess = async () => {
+      let activationSuccess = false;
+      
       try {
         setIsLoading(true);
         
-        // Activer l'abonnement si on a un subscription_id
-        if (subscriptionId) {
-          console.log('🔄 Activation de l\'abonnement avec subscription_id:', subscriptionId);
-          
+        // Fonction helper pour activer un abonnement avec vérification
+        const tryActivateSubscription = async (subId: string, source: string): Promise<boolean> => {
           try {
-            await apiService.activateSubscription(subscriptionId);
-            console.log('✅ Abonnement activé avec succès');
+            // Vérifier d'abord si l'abonnement est déjà actif
+            const current = await apiService.getCurrentSubscription();
+            const sub: any = current?.subscription;
             
-            toast({
-              title: "Abonnement activé ! 🎉",
-              description: "Votre abonnement a été activé avec succès.",
-            });
-          } catch (activationError) {
-            console.error('❌ Erreur lors de l\'activation:', activationError);
-            toast({
-              title: "Information",
-              description: "L'abonnement a été créé. L'activation se fera automatiquement.",
-            });
+            if (sub && sub.id === subId && sub.status === 'active') {
+              console.log(`✅ Abonnement ${subId} déjà actif (source: ${source})`);
+              return true;
+            }
+            
+            console.log(`🔄 Tentative d'activation de l'abonnement ${subId} (source: ${source})`);
+            await apiService.activateSubscription(subId);
+            console.log(`✅ Abonnement ${subId} activé avec succès`);
+            return true;
+          } catch (error) {
+            console.error(`❌ Erreur lors de l'activation de ${subId} (source: ${source}):`, error);
+            return false;
           }
-        }
+        };
         
-        // Recharger les données de paiement une seule fois au début
-        await loadPaymentData();
+        // Méthode 1: Activation via subscription_id dans l'URL
+        if (subscriptionId) {
+          activationSuccess = await tryActivateSubscription(subscriptionId, "URL parameter");
+        }
 
-        // Injection côté front: si pas de subscription_id dans l'URL, utiliser celui sauvegardé
-        if (!subscriptionId) {
+        // Méthode 2: Activation via subscription_id dans localStorage
+        if (!activationSuccess) {
           try {
             const stored = localStorage.getItem('pending_subscription_id');
             if (stored) {
-              console.log('🧩 Injection subscription_id depuis localStorage:', stored);
-              await apiService.activateSubscription(stored);
-              // Recharge unique déjà effectuée
-              try { localStorage.removeItem('pending_subscription_id'); } catch {}
-              toast({ title: 'Abonnement activé ✅', description: 'Activation via subscription_id stocké.' });
+              console.log('🧩 Tentative d\'activation via subscription_id stocké:', stored);
+              activationSuccess = await tryActivateSubscription(stored, "localStorage");
             }
           } catch (e) {
             console.warn('⚠️ Impossible d\'utiliser subscription_id stocké:', e);
           }
         }
 
-        // Fallback 2: si pas d'activation et session_id présent, tenter de récupérer l'ID d'abonnement via la checkout session
-        if (!subscriptionId && sessionId) {
+        // Méthode 3: Activation via session_id (récupérer l'abonnement depuis la session)
+        if (!activationSuccess && sessionId) {
           try {
             console.log('🔎 Recherche de la subscription via session_id:', sessionId);
             const sessionResp = await apiService.getCheckoutSession(sessionId);
             const s: any = sessionResp?.session || sessionResp;
             const subId = s?.subscription_id || s?.subscription?.id || s?.subscriptionId || s?.data?.subscription_id;
             if (subId) {
-              console.log('🔄 Activation via session → subscription_id:', subId);
-              await apiService.activateSubscription(subId);
-              // Recharge unique déjà effectuée
-              toast({
-                title: 'Abonnement activé ✅',
-                description: 'Activation réalisée via la session de paiement.',
-              });
+              console.log('🔄 Tentative d\'activation via session → subscription_id:', subId);
+              activationSuccess = await tryActivateSubscription(subId, "checkout session");
             } else {
               console.warn('⚠️ Aucun subscription_id trouvé dans la session');
             }
@@ -91,78 +88,59 @@ const PaymentSuccess: React.FC = () => {
           }
         }
 
-        // Fallback: si pas de subscription_id dans l'URL, tenter d'activer l'abonnement courant si non actif
-        if (!subscriptionId) {
+        // Méthode 4: Activation de l'abonnement courant si non actif
+        if (!activationSuccess) {
           try {
             const current = await apiService.getCurrentSubscription();
             const sub: any = current?.subscription;
             if (sub && sub.id && sub.status && sub.status !== 'active') {
-              console.log('🔄 Fallback activation avec l\'abonnement courant:', sub.id, 'status:', sub.status);
-              await apiService.activateSubscription(sub.id);
-              // Recharge unique déjà effectuée
-              toast({
-                title: 'Abonnement activé (fallback) ✅',
-                description: 'Votre abonnement a été activé avec succès.',
-              });
+              console.log('🔄 Tentative d\'activation avec l\'abonnement courant:', sub.id, 'status:', sub.status);
+              activationSuccess = await tryActivateSubscription(sub.id, "current subscription");
             }
           } catch (e) {
             console.warn('⚠️ Impossible d\'exécuter le fallback d\'activation:', e);
           }
         }
 
-        // Fallback 3: si toujours free, tenter d'activer via le plan sélectionné mis en cache
-        try {
-          const pendingPlanId = planId || localStorage.getItem('pending_plan_id');
-          if (pendingPlanId) {
-            const current = await apiService.getCurrentSubscription();
-            const sub: any = current?.subscription;
-            // Si pas de subscription active mais un plan a été choisi, tenter un refresh complet
-            if (!sub || sub.status !== 'active') {
-              console.log('🔁 Fallback refresh après paiement pour plan:', pendingPlanId);
-              // Recharge unique déjà effectuée
-            }
-            // Nettoyer le cache
-            try { localStorage.removeItem('pending_plan_id'); } catch {}
-          }
+        // Nettoyer le cache après toutes les tentatives
+        try { 
+          localStorage.removeItem('pending_subscription_id'); 
+          localStorage.removeItem('pending_plan_id'); 
         } catch {}
 
-        // Fallback 4 (ultime): créer et activer l'abonnement côté front si toujours non actif
+        // Recharger les données de paiement après toutes les tentatives d'activation
+        await loadPaymentData();
+        
+        // Vérifier le statut final de l'abonnement et afficher le message approprié
         try {
           const current = await apiService.getCurrentSubscription();
           const sub: any = current?.subscription;
           const isActive = !!(sub && sub.status === 'active');
-          const chosenPlan = planId || localStorage.getItem('pending_plan_id');
-          if (!isActive && chosenPlan) {
-            console.log('🛠️ Création manuelle de l\'abonnement pour le plan:', chosenPlan);
-            const createResp: any = await apiService.createSubscription({
-              plan_id: chosenPlan,
-              auto_renew: true,
-              payment_method: {} as any
-            } as any);
-            const createdSubId = createResp?.subscription?.id || createResp?.subscription?.subscription?.id;
-            if (createdSubId) {
-              await apiService.activateSubscription(createdSubId);
-              await loadPaymentData();
-              toast({ title: 'Abonnement activé ✅', description: 'Activation réalisée côté client.' });
-              try { localStorage.removeItem('pending_plan_id'); } catch {}
-            } else {
-              console.warn('⚠️ Impossible de récupérer l\'ID de la souscription créée');
-            }
+          
+          if (isActive) {
+            toast({
+              title: "Paiement réussi ! 🎉",
+              description: "Votre abonnement a été activé avec succès.",
+            });
+          } else {
+            toast({
+              title: "Paiement reçu",
+              description: "Votre paiement a été traité. L'activation de l'abonnement peut prendre quelques instants. Veuillez rafraîchir la page si nécessaire.",
+            });
           }
         } catch (e) {
-          console.warn('⚠️ Échec du fallback de création/activation côté client:', e);
+          console.warn('⚠️ Impossible de vérifier le statut final:', e);
+          toast({
+            title: "Paiement reçu",
+            description: "Votre paiement a été traité. Veuillez rafraîchir la page dans quelques instants pour vérifier votre abonnement.",
+          });
         }
         
-        // Afficher un toast de succès
-        toast({
-          title: "Paiement réussi ! 🎉",
-          description: "Votre abonnement a été activé avec succès.",
-        });
       } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
+        console.error('Erreur lors du traitement du paiement:', error);
         toast({
           title: "Erreur",
-          description: "Erreur lors du chargement des données de l'abonnement.",
+          description: "Erreur lors du traitement de votre paiement. Veuillez contacter le support si le problème persiste.",
           variant: "destructive",
         });
       } finally {
@@ -171,7 +149,7 @@ const PaymentSuccess: React.FC = () => {
     };
 
     handleSuccess();
-  }, [loadPaymentData, toast, subscriptionId, hasRun]);
+  }, [loadPaymentData, toast, subscriptionId, sessionId, planId, hasRun]);
 
   // Compte à rebours pour redirection automatique
   useEffect(() => {
@@ -375,7 +353,7 @@ const PaymentSuccess: React.FC = () => {
           </div>
           
           {/* Bouton de test d'activation */}
-          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          {/* <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h3 className="text-lg font-semibold text-yellow-800 mb-2">🧪 Test d'activation</h3>
             <p className="text-sm text-yellow-700 mb-3">
               Testez l'activation manuelle d'un abonnement
@@ -415,7 +393,7 @@ const PaymentSuccess: React.FC = () => {
             >
               🔧 Tester l'activation
             </Button>
-          </div>
+          </div> */}
           
           <p className="text-sm text-gray-500">
             Un email de confirmation vous a été envoyé avec tous les détails

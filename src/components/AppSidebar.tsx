@@ -9,6 +9,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { LayoutDashboard, LineChart, Settings, CircleHelp, ChevronRight, Globe2, Sparkles, Crown, ShieldCheck, UserCog, BadgeDollarSign, Plus, LogOut, FileText } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
@@ -87,6 +88,7 @@ export function AppSidebar() {
   const navigate = useNavigate()
   const { user, logout } = useAuthContext()
   const { userPlan, isLoading } = usePayment()
+  const { isMobile, setOpenMobile } = useSidebar()
   const localUser = AuthService.getUser?.() as any
   const isProd = import.meta.env.PROD
   const isAdminLocal = Boolean(localUser?.is_admin ?? localUser?.isAdmin)
@@ -108,6 +110,13 @@ export function AppSidebar() {
     setOpenMenus(newOpenMenus)
   }, [location.pathname])
 
+  // Fermer le sidebar sur mobile après navigation
+  React.useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }, [location.pathname, isMobile, setOpenMobile])
+
   // Log de diagnostic pour voir la valeur retenue
   React.useEffect(() => {
     try {
@@ -120,12 +129,18 @@ export function AppSidebar() {
     setOpenMenus(prev => ({ ...prev, [title]: open }))
   }
 
+  const handleNavigation = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
+
 
 
   return (
     <Sidebar className="border-r-0 bg-sidebar shadow-xl text-sidebar-foreground">
       {/* Header avec logo et branding */}
-      <SidebarHeader className="p-4 pb-0">
+      <SidebarHeader className="p-3 sm:p-4 pb-0">
         <div className="flex items-center justify-center mb-0">
           {/* <div className="w-12 h-12 bg-neutral-200 rounded-xl flex items-center justify-center shadow-lg">
             <Sparkles className="w-6 h-6 text-neutral-700" />
@@ -134,7 +149,7 @@ export function AppSidebar() {
             <img
               src="/LOGO BLEU FOND TRANSPARENT (1).png"
               alt="Virail Studio"
-              className="h-36 md:h-40 w-auto object-contain mx-auto"
+              className="h-24 sm:h-32 md:h-36 lg:h-40 w-auto object-contain mx-auto"
             />
           </div>
         </div>
@@ -157,14 +172,17 @@ export function AppSidebar() {
         {/* </div> */}
       </SidebarHeader>
       
-      <SidebarContent className="px-4 pt-0 pb-0 flex-1 overflow-y-auto">
+      <SidebarContent className="px-2 sm:px-4 pt-0 pb-0 flex-1 overflow-y-auto">
         <SidebarGroup>
           {/* Bouton Nouvelle Analyse */}
       
           {/* Bouton Tableau de bord */}
-          <div className="px-2 mb-2">
+          <div className="px-1 sm:px-2 mb-2">
             <Button
-              onClick={() => navigate('/')}
+              onClick={() => {
+                navigate('/')
+                handleNavigation()
+              }}
               className={cn(
                 "w-full shadow-sm font-bold h-10 justify-start transition-all duration-200 p-0",
                 location.pathname === '/' 
@@ -237,7 +255,7 @@ export function AppSidebar() {
                                       : "hover:bg-sidebar-accent"
                                   )}
                                 >
-                                  <Link to={child.url} className="flex items-center gap-3 px-3 py-2 text-xs">
+                                  <Link to={child.url} onClick={handleNavigation} className="flex items-center gap-3 px-3 py-2 text-xs">
                                     <div className="w-2 h-2 rounded-full bg-current opacity-60"></div>
                                     {child.title}
                                   </Link>
@@ -257,7 +275,7 @@ export function AppSidebar() {
                             : "hover:bg-sidebar-accent"
                         )}
                       >
-                        <Link to={item.url} className="flex items-center gap-3 px-3 py-2">
+                        <Link to={item.url} onClick={handleNavigation} className="flex items-center gap-3 px-3 py-2">
                           <div className={cn(
                             "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
                             isActive 
@@ -278,7 +296,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="px-4 pt-4 pb-2 mt-auto space-y-3">
+      <SidebarFooter className="px-2 sm:px-4 pt-4 pb-2 mt-auto space-y-3">
         {/* Informations utilisateur */}
         <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/50">
           <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center shrink-0">
