@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Mail, Lock, User, UserPlus, Sparkles, Shield, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, UserPlus, Sparkles, Shield, CheckCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { GoogleButton } from '@/components/ui/GoogleButton';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { RegisterRequest } from '@/types/auth';
@@ -27,6 +28,8 @@ type RegisterFormData = RegisterRequest & { confirmPassword: string };
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [countdown, setCountdown] = useState(5);
   const { register: registerUser, isLoading } = useAuthContext();
   const navigate = useNavigate();
 
@@ -40,17 +43,32 @@ export default function Register() {
     },
   });
 
+  // Compte à rebours pour redirection automatique
+  useEffect(() => {
+    if (showSuccessMessage && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (showSuccessMessage && countdown === 0) {
+      navigate('/login', { replace: true });
+    }
+  }, [countdown, showSuccessMessage, navigate]);
+
   const onSubmit = async (data: RegisterFormData) => {
     try {
       const { confirmPassword, ...registerData } = data;
       await registerUser(registerData);
       
-      // Petit délai pour permettre à l'état d'authentification de se propager
-      setTimeout(() => {
-        navigate('/', { replace: true });
-      }, 100);
+      // Afficher le message de succès
+      setShowSuccessMessage(true);
+      setCountdown(5);
+      
+      // Réinitialiser le formulaire
+      form.reset();
     } catch (error) {
       // L'erreur est déjà gérée dans le hook useAuth
+      setShowSuccessMessage(false);
     }
   };
 
@@ -74,8 +92,38 @@ export default function Register() {
 
           <Card className="shadow-sm border-none bg-card">
             <CardContent className="p-8">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              {showSuccessMessage ? (
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-foreground mb-4">Compte créé avec succès</h2>
+                    <Alert className="bg-blue-50 border-blue-200">
+                      <AlertDescription className="text-blue-900">
+                        <p className="font-medium mb-2">Votre compte est en attente d'approbation par un administrateur.</p>
+                        <p>Vous recevrez un email lorsque votre compte sera approuvé.</p>
+                      </AlertDescription>
+                    </Alert>
+                    <div className="mt-6 p-4 bg-muted rounded-lg">
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <p className="text-sm">
+                          Redirection vers la page de connexion dans {countdown} seconde{countdown > 1 ? 's' : ''}...
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => navigate('/login', { replace: true })}
+                      className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    >
+                      Aller à la page de connexion maintenant
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                   <FormField
                     control={form.control}
                     name="email"
@@ -195,33 +243,38 @@ export default function Register() {
                   </Button>
                 </form>
               </Form>
+              )}
 
-              <div className="mt-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
+              {!showSuccessMessage && (
+                <>
+                  <div className="mt-6">
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">Ou</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Ou</span>
+
+                  {/* <div className="mt-6">
+                    <GoogleButton isLoading={isLoading} />
+                  </div> */}
+
+                  <div className="mt-8 text-center">
+                    <p className="text-muted-foreground">
+                      Déjà un compte ?{' '}
+                      <Link
+                        to="/login"
+                        className="text-foreground hover:text-foreground font-medium hover:underline transition-colors"
+                      >
+                        Se connecter
+                      </Link>
+                    </p>
                   </div>
-                </div>
-              </div>
-
-              {/* <div className="mt-6">
-                <GoogleButton isLoading={isLoading} />
-              </div> */}
-
-              <div className="mt-8 text-center">
-                <p className="text-muted-foreground">
-                  Déjà un compte ?{' '}
-                  <Link
-                    to="/login"
-                    className="text-foreground hover:text-foreground font-medium hover:underline transition-colors"
-                  >
-                    Se connecter
-                  </Link>
-                </p>
-              </div>
+                </>
+              )}
             </CardContent>
           </Card>
 

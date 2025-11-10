@@ -54,7 +54,7 @@ const Analyses = () => {
       
       toast({
         title: "Analyse démarrée",
-        description: `${includeOptimization ? 'Analyse LLMO avec optimisation' : 'Analyse LLMO simple'} de ${normalizedUrl} en cours...`,
+        description: `${includeOptimization ? 'Analyse GEO avec optimisation' : 'Analyse GEO simple'} de ${normalizedUrl} en cours...`,
       });
 
       // Simuler la progression
@@ -80,9 +80,36 @@ const Analyses = () => {
           setNewAnalysisUrl("");
           setProgress(0);
 
+          // Extraire le domaine pour l'affichage
+          const domain = (() => {
+            try {
+              const urlObj = new URL(normalizedUrl);
+              return urlObj.hostname.replace('www.', '');
+            } catch {
+              return normalizedUrl;
+            }
+          })();
+
           toast({
-            title: "Analyse terminée",
-            description: `L'analyse LLMO ${includeOptimization ? 'avec optimisation' : 'simple'} est maintenant disponible.`,
+            title: "✅ Analyse lancée",
+            description: (
+              <div className="space-y-2 text-sm leading-relaxed">
+                <p>
+                  Analyse GEO {includeOptimization ? 'avec optimisation' : 'simple'} de <strong className="text-foreground">{domain}</strong> lancée avec succès.
+                </p>
+                <div className="space-y-1 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span>⏱️</span>
+                    <span>Durée estimée : <strong>5 à 15 minutes</strong></span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🔄</span>
+                    <span><strong>Actualisez la page</strong> après ce délai pour voir les résultats</span>
+                  </div>
+                </div>
+              </div>
+            ),
+            duration: 10000,
           });
 
           // Auto-sélectionner le nouveau rapport
@@ -377,7 +404,7 @@ const Analyses = () => {
                   </div>
                   <Progress value={optimizedProgress} className="h-3" />
                   <p className="text-xs text-muted-foreground">
-                    Optimisation en cours... Cela peut prendre quelques minutes.
+                    Optimisation en cours... Cela prend généralement entre 5 et 15 minutes. Actualisez la page une fois ce délai passé pour découvrir les résultats.
                   </p>
                 </div>
               )}
@@ -463,7 +490,7 @@ const Analyses = () => {
                   </div>
                   <Progress value={progress} className="h-3" />
                   <p className="text-xs text-muted-foreground">
-                    Analyse en cours... Cela peut prendre quelques minutes.
+                    Analyse en cours... Cela prend généralement entre 5 et 15 minutes. Actualisez la page après ce délai pour voir les résultats.
                   </p>
                 </div>
               )}

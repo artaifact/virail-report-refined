@@ -7,12 +7,14 @@ import type {
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
+const DEFAULT_TOAST_DURATION = 5000
 
 type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  duration?: number
 }
 
 const actionTypes = {
@@ -55,10 +57,12 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-const addToRemoveQueue = (toastId: string) => {
+const addToRemoveQueue = (toastId: string, duration?: number) => {
   if (toastTimeouts.has(toastId)) {
     return
   }
+
+  const delay = duration !== undefined ? duration : TOAST_REMOVE_DELAY
 
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId)
@@ -66,7 +70,7 @@ const addToRemoveQueue = (toastId: string) => {
       type: "REMOVE_TOAST",
       toastId: toastId,
     })
-  }, TOAST_REMOVE_DELAY)
+  }, delay)
 
   toastTimeouts.set(toastId, timeout)
 }
@@ -93,10 +97,11 @@ export const reducer = (state: State, action: Action): State => {
       // ! Side effects ! - This could be extracted into a dismissToast() action,
       // but I'll keep it here for simplicity
       if (toastId) {
-        addToRemoveQueue(toastId)
+        const toast = state.toasts.find(t => t.id === toastId)
+        addToRemoveQueue(toastId, toast?.duration)
       } else {
         state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
+          addToRemoveQueue(toast.id, toast.duration)
         })
       }
 
@@ -139,7 +144,7 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+function toast({ duration, ...props }: Toast) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -147,19 +152,35 @@ function toast({ ...props }: Toast) {
       type: "UPDATE_TOAST",
       toast: { ...props, id },
     })
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+  const dismiss = () => {
+    // Clear timeout if toast is manually dismissed
+    if (toastTimeouts.has(id)) {
+      clearTimeout(toastTimeouts.get(id))
+      toastTimeouts.delete(id)
+    }
+    dispatch({ type: "DISMISS_TOAST", toastId: id })
+  }
 
   dispatch({
     type: "ADD_TOAST",
     toast: {
       ...props,
       id,
+      duration,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss()
       },
     },
   })
+
+  // Auto-dismiss after duration if specified
+  if (duration !== undefined && duration > 0) {
+    const timeout = setTimeout(() => {
+      dismiss()
+    }, duration)
+    toastTimeouts.set(id, timeout)
+  }
 
   return {
     id: id,

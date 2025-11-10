@@ -456,13 +456,13 @@ const Index = () => {
   };
 
   return (
-    <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 text-foreground">
+    <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-slate-800/50 dark:to-slate-900 text-foreground">
       {/* Main Content */}
       <div className="px-4 sm:px-6 md:px-8 py-6 space-y-6 max-w-6xl mx-auto">
 
         {/* Section principale avec système d'onglets */}
-        <Card className="bg-white shadow-lg border-2 border-blue-100/50 backdrop-blur-sm">
-          <CardHeader className="pb-1 pt-4 px-3 sm:px-6 bg-white border-b border-blue-100/50">
+        <Card className="bg-white dark:bg-slate-800 shadow-lg border-2 border-blue-100/50 dark:border-slate-700 backdrop-blur-sm">
+          <CardHeader className="pb-1 pt-4 px-3 sm:px-6 bg-white dark:bg-slate-800 border-b border-blue-100/50 dark:border-slate-700">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 flex-1 w-full">
                 <CardTitle className="text-lg sm:text-xl md:text-2xl font-normal text-foreground break-words">
@@ -504,7 +504,7 @@ const Index = () => {
             {/* Jauge de performance circulaire */}
             <div className="flex items-center justify-center py-6">
               <div className="relative w-32 h-32 sm:w-40 sm:h-40">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-100/50 to-indigo-100/50 rounded-full blur-xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-100/50 to-indigo-100/50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-full blur-xl"></div>
                 <svg className="relative w-32 h-32 sm:w-40 sm:h-40 transform -rotate-90" viewBox="0 0 120 120">
                   {/* Cercle de fond */}
                   <circle
@@ -512,6 +512,7 @@ const Index = () => {
                     cy="60"
                     r="50"
                     stroke="#e0e7ff"
+                    className="dark:stroke-slate-700"
                     strokeWidth="8"
                     fill="none"
                   />
@@ -554,8 +555,8 @@ const Index = () => {
                 variant={activeTab === 'details' ? 'default' : 'outline'}
                 className={`px-6 sm:px-8 py-2.5 text-sm sm:text-base font-medium transition-all ${
                   activeTab === 'details' 
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg scale-105' 
-                    : 'bg-white/80 border-2 border-blue-200 text-foreground hover:bg-blue-50/50 hover:border-blue-300'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white shadow-md hover:shadow-lg scale-105' 
+                    : 'bg-white/80 dark:bg-slate-700/80 border-2 border-blue-200 dark:border-slate-600 text-foreground hover:bg-blue-50/50 dark:hover:bg-slate-600/50 hover:border-blue-300 dark:hover:border-slate-500'
                 }`}
                 onClick={() => setActiveTab('details')}
               >
@@ -565,8 +566,8 @@ const Index = () => {
                 variant={activeTab === 'improve' ? 'default' : 'outline'}
                 className={`px-6 sm:px-8 py-2.5 text-sm sm:text-base font-medium transition-all ${
                   activeTab === 'improve' 
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md hover:shadow-lg scale-105' 
-                    : 'bg-white/80 text-foreground hover:bg-blue-50/50'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white shadow-md hover:shadow-lg scale-105' 
+                    : 'bg-white/80 dark:bg-slate-700/80 border-2 border-blue-200 dark:border-slate-600 text-foreground hover:bg-blue-50/50 dark:hover:bg-slate-600/50'
                 }`}
                 onClick={() => setActiveTab('improve')}
               >
@@ -628,7 +629,7 @@ const Index = () => {
                       </div>
 
                   {/* Légende visible et lisible */}
-                  <div className="mb-4 p-3 sm:p-4 bg-white/50 backdrop-blur-sm rounded-lg border border-blue-100/50">
+                  <div className="mb-4 p-3 sm:p-4 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-lg border border-blue-100/50 dark:border-slate-700">
                     <div className="flex flex-wrap gap-3 sm:gap-6 justify-center">
                       <div className="flex items-center gap-3">
                         <img
@@ -673,7 +674,7 @@ const Index = () => {
                     </div>
                   </div>
 
-                  <div className="h-[20rem] sm:h-[28rem] md:h-[32rem] w-full relative overflow-hidden bg-white/30 backdrop-blur-sm rounded-lg border border-blue-100/50 p-2 sm:p-4 md:p-6">
+                  <div className="h-[20rem] sm:h-[28rem] md:h-[32rem] w-full relative overflow-hidden bg-white/30 dark:bg-slate-800/30 backdrop-blur-sm rounded-lg border border-blue-100/50 dark:border-slate-700 p-2 sm:p-4 md:p-6">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
                         data={(() => {
@@ -810,8 +811,8 @@ const Index = () => {
                   </div>
                 </div>
 
-                <Card className="bg-white shadow-md border border-blue-100/60">
-                  <CardHeader className="pb-4 px-3 sm:px-6 bg-white border-b border-blue-100/40">
+                <Card className="bg-white dark:bg-slate-800 shadow-md border border-blue-100/60 dark:border-slate-700">
+                  <CardHeader className="pb-4 px-3 sm:px-6 bg-white dark:bg-slate-800 border-b border-blue-100/40 dark:border-slate-700">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <CardTitle className="text-base sm:text-lg text-foreground font-semibold">
                         Analyse concurrentielle
@@ -1117,12 +1118,12 @@ const Index = () => {
                                           const score = Math.round(competitor.average_score * 100);
                                           const scoreColor = score >= 80 ? 'text-green-600' :
                                             score >= 60 ? 'text-yellow-600' : 'text-red-600';
-                                          return (
-                                            <div key={index} className="flex items-center justify-between p-3 bg-white/70 backdrop-blur-sm rounded-lg border border-blue-100/50 hover:shadow-md hover:border-blue-200 transition-all">
-                                              <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-200/50">
-                                                  <span className="text-sm font-semibold text-blue-700">#{competitor.global_rank || index + 1}</span>
-                                                </div>
+                                            return (
+                                              <div key={index} className="flex items-center justify-between p-3 bg-white/70 dark:bg-slate-700/70 backdrop-blur-sm rounded-lg border border-blue-100/50 dark:border-slate-600 hover:shadow-md hover:border-blue-200 dark:hover:border-slate-500 transition-all">
+                                                <div className="flex items-center gap-3">
+                                                  <div className="w-8 h-8 bg-blue-50 dark:bg-slate-600 rounded-lg flex items-center justify-center border border-blue-200/50 dark:border-slate-500">
+                                                    <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">#{competitor.global_rank || index + 1}</span>
+                                                  </div>
                                                 <div>
                                                   <span className="text-sm font-medium text-foreground">{competitor.name}</span>
                                                   <div className="text-xs text-muted-foreground">
@@ -1178,10 +1179,10 @@ const Index = () => {
                                       const scoreColor = score >= 80 ? 'text-green-600' :
                                         score >= 60 ? 'text-yellow-600' : 'text-red-600';
                                       return (
-                                        <div key={index} className="flex items-center justify-between p-3 bg-white/70 backdrop-blur-sm rounded-lg border border-blue-100/50 hover:shadow-md hover:border-blue-200 transition-all">
+                                        <div key={index} className="flex items-center justify-between p-3 bg-white/70 dark:bg-slate-700/70 backdrop-blur-sm rounded-lg border border-blue-100/50 dark:border-slate-600 hover:shadow-md hover:border-blue-200 dark:hover:border-slate-500 transition-all">
                                           <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-200/50">
-                                              <span className="text-sm font-semibold text-blue-700">#{competitor.model_rank}</span>
+                                            <div className="w-8 h-8 bg-blue-50 dark:bg-slate-600 rounded-lg flex items-center justify-center border border-blue-200/50 dark:border-slate-500">
+                                              <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">#{competitor.model_rank}</span>
                                             </div>
                                             <div>
                                               <span className="text-sm font-medium text-foreground">{competitor.name}</span>
@@ -1250,8 +1251,8 @@ const Index = () => {
 
                 {/* Analyse Benchmark */}
                 {selectedCompetitorAnalysis && (selectedCompetitorAnalysis as any).benchmark_results?.benchmark && (
-                  <Card className="bg-white shadow-md border border-blue-100/60">
-                    <CardHeader className="bg-white border-b border-blue-100/40">
+                  <Card className="bg-white dark:bg-slate-800 shadow-md border border-blue-100/60 dark:border-slate-700">
+                    <CardHeader className="bg-white dark:bg-slate-800 border-b border-blue-100/40 dark:border-slate-700">
                       <CardTitle className="text-base sm:text-lg text-foreground font-semibold flex items-center gap-2">
                         <BarChart3 className="h-5 w-5" />
                         Analyse Benchmark
@@ -1274,19 +1275,19 @@ const Index = () => {
                                   key={idx}
                                   className={`flex items-center justify-between p-3 rounded-lg border ${
                                     isYourSite 
-                                      ? 'bg-blue-50 border-blue-200' 
+                                      ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700' 
                                       : idx < 3
-                                        ? 'bg-yellow-50 border-yellow-200'
-                                        : 'bg-white border-blue-100'
+                                        ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700'
+                                        : 'bg-white dark:bg-slate-700 border-blue-100 dark:border-slate-600'
                                   }`}
                                 >
                                   <div className="flex items-center gap-3">
                                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
-                                      isYourSite ? 'bg-blue-500 text-white' : 
-                                      idx === 0 ? 'bg-yellow-400 text-yellow-900' :
-                                      idx === 1 ? 'bg-gray-300 text-gray-900' :
-                                      idx === 2 ? 'bg-amber-400 text-amber-900' :
-                                      'bg-blue-50 text-blue-700'
+                                      isYourSite ? 'bg-blue-500 dark:bg-blue-600 text-white' : 
+                                      idx === 0 ? 'bg-yellow-400 dark:bg-yellow-500 text-yellow-900 dark:text-yellow-100' :
+                                      idx === 1 ? 'bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100' :
+                                      idx === 2 ? 'bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-100' :
+                                      'bg-blue-50 dark:bg-slate-600 text-blue-700 dark:text-blue-300'
                                     }`}>
                                       {isYourSite ? '👤' : idx + 1}
                                     </div>
@@ -1469,9 +1470,9 @@ const Index = () => {
 
 
                       {/* Tableau des Modèles IA Utilisés */}
-                      <div className="overflow-x-auto rounded-lg bg-white/80 backdrop-blur-sm border border-blue-100/50 shadow-sm">
+                      <div className="overflow-x-auto rounded-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-blue-100/50 dark:border-slate-700 shadow-sm">
                         <table className="w-full min-w-[600px]">
-                          <thead className="bg-blue-50/40 border-b border-blue-100/40">
+                          <thead className="bg-blue-50/40 dark:bg-slate-700/40 border-b border-blue-100/40 dark:border-slate-600">
                             <tr>
                               <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
                               <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Modèle IA</th>
@@ -1481,12 +1482,12 @@ const Index = () => {
                               <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Temps</th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white/50 divide-y divide-blue-100/30">
+                          <tbody className="bg-white/50 dark:bg-slate-800/50 divide-y divide-blue-100/30 dark:divide-slate-700">
                             {(() => {
                               if (!selectedSourceAnalysis?.models_analysis || selectedSourceAnalysis.models_analysis.length === 0) {
                                 return (
                                   <tr>
-                                    <td colSpan={6} className="px-4 py-8 text-center text-neutral-500 italic">
+                                    <td colSpan={6} className="px-4 py-8 text-center text-neutral-500 dark:text-neutral-400 italic">
                                       <span>Aucune donnée de modèle disponible</span>
                                     </td>
                                   </tr>
@@ -1501,11 +1502,11 @@ const Index = () => {
 
                                 // Déterminer le nom d'affichage et l'icône
                                 let displayName = modelInfo.display_name || modelInfo.provider;
-                                let statusColor = 'bg-green-100 text-green-800';
+                                let statusColor = 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300';
                                 let statusText = 'Complété';
 
                                 if (modelInfo.status !== 'completed') {
-                                  statusColor = 'bg-red-100 text-red-800';
+                                  statusColor = 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300';
                                   statusText = 'Erreur';
                                 }
 
@@ -1515,7 +1516,7 @@ const Index = () => {
                                 }
 
                                 return (
-                                  <tr key={index} className="hover:bg-blue-50/40 transition-colors">
+                                  <tr key={index} className="hover:bg-blue-50/40 dark:hover:bg-slate-700/40 transition-colors">
                                     <td className="px-2 sm:px-4 py-3 text-sm text-foreground">{index + 1}</td>
                                     <td className="px-2 sm:px-4 py-3 text-sm">
                                       <div className="flex items-center gap-2">
@@ -1579,11 +1580,11 @@ const Index = () => {
 
             {/* Contenu de l'onglet Améliorer */}
             {activeTab === 'improve' && (
-              <div className="space-y-4 sm:space-y-6 px-2 sm:px-4 bg-gradient-to-br from-amber-50/20 to-orange-50/20 rounded-lg p-4">
+              <div className="space-y-4 sm:space-y-6 px-2 sm:px-4 bg-gradient-to-br from-amber-50/20 to-orange-50/20 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg p-4">
                 {/* Section Impact - Améliorations estimées */}
                 <div className="space-y-3 sm:space-y-4">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-1 h-8 bg-amber-500 rounded-full"></div>
+                    <div className="w-1 h-8 bg-amber-500 dark:bg-amber-400 rounded-full"></div>
                     <h3 className="text-sm font-semibold text-foreground">Impact - Améliorations estimées</h3>
                   </div>
 
@@ -1997,7 +1998,7 @@ const Index = () => {
                     }
 
                     return improvements.map((item, index) => (
-                      <div key={index} className="p-3 sm:p-4 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                      <div key={index} className="p-3 sm:p-4 bg-white/70 dark:bg-slate-700/70 backdrop-blur-sm rounded-lg shadow-sm hover:shadow-md transition-shadow border border-blue-100/50 dark:border-slate-600">
                         <div className="flex items-start gap-2 sm:gap-3">
                           <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center bg-card ${item.color} flex-shrink-0`}>
                             <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -2094,100 +2095,100 @@ const Index = () => {
                 </div>
 
 
-                {/* Tableau des recommandations spécifiques */}
-                <div className="overflow-x-auto rounded-lg bg-white/80 backdrop-blur-sm shadow-sm">
-                  <table className="w-full min-w-[800px]">
-                    <thead className="bg-gradient-to-r from-amber-50/60 to-orange-50/40">
-                      <tr>
-                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
-                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Priorité</th>
-                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Impact</th>
-                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Effort</th>
-                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">Pourquoi</th>
-                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Prochaine action</th>
-                        <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
-                      </tr>
-                    </thead>
-                          <tbody className="bg-white/50 divide-y divide-amber-100/30">
-                      {(() => {
-                        // Récupérer les données depuis l'API comme dans LLMODashboard
-                        const analysisWithGeoPlan = selectedGeoReport?.analyses?.find(analysis =>
-                          analysis.modules?.audit_geo?.plan_action_geo &&
-                          Array.isArray(analysis.modules.audit_geo.plan_action_geo) &&
-                          analysis.modules.audit_geo.plan_action_geo.length > 0
-                        );
-
-                        const geoData = analysisWithGeoPlan?.modules?.audit_geo;
-                        const planActions = geoData?.plan_action_geo || [];
-
-                        // État vide si aucune analyse disponible
-                        const hasAnalyses = (selectedGeoReport?.analyses?.length || 0) > 0;
-                        if (!hasAnalyses) {
-                          return (
-                            <tr>
-                              <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted-foreground">
-                                Aucune analyse disponible
-                              </td>
-                            </tr>
+                  {/* Tableau des recommandations spécifiques */}
+                 <div className="overflow-x-auto rounded-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-sm border border-blue-100/50 dark:border-slate-700">
+                   <table className="w-full min-w-[800px]">
+                     <thead className="bg-gradient-to-r from-amber-50/60 to-orange-50/40 dark:from-amber-900/40 dark:to-orange-900/40">
+                       <tr>
+                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
+                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Priorité</th>
+                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Impact</th>
+                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Effort</th>
+                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">Pourquoi</th>
+                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Prochaine action</th>
+                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
+                       </tr>
+                     </thead>
+                           <tbody className="bg-white/50 dark:bg-slate-800/50 divide-y divide-amber-100/30 dark:divide-slate-700">
+                        {(() => {
+                          // Récupérer les données depuis l'API comme dans LLMODashboard
+                          const analysisWithGeoPlan = selectedGeoReport?.analyses?.find(analysis =>
+                            analysis.modules?.audit_geo?.plan_action_geo &&
+                            Array.isArray(analysis.modules.audit_geo.plan_action_geo) &&
+                            analysis.modules.audit_geo.plan_action_geo.length > 0
                           );
-                        }
 
-                        // État vide si pas de données GEO exploitables
-                        if (!geoData) {
-                          return (
-                            <tr>
-                              <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted-foreground">
-                                Aucune recommandation disponible pour le moment
-                              </td>
-                            </tr>
-                          );
-                        }
+                          const geoData = analysisWithGeoPlan?.modules?.audit_geo;
+                          const planActions = geoData?.plan_action_geo || [];
 
-                        // Fonctions de calcul comme dans LLMODashboard
-                        const getImpact = (score: number) => {
-                          if (score < 20) return 5; // Impact maximum - score très faible
-                          if (score < 40) return 4; // Impact élevé - score faible
-                          if (score < 60) return 3; // Impact moyen - score moyen
-                          if (score < 80) return 2; // Impact faible - score bon
-                          return 1; // Impact très faible - score excellent
-                        };
+                          // État vide si aucune analyse disponible
+                          const hasAnalyses = (selectedGeoReport?.analyses?.length || 0) > 0;
+                          if (!hasAnalyses) {
+                            return (
+                              <tr>
+                                <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                                  Aucune analyse disponible
+                                </td>
+                              </tr>
+                            );
+                          }
 
-                        const getEffort = (action: string) => {
-                          if (action.includes('JSON-LD') || action.includes('Schema.org') || action.includes('structurées')) return 5; // Effort maximum
-                          if (action.includes('HTML') || action.includes('balises') || action.includes('hiérarchie')) return 4; // Effort élevé
-                          if (action.includes('métadonnées') || action.includes('Open Graph')) return 3; // Effort moyen
-                          if (action.includes('robots.txt') || action.includes('sitemap')) return 2; // Effort faible
-                          if (action.includes('répétitions') || action.includes('lisibilité')) return 4; // Effort élevé pour le contenu
-                          return 3; // Effort par défaut
-                        };
+                          // État vide si pas de données GEO exploitables
+                          if (!geoData) {
+                            return (
+                              <tr>
+                                <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                                  Aucune recommandation disponible pour le moment
+                                </td>
+                              </tr>
+                            );
+                          }
 
-                        const getStatus = (score: number) => {
-                          if (score < 20) return {
-                            label: 'Critique',
-                            color: 'bg-red-100 text-red-800',
-                            description: 'Action urgente requise'
+                          // Fonctions de calcul comme dans LLMODashboard
+                          const getImpact = (score: number) => {
+                            if (score < 20) return 5; // Impact maximum - score très faible
+                            if (score < 40) return 4; // Impact élevé - score faible
+                            if (score < 60) return 3; // Impact moyen - score moyen
+                            if (score < 80) return 2; // Impact faible - score bon
+                            return 1; // Impact très faible - score excellent
                           };
-                          if (score < 40) return {
-                            label: 'Urgent',
-                            color: 'bg-red-100 text-red-800',
-                            description: 'Priorité haute'
+
+                          const getEffort = (action: string) => {
+                            if (action.includes('JSON-LD') || action.includes('Schema.org') || action.includes('structurées')) return 5; // Effort maximum
+                            if (action.includes('HTML') || action.includes('balises') || action.includes('hiérarchie')) return 4; // Effort élevé
+                            if (action.includes('métadonnées') || action.includes('Open Graph')) return 3; // Effort moyen
+                            if (action.includes('robots.txt') || action.includes('sitemap')) return 2; // Effort faible
+                            if (action.includes('répétitions') || action.includes('lisibilité')) return 4; // Effort élevé pour le contenu
+                            return 3; // Effort par défaut
                           };
-                          if (score < 60) return {
-                            label: 'À améliorer',
-                            color: 'bg-orange-100 text-orange-800',
-                            description: 'Amélioration nécessaire'
+
+                          const getStatus = (score: number) => {
+                            if (score < 20) return {
+                              label: 'Critique',
+                              color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+                              description: 'Action urgente requise'
+                            };
+                            if (score < 40) return {
+                              label: 'Urgent',
+                              color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
+                              description: 'Priorité haute'
+                            };
+                            if (score < 60) return {
+                              label: 'À améliorer',
+                              color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300',
+                              description: 'Amélioration nécessaire'
+                            };
+                            if (score < 80) return {
+                              label: 'Correct',
+                              color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300',
+                              description: 'Peut être optimisé'
+                            };
+                            return {
+                              label: 'Excellent',
+                              color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
+                              description: 'Performance optimale'
+                            };
                           };
-                          if (score < 80) return {
-                            label: 'Correct',
-                            color: 'bg-yellow-100 text-yellow-800',
-                            description: 'Peut être optimisé'
-                          };
-                          return {
-                            label: 'Excellent',
-                            color: 'bg-green-100 text-green-800',
-                            description: 'Performance optimale'
-                          };
-                        };
 
                         // Priorités avec leurs données correspondantes depuis l'API
                         const priorities = [
@@ -2234,15 +2235,15 @@ const Index = () => {
                           const status = getStatus(priority.score);
 
                           return (
-                            <tr key={priority.id} className="hover:bg-amber-50/40 transition-colors">
+                            <tr key={priority.id} className="hover:bg-amber-50/40 dark:hover:bg-slate-700/40 transition-colors">
                               <td className="px-2 sm:px-4 py-3 text-sm text-foreground">{priority.id}</td>
                               <td className="px-2 sm:px-4 py-3 text-sm">
-                                <Badge className={`${impact >= 4 ? 'bg-green-100 text-green-800' : impact >= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'} text-xs font-medium`}>
+                                <Badge className={`${impact >= 4 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' : impact >= 3 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'} text-xs font-medium`}>
                                   {impact >= 4 ? 'Élevée' : impact >= 3 ? 'Moyen' : 'Faible'}
                                 </Badge>
                               </td>
                               <td className="px-2 sm:px-4 py-3 text-sm">
-                                <Badge className={`${impact >= 4 ? 'bg-green-100 text-green-800' : impact >= 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'} text-xs font-medium`}>
+                                <Badge className={`${impact >= 4 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' : impact >= 3 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'} text-xs font-medium`}>
                                   {impact >= 4 ? 'Élevé' : impact >= 3 ? 'Moyen' : 'Faible'}
                                 </Badge>
                               </td>
@@ -2251,7 +2252,7 @@ const Index = () => {
                                   {Array.from({ length: 5 }, (_, i) => (
                                     <div
                                       key={i}
-                                      className={`w-2 h-2 rounded-full ${i < effort ? 'bg-blue-500' : 'bg-gray-200'}`}
+                                      className={`w-2 h-2 rounded-full ${i < effort ? 'bg-blue-500 dark:bg-blue-400' : 'bg-gray-200 dark:bg-slate-600'}`}
                                     />
                                   ))}
                                 </div>
@@ -2537,8 +2538,8 @@ const Index = () => {
 
       {/* Enhanced Quick Actions */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
-        <Card className="shadow-lg bg-white border border-blue-100/60 overflow-hidden">
-        <CardHeader className="bg-white border-b border-blue-100/40">
+        <Card className="shadow-lg bg-white dark:bg-slate-800 border border-blue-100/60 dark:border-slate-700 overflow-hidden">
+        <CardHeader className="bg-white dark:bg-slate-800 border-b border-blue-100/40 dark:border-slate-700">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
@@ -2547,13 +2548,13 @@ const Index = () => {
               </CardTitle>
               <CardDescription className="mt-2 text-muted-foreground text-sm">Optimisations recommandées</CardDescription>
             </div>
-            <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-200">
+            <Badge variant="outline" className="bg-blue-50/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700">
               <Star className="w-3 h-3 mr-1" />
               Recommandé
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="p-3 sm:p-4 bg-white">
+        <CardContent className="p-3 sm:p-4 bg-white dark:bg-slate-800">
           <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
             {[
               {
@@ -2572,15 +2573,15 @@ const Index = () => {
               <Button
                 key={index}
                 variant="ghost"
-                className="h-auto p-4 flex flex-col items-start text-left hover:shadow-lg transition-all duration-300 bg-white rounded-lg border border-blue-100/50 group hover:border-blue-200 hover:scale-[1.02]"
+                className="h-auto p-4 flex flex-col items-start text-left hover:shadow-lg transition-all duration-300 bg-white dark:bg-slate-700 rounded-lg border border-blue-100/50 dark:border-slate-600 group hover:border-blue-200 dark:hover:border-slate-500 hover:scale-[1.02]"
                 onClick={action.action}
               >
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-blue-50 border border-blue-200/50 group-hover:bg-blue-100 transition-all">
-                  <action.icon className="h-5 w-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-blue-50 dark:bg-slate-600 border border-blue-200/50 dark:border-slate-500 group-hover:bg-blue-100 dark:group-hover:bg-slate-500 transition-all">
+                  <action.icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <h4 className="font-semibold mb-1 text-sm text-foreground">{action.title}</h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
-                <ArrowRight className="h-3 w-3 text-blue-600 group-hover:translate-x-1 transition-all mt-2 self-end" />
+                <ArrowRight className="h-3 w-3 text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-all mt-2 self-end" />
               </Button>
             ))}
           </div>

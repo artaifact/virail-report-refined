@@ -25,32 +25,22 @@ const NotFound = () => {
       <div className="relative z-10 text-center max-w-2xl mx-auto px-8">
         {/* Branding & 404 Icon */}
         <div className="mb-8">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="w-16 h-16 bg-[#1A3AFF] rounded-2xl flex items-center justify-center shadow-lg">
-              <Users className="w-8 h-8 text-white" />
-            </div>
-            <div className="text-left">
-              <h1 className="text-2xl font-semibold text-[#2E2E3E]">Meetmind.ai</h1>
-              <p className="text-[#C8C9CC] text-sm font-medium">Page introuvable</p>
-            </div>
-          </div>
-          <div className="w-32 h-32 bg-[#2E2E3E] rounded-full flex items-center justify-center mx-auto shadow-[0px_4px_12px_rgba(0,0,0,0.25)]">
-            <AlertTriangle className="h-16 w-16 text-[#C8C9CC]" />
-          </div>
+          <div className="flex items-center justify-center gap-3 mb-6"></div>
+          
         </div>
 
         {/* Main Content */}
         <Card className="border-0 shadow-[0px_4px_12px_rgba(0,0,0,0.25)] bg-[#0C0F1A] rounded-2xl">
           <CardContent className="p-8">
-            <h1 className="text-8xl font-bold text-[#1A3AFF] mb-4">
+            <h1 className="text-8xl font-bold text-white mb-4">
               404
             </h1>
             <h2 className="text-3xl font-bold text-white mb-4">
               Page introuvable
             </h2>
             <p className="text-xl text-[#C8C9CC] mb-8 leading-relaxed font-normal">
-              Oops ! Cette page semble être en réunion ailleurs. 
-              Elle a peut-être été déplacée, supprimée ou n'a jamais existé.
+              Oups ! Cette page n’existe pas (ou plus). 
+              Elle a peut-être été déplacée, supprimée ou l’URL comporte une faute.
             </p>
             
             {/* Current Path Info */}
@@ -69,7 +59,7 @@ const NotFound = () => {
               >
                 <Link to="/">
                   <Home className="h-4 w-4 mr-2" />
-                  Retour à l'accueil
+                  Retour à l’accueil
                 </Link>
               </Button>
               
@@ -86,7 +76,7 @@ const NotFound = () => {
             {/* Quick Links */}
             <div className="mt-12 pt-8 border-t border-[#2E2E3E]">
               <h3 className="text-lg font-semibold text-white mb-6">
-                Pages populaires
+                Accès rapide
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Link 
@@ -98,8 +88,8 @@ const NotFound = () => {
                       <Search className="h-4 w-4 text-white" />
                     </div>
                     <div>
-                      <div className="font-semibold text-white group-hover:text-[#2E4CFF]">Réunions</div>
-                      <div className="text-xs text-[#C8C9CC]">Organiser</div>
+                      <div className="font-semibold text-white group-hover:text-[#2E4CFF]">Analyses</div>
+                      <div className="text-xs text-[#C8C9CC]">Tableau de bord</div>
                     </div>
                   </div>
                 </Link>
@@ -113,8 +103,8 @@ const NotFound = () => {
                       <Users className="h-4 w-4 text-white" />
                     </div>
                     <div>
-                      <div className="font-semibold text-white group-hover:text-[#1A3AFF]">Équipes</div>
-                      <div className="text-xs text-[#C8C9CC]">Collaboration</div>
+                      <div className="font-semibold text-white group-hover:text-[#1A3AFF]">Concurrence</div>
+                      <div className="text-xs text-[#C8C9CC]">Comparatif</div>
                     </div>
                   </div>
                 </Link>
@@ -129,7 +119,7 @@ const NotFound = () => {
                     </div>
                     <div>
                       <div className="font-semibold text-white group-hover:text-[#4CAF50]">Aide</div>
-                      <div className="text-xs text-[#C8C9CC]">Support</div>
+                      <div className="text-xs text-[#C8C9CC]">Documentation</div>
                     </div>
                   </div>
                 </Link>
@@ -142,7 +132,7 @@ const NotFound = () => {
         <p className="text-[#C8C9CC] text-sm mt-8">
           Si vous pensez qu'il s'agit d'une erreur, n'hésitez pas à{" "}
           <Link to="/help" className="text-[#1A3AFF] hover:text-[#2E4CFF] underline font-medium transition-colors duration-200">
-            nous contacter
+            contacter le support
           </Link>
         </p>
       </div>
