@@ -953,11 +953,11 @@ const PaymentSuccess: React.FC = <span class="cstat-no" title="statement not cov
         
         // Activer l'abonnement si on a un subscription_id
 <span class="cstat-no" title="statement not covered" >        if (subscriptionId) {</span>
-<span class="cstat-no" title="statement not covered" >          console.log('🔄 Activation de l\'abonnement avec subscription_id:', subscriptionId);</span>
+<span class="cstat-no" title="statement not covered" >         //console.log('🔄 Activation de l\'abonnement avec subscription_id:', subscriptionId);</span>
           
 <span class="cstat-no" title="statement not covered" >          try {</span>
 <span class="cstat-no" title="statement not covered" >            await apiService.activateSubscription(subscriptionId);</span>
-<span class="cstat-no" title="statement not covered" >            console.log('✅ Abonnement activé avec succès');</span>
+<span class="cstat-no" title="statement not covered" >           //console.log('✅ Abonnement activé avec succès');</span>
             
 <span class="cstat-no" title="statement not covered" >            toast({</span>
               title: "Abonnement activé ! 🎉",
@@ -980,7 +980,7 @@ const PaymentSuccess: React.FC = <span class="cstat-no" title="statement not cov
 <span class="cstat-no" title="statement not covered" >          try {</span>
             const stored = <span class="cstat-no" title="statement not covered" >localStorage.getItem('pending_subscription_id');</span>
 <span class="cstat-no" title="statement not covered" >            if (stored) {</span>
-<span class="cstat-no" title="statement not covered" >              console.log('🧩 Injection subscription_id depuis localStorage:', stored);</span>
+<span class="cstat-no" title="statement not covered" >             //console.log('🧩 Injection subscription_id depuis localStorage:', stored);</span>
 <span class="cstat-no" title="statement not covered" >              await apiService.activateSubscription(stored);</span>
               // Recharge unique déjà effectuée
 <span class="cstat-no" title="statement not covered" >              try { <span class="cstat-no" title="statement not covered" >localStorage.removeItem('pending_subscription_id'); </span>} catch {}</span>
@@ -994,12 +994,12 @@ const PaymentSuccess: React.FC = <span class="cstat-no" title="statement not cov
         // Fallback 2: si pas d'activation et session_id présent, tenter de récupérer l'ID d'abonnement via la checkout session
 <span class="cstat-no" title="statement not covered" >        if (!subscriptionId &amp;&amp; sessionId) {</span>
 <span class="cstat-no" title="statement not covered" >          try {</span>
-<span class="cstat-no" title="statement not covered" >            console.log('🔎 Recherche de la subscription via session_id:', sessionId);</span>
+<span class="cstat-no" title="statement not covered" >           //console.log('🔎 Recherche de la subscription via session_id:', sessionId);</span>
             const sessionResp = <span class="cstat-no" title="statement not covered" >await apiService.getCheckoutSession(sessionId);</span>
             const s: any = <span class="cstat-no" title="statement not covered" >sessionResp?.session || sessionResp;</span>
             const subId = <span class="cstat-no" title="statement not covered" >s?.subscription_id || s?.subscription?.id || s?.subscriptionId || s?.data?.subscription_id;</span>
 <span class="cstat-no" title="statement not covered" >            if (subId) {</span>
-<span class="cstat-no" title="statement not covered" >              console.log('🔄 Activation via session → subscription_id:', subId);</span>
+<span class="cstat-no" title="statement not covered" >             //console.log('🔄 Activation via session → subscription_id:', subId);</span>
 <span class="cstat-no" title="statement not covered" >              await apiService.activateSubscription(subId);</span>
               // Recharge unique déjà effectuée
 <span class="cstat-no" title="statement not covered" >              toast({</span>
@@ -1020,7 +1020,7 @@ const PaymentSuccess: React.FC = <span class="cstat-no" title="statement not cov
             const current = <span class="cstat-no" title="statement not covered" >await apiService.getCurrentSubscription();</span>
             const sub: any = <span class="cstat-no" title="statement not covered" >current?.subscription;</span>
 <span class="cstat-no" title="statement not covered" >            if (sub &amp;&amp; sub.id &amp;&amp; sub.status &amp;&amp; sub.status !== 'active') {</span>
-<span class="cstat-no" title="statement not covered" >              console.log('🔄 Fallback activation avec l\'abonnement courant:', sub.id, 'status:', sub.status);</span>
+<span class="cstat-no" title="statement not covered" >             //console.log('🔄 Fallback activation avec l\'abonnement courant:', sub.id, 'status:', sub.status);</span>
 <span class="cstat-no" title="statement not covered" >              await apiService.activateSubscription(sub.id);</span>
               // Recharge unique déjà effectuée
 <span class="cstat-no" title="statement not covered" >              toast({</span>
@@ -1041,7 +1041,7 @@ const PaymentSuccess: React.FC = <span class="cstat-no" title="statement not cov
             const sub: any = <span class="cstat-no" title="statement not covered" >current?.subscription;</span>
             // Si pas de subscription active mais un plan a été choisi, tenter un refresh complet
 <span class="cstat-no" title="statement not covered" >            if (!sub || sub.status !== 'active') {</span>
-<span class="cstat-no" title="statement not covered" >              console.log('🔁 Fallback refresh après paiement pour plan:', pendingPlanId);</span>
+<span class="cstat-no" title="statement not covered" >             //console.log('🔁 Fallback refresh après paiement pour plan:', pendingPlanId);</span>
               // Recharge unique déjà effectuée
             }
             // Nettoyer le cache
@@ -1056,7 +1056,7 @@ const PaymentSuccess: React.FC = <span class="cstat-no" title="statement not cov
           const isActive = <span class="cstat-no" title="statement not covered" >!!(sub &amp;&amp; sub.status === 'active');</span>
           const chosenPlan = <span class="cstat-no" title="statement not covered" >planId || localStorage.getItem('pending_plan_id');</span>
 <span class="cstat-no" title="statement not covered" >          if (!isActive &amp;&amp; chosenPlan) {</span>
-<span class="cstat-no" title="statement not covered" >            console.log('🛠️ Création manuelle de l\'abonnement pour le plan:', chosenPlan);</span>
+<span class="cstat-no" title="statement not covered" >           //console.log('🛠️ Création manuelle de l\'abonnement pour le plan:', chosenPlan);</span>
             const createResp: any = <span class="cstat-no" title="statement not covered" >await apiService.createSubscription({</span>
               plan_id: chosenPlan,
               auto_renew: true,
@@ -1308,7 +1308,7 @@ const PaymentSuccess: React.FC = <span class="cstat-no" title="statement not cov
               className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
               onClick={<span class="fstat-no" title="function not covered" >async </span>() =&gt; {
 <span class="cstat-no" title="statement not covered" >                try {</span>
-<span class="cstat-no" title="statement not covered" >                  console.log('🧪 Test d\'activation manuelle...');</span>
+<span class="cstat-no" title="statement not covered" >                 //console.log('🧪 Test d\'activation manuelle...');</span>
                   const testSubscriptionId = <span class="cstat-no" title="statement not covered" >'sub_1e325deb_1756402111';</span>
                   
 <span class="cstat-no" title="statement not covered" >                  toast({</span>

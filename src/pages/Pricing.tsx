@@ -14,7 +14,7 @@ const Pricing: React.FC = () => {
   const { toast } = useToast();
 
   const handlePlanSelected = (planId: string) => {
-    console.log('Plan sélectionné:', planId);
+   //console.log('Plan sélectionné:', planId);
     // Ici vous pouvez ajouter une logique supplémentaire si nécessaire
   };
 
@@ -85,7 +85,7 @@ const Pricing: React.FC = () => {
           className="border-neutral-200 text-neutral-700 hover:bg-neutral-50"
           onClick={async () => {
             try {
-              console.log('🧪 Test d\'activation manuelle...');
+             //console.log('🧪 Test d\'activation manuelle...');
               const testSubscriptionId = 'sub_1e325deb_1756402111';
               
               toast({

@@ -7,16 +7,16 @@ const API_BASE_URL = 'http://localhost:8000';
 
 // Fonction pour afficher les résultats de manière formatée
 function displayResult(title, data) {
-  console.log('\n' + '='.repeat(60));
-  console.log(`📋 ${title}`);
-  console.log('='.repeat(60));
-  console.log(JSON.stringify(data, null, 2));
+ //console.log('\n' + '='.repeat(60));
+ //console.log(`📋 ${title}`);
+ //console.log('='.repeat(60));
+ //console.log(JSON.stringify(data, null, 2));
 }
 
 // 1. GET /admin/messages - Liste des messages
 async function testGetMessages() {
   try {
-    console.log('\n🔍 Test: GET /admin/messages');
+   //console.log('\n🔍 Test: GET /admin/messages');
     
     const params = new URLSearchParams({
       page: '1',
@@ -33,7 +33,7 @@ async function testGetMessages() {
       },
     });
 
-    console.log('📊 Statut:', response.status);
+   //console.log('📊 Statut:', response.status);
 
     if (!response.ok) {
       const error = await response.json();
@@ -60,7 +60,7 @@ async function testGetMessages() {
 // 2. GET /admin/messages/stats/overview - Statistiques
 async function testGetMessagesStats() {
   try {
-    console.log('\n🔍 Test: GET /admin/messages/stats/overview');
+   //console.log('\n🔍 Test: GET /admin/messages/stats/overview');
 
     const response = await fetch(`${API_BASE_URL}/admin/messages/stats/overview`, {
       method: 'GET',
@@ -70,7 +70,7 @@ async function testGetMessagesStats() {
       },
     });
 
-    console.log('📊 Statut:', response.status);
+   //console.log('📊 Statut:', response.status);
 
     if (!response.ok) {
       const error = await response.json();
@@ -90,7 +90,7 @@ async function testGetMessagesStats() {
 // 3. GET /admin/messages/search - Recherche avancée
 async function testSearchMessages() {
   try {
-    console.log('\n🔍 Test: GET /admin/messages/search');
+   //console.log('\n🔍 Test: GET /admin/messages/search');
 
     const params = new URLSearchParams({
       query: 'support',
@@ -108,7 +108,7 @@ async function testSearchMessages() {
       },
     });
 
-    console.log('📊 Statut:', response.status);
+   //console.log('📊 Statut:', response.status);
 
     if (!response.ok) {
       const error = await response.json();
@@ -132,12 +132,12 @@ async function testSearchMessages() {
 // 4. GET /admin/messages/{id} - Détails d'un message
 async function testGetMessageById(messageId) {
   if (!messageId) {
-    console.log('\n⚠️  Aucun ID de message disponible pour le test');
+   //console.log('\n⚠️  Aucun ID de message disponible pour le test');
     return false;
   }
 
   try {
-    console.log(`\n🔍 Test: GET /admin/messages/${messageId}`);
+   //console.log(`\n🔍 Test: GET /admin/messages/${messageId}`);
 
     const response = await fetch(`${API_BASE_URL}/admin/messages/${messageId}`, {
       method: 'GET',
@@ -147,7 +147,7 @@ async function testGetMessageById(messageId) {
       },
     });
 
-    console.log('📊 Statut:', response.status);
+   //console.log('📊 Statut:', response.status);
 
     if (!response.ok) {
       const error = await response.json();
@@ -167,12 +167,12 @@ async function testGetMessageById(messageId) {
 // 5. PUT /admin/messages/{id} - Mise à jour d'un message
 async function testUpdateMessage(messageId) {
   if (!messageId) {
-    console.log('\n⚠️  Aucun ID de message disponible pour le test');
+   //console.log('\n⚠️  Aucun ID de message disponible pour le test');
     return false;
   }
 
   try {
-    console.log(`\n🔍 Test: PUT /admin/messages/${messageId}`);
+   //console.log(`\n🔍 Test: PUT /admin/messages/${messageId}`);
 
     const updateData = {
       status: 'read',
@@ -181,7 +181,7 @@ async function testUpdateMessage(messageId) {
       tags: ['support', 'en-cours', 'test']
     };
 
-    console.log('📤 Données envoyées:', updateData);
+   //console.log('📤 Données envoyées:', updateData);
 
     const response = await fetch(`${API_BASE_URL}/admin/messages/${messageId}`, {
       method: 'PUT',
@@ -192,7 +192,7 @@ async function testUpdateMessage(messageId) {
       body: JSON.stringify(updateData),
     });
 
-    console.log('📊 Statut:', response.status);
+   //console.log('📊 Statut:', response.status);
 
     if (!response.ok) {
       const error = await response.json();
@@ -212,13 +212,13 @@ async function testUpdateMessage(messageId) {
 // 6. DELETE /admin/messages/{id} - Suppression d'un message
 async function testDeleteMessage(messageId) {
   if (!messageId) {
-    console.log('\n⚠️  Aucun ID de message disponible pour le test');
+   //console.log('\n⚠️  Aucun ID de message disponible pour le test');
     return false;
   }
 
   try {
-    console.log(`\n🔍 Test: DELETE /admin/messages/${messageId}`);
-    console.log('⚠️  ATTENTION: Ce test va supprimer le message!');
+   //console.log(`\n🔍 Test: DELETE /admin/messages/${messageId}`);
+   //console.log('⚠️  ATTENTION: Ce test va supprimer le message!');
 
     const response = await fetch(`${API_BASE_URL}/admin/messages/${messageId}`, {
       method: 'DELETE',
@@ -228,7 +228,7 @@ async function testDeleteMessage(messageId) {
       },
     });
 
-    console.log('📊 Statut:', response.status);
+   //console.log('📊 Statut:', response.status);
 
     if (!response.ok) {
       const error = await response.json();
@@ -247,9 +247,9 @@ async function testDeleteMessage(messageId) {
 
 // Fonction principale pour exécuter tous les tests
 async function runAllTests() {
-  console.log('🚀 Démarrage des tests des endpoints admin messages...');
-  console.log(`📍 API Base URL: ${API_BASE_URL}`);
-  console.log('🔐 Note: Assurez-vous d\'être authentifié avec un compte admin');
+ //console.log('🚀 Démarrage des tests des endpoints admin messages...');
+ //console.log(`📍 API Base URL: ${API_BASE_URL}`);
+ //console.log('🔐 Note: Assurez-vous d\'être authentifié avec un compte admin');
 
   const results = {
     total: 6,
@@ -295,8 +295,8 @@ async function runAllTests() {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // Test 6: Suppression (si on a un ID) - OPTIONNEL
-    console.log('\n⚠️  Test 6 (DELETE) commenté pour éviter la suppression réelle');
-    console.log('💡 Pour tester la suppression, décommentez le code dans test-admin-messages.js');
+   //console.log('\n⚠️  Test 6 (DELETE) commenté pour éviter la suppression réelle');
+   //console.log('💡 Pour tester la suppression, décommentez le code dans test-admin-messages.js');
     // const deleteSuccess = await testDeleteMessage(messageId);
     // if (deleteSuccess) results.passed++;
     // else results.failed++;
@@ -304,24 +304,24 @@ async function runAllTests() {
     // Pour le moment, on compte ce test comme ignoré
     results.failed++;
   } else {
-    console.log('\n⚠️  Tests 4, 5 et 6 ignorés (pas de message disponible)');
+   //console.log('\n⚠️  Tests 4, 5 et 6 ignorés (pas de message disponible)');
     results.failed += 3;
   }
 
   // Résumé final
-  console.log('\n' + '='.repeat(60));
-  console.log('📊 RÉSUMÉ DES TESTS');
-  console.log('='.repeat(60));
-  console.log(`✅ Tests réussis: ${results.passed}/${results.total}`);
-  console.log(`❌ Tests échoués: ${results.failed}/${results.total}`);
-  console.log(`📈 Taux de réussite: ${Math.round((results.passed / results.total) * 100)}%`);
-  console.log('='.repeat(60));
+ //console.log('\n' + '='.repeat(60));
+ //console.log('📊 RÉSUMÉ DES TESTS');
+ //console.log('='.repeat(60));
+ //console.log(`✅ Tests réussis: ${results.passed}/${results.total}`);
+ //console.log(`❌ Tests échoués: ${results.failed}/${results.total}`);
+ //console.log(`📈 Taux de réussite: ${Math.round((results.passed / results.total) * 100)}%`);
+ //console.log('='.repeat(60));
 
   if (results.passed === results.total) {
-    console.log('🎉 Tous les tests ont réussi!');
+   //console.log('🎉 Tous les tests ont réussi!');
     process.exit(0);
   } else {
-    console.log('⚠️  Certains tests ont échoué. Vérifiez les logs ci-dessus.');
+   //console.log('⚠️  Certains tests ont échoué. Vérifiez les logs ci-dessus.');
     process.exit(1);
   }
 }

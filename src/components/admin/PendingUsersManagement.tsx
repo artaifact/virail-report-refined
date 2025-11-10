@@ -36,13 +36,13 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
   const loadUsers = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Chargement des utilisateurs en attente...', { currentPage, perPage });
+     //console.log('🔄 Chargement des utilisateurs en attente...', { currentPage, perPage });
       const response: AdminUsersResponse = await AdminService.getPendingUsers(currentPage, perPage);
-      console.log('✅ Réponse reçue dans le composant:', response);
+     //console.log('✅ Réponse reçue dans le composant:', response);
       setUsers(response.users);
       setTotal(response.total);
       setTotalPages(response.total_pages);
-      console.log(`✅ ${response.users.length} utilisateur(s) en attente chargé(s) sur ${response.total} total`);
+     //console.log(`✅ ${response.users.length} utilisateur(s) en attente chargé(s) sur ${response.total} total`);
     } catch (error) {
       console.error('❌ Erreur lors du chargement des utilisateurs en attente:', error);
       toast({

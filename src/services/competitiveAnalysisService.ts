@@ -110,27 +110,27 @@ const getApiBaseUrl = (): string => {
  */
 export const runCompetitiveAnalysis = async (url: string): Promise<CompetitiveAnalysisResult> => {
   try {
-    console.log('🚀 Lancement de l\'analyse concurrentielle pour:', url);
+   //console.log('🚀 Lancement de l\'analyse concurrentielle pour:', url);
     
     const API_BASE_URL = getApiBaseUrl();
-    console.log('🌐 Utilisation de l\'API:', API_BASE_URL);
+   //console.log('🌐 Utilisation de l\'API:', API_BASE_URL);
 
-    console.log('🌐 Appel API via apiService...');
-    console.log('📤 Données envoyées:', { url, min_score: 0.5, min_mentions: 1 });
-    console.log('🍪 Utilisation des cookies d\'authentification via apiService');
+   //console.log('🌐 Appel API via apiService...');
+   //console.log('📤 Données envoyées:', { url, min_score: 0.5, min_mentions: 1 });
+   //console.log('🍪 Utilisation des cookies d\'authentification via apiService');
 
     // Appeler directement l'API via apiService (credentials: 'include' géré en interne)
-    console.log('🚀 Appel via apiService.analyzeCompetitors...');
+   //console.log('🚀 Appel via apiService.analyzeCompetitors...');
     const apiData = await apiService.analyzeCompetitors(url, {
       min_score: 0.5,
       min_mentions: 1
     });
     
-    console.log('✅ Données reçues de l\'API competitors/analyze:', apiData);
+   //console.log('✅ Données reçues de l\'API competitors/analyze:', apiData);
 
-    console.log('✅ Réponse API reçue via apiService:', apiData);
-    console.log('📋 Type de réponse:', typeof apiData);
-    console.log('🔍 Structure de la réponse:', Object.keys(apiData || {}));
+   //console.log('✅ Réponse API reçue via apiService:', apiData);
+   //console.log('📋 Type de réponse:', typeof apiData);
+   //console.log('🔍 Structure de la réponse:', Object.keys(apiData || {}));
 
     // Essayer de mapper les données API vers le format attendu
     try {
@@ -183,11 +183,11 @@ export const runCompetitiveAnalysis = async (url: string): Promise<CompetitiveAn
       return result;
     } catch (mappingError) {
       console.warn('⚠️ Impossible de mapper les données API:', mappingError);
-      console.log('📊 Données API reçues:', JSON.stringify(apiData, null, 2));
+     //console.log('📊 Données API reçues:', JSON.stringify(apiData, null, 2));
     }
     
     // Fallback: Si l'API retourne un autre format, essayer de charger les données JSON statiques
-    console.log('⚠️ Format API inattendu, fallback vers les données statiques');
+   //console.log('⚠️ Format API inattendu, fallback vers les données statiques');
     const fallbackResponse = await fetch('/analyse_comparative_alan.json');
     if (!fallbackResponse.ok) {
       throw new Error(`Erreur lors du chargement des données de fallback: ${fallbackResponse.status}`);
@@ -363,12 +363,12 @@ function generateOpportunitiesFromData(data: CompetitiveAnalysisData): string[] 
  */
 export const getCompetitiveAnalyses = async (): Promise<CompetitiveAnalysisResult[]> => {
   try {
-    console.log('📄 Récupération des analyses sauvegardées depuis l\'API...');
+   //console.log('📄 Récupération des analyses sauvegardées depuis l\'API...');
     const API_BASE_URL = getApiBaseUrl();
-    console.log('🌐 Utilisation de l\'API:', API_BASE_URL);
+   //console.log('🌐 Utilisation de l\'API:', API_BASE_URL);
 
     // Requête GET vers votre API
-    console.log('🍪 Envoi des cookies avec la requête vers /api/v1/competitors/');
+   //console.log('🍪 Envoi des cookies avec la requête vers /api/v1/competitors/');
     const response = await fetch(`${API_BASE_URL}/api/v1/competitors/analyses`, {
       method: 'GET',
       headers: {
@@ -377,7 +377,7 @@ export const getCompetitiveAnalyses = async (): Promise<CompetitiveAnalysisResul
       credentials: 'include', // Pour inclure les cookies automatiquement
     });
     
-    console.log('📡 Réponse API competitors/summary:', response.status, response.statusText);
+   //console.log('📡 Réponse API competitors/summary:', response.status, response.statusText);
 
     if (!response.ok) {
       console.warn('⚠️ Erreur lors de la récupération des analyses API, fallback vers localStorage');
@@ -386,7 +386,7 @@ export const getCompetitiveAnalyses = async (): Promise<CompetitiveAnalysisResul
     }
 
     const apiData = await response.json();
-    console.log('✅ Analyses récupérées de l\'API:', apiData);
+   //console.log('✅ Analyses récupérées de l\'API:', apiData);
 
     // Nouveau format: tableau de sessions { session_id, url, competitors, mini_llm_results, stats, created_at }
     let analyses: CompetitiveAnalysisResult[] = [];
@@ -439,18 +439,18 @@ const cleanAnalysisId = (id: string | number): string => {
  */
 export const getCompetitiveAnalysisById = async (id: string): Promise<CompetitiveAnalysisResult | null> => {
   try {
-    console.log('🔍 Récupération de l\'analyse spécifique:', id);
+   //console.log('🔍 Récupération de l\'analyse spécifique:', id);
     const API_BASE_URL = getApiBaseUrl();
-    console.log('🌐 Utilisation de l\'API:', API_BASE_URL);
+   //console.log('🌐 Utilisation de l\'API:', API_BASE_URL);
 
     // Nettoyer l'ID : enlever le préfixe "comp_" si présent
     const cleanId = cleanAnalysisId(id);
-    console.log('🧹 ID nettoyé:', cleanId);
+   //console.log('🧹 ID nettoyé:', cleanId);
 
     // Requête GET vers votre API pour une analyse spécifique
     const enrichedUrl = `${API_BASE_URL}/api/v1/competitors/analyses/${cleanId}`;
-    console.log('➡️ GET analyse spécifique:', enrichedUrl);
-    console.log('🍪 Envoi des cookies avec la requête vers /api/v3/competitors/' + cleanId);
+   //console.log('➡️ GET analyse spécifique:', enrichedUrl);
+   //console.log('🍪 Envoi des cookies avec la requête vers /api/v3/competitors/' + cleanId);
     const response = await fetch(enrichedUrl, {
       method: 'GET',
       headers: {
@@ -459,7 +459,7 @@ export const getCompetitiveAnalysisById = async (id: string): Promise<Competitiv
       credentials: 'include', // Pour inclure les cookies automatiquement
     });
     
-    console.log('📡 Réponse API competitors/' + cleanId + ':', response.status, response.statusText);
+   //console.log('📡 Réponse API competitors/' + cleanId + ':', response.status, response.statusText);
 
     if (!response.ok) {
       console.warn(`⚠️ Erreur lors de la récupération de l'analyse ${id}, fallback vers cache local`);
@@ -469,10 +469,10 @@ export const getCompetitiveAnalysisById = async (id: string): Promise<Competitiv
     }
 
     const apiData = await response.json();
-    console.log('✅ Analyse spécifique récupérée de l\'API:', apiData);
-    console.log('🔍 Structure de la réponse API:', Object.keys(apiData || {}));
-    console.log('🔍 consolidated_competitors dans la réponse:', apiData.consolidated_competitors);
-    console.log('🔍 Nombre de concurrents:', apiData.consolidated_competitors?.length || 0);
+   //console.log('✅ Analyse spécifique récupérée de l\'API:', apiData);
+   //console.log('🔍 Structure de la réponse API:', Object.keys(apiData || {}));
+   //console.log('🔍 consolidated_competitors dans la réponse:', apiData.consolidated_competitors);
+   //console.log('🔍 Nombre de concurrents:', apiData.consolidated_competitors?.length || 0);
 
     // Nouveau format enrichi: objet session enrichi, ou tableau avec un unique élément
     const enriched = Array.isArray(apiData) ? (apiData[0] || null) : apiData;
@@ -536,7 +536,7 @@ export const deleteCompetitiveAnalysis = async (id: string): Promise<void> => {
     const filtered = analyses.filter(analysis => analysis.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
     
-    console.log('🗑️ Analyse supprimée du cache local:', id);
+   //console.log('🗑️ Analyse supprimée du cache local:', id);
   } catch (error) {
     console.error('❌ Erreur lors de la suppression de l\'analyse:', error);
     throw error;
@@ -549,7 +549,7 @@ const saveCompetitiveAnalysis = (analysis: CompetitiveAnalysisResult): void => {
   const existing = getLocalStorageAnalyses();
   const updated = [analysis, ...existing].slice(0, 10); // Garder seulement les 10 dernières
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-  console.log('💾 Analyse sauvegardée localement:', analysis.id);
+ //console.log('💾 Analyse sauvegardée localement:', analysis.id);
 };
 
 const extractDomain = (url: string): string => {
@@ -809,7 +809,7 @@ const mapApiAnalysisToResult = (apiAnalysis: any): CompetitiveAnalysisResult => 
 
   // Format spécifique de votre API avec analysis_id et competitors avec average_score
   if (apiAnalysis.analysis_id && apiAnalysis.competitors && Array.isArray(apiAnalysis.competitors)) {
-    console.log('🔄 Mapping du format API spécifique avec analysis_id:', apiAnalysis.analysis_id);
+   //console.log('🔄 Mapping du format API spécifique avec analysis_id:', apiAnalysis.analysis_id);
     
     // Calculer le score utilisateur basé sur une estimation (à ajuster selon vos besoins)
     const userScore = 75; // Score par défaut, à ajuster selon votre logique

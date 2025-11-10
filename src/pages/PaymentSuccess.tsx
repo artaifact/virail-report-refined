@@ -38,13 +38,13 @@ const PaymentSuccess: React.FC = () => {
             const sub: any = current?.subscription;
             
             if (sub && sub.id === subId && sub.status === 'active') {
-              console.log(`✅ Abonnement ${subId} déjà actif (source: ${source})`);
+             //console.log(`✅ Abonnement ${subId} déjà actif (source: ${source})`);
               return true;
             }
             
-            console.log(`🔄 Tentative d'activation de l'abonnement ${subId} (source: ${source})`);
+           //console.log(`🔄 Tentative d'activation de l'abonnement ${subId} (source: ${source})`);
             await apiService.activateSubscription(subId);
-            console.log(`✅ Abonnement ${subId} activé avec succès`);
+           //console.log(`✅ Abonnement ${subId} activé avec succès`);
             return true;
           } catch (error) {
             console.error(`❌ Erreur lors de l'activation de ${subId} (source: ${source}):`, error);
@@ -62,7 +62,7 @@ const PaymentSuccess: React.FC = () => {
           try {
             const stored = localStorage.getItem('pending_subscription_id');
             if (stored) {
-              console.log('🧩 Tentative d\'activation via subscription_id stocké:', stored);
+             //console.log('🧩 Tentative d\'activation via subscription_id stocké:', stored);
               activationSuccess = await tryActivateSubscription(stored, "localStorage");
             }
           } catch (e) {
@@ -73,12 +73,12 @@ const PaymentSuccess: React.FC = () => {
         // Méthode 3: Activation via session_id (récupérer l'abonnement depuis la session)
         if (!activationSuccess && sessionId) {
           try {
-            console.log('🔎 Recherche de la subscription via session_id:', sessionId);
+           //console.log('🔎 Recherche de la subscription via session_id:', sessionId);
             const sessionResp = await apiService.getCheckoutSession(sessionId);
             const s: any = sessionResp?.session || sessionResp;
             const subId = s?.subscription_id || s?.subscription?.id || s?.subscriptionId || s?.data?.subscription_id;
             if (subId) {
-              console.log('🔄 Tentative d\'activation via session → subscription_id:', subId);
+             //console.log('🔄 Tentative d\'activation via session → subscription_id:', subId);
               activationSuccess = await tryActivateSubscription(subId, "checkout session");
             } else {
               console.warn('⚠️ Aucun subscription_id trouvé dans la session');
@@ -94,7 +94,7 @@ const PaymentSuccess: React.FC = () => {
             const current = await apiService.getCurrentSubscription();
             const sub: any = current?.subscription;
             if (sub && sub.id && sub.status && sub.status !== 'active') {
-              console.log('🔄 Tentative d\'activation avec l\'abonnement courant:', sub.id, 'status:', sub.status);
+             //console.log('🔄 Tentative d\'activation avec l\'abonnement courant:', sub.id, 'status:', sub.status);
               activationSuccess = await tryActivateSubscription(sub.id, "current subscription");
             }
           } catch (e) {
@@ -363,7 +363,7 @@ const PaymentSuccess: React.FC = () => {
               className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
               onClick={async () => {
                 try {
-                  console.log('🧪 Test d\'activation manuelle...');
+                 //console.log('🧪 Test d\'activation manuelle...');
                   const testSubscriptionId = 'sub_1e325deb_1756402111';
                   
                   toast({

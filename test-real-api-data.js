@@ -117,8 +117,8 @@ const realApiData = {
 
 // Test de mapping des données
 function testRealDataMapping() {
-    console.log('🧪 Test du mapping avec les données réelles de votre API');
-    console.log('📊 Données d\'entrée:', realApiData);
+   //console.log('🧪 Test du mapping avec les données réelles de votre API');
+   //console.log('📊 Données d\'entrée:', realApiData);
     
     // Simuler le mapping (vous pouvez copier la logique de mapApiAnalysisToResult ici pour tester)
     const mappedData = {
@@ -169,24 +169,24 @@ function testRealDataMapping() {
         }
     };
     
-    console.log('✅ Données mappées:', mappedData);
+   //console.log('✅ Données mappées:', mappedData);
     
     // Vérifications
-    console.log('🔍 Vérifications:');
-    console.log(`- ID: ${mappedData.id}`);
-    console.log(`- URL utilisateur: ${mappedData.userSite.url}`);
-    console.log(`- Nombre de concurrents: ${mappedData.competitors.length}`);
-    console.log(`- Score utilisateur: ${mappedData.userSite.report.total_score}`);
-    console.log(`- Rang: ${mappedData.summary.userRank}/${mappedData.summary.totalAnalyzed}`);
+   //console.log('🔍 Vérifications:');
+   //console.log(`- ID: ${mappedData.id}`);
+   //console.log(`- URL utilisateur: ${mappedData.userSite.url}`);
+   //console.log(`- Nombre de concurrents: ${mappedData.competitors.length}`);
+   //console.log(`- Score utilisateur: ${mappedData.userSite.report.total_score}`);
+   //console.log(`- Rang: ${mappedData.summary.userRank}/${mappedData.summary.totalAnalyzed}`);
     
     // Top 3 concurrents
     const top3 = mappedData.competitors
         .sort((a, b) => b.report.total_score - a.report.total_score)
         .slice(0, 3);
     
-    console.log('🏆 Top 3 concurrents:');
+   //console.log('🏆 Top 3 concurrents:');
     top3.forEach((comp, idx) => {
-        console.log(`${idx + 1}. ${comp.domain} - ${comp.report.total_score}/100`);
+       //console.log(`${idx + 1}. ${comp.domain} - ${comp.report.total_score}/100`);
     });
     
     return mappedData;
@@ -194,7 +194,7 @@ function testRealDataMapping() {
 
 // Test de l'affichage des concurrents
 function testCompetitorDisplay() {
-    console.log('🎨 Test de l\'affichage des concurrents');
+   //console.log('🎨 Test de l\'affichage des concurrents');
     
     realApiData.competitors.forEach((comp, idx) => {
         const score = Math.round(comp.average_score * 100);
@@ -203,22 +203,22 @@ function testCompetitorDisplay() {
                      score >= 70 ? "Bien optimisé" :
                      score >= 60 ? "Moyennement optimisé" : "Peu optimisé";
         
-        console.log(`${idx + 1}. ${comp.name}`);
-        console.log(`   URL: ${comp.url}`);
-        console.log(`   Score: ${score}/100 (${grade})`);
-        console.log(`   Sources: ${comp.sources.join(', ')}`);
-        console.log(`   Mentions: ${comp.mentions}`);
-        console.log('');
+       //console.log(`${idx + 1}. ${comp.name}`);
+       //console.log(`   URL: ${comp.url}`);
+       //console.log(`   Score: ${score}/100 (${grade})`);
+       //console.log(`   Sources: ${comp.sources.join(', ')}`);
+       //console.log(`   Mentions: ${comp.mentions}`);
+       //console.log('');
     });
 }
 
 // Test des statistiques
 function testStatsDisplay() {
-    console.log('📊 Test de l\'affichage des statistiques');
-    console.log(`- Total mentions: ${realApiData.stats.total_mentions}`);
-    console.log(`- Concurrents uniques: ${realApiData.stats.unique_competitors}`);
-    console.log(`- Modèles utilisés: ${realApiData.stats.models_used.join(', ')}`);
-    console.log(`- Date d'analyse: ${new Date(realApiData.created_at).toLocaleString('fr-FR')}`);
+   //console.log('📊 Test de l\'affichage des statistiques');
+   //console.log(`- Total mentions: ${realApiData.stats.total_mentions}`);
+   //console.log(`- Concurrents uniques: ${realApiData.stats.unique_competitors}`);
+   //console.log(`- Modèles utilisés: ${realApiData.stats.models_used.join(', ')}`);
+   //console.log(`- Date d'analyse: ${new Date(realApiData.created_at).toLocaleString('fr-FR')}`);
 }
 
 // Exporter les fonctions pour utilisation dans la console

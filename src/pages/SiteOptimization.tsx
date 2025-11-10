@@ -49,12 +49,12 @@ const SiteOptimization: React.FC = () => {
 
       // Récupérer les données depuis /optimize
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
-      console.log('🔄 Chargement des statistiques depuis:', `${API_BASE_URL}/optimize`);
+     //console.log('🔄 Chargement des statistiques depuis:', `${API_BASE_URL}/optimize`);
       const optimizeResponse = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/optimize`);
       
       if (optimizeResponse.ok) {
         const optimizeData = await optimizeResponse.json();
-        console.log('✅ Données récupérées depuis /optimize:', optimizeData);
+       //console.log('✅ Données récupérées depuis /optimize:', optimizeData);
         
         // Adapter selon la structure des données
         let sitesData = [];
@@ -88,7 +88,7 @@ const SiteOptimization: React.FC = () => {
           averageScore,
           sitesWithOptimization
         };
-        console.log('📊 Statistiques calculées:', finalStats);
+       //console.log('📊 Statistiques calculées:', finalStats);
         setStats(finalStats);
 
       } else {
@@ -192,7 +192,7 @@ const SiteOptimization: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('✅ Réponse /optimize:', data);
+     //console.log('✅ Réponse /optimize:', data);
       
       clearInterval(progressInterval);
       setAnalysisProgress(100);

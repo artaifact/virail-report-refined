@@ -13,8 +13,8 @@ async function createAdmin() {
   };
 
   try {
-    console.log('🔧 Création d\'un compte administrateur...');
-    console.log('📤 Données envoyées:', adminData);
+   //console.log('🔧 Création d\'un compte administrateur...');
+   //console.log('📤 Données envoyées:', adminData);
 
     const response = await fetch(`${API_BASE_URL}/auth/create-admin`, {
       method: 'POST',
@@ -25,8 +25,8 @@ async function createAdmin() {
       body: JSON.stringify(adminData),
     });
 
-    console.log('📊 Statut de la réponse:', response.status);
-    console.log('📊 Headers de la réponse:', Object.fromEntries(response.headers.entries()));
+   //console.log('📊 Statut de la réponse:', response.status);
+   //console.log('📊 Headers de la réponse:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -35,8 +35,8 @@ async function createAdmin() {
     }
 
     const data = await response.json();
-    console.log('✅ Compte admin créé avec succès!');
-    console.log('📋 Données retournées:', data);
+   //console.log('✅ Compte admin créé avec succès!');
+   //console.log('📋 Données retournées:', data);
 
     return data;
   } catch (error) {
@@ -48,8 +48,8 @@ async function createAdmin() {
 // Exécuter le test
 createAdmin()
   .then((result) => {
-    console.log('🎉 Test réussi!');
-    console.log('👤 Compte admin créé:', result);
+   //console.log('🎉 Test réussi!');
+   //console.log('👤 Compte admin créé:', result);
   })
   .catch((error) => {
     console.error('💥 Test échoué:', error.message);

@@ -248,7 +248,7 @@ export const startCompetitorAnalysis = async (request: CompetitorAnalysisRequest
       models: (request.models && request.models.length > 0) ? request.models : defaultPayload.models,
     };
 
-    console.log('🚀 Lancement analyse concurrentielle (payload):', payload);
+    ////console.log('🚀 Lancement analyse concurrentielle (payload):', payload);
 
     const response = await fetch(`${API_BASE_URL}/api/v1/competitors/analyze`, {
       method: 'POST',
@@ -265,16 +265,16 @@ export const startCompetitorAnalysis = async (request: CompetitorAnalysisRequest
     }
 
     const data = await response.json();
-    console.log('✅ Analyse concurrentielle créée:', data);
+    ////console.log('✅ Analyse concurrentielle créée:', data);
     
     // Logger un avertissement si le benchmark a échoué mais ne pas bloquer l'analyse
     if (data.benchmark_results?.error) {
-      console.warn('⚠️ Benchmark échoué (non bloquant):', data.benchmark_results.error);
+      // console.warn('⚠️ Benchmark échoué (non bloquant):', data.benchmark_results.error);
     }
     
     return data;
   } catch (error) {
-    console.error('❌ Erreur lors de l\'analyse:', error);
+    // console.error('❌ Erreur lors de l\'analyse:', error);
     throw error;
   }
 };
@@ -537,7 +537,7 @@ export const getCompetitorAnalysisById = async (analysisId: number): Promise<Com
   const API_BASE_URL = getApiBaseUrl();
   
   try {
-    console.log('🔍 Récupération analyse:', analysisId);
+    ////console.log('🔍 Récupération analyse:', analysisId);
     
     const response = await fetch(`${API_BASE_URL}/api/v1/competitors/analyses/${analysisId}`, {
       method: 'GET',
@@ -553,7 +553,7 @@ export const getCompetitorAnalysisById = async (analysisId: number): Promise<Com
     }
 
     const data = await response.json();
-    console.log('✅ Analyse récupérée:', data);
+    ////console.log('✅ Analyse récupérée:', data);
     
     // Logger un avertissement si le benchmark a échoué mais ne pas bloquer l'analyse
     if (data.benchmark_results?.error) {

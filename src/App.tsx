@@ -88,7 +88,7 @@ function MainLayout() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <ThemeProvider>
+      {/* <ThemeProvider> */}
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -113,7 +113,7 @@ const App = () => (
             </PaymentProvider>
           </AuthProvider>
         </BrowserRouter>
-      </ThemeProvider>
+      {/* </ThemeProvider> */}
     </TooltipProvider>
   </QueryClientProvider>
 );

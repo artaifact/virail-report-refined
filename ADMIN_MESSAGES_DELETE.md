@@ -182,7 +182,7 @@ async function testDeleteMessage(messageId) {
   }
 
   const data = await response.json();
-  console.log('✅ Message supprimé:', data);
+ //console.log('✅ Message supprimé:', data);
   return true;
 }
 ```

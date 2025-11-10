@@ -60,12 +60,12 @@ function DetailedCompetitiveAnalysis({
     );
   }
 
-  console.log('🔍 DetailedCompetitiveAnalysis - competitors:', competitors);
-  console.log('🔍 DetailedCompetitiveAnalysis - competitors length:', competitors?.length);
-  console.log('🔍 DetailedCompetitiveAnalysis - isLoading:', isLoading);
+ //console.log('🔍 DetailedCompetitiveAnalysis - competitors:', competitors);
+ //console.log('🔍 DetailedCompetitiveAnalysis - competitors length:', competitors?.length);
+ //console.log('🔍 DetailedCompetitiveAnalysis - isLoading:', isLoading);
 
   if (!competitors || competitors.length === 0) {
-    console.log('⚠️ Aucune donnée de concurrents - competitors:', competitors);
+   //console.log('⚠️ Aucune donnée de concurrents - competitors:', competitors);
     return (
       <Card>
         <CardContent className="p-6 text-center">

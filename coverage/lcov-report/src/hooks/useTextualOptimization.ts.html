@@ -652,9 +652,9 @@ export const <span class="cstat-no" title="statement not covered" >useTextualOpt
 <span class="cstat-no" title="statement not covered" >      setIsLoading(true);</span>
 <span class="cstat-no" title="statement not covered" >      setError(null);</span>
       
-<span class="cstat-no" title="statement not covered" >      console.log('🔄 Chargement des optimisations depuis l\'API...');</span>
+<span class="cstat-no" title="statement not covered" >     //console.log('🔄 Chargement des optimisations depuis l\'API...');</span>
       const data = <span class="cstat-no" title="statement not covered" >await listOptimizations();</span>
-<span class="cstat-no" title="statement not covered" >      console.log('📊 Données récupérées depuis l\'API:', data);</span>
+<span class="cstat-no" title="statement not covered" >     //console.log('📊 Données récupérées depuis l\'API:', data);</span>
       
 <span class="cstat-no" title="statement not covered" >      setOptimizations(data);</span>
       
@@ -793,7 +793,7 @@ export const <span class="cstat-no" title="statement not covered" >useTextualOpt
   // Charger l'optimisation spécifique si un ID est fourni
 <span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (optimizationId) {</span>
-<span class="cstat-no" title="statement not covered" >      console.log('🔄 Chargement de l\'optimisation spécifique:', optimizationId);</span>
+<span class="cstat-no" title="statement not covered" >     //console.log('🔄 Chargement de l\'optimisation spécifique:', optimizationId);</span>
 <span class="cstat-no" title="statement not covered" >      loadOptimization(optimizationId);</span>
     } else {
 <span class="cstat-no" title="statement not covered" >      loadOptimizations();</span>
@@ -803,7 +803,7 @@ export const <span class="cstat-no" title="statement not covered" >useTextualOpt
   // Charger automatiquement la première optimisation si disponible (seulement si pas d'ID spécifique)
 <span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (!optimizationId &amp;&amp; optimizations.length &gt; 0 &amp;&amp; !currentOptimization) {</span>
-<span class="cstat-no" title="statement not covered" >      console.log('🔄 Chargement automatique de la première optimisation');</span>
+<span class="cstat-no" title="statement not covered" >     //console.log('🔄 Chargement automatique de la première optimisation');</span>
 <span class="cstat-no" title="statement not covered" >      loadOptimization(optimizations[0].id?.toString() || '');</span>
     }
   }, [optimizations, currentOptimization, optimizationId]);

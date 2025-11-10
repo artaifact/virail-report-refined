@@ -85,7 +85,7 @@ Votre API retourne un format spécifique avec `analysis_id` et des concurrents a
 ```typescript
 // Format spécifique de votre API avec analysis_id et competitors avec average_score
 if (apiAnalysis.analysis_id && apiAnalysis.competitors && Array.isArray(apiAnalysis.competitors)) {
-  console.log('🔄 Mapping du format API spécifique avec analysis_id:', apiAnalysis.analysis_id);
+ //console.log('🔄 Mapping du format API spécifique avec analysis_id:', apiAnalysis.analysis_id);
   // Logique de mapping spécifique
 }
 ```

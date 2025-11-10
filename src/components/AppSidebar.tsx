@@ -121,7 +121,7 @@ export function AppSidebar() {
   React.useEffect(() => {
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-      console.log('[AppSidebar] isAdmin (final):', Boolean(isAdmin), { isProd, isAdminLocal, user, API_BASE_URL })
+      ////console.log('[AppSidebar] isAdmin (final):', Boolean(isAdmin), { isProd, isAdminLocal, user, API_BASE_URL })
     } catch {}
   }, [isAdmin, isAdminLocal, isProd, user])
 

@@ -130,7 +130,7 @@ export async function fetchReport(reportId: string): Promise<FullReportData | nu
  */
 export async function startAnalysis(url: string): Promise<{ reportId: string; status: string; metadata?: any } | null> {
   try {
-    console.log('🚀 Lancement de l\'analyse pour:', url);
+   //console.log('🚀 Lancement de l\'analyse pour:', url);
 
     // Faire deux appels API en parallèle pour optimiser les performances
     const [analysisResponse, metadataResponse] = await Promise.all([
@@ -171,8 +171,8 @@ export async function startAnalysis(url: string): Promise<{ reportId: string; st
     const analysisData = await analysisResponse.json();
     const metadataData = metadataResponse.ok ? await metadataResponse.json() : null;
 
-    console.log('✅ Réponse de l\'API startAnalysis:', analysisData);
-    console.log('📊 Métadonnées reçues:', metadataData);
+   //console.log('✅ Réponse de l\'API startAnalysis:', analysisData);
+   //console.log('📊 Métadonnées reçues:', metadataData);
     
     // Adapter la réponse selon le format de votre API
     const result = {
@@ -181,7 +181,7 @@ export async function startAnalysis(url: string): Promise<{ reportId: string; st
       metadata: metadataData || null
     };
 
-    console.log('📊 Analyse créée avec optimisations:', result);
+   //console.log('📊 Analyse créée avec optimisations:', result);
     return result;
     
   } catch (error) {
@@ -200,10 +200,10 @@ export async function startAnalysisSequential(
 ): Promise<{ reportId: string; status: string; optimizationResults?: any } | null> {
   try {
     const { model = 'gpt-4o' } = options;
-    console.log('🚀 Lancement de l\'analyse séquentielle pour:', url, 'avec modèle:', model);
+   //console.log('🚀 Lancement de l\'analyse séquentielle pour:', url, 'avec modèle:', model);
 
     // Premier appel : Lancer l'analyse principale
-    console.log('📊 Étape 1: Lancement de l\'analyse LLMO principale...');
+   //console.log('📊 Étape 1: Lancement de l\'analyse LLMO principale...');
     const analysisResponse = await fetchWithAuth(`${API_BASE_URL}/analyze`, {
       method: 'POST',
       headers: {
@@ -218,10 +218,10 @@ export async function startAnalysisSequential(
     }
 
     const analysisData = await analysisResponse.json();
-    console.log('✅ Première analyse terminée:', analysisData);
+   //console.log('✅ Première analyse terminée:', analysisData);
 
     // Deuxième appel : Optimisation basée sur les résultats du premier
-    console.log('🎯 Étape 2: Lancement de l\'optimisation...');
+   //console.log('🎯 Étape 2: Lancement de l\'optimisation...');
     let optimizationData = null;
     
     // Essayer plusieurs endpoints d'optimisation
@@ -233,7 +233,7 @@ export async function startAnalysisSequential(
     
     for (const endpoint of optimizationEndpoints) {
       try {
-        console.log(`🔄 Tentative d'optimisation via: ${endpoint}`);
+       //console.log(`🔄 Tentative d'optimisation via: ${endpoint}`);
         const optimizationResponse = await fetchWithAuth(endpoint, {
           method: 'POST',
           headers: {
@@ -248,13 +248,13 @@ export async function startAnalysisSequential(
 
         if (optimizationResponse.ok) {
           optimizationData = await optimizationResponse.json();
-          console.log('✅ Optimisation réussie via:', endpoint, optimizationData);
+         //console.log('✅ Optimisation réussie via:', endpoint, optimizationData);
           break;
         } else {
-          console.log(`⚠️ Échec de l'optimisation via ${endpoint}:`, optimizationResponse.status);
+         //console.log(`⚠️ Échec de l'optimisation via ${endpoint}:`, optimizationResponse.status);
         }
       } catch (error) {
-        console.log(`❌ Erreur lors de l'optimisation via ${endpoint}:`, error);
+       //console.log(`❌ Erreur lors de l'optimisation via ${endpoint}:`, error);
       }
     }
     
@@ -269,7 +269,7 @@ export async function startAnalysisSequential(
       optimizationResults: optimizationData
     };
 
-    console.log('📊 Analyse séquentielle terminée:', result);
+   //console.log('📊 Analyse séquentielle terminée:', result);
     return result;
     
   } catch (error) {
@@ -298,7 +298,7 @@ export async function startAnalysisExtended(
       include_raw = false
     } = options;
 
-    console.log('🚀 Lancement de l\'analyse étendue pour:', url, 'avec options:', options);
+   //console.log('🚀 Lancement de l\'analyse étendue pour:', url, 'avec options:', options);
 
     const analysisResponse = await fetchWithAuth(`${API_BASE_URL}/analyze`, {
       method: 'POST',
@@ -320,7 +320,7 @@ export async function startAnalysisExtended(
     }
 
     const analysisData = await analysisResponse.json();
-    console.log('✅ Analyse étendue terminée:', analysisData);
+   //console.log('✅ Analyse étendue terminée:', analysisData);
     
     const result = {
       reportId: analysisData.id || analysisData.reportId || analysisData.analysis_id || `analysis-${Date.now()}`,
@@ -328,7 +328,7 @@ export async function startAnalysisExtended(
       data: analysisData
     };
 
-    console.log('📊 Analyse étendue créée:', result);
+   //console.log('📊 Analyse étendue créée:', result);
     return result;
     
   } catch (error) {
@@ -347,7 +347,7 @@ export async function startAnalysisSimple(
 ): Promise<{ reportId: string; status: string } | null> {
   try {
     const { model = 'gpt-4o' } = options;
-    console.log('🚀 Lancement de l\'analyse simple pour:', url, 'avec modèle:', model);
+   //console.log('🚀 Lancement de l\'analyse simple pour:', url, 'avec modèle:', model);
 
     // Appel unique : Lancer l'analyse principale
     const analysisResponse = await fetchWithAuth(`${API_BASE_URL}/analyze`, {
@@ -368,14 +368,14 @@ export async function startAnalysisSimple(
     }
 
     const analysisData = await analysisResponse.json();
-    console.log('✅ Analyse simple terminée:', analysisData);
+   //console.log('✅ Analyse simple terminée:', analysisData);
     
     const result = {
       reportId: analysisData.id || analysisData.reportId || analysisData.analysis_id || `analysis-${Date.now()}`,
       status: analysisData.status || 'processing'
     };
 
-    console.log('📊 Analyse simple créée:', result);
+   //console.log('📊 Analyse simple créée:', result);
     return result;
     
   } catch (error) {
@@ -574,7 +574,7 @@ export async function startOptimizedAnalysis(
 ): Promise<{ reportId: string; status: string; metadata?: any; optimizationResults?: any } | null> {
   const { strategy = 'auto', includeMetadata = true, optimizationLevel = 'medium', model } = options;
   
-  console.log(`🎯 Stratégie sélectionnée: ${strategy} pour ${url}${model ? ' avec modèle: ' + model : ''}`);
+ //console.log(`🎯 Stratégie sélectionnée: ${strategy} pour ${url}${model ? ' avec modèle: ' + model : ''}`);
   
   try {
     // Auto-sélection de la stratégie
@@ -585,7 +585,7 @@ export async function startOptimizedAnalysis(
         const result = await startAnalysisSequential(url, { model });
         if (result) return result;
         // Fallback vers simple si séquentiel échoue
-        console.log('🔄 Fallback vers analyse simple après échec séquentiel');
+       //console.log('🔄 Fallback vers analyse simple après échec séquentiel');
         return await startAnalysisSimple(url, { model });
       } else {
         return await startAnalysis(url);
@@ -597,7 +597,7 @@ export async function startOptimizedAnalysis(
       const result = await startAnalysisSequential(url, { model });
       if (result) return result;
       // Fallback vers simple si séquentiel échoue
-      console.log('🔄 Fallback vers analyse simple après échec séquentiel');
+     //console.log('🔄 Fallback vers analyse simple après échec séquentiel');
       return await startAnalysisSimple(url, { model });
     }
     

@@ -130,7 +130,7 @@ const MyComponent = () => {
   const handleAnalysis = async () => {
     try {
       const result = await analyzeWebsite('https://example.com');
-      console.log('Analyse réussie:', result);
+     //console.log('Analyse réussie:', result);
     } catch (error) {
       console.error('Erreur:', error);
     }
@@ -155,7 +155,7 @@ import PlanSelector from '@/components/PlanSelector';
 
 const PricingPage = () => {
   const handlePlanSelected = (planId: string) => {
-    console.log('Plan sélectionné:', planId);
+   //console.log('Plan sélectionné:', planId);
   };
 
   return (
@@ -454,7 +454,7 @@ Activez les logs de débogage :
 const DEBUG = import.meta.env.DEV;
 
 if (DEBUG) {
-  console.log('API Request:', endpoint, options);
+ //console.log('API Request:', endpoint, options);
 }
 ```
 

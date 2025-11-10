@@ -313,7 +313,7 @@ const Index = () => {
       const analysis = await getCompetitorAnalysisById(Number(analysisId));
       setSelectedCompetitorAnalysis(analysis);
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'analyse:', error);
+     
     }
   };
 
@@ -892,11 +892,9 @@ const Index = () => {
                       <div className="space-y-4">
                         {(() => {
                           let analysis = selectedCompetitorAnalysis;
-                          console.log('🔍 selectedCompetitorAnalysis dans le rendu:', analysis);
 
                           // Si pas d'analyse, créer des données de test temporaires
                           if (!analysis) {
-                            console.log('⚠️ Pas d\'analyse sélectionnée, utilisation des données de test');
                             analysis = {
                               analysis_id: 42,
                               url: "https://alan.com",
@@ -976,16 +974,7 @@ const Index = () => {
                           const totalCompetitorsFound = analysis.global_stats?.total_competitors_found || 13;
 
                           // Debug: vérifier les données
-                          console.log('🔍 Données d\'analyse:', {
-                            targetScore,
-                            userRank,
-                            totalCompetitors,
-                            totalCompetitorsFound,
-                            competitorsCount,
-                            globalStats: analysis.global_stats,
-                            targetPositioning: analysis.target_positioning
-                          });
-
+                          
                           return (
                             <>
                               {/* En-tête Top 5 Concurrents */}
@@ -1083,19 +1072,7 @@ const Index = () => {
                                 });
 
                                 // Debug: logger les informations pour diagnostiquer
-                                console.log('🔍 Recherche modèle:', {
-                                  selectedLLMModel,
-                                  searchVariants,
-                                  availableModels: analysis.models_analysis?.map(m => ({
-                                    provider: m.model_info?.provider,
-                                    name: m.model_info?.model_name,
-                                    display: m.model_info?.display_name,
-                                    competitorsCount: m.competitors?.length || 0
-                                  })),
-                                  foundModelAnalysis: !!modelAnalysis,
-                                  modelAnalysisCompetitors: modelAnalysis?.competitors?.length || 0,
-                                  consolidatedCompetitorsCount: analysis.consolidated_competitors?.length || 0
-                                });
+                                
 
                                 // Si aucun modèle spécifique trouvé, utiliser tous les concurrents consolidés
                                 if (!modelAnalysis || !modelAnalysis.competitors || modelAnalysis.competitors.length === 0) {
@@ -1590,9 +1567,8 @@ const Index = () => {
 
                   {(() => {
                     // Récupérer les données depuis l'API comme dans LLMODashboard
-                    console.log('[Index] selectedGeoReport:', selectedGeoReport);
+                  
                     const analyses = selectedGeoReport?.analyses || [];
-                    console.log('[Index] Analyses disponibles:', analyses.length, analyses.map(a => (a as any)?.llm_name || (a as any)?.['llm_utilisé']));
                     const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-4-sonnet'];
                     let perf: any | null = null;
 
@@ -1638,57 +1614,46 @@ const Index = () => {
                     };
 
                     // Chercher les données de performance
-                    console.log('[Index] Recherche des données de performance...');
+                    ////console.log('[Index] Recherche des données de performance...');
                     for (const model of preferredModels) {
                       const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
-                      console.log('[Index] Test performance pour', model, ':', a ? 'trouvé' : 'non trouvé');
                       perf = extractPerformanceFromAnalysis(a);
                       if (perf) {
-                        console.log('[Index] Performance trouvée via', model, ':', perf);
                         break;
                       }
                     }
 
                     if (!perf) {
-                      console.log('[Index] Aucune performance via modèles préférés, test de toutes les analyses...');
                       for (const a of analyses) {
                         const tmp = extractPerformanceFromAnalysis(a);
                         if (tmp) {
-                          console.log('[Index] Performance trouvée via analyse:', tmp);
                           perf = tmp;
                           break;
                         }
                       }
                     }
-                    console.log('[Index] Performance final:', perf);
 
 
                     // Chercher le guide d'implémentation
                     let guideData: any = null;
-                    console.log('[Index] Recherche du guide d\'implémentation...');
                     for (const model of preferredModels) {
                       const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
-                      console.log('[Index] Test modèle', model, ':', a ? 'trouvé' : 'non trouvé');
                       const extracted = extractGuideFromAnalysis(a);
                       if (extracted) {
-                        console.log('[Index] Guide trouvé via', model, ':', extracted);
                         guideData = extracted.guide;
                         break;
                       }
                     }
 
                     if (!guideData) {
-                      console.log('[Index] Aucun guide via modèles préférés, test de toutes les analyses...');
                       for (const a of analyses) {
                         const extracted = extractGuideFromAnalysis(a);
                         if (extracted) {
-                          console.log('[Index] Guide trouvé via analyse:', extracted);
                           guideData = extracted.guide;
                           break;
                         }
                       }
                     }
-                    console.log('[Index] Guide final:', guideData);
 
                     // Helpers pour rechercher dynamiquement le guide d'implémentation dans la structure réelle
                     // Deep search pour une clé type implementation_guide (avec alias possibles)
@@ -1727,7 +1692,6 @@ const Index = () => {
                       if (!container) return null;
                       // 1) priorité à la clé exacte 7_package_optimisation_geo
                       if ((container as any)['7_package_optimisation_geo']) {
-                        console.log('[Index] GEO package trouvé (exact) dans', contextLabel, '→ 7_package_optimisation_geo');
                         return (container as any)['7_package_optimisation_geo'];
                       }
                       // 2) alias courants
@@ -1739,7 +1703,6 @@ const Index = () => {
                       ];
                       for (const candidate of aliasCandidates) {
                         if ((container as any)[candidate]) {
-                          console.log('[Index] GEO module trouvé via alias dans', contextLabel + ':', candidate);
                           return (container as any)[candidate];
                         }
                       }
@@ -1747,10 +1710,8 @@ const Index = () => {
                       const keys = Object.keys(container);
                       const regexMatch = keys.find(k => /7\s*[_-]?\s*package.*optimisation.*geo/i.test(k) || /package.*optimisation.*geo/i.test(k) || /geo.*optim/i.test(k));
                       if (regexMatch) {
-                        console.log('[Index] GEO module trouvé via regex key dans', contextLabel + ':', regexMatch);
                         return (container as any)[regexMatch];
                       }
-                      console.log('[Index] Aucun module GEO trouvé dans', contextLabel, '→ clés:', keys);
                       return null;
                     }
 
@@ -1786,20 +1747,16 @@ const Index = () => {
                       if (!analysis) return null;
                       const geoPackage = findGeoFromAnalysis(analysis);
                       if (!geoPackage) {
-                        console.log('[Index] Pas de GEO package pour analyse:', (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé']);
                         return null;
                       }
                       let guide: any = null;
                       if ((geoPackage as any).implementation_guide) {
-                        console.log('[Index] implementation_guide trouvé direct dans GEO package');
                         guide = (geoPackage as any).implementation_guide;
                       }
                       if (!guide) {
-                        console.log('[Index] Recherche profonde du implementation_guide...');
                         guide = deepFindImplementationGuide(geoPackage);
                       }
                       if (!guide) {
-                        console.log('[Index] Aucun implementation_guide trouvé pour analyse:', (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé']);
                         return null;
                       }
                       const source = (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé'] || 'inconnu';
@@ -1809,26 +1766,21 @@ const Index = () => {
                     // Fonction pour extraire les actions spécifiques du guide
                     const getGuideActions = (category: string) => {
                       if (!guideData) {
-                        console.log('[Index] getGuideActions: Pas de guideData pour', category);
                         return [];
                       }
 
-                      console.log('[Index] getGuideActions: Recherche actions pour', category, 'dans guideData:', guideData);
 
                       // Chercher les actions par catégorie dans le guide
                       const actions = [];
 
                       // Recherche dans les étapes d'implémentation
                       const steps = guideData.etapes_implementation || guideData.etapes || guideData.steps;
-                      console.log('[Index] getGuideActions: Étapes trouvées:', steps);
 
                       if (steps && typeof steps === 'object') {
                         for (const [key, step] of Object.entries(steps)) {
-                          console.log('[Index] getGuideActions: Étape', key, ':', step);
                           if (typeof step === 'object' && step !== null) {
                             const stepObj = step as any;
                             if (stepObj.actions && Array.isArray(stepObj.actions)) {
-                              console.log('[Index] getGuideActions: Actions trouvées dans', key, ':', stepObj.actions);
 
                               // Mapping spécifique basé sur votre structure JSON
                               const keyLower = key.toLowerCase();
@@ -1842,7 +1794,6 @@ const Index = () => {
                                 keyLower.includes('mots-clés') ||
                                 keyLower.includes('optimisation')
                               )) {
-                                console.log('[Index] getGuideActions: Match visibilité pour', key);
                                 return stepObj.actions.slice(0, 2);
                               }
 
@@ -1854,7 +1805,6 @@ const Index = () => {
                                 keyLower.includes('structurées') ||
                                 keyLower.includes('json-ld')
                               )) {
-                                console.log('[Index] getGuideActions: Match indexation pour', key);
                                 return stepObj.actions.slice(0, 2);
                               }
 
@@ -1867,7 +1817,6 @@ const Index = () => {
                                 keyLower.includes('semantique') ||
                                 keyLower.includes('sémantique')
                               )) {
-                                console.log('[Index] getGuideActions: Match compréhension pour', key);
                                 return stepObj.actions.slice(0, 2);
                               }
 
@@ -1880,7 +1829,6 @@ const Index = () => {
                                 keyLower.includes('structure_semantique') ||
                                 keyLower.includes('structure_sémantique')
                               )) {
-                                console.log('[Index] getGuideActions: Match autorité pour', key);
                                 return stepObj.actions.slice(0, 2);
                               }
                             }
@@ -1890,7 +1838,6 @@ const Index = () => {
 
                       // Recherche directe dans les actions
                       if (guideData.actions && Array.isArray(guideData.actions)) {
-                        console.log('[Index] getGuideActions: Actions directes trouvées:', guideData.actions);
                         guideData.actions.forEach((action: any) => {
                           if (typeof action === 'string' && action.toLowerCase().includes(category.toLowerCase())) {
                             actions.push(action);
@@ -1900,19 +1847,16 @@ const Index = () => {
 
                       // Si aucune action spécifique trouvée, retourner les premières actions disponibles
                       if (actions.length === 0 && steps && typeof steps === 'object') {
-                        console.log('[Index] getGuideActions: Aucune action spécifique, recherche générale');
                         for (const [key, step] of Object.entries(steps)) {
                           if (typeof step === 'object' && step !== null) {
                             const stepObj = step as any;
                             if (stepObj.actions && Array.isArray(stepObj.actions) && stepObj.actions.length > 0) {
-                              console.log('[Index] getGuideActions: Retour des premières actions de', key);
                               return stepObj.actions.slice(0, 2);
                             }
                           }
                         }
                       }
 
-                      console.log('[Index] getGuideActions: Actions finales pour', category, ':', actions);
                       return actions.slice(0, 2); // Limiter à 2 actions par catégorie
                     };
 
@@ -1920,7 +1864,6 @@ const Index = () => {
                     const improvements = [];
 
                     if (guideData && guideData.etapes_implementation) {
-                      console.log('[Index] Création des améliorations depuis implementation_guide:', guideData.etapes_implementation);
 
                       // Mapping des étapes vers les améliorations
                       const stepMapping = {

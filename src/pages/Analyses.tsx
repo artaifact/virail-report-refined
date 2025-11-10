@@ -179,7 +179,7 @@ const Analyses = () => {
       }
 
       const data = await response.json();
-      console.log('✅ Réponse /optimize:', data);
+     //console.log('✅ Réponse /optimize:', data);
       
       clearInterval(progressInterval);
       setOptimizedProgress(100);

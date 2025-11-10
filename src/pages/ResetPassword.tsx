@@ -24,9 +24,9 @@ const ResetPassword: React.FC = () => {
 
   useEffect(() => {
     const tokenParam = searchParams.get('token');
-    console.log('🔍 Token extrait de l\'URL:', tokenParam);
-    console.log('🔍 URL complète:', window.location.href);
-    console.log('🔍 Search params:', Object.fromEntries(searchParams.entries()));
+   //console.log('🔍 Token extrait de l\'URL:', tokenParam);
+   //console.log('🔍 URL complète:', window.location.href);
+   //console.log('🔍 Search params:', Object.fromEntries(searchParams.entries()));
     
     if (!tokenParam) {
       setError('Token de réinitialisation manquant ou invalide');
@@ -75,8 +75,8 @@ const ResetPassword: React.FC = () => {
     }
 
     try {
-      console.log('🔄 Tentative de réinitialisation avec token:', token);
-      console.log('🔄 Nouveau mot de passe:', password);
+     //console.log('🔄 Tentative de réinitialisation avec token:', token);
+     //console.log('🔄 Nouveau mot de passe:', password);
       
       const result = await AuthService.resetPassword(token, password);
       

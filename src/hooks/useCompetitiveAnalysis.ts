@@ -51,7 +51,7 @@ export const useCompetitiveAnalysis = () => {
   }, []);
 
   const startAnalysis = useCallback(async (url: string) => {
-    console.log('🚀 Démarrage de l\'analyse concurrentielle pour:', url);
+   //console.log('🚀 Démarrage de l\'analyse concurrentielle pour:', url);
 
     setState(prev => ({
       ...prev,
@@ -63,34 +63,34 @@ export const useCompetitiveAnalysis = () => {
     let progressInterval: NodeJS.Timeout | null = null;
 
     try {
-      console.log('🔐 Vérification de la connexion...');
+     //console.log('🔐 Vérification de la connexion...');
       // Vérifier si l'utilisateur est connecté
       const isAuthenticated = AuthService.isAuthenticated();
-      console.log('✅ Authentification vérifiée:', isAuthenticated);
+     //console.log('✅ Authentification vérifiée:', isAuthenticated);
 
       if (!isAuthenticated) {
         throw new Error('Vous devez être connecté pour lancer une analyse concurrentielle. Veuillez vous connecter et réessayer.');
       }
 
-      console.log('🔍 Vérification des quotas...');
+     //console.log('🔍 Vérification des quotas...');
 
       // Vérifier que les quotas sont disponibles
-      console.log('🔍 Vérification de la disponibilité des quotas...');
+     //console.log('🔍 Vérification de la disponibilité des quotas...');
       let attempts = 0;
       const maxAttempts = 3;
 
       while (!usageLimits && attempts < maxAttempts) {
-        console.log(`⚠️ UsageLimits non disponibles (tentative ${attempts + 1}/${maxAttempts}), attente...`);
+       //console.log(`⚠️ UsageLimits non disponibles (tentative ${attempts + 1}/${maxAttempts}), attente...`);
 
         // Note: Les cookies access_token et refresh_token sont HttpOnly
         // donc ils ne sont pas lisibles depuis JavaScript côté frontend
         // La vérification d'authentification se fait via AuthService.isAuthenticated()
-        console.log('🔐 Vérification d\'authentification via AuthService...');
+       //console.log('🔐 Vérification d\'authentification via AuthService...');
 
         // Re-vérifier l'authentification à chaque tentative
         const stillAuthenticated = AuthService.isAuthenticated();
         if (!stillAuthenticated) {
-          console.log('🚨 Session expirée détectée, reconnexion nécessaire');
+         //console.log('🚨 Session expirée détectée, reconnexion nécessaire');
           throw new Error('Votre session a expiré. Veuillez vous reconnecter.');
         }
 
@@ -99,8 +99,8 @@ export const useCompetitiveAnalysis = () => {
       }
 
       if (!usageLimits) {
-        console.log('❌ Impossible de charger les quotas après plusieurs tentatives');
-        console.log('🔄 Tentative de rechargement forcé...');
+       //console.log('❌ Impossible de charger les quotas après plusieurs tentatives');
+       //console.log('🔄 Tentative de rechargement forcé...');
 
         // Essayer une dernière fois avec un appel direct à l'API
         try {
@@ -111,7 +111,7 @@ export const useCompetitiveAnalysis = () => {
 
           if (directResponse.ok) {
             const directData = await directResponse.json();
-            console.log('✅ Données quotas récupérées directement:', directData);
+           //console.log('✅ Données quotas récupérées directement:', directData);
             // Ne pas continuer car on ne peut pas modifier l'état ici
           } else {
             console.error('❌ Échec de récupération directe des quotas:', directResponse.status);
@@ -121,14 +121,14 @@ export const useCompetitiveAnalysis = () => {
         }
       }
 
-      console.log('📊 État des usageLimits:', usageLimits);
+     //console.log('📊 État des usageLimits:', usageLimits);
 
       // Vérifier que nous avons bien les données de quotas
       if (!usageLimits || !usageLimits.can_use_competitor_analysis) {
-        console.log('⚠️ Données de quotas manquantes, tentative de diagnostic...');
+       //console.log('⚠️ Données de quotas manquantes, tentative de diagnostic...');
 
         // Diagnostic détaillé
-        console.log('🔍 Diagnostic quotas:', {
+       //console.log('🔍 Diagnostic quotas:', {
           usageLimits: !!usageLimits,
           hasCompetitorAnalysis: !!(usageLimits?.can_use_competitor_analysis),
           competitorAnalysis: usageLimits?.can_use_competitor_analysis,
@@ -136,16 +136,16 @@ export const useCompetitiveAnalysis = () => {
         });
 
         // Essayer quand même
-        console.log('🔄 Tentative malgré données manquantes...');
+       //console.log('🔄 Tentative malgré données manquantes...');
       }
 
       // Vérifier les quotas avant de lancer l'analyse
       const isAllowed = canUseFeature('competitor_analysis');
       const featureLimits = getFeatureLimits('competitor_analysis');
 
-      console.log('✅ Résultat canUseFeature:', isAllowed);
-      console.log('📊 Détails des quotas:', featureLimits);
-      console.log('📋 État complet:', {
+     //console.log('✅ Résultat canUseFeature:', isAllowed);
+     //console.log('📊 Détails des quotas:', featureLimits);
+     //console.log('📋 État complet:', {
         isAllowed,
         type: typeof isAllowed,
         usageLimitsLoaded: !!usageLimits,
@@ -161,7 +161,7 @@ export const useCompetitiveAnalysis = () => {
       const bypassQuotaCheck = !usageLimits && !featureLimits;
 
       if (!finalAllowed && !bypassQuotaCheck) {
-        console.log('❌ Accès refusé aux analyses concurrentielles');
+       //console.log('❌ Accès refusé aux analyses concurrentielles');
         const reason = featureLimits?.reason ||
                       (usageLimits?.can_use_competitor_analysis?.reason) ||
                       'Limite d\'analyses concurrentielles atteinte';
@@ -169,9 +169,9 @@ export const useCompetitiveAnalysis = () => {
       }
 
       if (bypassQuotaCheck) {
-        console.log('⚠️ Bypass vérification quotas côté frontend - backend gérera les quotas');
+       //console.log('⚠️ Bypass vérification quotas côté frontend - backend gérera les quotas');
       } else {
-        console.log('✅ Vérification des quotas réussie, lancement de l\'analyse...');
+       //console.log('✅ Vérification des quotas réussie, lancement de l\'analyse...');
       }
 
       // Simulation du progrès
@@ -182,9 +182,9 @@ export const useCompetitiveAnalysis = () => {
         }));
       }, 300);
 
-      console.log('🔧 Appel de runCompetitiveAnalysis...');
+     //console.log('🔧 Appel de runCompetitiveAnalysis...');
       const result = await runCompetitiveAnalysis(url);
-      console.log('✅ Analyse terminée avec succès:', result);
+     //console.log('✅ Analyse terminée avec succès:', result);
 
       clearInterval(progressInterval);
 

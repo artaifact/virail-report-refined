@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { AuthService } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
-import { ThemeToggle } from "@/components/ThemeToggle";
+// import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface UserProfile {
@@ -349,7 +349,7 @@ const Settings = () => {
           </Card> */}
           
           {/* Display Preferences */}
-          <Card className="border border-border shadow-sm bg-card overflow-hidden">
+          {/* <Card className="border border-border shadow-sm bg-card overflow-hidden">
             <CardHeader className="bg-muted">
               <div className="flex items-center justify-between">
                 <div>
@@ -375,7 +375,7 @@ const Settings = () => {
                   <ThemeToggle />
                 </div>
               </div>    
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>

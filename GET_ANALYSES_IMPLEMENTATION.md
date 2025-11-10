@@ -31,7 +31,7 @@ useEffect(() => {
 ```typescript
 // src/services/competitiveAnalysisService.ts
 export const getCompetitiveAnalyses = async (): Promise<CompetitiveAnalysisResult[]> => {
-  console.log('📄 Récupération des analyses sauvegardées depuis l\'API...');
+ //console.log('📄 Récupération des analyses sauvegardées depuis l\'API...');
 
   const response = await fetch('http://localhost:8000/api/v1/competitors/analyses', {
     method: 'GET',
@@ -47,7 +47,7 @@ export const getCompetitiveAnalyses = async (): Promise<CompetitiveAnalysisResul
   }
 
   const apiData = await response.json();
-  console.log('✅ Analyses récupérées de l\'API:', apiData);
+ //console.log('✅ Analyses récupérées de l\'API:', apiData);
   
   // Mapper les données API vers le format attendu
   return mapApiDataToAnalysisResults(apiData);
@@ -241,9 +241,9 @@ testAPI.testGetAnalyses = async () => {
     method: 'GET',
     credentials: 'include'
   });
-  console.log('Status:', response.status);
+ //console.log('Status:', response.status);
   const data = await response.json();
-  console.log('Data:', data);
+ //console.log('Data:', data);
   return data;
 };
 

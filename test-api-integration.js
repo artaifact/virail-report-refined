@@ -4,7 +4,7 @@
 // Test 1: Vérifier que l'API est accessible
 async function testApiEndpoint() {
   try {
-    console.log('🧪 Test 1: Vérification de l\'endpoint API...');
+   //console.log('🧪 Test 1: Vérification de l\'endpoint API...');
     
     const response = await fetch('http://localhost:8000/api/v1/competitors/analyze', {
       method: 'POST',
@@ -19,12 +19,12 @@ async function testApiEndpoint() {
       })
     });
 
-    console.log('📊 Status:', response.status);
-    console.log('📊 Headers:', Object.fromEntries(response.headers));
+   //console.log('📊 Status:', response.status);
+   //console.log('📊 Headers:', Object.fromEntries(response.headers));
     
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ Réponse API:', data);
+     //console.log('✅ Réponse API:', data);
       return data;
     } else {
       console.error('❌ Erreur API:', response.status, response.statusText);
@@ -40,12 +40,12 @@ async function testApiEndpoint() {
 
 // Test 2: Simuler le clic sur le bouton
 async function testButtonClick() {
-  console.log('🧪 Test 2: Simulation du clic sur le bouton...');
+ //console.log('🧪 Test 2: Simulation du clic sur le bouton...');
   
   // Trouver le composant React (si disponible)
   const button = document.querySelector('button[type="button"]');
   if (button && button.textContent.includes('Lancer')) {
-    console.log('🔘 Bouton trouvé:', button);
+   //console.log('🔘 Bouton trouvé:', button);
     button.click();
   } else {
     console.warn('⚠️ Bouton "Lancer l\'analyse" non trouvé');
@@ -54,7 +54,7 @@ async function testButtonClick() {
 
 // Test 3: Vérifier les cookies d'authentification
 function testAuthCookies() {
-  console.log('🧪 Test 3: Vérification des cookies...');
+ //console.log('🧪 Test 3: Vérification des cookies...');
   
   const cookies = document.cookie.split(';').reduce((acc, cookie) => {
     const [name, value] = cookie.trim().split('=');
@@ -62,14 +62,14 @@ function testAuthCookies() {
     return acc;
   }, {});
   
-  console.log('🍪 Cookies disponibles:', cookies);
+ //console.log('🍪 Cookies disponibles:', cookies);
   
   // Vérifier les cookies d'authentification courants
   const authCookies = ['session', 'token', 'auth', 'jwt', 'access_token'];
   const foundAuthCookies = authCookies.filter(name => cookies[name]);
   
   if (foundAuthCookies.length > 0) {
-    console.log('✅ Cookies d\'authentification trouvés:', foundAuthCookies);
+   //console.log('✅ Cookies d\'authentification trouvés:', foundAuthCookies);
   } else {
     console.warn('⚠️ Aucun cookie d\'authentification détecté');
   }
@@ -79,7 +79,7 @@ function testAuthCookies() {
 
 // Test 4: Vérifier le format de la réponse
 function testResponseFormat(apiResponse) {
-  console.log('🧪 Test 4: Vérification du format de réponse...');
+ //console.log('🧪 Test 4: Vérification du format de réponse...');
   
   if (!apiResponse) {
     console.error('❌ Pas de données à tester');
@@ -88,26 +88,26 @@ function testResponseFormat(apiResponse) {
   
   // Format 1: Réponse directe
   if (apiResponse.user_site && apiResponse.competitors) {
-    console.log('✅ Format 1 détecté: Réponse directe');
+   //console.log('✅ Format 1 détecté: Réponse directe');
     return 'format1';
   }
   
   // Format 2: Réponse avec analysis_result
   if (apiResponse.analysis_result || apiResponse.competitive_analysis) {
-    console.log('✅ Format 2 détecté: Réponse avec analysis_result');
+   //console.log('✅ Format 2 détecté: Réponse avec analysis_result');
     return 'format2';
   }
   
   // Format inconnu
   console.warn('⚠️ Format de réponse non reconnu');
-  console.log('📊 Structure reçue:', Object.keys(apiResponse));
+ //console.log('📊 Structure reçue:', Object.keys(apiResponse));
   return 'unknown';
 }
 
 // Test 5: Tester l'endpoint GET d'une analyse spécifique par ID
 async function testGetAnalysisById(analysisId) {
   try {
-    console.log('🧪 Test 5: Récupération d\'une analyse spécifique par ID:', analysisId);
+   //console.log('🧪 Test 5: Récupération d\'une analyse spécifique par ID:', analysisId);
     
     const response = await fetch(`http://localhost:8000/api/v1/competitors/analyses/${analysisId}`, {
       method: 'GET',
@@ -117,18 +117,18 @@ async function testGetAnalysisById(analysisId) {
       credentials: 'include'
     });
 
-    console.log('📊 Status:', response.status);
-    console.log('📊 Headers:', Object.fromEntries(response.headers));
+   //console.log('📊 Status:', response.status);
+   //console.log('📊 Headers:', Object.fromEntries(response.headers));
     
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ Analyse spécifique récupérée:', data);
+     //console.log('✅ Analyse spécifique récupérée:', data);
       
       // Vérifier la structure des données
       if (data.userSite && data.competitors) {
-        console.log('📋 Format: Analyse complète détectée');
-        console.log('🏆 Score utilisateur:', data.userSite.report?.total_score);
-        console.log('🎯 Concurrents:', data.competitors.length);
+       //console.log('📋 Format: Analyse complète détectée');
+       //console.log('🏆 Score utilisateur:', data.userSite.report?.total_score);
+       //console.log('🎯 Concurrents:', data.competitors.length);
       } else {
         console.warn('⚠️ Format d\'analyse non reconnu:', Object.keys(data));
       }
@@ -149,7 +149,7 @@ async function testGetAnalysisById(analysisId) {
 // Test 6: Tester l'endpoint GET des analyses sauvegardées
 async function testGetAnalyses() {
   try {
-    console.log('🧪 Test 6: Récupération des analyses sauvegardées...');
+   //console.log('🧪 Test 6: Récupération des analyses sauvegardées...');
     
     const response = await fetch('http://localhost:8000/api/v1/competitors/analyses', {
       method: 'GET',
@@ -159,20 +159,20 @@ async function testGetAnalyses() {
       credentials: 'include'
     });
 
-    console.log('📊 Status:', response.status);
-    console.log('📊 Headers:', Object.fromEntries(response.headers));
+   //console.log('📊 Status:', response.status);
+   //console.log('📊 Headers:', Object.fromEntries(response.headers));
     
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ Analyses récupérées:', data);
+     //console.log('✅ Analyses récupérées:', data);
       
       // Vérifier le format des données
       if (Array.isArray(data)) {
-        console.log('📋 Format: Tableau direct -', data.length, 'analyses');
+       //console.log('📋 Format: Tableau direct -', data.length, 'analyses');
       } else if (data.analyses && Array.isArray(data.analyses)) {
-        console.log('📋 Format: Objet avec propriété analyses -', data.analyses.length, 'analyses');
+       //console.log('📋 Format: Objet avec propriété analyses -', data.analyses.length, 'analyses');
       } else if (data.data && Array.isArray(data.data)) {
-        console.log('📋 Format: Objet avec propriété data -', data.data.length, 'analyses');
+       //console.log('📋 Format: Objet avec propriété data -', data.data.length, 'analyses');
       } else {
         console.warn('⚠️ Format non reconnu:', Object.keys(data));
       }
@@ -192,7 +192,7 @@ async function testGetAnalyses() {
 
 // Test complet
 async function runAllTests() {
-  console.log('🚀 === DÉBUT DES TESTS D\'INTÉGRATION API ===');
+ //console.log('🚀 === DÉBUT DES TESTS D\'INTÉGRATION API ===');
   
   // Test des cookies
   const cookies = testAuthCookies();
@@ -217,24 +217,24 @@ async function runAllTests() {
   const format = testResponseFormat(apiResponse);
   
   // Résumé
-  console.log('📋 === RÉSUMÉ DES TESTS ===');
-  console.log('🍪 Cookies:', Object.keys(cookies).length > 0 ? '✅' : '❌');
-  console.log('🌐 API POST (analyse):', apiResponse ? '✅' : '❌');
-  console.log('📄 API GET (analyses):', savedAnalyses ? '✅' : '❌');
-  console.log('🔍 API GET by ID:', specificAnalysis ? '✅' : '❌');
-  console.log('📊 Format:', format !== 'unknown' ? '✅' : '❌');
+ //console.log('📋 === RÉSUMÉ DES TESTS ===');
+ //console.log('🍪 Cookies:', Object.keys(cookies).length > 0 ? '✅' : '❌');
+ //console.log('🌐 API POST (analyse):', apiResponse ? '✅' : '❌');
+ //console.log('📄 API GET (analyses):', savedAnalyses ? '✅' : '❌');
+ //console.log('🔍 API GET by ID:', specificAnalysis ? '✅' : '❌');
+ //console.log('📊 Format:', format !== 'unknown' ? '✅' : '❌');
   
   const allSuccess = apiResponse && savedAnalyses && format !== 'unknown';
   if (allSuccess) {
-    console.log('🎉 Intégration API complète fonctionnelle !');
+   //console.log('🎉 Intégration API complète fonctionnelle !');
     if (specificAnalysis) {
-      console.log('🚀 Bonus: Chargement d\'analyse spécifique aussi fonctionnel !');
+     //console.log('🚀 Bonus: Chargement d\'analyse spécifique aussi fonctionnel !');
     }
   } else {
-    console.log('⚠️ Problèmes détectés, vérifiez les logs ci-dessus');
+   //console.log('⚠️ Problèmes détectés, vérifiez les logs ci-dessus');
   }
   
-  console.log('🏁 === FIN DES TESTS ===');
+ //console.log('🏁 === FIN DES TESTS ===');
   
   return {
     cookies,
@@ -251,8 +251,8 @@ const debugUtils = {
   // Afficher la requête cURL équivalente
   showCurlCommand: () => {
     const cookies = document.cookie;
-    console.log('📋 Commande cURL équivalente:');
-    console.log(`curl -X POST "http://localhost:8000/api/v1/competitors/analyze" \\
+   //console.log('📋 Commande cURL équivalente:');
+   //console.log(`curl -X POST "http://localhost:8000/api/v1/competitors/analyze" \\
   -H "Content-Type: application/json" \\
   -H "Cookie: ${cookies}" \\
   -d '{
@@ -266,11 +266,11 @@ const debugUtils = {
   checkReactState: () => {
     // Essayer de trouver l'état React (méthode approximative)
     const reactElements = document.querySelectorAll('[data-reactroot], [data-react-checksum]');
-    console.log('⚛️ Éléments React trouvés:', reactElements.length);
+   //console.log('⚛️ Éléments React trouvés:', reactElements.length);
     
     // Chercher les éléments avec des classes spécifiques à l'app
     const analysisElements = document.querySelectorAll('[class*="analysis"], [class*="competitive"]');
-    console.log('🔍 Éléments d\'analyse trouvés:', analysisElements.length);
+   //console.log('🔍 Éléments d\'analyse trouvés:', analysisElements.length);
   }
 };
 

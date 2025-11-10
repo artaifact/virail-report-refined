@@ -87,7 +87,7 @@ const startAnalysis = useCallback(async (url: string) => {
 ```typescript
 // src/services/competitiveAnalysisService.ts
 export const runCompetitiveAnalysis = async (url: string) => {
-  console.log('🚀 Lancement de l\'analyse concurrentielle pour:', url);
+ //console.log('🚀 Lancement de l\'analyse concurrentielle pour:', url);
 
   // REQUÊTE POST VERS VOTRE API ← ICI !
   const response = await fetch('http://localhost:8000/api/v1/competitors/analyze', {
@@ -108,7 +108,7 @@ export const runCompetitiveAnalysis = async (url: string) => {
   }
   
   const apiData = await response.json();
-  console.log('✅ Réponse API reçue:', apiData);
+ //console.log('✅ Réponse API reçue:', apiData);
   
   // Mapper les données vers le format attendu par l'interface
   const result = mapApiDataToResult(apiData, url);

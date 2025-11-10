@@ -1149,12 +1149,12 @@ export interface OptimizationRequest {
  * Utilise le système d'authentification complet d'AuthService
  */
 async function <span class="fstat-no" title="function not covered" >fetchWithAuth(</span>url: string, options: RequestInit = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span>: Promise&lt;Response&gt; {
-<span class="cstat-no" title="statement not covered" >  console.log('🔐 fetchWithAuth - URL:', url);</span>
-<span class="cstat-no" title="statement not covered" >  console.log('🔐 fetchWithAuth - Options:', options);</span>
+<span class="cstat-no" title="statement not covered" > //console.log('🔐 fetchWithAuth - URL:', url);</span>
+<span class="cstat-no" title="statement not covered" > //console.log('🔐 fetchWithAuth - Options:', options);</span>
   
   // Vérifier l'authentification
   const isAuthenticated = <span class="cstat-no" title="statement not covered" >AuthService.isAuthenticated();</span>
-<span class="cstat-no" title="statement not covered" >  console.log('🔐 Utilisateur authentifié:', isAuthenticated);</span>
+<span class="cstat-no" title="statement not covered" > //console.log('🔐 Utilisateur authentifié:', isAuthenticated);</span>
   
 <span class="cstat-no" title="statement not covered" >  if (!isAuthenticated) {</span>
 <span class="cstat-no" title="statement not covered" >    console.warn('⚠️ Utilisateur non authentifié, requête sans authentification');</span>
@@ -1177,9 +1177,9 @@ async function <span class="fstat-no" title="function not covered" >fetchWithAut
       ...requestOptions.headers,
       'Authorization': `Bearer ${accessToken}`,
     };
-<span class="cstat-no" title="statement not covered" >    console.log('🔐 Token Bearer ajouté');</span>
+<span class="cstat-no" title="statement not covered" >   //console.log('🔐 Token Bearer ajouté');</span>
   } else {
-<span class="cstat-no" title="statement not covered" >    console.log('🔐 Authentification par cookies uniquement');</span>
+<span class="cstat-no" title="statement not covered" >   //console.log('🔐 Authentification par cookies uniquement');</span>
   }
   
 <span class="cstat-no" title="statement not covered" >  return fetch(url, requestOptions);</span>
@@ -1195,7 +1195,7 @@ const API_BASE_URL = <span class="cstat-no" title="statement not covered" >proce
  */
 <span class="cstat-no" title="statement not covered" >export a</span>sync function <span class="fstat-no" title="function not covered" >fetchOptimizationById(</span>id: string): Promise&lt;TextualOptimizationData&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
-<span class="cstat-no" title="statement not covered" >    console.log(`📄 Récupération de l'optimisation ID: ${id} depuis ${API_BASE_URL}/optimize/${id}`);</span>
+<span class="cstat-no" title="statement not covered" >   //console.log(`📄 Récupération de l'optimisation ID: ${id} depuis ${API_BASE_URL}/optimize/${id}`);</span>
     
     const response = <span class="cstat-no" title="statement not covered" >await fetchWithAuth(`${API_BASE_URL}/optimize/${id}`, {</span>
       method: 'GET',
@@ -1204,7 +1204,7 @@ const API_BASE_URL = <span class="cstat-no" title="statement not covered" >proce
       },
     });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    console.log(`📊 Status de la réponse: ${response.status}`);</span>
+<span class="cstat-no" title="statement not covered" >   //console.log(`📊 Status de la réponse: ${response.status}`);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (!response.ok) {</span>
 <span class="cstat-no" title="statement not covered" >      if (response.status === 401) {</span>
@@ -1219,13 +1219,13 @@ const API_BASE_URL = <span class="cstat-no" title="statement not covered" >proce
     }
 &nbsp;
     const data = <span class="cstat-no" title="statement not covered" >await response.json();</span>
-<span class="cstat-no" title="statement not covered" >    console.log('✅ Optimisation récupérée depuis l\'API:', data);</span>
+<span class="cstat-no" title="statement not covered" >   //console.log('✅ Optimisation récupérée depuis l\'API:', data);</span>
     
 <span class="cstat-no" title="statement not covered" >    return data as TextualOptimizationData;</span>
     
   } catch (error) {
 <span class="cstat-no" title="statement not covered" >    console.error('❌ Erreur lors de la récupération de l\'optimisation:', error);</span>
-<span class="cstat-no" title="statement not covered" >    console.log('🔄 Utilisation des données mock en fallback');</span>
+<span class="cstat-no" title="statement not covered" >   //console.log('🔄 Utilisation des données mock en fallback');</span>
 <span class="cstat-no" title="statement not covered" >    return getMockOptimization(id);</span>
   }
 }
@@ -1235,7 +1235,7 @@ const API_BASE_URL = <span class="cstat-no" title="statement not covered" >proce
  */
 <span class="cstat-no" title="statement not covered" >export a</span>sync function <span class="fstat-no" title="function not covered" >listOptimizationsFromOptimize(</span>): Promise&lt;TextualOptimizationData[]&gt; {
 <span class="cstat-no" title="statement not covered" >  try {</span>
-<span class="cstat-no" title="statement not covered" >    console.log(`📄 Récupération des optimisations depuis ${API_BASE_URL}/optimize`);</span>
+<span class="cstat-no" title="statement not covered" >   //console.log(`📄 Récupération des optimisations depuis ${API_BASE_URL}/optimize`);</span>
     
     const response = <span class="cstat-no" title="statement not covered" >await fetchWithAuth(`${API_BASE_URL}/optimize`, {</span>
       method: 'GET',
@@ -1244,7 +1244,7 @@ const API_BASE_URL = <span class="cstat-no" title="statement not covered" >proce
       },
     });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    console.log(`📊 Status de la réponse: ${response.status}`);</span>
+<span class="cstat-no" title="statement not covered" >   //console.log(`📊 Status de la réponse: ${response.status}`);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    if (!response.ok) {</span>
 <span class="cstat-no" title="statement not covered" >      if (response.status === 401) {</span>
@@ -1256,7 +1256,7 @@ const API_BASE_URL = <span class="cstat-no" title="statement not covered" >proce
     }
 &nbsp;
     const data = <span class="cstat-no" title="statement not covered" >await response.json();</span>
-<span class="cstat-no" title="statement not covered" >    console.log('✅ Optimisations récupérées depuis l\'API:', data);</span>
+<span class="cstat-no" title="statement not covered" >   //console.log('✅ Optimisations récupérées depuis l\'API:', data);</span>
     
     let optimizationsList = <span class="cstat-no" title="statement not covered" >[];</span>
 <span class="cstat-no" title="statement not covered" >    if (Array.isArray(data)) {</span>
@@ -1270,12 +1270,12 @@ const API_BASE_URL = <span class="cstat-no" title="statement not covered" >proce
 <span class="cstat-no" title="statement not covered" >      return getMockOptimizationsList();</span>
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    console.log(`📊 ${optimizationsList.length} optimisations récupérées`);</span>
+<span class="cstat-no" title="statement not covered" >   //console.log(`📊 ${optimizationsList.length} optimisations récupérées`);</span>
 <span class="cstat-no" title="statement not covered" >    return optimizationsList as TextualOptimizationData[];</span>
     
   } catch (error) {
 <span class="cstat-no" title="statement not covered" >    console.error('❌ Erreur lors de la récupération des optimisations:', error);</span>
-<span class="cstat-no" title="statement not covered" >    console.log('🔄 Utilisation des données mock en fallback');</span>
+<span class="cstat-no" title="statement not covered" >   //console.log('🔄 Utilisation des données mock en fallback');</span>
 <span class="cstat-no" title="statement not covered" >    return getMockOptimizationsList();</span>
   }
 }
@@ -1339,7 +1339,7 @@ const API_BASE_URL = <span class="cstat-no" title="statement not covered" >proce
     
   } catch (error) {
 <span class="cstat-no" title="statement not covered" >    console.error('❌ Erreur lors du démarrage de l\'optimisation:', error);</span>
-<span class="cstat-no" title="statement not covered" >    console.log('🔄 Simulation d\'une optimisation en fallback');</span>
+<span class="cstat-no" title="statement not covered" >   //console.log('🔄 Simulation d\'une optimisation en fallback');</span>
 <span class="cstat-no" title="statement not covered" >    return {</span>
       optimizationId: 'mock-' + Date.now(),
       status: 'completed',

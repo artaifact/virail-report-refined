@@ -573,11 +573,11 @@ const Competition = () => {
               <div className="flex gap-2 mt-2">
                 <Button
                   onClick={async () => {
-                    console.log('🔄 Test manuel des quotas...');
+                   //console.log('🔄 Test manuel des quotas...');
                     const testResult = canUseFeature('competitor_analysis');
                     const featureLimits = usageLimits?.can_use_competitor_analysis;
-                    console.log('📊 Résultat test:', testResult);
-                    console.log('📋 Détails complets:', {
+                   //console.log('📊 Résultat test:', testResult);
+                   //console.log('📋 Détails complets:', {
                       canUseFeature: testResult,
                       featureLimits,
                       usageLimits: usageLimits
@@ -591,7 +591,7 @@ const Competition = () => {
                 </Button>
                 <Button
                   onClick={async () => {
-                    console.log('🔄 Rechargement manuel des quotas...');
+                   //console.log('🔄 Rechargement manuel des quotas...');
                     // Forcer le rechargement
                     window.location.reload();
                   }}
@@ -602,7 +602,7 @@ const Competition = () => {
                 </Button>
                 <Button
                   onClick={async () => {
-                    console.log('🔐 Test de session...');
+                   //console.log('🔐 Test de session...');
 
                     // Tester via une requête API pour voir si la session est valide
                     try {
@@ -613,14 +613,14 @@ const Competition = () => {
 
                       if (response.ok) {
                         alert('✅ Session valide - Authentification réussie');
-                        console.log('✅ Session valide');
+                       //console.log('✅ Session valide');
                       } else if (response.status === 401) {
                         alert('❌ Session expirée - Reconnexion nécessaire\nRedirection vers la page de connexion...');
-                        console.log('❌ Session expirée');
+                       //console.log('❌ Session expirée');
                         window.location.href = '/login';
                       } else {
                         alert(`❓ Erreur inconnue: ${response.status}`);
-                        console.log('❓ Erreur inconnue:', response.status);
+                       //console.log('❓ Erreur inconnue:', response.status);
                       }
                     } catch (error) {
                       alert('❌ Erreur de réseau - Vérifiez votre connexion');
@@ -1329,10 +1329,10 @@ const Competition = () => {
                 {console.log('🔍 Debug global_stats:', currentAnalysis.global_stats)}
                 {/* <DetailedCompetitiveAnalysis 
                   competitors={(() => {
-                    console.log('🔍 Fallback logic - consolidated_competitors length:', currentAnalysis.consolidated_competitors?.length || 0);
+                   //console.log('🔍 Fallback logic - consolidated_competitors length:', currentAnalysis.consolidated_competitors?.length || 0);
                     
                     if (currentAnalysis.consolidated_competitors?.length > 0) {
-                      console.log('✅ Using consolidated_competitors');
+                     //console.log('✅ Using consolidated_competitors');
                       return currentAnalysis.consolidated_competitors.map(comp => ({
                         name: comp.name,
                         domain: comp.primary_url,
@@ -1348,10 +1348,10 @@ const Competition = () => {
                         opportunities: []
                       }));
                     } else {
-                      console.log('🔄 Using models_analysis fallback');
+                     //console.log('🔄 Using models_analysis fallback');
                       const extracted = currentAnalysis.models_analysis?.flatMap(model => {
-                        console.log('🔍 Processing model:', model.model_info?.display_name);
-                        console.log('🔍 Model competitors:', model.competitors?.length || 0);
+                       //console.log('🔍 Processing model:', model.model_info?.display_name);
+                       //console.log('🔍 Model competitors:', model.competitors?.length || 0);
                         return model.competitors?.map(comp => ({
                           name: comp.name,
                           domain: comp.url,
@@ -1377,7 +1377,7 @@ const Competition = () => {
                           competitive_advantages: comp.competitive_advantages || []
                         })) || [];
                       }) || [];
-                      console.log('🔍 Extracted competitors:', extracted.length);
+                     //console.log('🔍 Extracted competitors:', extracted.length);
                       return extracted;
                     }
                   })()} 

@@ -91,7 +91,7 @@ export class AdminService {
     filters?: AdminUserFilters
   ): Promise<AdminUsersResponse> {
     try {
-      console.log('📄 Récupération de la liste des utilisateurs...');
+     //console.log('📄 Récupération de la liste des utilisateurs...');
       
       const searchParams = new URLSearchParams();
       
@@ -128,7 +128,7 @@ export class AdminService {
 
       const data = await this.makeAdminRequest<any>(`/admin/users?${searchParams.toString()}`);
       
-      console.log('✅ Utilisateurs récupérés:', data);
+     //console.log('✅ Utilisateurs récupérés:', data);
       
       // Adapter le format de réponse de l'API au format attendu par le composant
       const adaptedData: AdminUsersResponse = {
@@ -154,7 +154,7 @@ export class AdminService {
     perPage: number = 20
   ): Promise<AdminUsersResponse> {
     try {
-      console.log('📄 Récupération des utilisateurs en attente...', { page, perPage });
+     //console.log('📄 Récupération des utilisateurs en attente...', { page, perPage });
       
       const searchParams = new URLSearchParams();
       searchParams.append('limit', perPage.toString());
@@ -164,11 +164,11 @@ export class AdminService {
       }
 
       const endpoint = `/admin/users/pending?${searchParams.toString()}`;
-      console.log('🔗 Appel API:', `${API_BASE_URL}${endpoint}`);
+     //console.log('🔗 Appel API:', `${API_BASE_URL}${endpoint}`);
       
       const data = await this.makeAdminRequest<any>(endpoint);
       
-      console.log('✅ Réponse API reçue:', data);
+     //console.log('✅ Réponse API reçue:', data);
       
       // Gérer différentes structures de réponse possibles
       let users: AdminUser[] = [];
@@ -207,7 +207,7 @@ export class AdminService {
         total_pages: Math.ceil(total / limit)
       };
       
-      console.log('✅ Données adaptées:', adaptedData);
+     //console.log('✅ Données adaptées:', adaptedData);
       
       return adaptedData;
     } catch (error) {
@@ -225,7 +225,7 @@ export class AdminService {
     notes?: string
   ): Promise<AdminUser> {
     try {
-      console.log(`📝 ${approved ? 'Approbation' : 'Rejet'} de l'utilisateur ${userId}...`);
+     //console.log(`📝 ${approved ? 'Approbation' : 'Rejet'} de l'utilisateur ${userId}...`);
       
       const requestBody: any = {
         action: approved ? 'approve' : 'reject'
@@ -235,7 +235,7 @@ export class AdminService {
         requestBody.notes = notes.trim();
       }
 
-      console.log('📤 Body de la requête:', requestBody);
+     //console.log('📤 Body de la requête:', requestBody);
 
       const data = await this.makeAdminRequest<AdminUser>(
         `/admin/users/${userId}/approve`,
@@ -245,7 +245,7 @@ export class AdminService {
         }
       );
       
-      console.log(`✅ Utilisateur ${approved ? 'approuvé' : 'rejeté'} avec succès:`, data);
+     //console.log(`✅ Utilisateur ${approved ? 'approuvé' : 'rejeté'} avec succès:`, data);
       
       return data;
     } catch (error) {
@@ -263,7 +263,7 @@ export class AdminService {
     password: string;
   }): Promise<{ success: boolean; message: string; user?: AdminUser }> {
     try {
-      console.log('🔧 Création d\'un compte administrateur...');
+     //console.log('🔧 Création d\'un compte administrateur...');
       
       const response = await fetch(`${API_BASE_URL}/auth/create-admin`, {
         method: 'POST',
@@ -280,7 +280,7 @@ export class AdminService {
       }
 
       const data = await response.json();
-      console.log('✅ Compte admin créé avec succès:', data);
+     //console.log('✅ Compte admin créé avec succès:', data);
       
       return {
         success: true,
@@ -360,13 +360,13 @@ export class AdminService {
    */
   static async deleteMessage(messageId: number | string): Promise<{ success: boolean; message: string }> {
     try {
-      console.log(`🗑️ Suppression du message ${messageId}...`);
+     //console.log(`🗑️ Suppression du message ${messageId}...`);
       
       await this.makeAdminRequest(`/admin/messages/${messageId}`, {
         method: 'DELETE'
       });
       
-      console.log(`✅ Message ${messageId} supprimé avec succès`);
+     //console.log(`✅ Message ${messageId} supprimé avec succès`);
       
       return {
         success: true,
@@ -434,11 +434,11 @@ export class AdminService {
    */
   static async getUserById(userId: number): Promise<AdminUser> {
     try {
-      console.log(`📄 Récupération de l'utilisateur ${userId}...`);
+     //console.log(`📄 Récupération de l'utilisateur ${userId}...`);
       
       const data = await this.makeAdminRequest<AdminUser>(`/admin/users/${userId}`);
       
-      console.log('✅ Utilisateur récupéré:', data);
+     //console.log('✅ Utilisateur récupéré:', data);
       return data;
     } catch (error) {
       console.error(`❌ Erreur lors de la récupération de l'utilisateur ${userId}:`, error);
@@ -451,11 +451,11 @@ export class AdminService {
    */
   static async getUserStats(): Promise<AdminUserStats> {
     try {
-      console.log('📄 Récupération des statistiques utilisateurs...');
+     //console.log('📄 Récupération des statistiques utilisateurs...');
       
       const data = await this.makeAdminRequest<any>('/admin/users/stats');
       
-      console.log('✅ Statistiques récupérées:', data);
+     //console.log('✅ Statistiques récupérées:', data);
       
       // Adapter le format de réponse de l'API au format attendu par le composant
       const adaptedData: AdminUserStats = {
@@ -480,7 +480,7 @@ export class AdminService {
    */
   static async searchUsers(searchParams: AdminUserSearchParams): Promise<AdminUsersResponse> {
     try {
-      console.log('📄 Recherche d\'utilisateurs...', searchParams);
+     //console.log('📄 Recherche d\'utilisateurs...', searchParams);
       
       const urlParams = new URLSearchParams();
       
@@ -507,7 +507,7 @@ export class AdminService {
 
       const data = await this.makeAdminRequest<any>(`/admin/users/search?${urlParams.toString()}`);
       
-      console.log('✅ Résultats de recherche:', data);
+     //console.log('✅ Résultats de recherche:', data);
       
       // Adapter le format de réponse de l'API au format attendu par le composant
       const adaptedData: AdminUsersResponse = {
@@ -530,13 +530,13 @@ export class AdminService {
    */
   static async disableUser(userId: number): Promise<{ success: boolean; message: string }> {
     try {
-      console.log(`📄 Désactivation de l'utilisateur ${userId}...`);
+     //console.log(`📄 Désactivation de l'utilisateur ${userId}...`);
       
       const data = await this.makeAdminRequest<{ success: boolean; message: string }>(`/auth/disable-user/${userId}`, {
         method: 'PUT',
       });
       
-      console.log('✅ Utilisateur désactivé:', data);
+     //console.log('✅ Utilisateur désactivé:', data);
       return data;
     } catch (error) {
       console.error(`❌ Erreur lors de la désactivation de l'utilisateur ${userId}:`, error);
@@ -549,13 +549,13 @@ export class AdminService {
    */
   static async enableUser(userId: number): Promise<{ success: boolean; message: string }> {
     try {
-      console.log(`📄 Réactivation de l'utilisateur ${userId}...`);
+     //console.log(`📄 Réactivation de l'utilisateur ${userId}...`);
       
       const data = await this.makeAdminRequest<{ success: boolean; message: string }>(`/auth/enable-user/${userId}`, {
         method: 'PUT',
       });
       
-      console.log('✅ Utilisateur réactivé:', data);
+     //console.log('✅ Utilisateur réactivé:', data);
       return data;
     } catch (error) {
       console.error(`❌ Erreur lors de la réactivation de l'utilisateur ${userId}:`, error);
@@ -568,13 +568,13 @@ export class AdminService {
    */
   static async deleteUser(userId: number): Promise<{ success: boolean; message: string }> {
     try {
-      console.log(`📄 Suppression de l'utilisateur ${userId}...`);
+     //console.log(`📄 Suppression de l'utilisateur ${userId}...`);
       
       const data = await this.makeAdminRequest<{ success: boolean; message: string }>(`/auth/delete-user/${userId}`, {
         method: 'DELETE',
       });
       
-      console.log('✅ Utilisateur supprimé:', data);
+     //console.log('✅ Utilisateur supprimé:', data);
       return data;
     } catch (error) {
       console.error(`❌ Erreur lors de la suppression de l'utilisateur ${userId}:`, error);
@@ -730,13 +730,13 @@ export class AdminService {
    */
   static async forceActivateSubscription(subscriptionId: number | string): Promise<{ success: boolean; message: string }> {
     try {
-      console.log(`⚡ Activation forcée de l'abonnement ${subscriptionId}...`);
+     //console.log(`⚡ Activation forcée de l'abonnement ${subscriptionId}...`);
       
       await this.makeAdminRequest(`/admin/subscriptions/${subscriptionId}/force-activate`, {
         method: 'PUT'
       });
       
-      console.log(`✅ Abonnement ${subscriptionId} activé avec succès`);
+     //console.log(`✅ Abonnement ${subscriptionId} activé avec succès`);
       
       return {
         success: true,
@@ -756,13 +756,13 @@ export class AdminService {
    */
   static async forceCancelSubscription(subscriptionId: number | string): Promise<{ success: boolean; message: string }> {
     try {
-      console.log(`⚡ Annulation forcée de l'abonnement ${subscriptionId}...`);
+     //console.log(`⚡ Annulation forcée de l'abonnement ${subscriptionId}...`);
       
       await this.makeAdminRequest(`/admin/subscriptions/${subscriptionId}/force-cancel`, {
         method: 'PUT'
       });
       
-      console.log(`✅ Abonnement ${subscriptionId} annulé avec succès`);
+     //console.log(`✅ Abonnement ${subscriptionId} annulé avec succès`);
       
       return {
         success: true,
@@ -782,14 +782,14 @@ export class AdminService {
    */
   static async extendSubscription(subscriptionId: number | string, days: number): Promise<{ success: boolean; message: string }> {
     try {
-      console.log(`⏰ Extension de l'abonnement ${subscriptionId} de ${days} jours...`);
+     //console.log(`⏰ Extension de l'abonnement ${subscriptionId} de ${days} jours...`);
       
       await this.makeAdminRequest(`/admin/subscriptions/${subscriptionId}/extend`, {
         method: 'PUT',
         body: JSON.stringify({ days })
       });
       
-      console.log(`✅ Abonnement ${subscriptionId} étendu avec succès`);
+     //console.log(`✅ Abonnement ${subscriptionId} étendu avec succès`);
       
       return {
         success: true,
@@ -812,14 +812,14 @@ export class AdminService {
     data: { plan_id: string; auto_renew?: boolean; duration_months?: number }
   ): Promise<{ success: boolean; message: string; subscription?: AdminSubscription }> {
     try {
-      console.log(`⚡ Création d'un abonnement pour l'utilisateur ${userId}...`);
+     //console.log(`⚡ Création d'un abonnement pour l'utilisateur ${userId}...`);
       
       const response = await this.makeAdminRequest<AdminSubscription>(`/admin/subscriptions/${userId}/create`, {
         method: 'POST',
         body: JSON.stringify(data)
       });
       
-      console.log(`✅ Abonnement créé avec succès pour l'utilisateur ${userId}`);
+     //console.log(`✅ Abonnement créé avec succès pour l'utilisateur ${userId}`);
       
       return {
         success: true,
@@ -845,14 +845,14 @@ export class AdminService {
     data: { username?: string; email?: string; is_active?: boolean; is_verified?: boolean; is_admin?: boolean }
   ): Promise<{ success: boolean; message: string; user?: AdminUser }> {
     try {
-      console.log(`⚡ Modification de l'utilisateur ${userId}...`);
+     //console.log(`⚡ Modification de l'utilisateur ${userId}...`);
       
       const response = await this.makeAdminRequest<AdminUser>(`/admin/users/${userId}`, {
         method: 'PUT',
         body: JSON.stringify(data)
       });
       
-      console.log(`✅ Utilisateur ${userId} modifié avec succès`);
+     //console.log(`✅ Utilisateur ${userId} modifié avec succès`);
       
       return {
         success: true,
@@ -874,14 +874,14 @@ export class AdminService {
    */
   static async toggleUserActivation(userId: number | string, isActive: boolean): Promise<{ success: boolean; message: string }> {
     try {
-      console.log(`${isActive ? '✅' : '❌'} ${isActive ? 'Activation' : 'Désactivation'} de l'utilisateur ${userId}...`);
+     //console.log(`${isActive ? '✅' : '❌'} ${isActive ? 'Activation' : 'Désactivation'} de l'utilisateur ${userId}...`);
       
       await this.makeAdminRequest(`/admin/users/${userId}/activate`, {
         method: 'PUT',
         body: JSON.stringify({ is_active: isActive })
       });
       
-      console.log(`✅ Utilisateur ${userId} ${isActive ? 'activé' : 'désactivé'} avec succès`);
+     //console.log(`✅ Utilisateur ${userId} ${isActive ? 'activé' : 'désactivé'} avec succès`);
       
       return {
         success: true,
@@ -901,14 +901,14 @@ export class AdminService {
    */
   static async resetUserPassword(userId: number | string, newPassword: string): Promise<{ success: boolean; message: string }> {
     try {
-      console.log(`🔑 Réinitialisation du mot de passe de l'utilisateur ${userId}...`);
+     //console.log(`🔑 Réinitialisation du mot de passe de l'utilisateur ${userId}...`);
       
       await this.makeAdminRequest(`/admin/users/${userId}/reset-password`, {
         method: 'PUT',
         body: JSON.stringify({ new_password: newPassword })
       });
       
-      console.log(`✅ Mot de passe de l'utilisateur ${userId} réinitialisé avec succès`);
+     //console.log(`✅ Mot de passe de l'utilisateur ${userId} réinitialisé avec succès`);
       
       return {
         success: true,
@@ -928,13 +928,13 @@ export class AdminService {
    */
   static async demoteUser(userId: number | string): Promise<{ success: boolean; message: string }> {
     try {
-      console.log(`👤 Retrait des droits admin de l'utilisateur ${userId}...`);
+     //console.log(`👤 Retrait des droits admin de l'utilisateur ${userId}...`);
       
       await this.makeAdminRequest(`/admin/users/${userId}/demote`, {
         method: 'PUT'
       });
       
-      console.log(`✅ Droits admin retirés pour l'utilisateur ${userId}`);
+     //console.log(`✅ Droits admin retirés pour l'utilisateur ${userId}`);
       
       return {
         success: true,
