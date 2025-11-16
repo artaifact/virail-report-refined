@@ -467,12 +467,12 @@ const cron = require('node-cron');
 
 // Exécuter le 1er de chaque mois à 00:00
 cron.schedule('0 0 1 * *', async () => {
-  console.log('🔄 Reset mensuel des usages...');
+ //console.log('🔄 Reset mensuel des usages...');
   
   // Les nouvelles entrées se créeront automatiquement
   // Pas besoin de reset explicite grâce à la logique par période
   
-  console.log('✅ Reset mensuel terminé');
+ //console.log('✅ Reset mensuel terminé');
 });
 ```
 
@@ -480,7 +480,7 @@ cron.schedule('0 0 1 * *', async () => {
 ```javascript
 // jobs/renewSubscriptions.js
 cron.schedule('0 2 * * *', async () => {
-  console.log('🔄 Vérification des renouvellements...');
+ //console.log('🔄 Vérification des renouvellements...');
   
   const expiredSubscriptions = await Subscription.findAll({
     where: {

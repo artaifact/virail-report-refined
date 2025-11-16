@@ -1062,7 +1062,7 @@ const CompetitiveAnalysisDisplay: React.FC&lt;CompetitiveAnalysisDisplayProps&gt
 }) =&gt; {
   // Normaliser si on reçoit un tableau de concurrents directement
   const normalizedData = <span class="cstat-no" title="statement not covered" >Array.isArray(analysisData) ? { competitors: analysisData } : analysisData;</span>
-<span class="cstat-no" title="statement not covered" >  console.log('🔍 CompetitiveAnalysisDisplay - Données reçues (normalisées si besoin):', normalizedData);</span>
+<span class="cstat-no" title="statement not covered" > //console.log('🔍 CompetitiveAnalysisDisplay - Données reçues (normalisées si besoin):', normalizedData);</span>
   // Si on charge
 <span class="cstat-no" title="statement not covered" >  if (isLoading) {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
@@ -1093,7 +1093,7 @@ const CompetitiveAnalysisDisplay: React.FC&lt;CompetitiveAnalysisDisplayProps&gt
   const isApiFormat = <span class="cstat-no" title="statement not covered" >normalizedData.analysis_id &amp;&amp; normalizedData.competitors &amp;&amp; normalizedData.stats;</span>
   const isLegacyFormat = <span class="cstat-no" title="statement not covered" >normalizedData.userSite &amp;&amp; normalizedData.competitors;</span>
   
-<span class="cstat-no" title="statement not covered" >  console.log('🔍 Format des données détecté:', {</span>
+<span class="cstat-no" title="statement not covered" > //console.log('🔍 Format des données détecté:', {</span>
     isApiFormat,
     isLegacyFormat,
     hasAnalysisId: !!normalizedData.analysis_id,
@@ -1136,7 +1136,7 @@ const CompetitiveAnalysisDisplay: React.FC&lt;CompetitiveAnalysisDisplayProps&gt
 <span class="cstat-no" title="statement not covered" >    miniLLMResults = Array.isArray(rawMini) ? rawMini : (rawMini ? Object.values(rawMini) : []);</span>
 <span class="cstat-no" title="statement not covered" >    benchmarkError = normalizedData.benchmark_results?.error;</span>
     
-<span class="cstat-no" title="statement not covered" >    console.log('🎯 Données API extraites:', {</span>
+<span class="cstat-no" title="statement not covered" >   //console.log('🎯 Données API extraites:', {</span>
       title,
       description: `"${description}"`,
       descriptionLength: description?.length,

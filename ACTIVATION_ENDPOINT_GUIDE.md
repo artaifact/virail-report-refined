@@ -116,7 +116,7 @@ async activateSubscription(subscriptionId: string): Promise<{ subscription: Subs
 if (subscriptionId) {
   try {
     await apiService.activateSubscription(subscriptionId);
-    console.log('✅ Abonnement activé avec succès');
+   //console.log('✅ Abonnement activé avec succès');
     
     toast({
       title: "Abonnement activé ! 🎉",

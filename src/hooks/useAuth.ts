@@ -23,9 +23,18 @@ export function useAuth() {
         let userFromApi: any | null = null;
         try {
           userFromApi = await apiService.getMeBearer();
+          // getMeBearer peut retourner null si la session a expiré (401)
+          // C'est normal, on continue avec les données locales
         } catch (e) {
-          // silencieux si endpoint non dispo
+          // silencieux si endpoint non dispo ou erreur réseau
           userFromApi = null;
+        }
+
+        // Si on a un user frais depuis l'API, on le persiste pour que le reste de l'app (ex: AppSidebar) voie is_admin
+        if (userFromApi) {
+          try {
+            AuthService.saveUser(userFromApi as any);
+          } catch {}
         }
 
         const mergedUser = userFromApi ?? AuthService.getUser();

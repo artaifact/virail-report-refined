@@ -36,7 +36,7 @@ async function makeRequest(endpoint, options = {}) {
 
 // Test 1: Connexion
 async function testLogin() {
-  console.log('🔐 Test de connexion...');
+ //console.log('🔐 Test de connexion...');
   
   try {
     const response = await makeRequest('/auth/login', {
@@ -47,7 +47,7 @@ async function testLogin() {
       })
     });
 
-    console.log('✅ Connexion réussie:', response);
+   //console.log('✅ Connexion réussie:', response);
     return true;
   } catch (error) {
     console.error('❌ Erreur de connexion:', error.message);
@@ -57,17 +57,17 @@ async function testLogin() {
 
 // Test 2: Récupération des plans
 async function testGetPlans() {
-  console.log('\n📋 Test de récupération des plans...');
+ //console.log('\n📋 Test de récupération des plans...');
   
   try {
     const response = await makeRequest('/api/v1/plans/');
-    console.log('✅ Plans récupérés:', response);
+   //console.log('✅ Plans récupérés:', response);
     
     const proPlan = response.plans.find(plan => plan.id === 'pro');
     if (proPlan) {
-      console.log('✅ Plan Pro trouvé:', proPlan);
+     //console.log('✅ Plan Pro trouvé:', proPlan);
     } else {
-      console.log('⚠️ Plan Pro non trouvé');
+     //console.log('⚠️ Plan Pro non trouvé');
     }
     
     return response.plans;
@@ -79,11 +79,11 @@ async function testGetPlans() {
 
 // Test 3: Récupération de l'abonnement actuel
 async function testGetCurrentSubscription() {
-  console.log('\n💳 Test de récupération de l\'abonnement actuel...');
+ //console.log('\n💳 Test de récupération de l\'abonnement actuel...');
   
   try {
     const response = await makeRequest('/api/v1/subscriptions/current');
-    console.log('✅ Abonnement actuel:', response);
+   //console.log('✅ Abonnement actuel:', response);
     return response;
   } catch (error) {
     console.error('❌ Erreur lors de la récupération de l\'abonnement:', error.message);
@@ -93,11 +93,11 @@ async function testGetCurrentSubscription() {
 
 // Test 4: Récupération des quotas
 async function testGetUsageLimits() {
-  console.log('\n📊 Test de récupération des quotas...');
+ //console.log('\n📊 Test de récupération des quotas...');
   
   try {
     const response = await makeRequest('/api/v1/usage/limits');
-    console.log('✅ Quotas récupérés:', response);
+   //console.log('✅ Quotas récupérés:', response);
     
     // Vérifier les fonctionnalités
     const features = ['analysis', 'report', 'competitor_analysis', 'optimize'];
@@ -105,7 +105,7 @@ async function testGetUsageLimits() {
       const key = `can_use_${feature}`;
       const limits = response[key];
       if (limits) {
-        console.log(`  ${feature}: ${limits.allowed ? '✅' : '❌'} (${limits.used}/${limits.limit})`);
+       //console.log(`  ${feature}: ${limits.allowed ? '✅' : '❌'} (${limits.used}/${limits.limit})`);
       }
     });
     
@@ -118,7 +118,7 @@ async function testGetUsageLimits() {
 
 // Test 5: Création d'un abonnement (si pas d'abonnement actif)
 async function testCreateSubscription() {
-  console.log('\n🆕 Test de création d\'abonnement...');
+ //console.log('\n🆕 Test de création d\'abonnement...');
   
   try {
     const subscriptionData = {
@@ -137,7 +137,7 @@ async function testCreateSubscription() {
       body: JSON.stringify(subscriptionData)
     });
 
-    console.log('✅ Abonnement créé:', response);
+   //console.log('✅ Abonnement créé:', response);
     return response;
   } catch (error) {
     console.error('❌ Erreur lors de la création de l\'abonnement:', error.message);
@@ -147,7 +147,7 @@ async function testCreateSubscription() {
 
 // Test 6: Test d'une fonctionnalité protégée
 async function testProtectedFeature() {
-  console.log('\n🔒 Test d\'une fonctionnalité protégée...');
+ //console.log('\n🔒 Test d\'une fonctionnalité protégée...');
   
   try {
     // Test d'analyse de concurrents
@@ -160,7 +160,7 @@ async function testProtectedFeature() {
       })
     });
 
-    console.log('✅ Fonctionnalité protégée testée:', response);
+   //console.log('✅ Fonctionnalité protégée testée:', response);
     return response;
   } catch (error) {
     console.error('❌ Erreur lors du test de fonctionnalité protégée:', error.message);
@@ -170,12 +170,12 @@ async function testProtectedFeature() {
 
 // Test principal
 async function runAllTests() {
-  console.log('🚀 Démarrage des tests d\'intégration frontend...\n');
+ //console.log('🚀 Démarrage des tests d\'intégration frontend...\n');
   
   // Test 1: Connexion
   const loginSuccess = await testLogin();
   if (!loginSuccess) {
-    console.log('❌ Impossible de continuer sans connexion');
+   //console.log('❌ Impossible de continuer sans connexion');
     return;
   }
   
@@ -196,7 +196,7 @@ async function runAllTests() {
   // Test 6: Fonctionnalité protégée
   await testProtectedFeature();
   
-  console.log('\n🎉 Tests terminés !');
+ //console.log('\n🎉 Tests terminés !');
 }
 
 // Exécuter les tests

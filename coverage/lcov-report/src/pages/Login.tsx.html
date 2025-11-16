@@ -571,13 +571,13 @@ const loginSchema = <span class="cstat-no" title="statement not covered" >z.obje
 &nbsp;
   const onSubmit = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>(data: LoginRequest) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      console.log('🔄 Début du processus de connexion...');</span>
+<span class="cstat-no" title="statement not covered" >     //console.log('🔄 Début du processus de connexion...');</span>
 <span class="cstat-no" title="statement not covered" >      await login(data);</span>
-<span class="cstat-no" title="statement not covered" >      console.log('✅ Connexion réussie, préparation de la redirection...');</span>
+<span class="cstat-no" title="statement not covered" >     //console.log('✅ Connexion réussie, préparation de la redirection...');</span>
       
       // Petit délai pour permettre à l'état d'authentification de se propager
 <span class="cstat-no" title="statement not covered" >      setTimeout(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        console.log('🚀 Navigation vers:', from);</span>
+<span class="cstat-no" title="statement not covered" >       //console.log('🚀 Navigation vers:', from);</span>
 <span class="cstat-no" title="statement not covered" >        navigate(from, { replace: true });</span>
       }, 100);
     } catch (error) {

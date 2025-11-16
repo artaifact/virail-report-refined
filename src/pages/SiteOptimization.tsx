@@ -48,13 +48,13 @@ const SiteOptimization: React.FC = () => {
       setStatsError(null);
 
       // Récupérer les données depuis /optimize
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
-      console.log('🔄 Chargement des statistiques depuis:', `${API_BASE_URL}/optimize`);
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
+     //console.log('🔄 Chargement des statistiques depuis:', `${API_BASE_URL}/optimize`);
       const optimizeResponse = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/optimize`);
       
       if (optimizeResponse.ok) {
         const optimizeData = await optimizeResponse.json();
-        console.log('✅ Données récupérées depuis /optimize:', optimizeData);
+       //console.log('✅ Données récupérées depuis /optimize:', optimizeData);
         
         // Adapter selon la structure des données
         let sitesData = [];
@@ -88,7 +88,7 @@ const SiteOptimization: React.FC = () => {
           averageScore,
           sitesWithOptimization
         };
-        console.log('📊 Statistiques calculées:', finalStats);
+       //console.log('📊 Statistiques calculées:', finalStats);
         setStats(finalStats);
 
       } else {
@@ -96,7 +96,7 @@ const SiteOptimization: React.FC = () => {
         
         // Tentative avec l'endpoint des optimisations textuelles
         try {
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
           const textualOptResponse = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/textual-optimizations`);
           
           if (textualOptResponse.ok) {
@@ -151,9 +151,15 @@ const SiteOptimization: React.FC = () => {
       setIsAnalyzing(true);
       setAnalysisProgress(0);
       
+      // Ajouter le préfixe https:// si nécessaire
+      let urlToAnalyze = newAnalysisUrl.trim();
+      if (!urlToAnalyze.startsWith('http://') && !urlToAnalyze.startsWith('https://')) {
+        urlToAnalyze = `https://${urlToAnalyze}`;
+      }
+      
       toast({
         title: "Optimisation démarrée",
-        description: `Optimisation GEO de ${newAnalysisUrl} en cours...`,
+        description: `Optimisation GEO de ${urlToAnalyze} en cours...`,
       });
 
       // Simuler la progression
@@ -168,14 +174,14 @@ const SiteOptimization: React.FC = () => {
       }, 500);
 
       // Appel direct et indépendant à l'endpoint /optimize
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
       const response = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/optimize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          url: newAnalysisUrl,
+          url: urlToAnalyze,
           model: 'gpt-4o',
           include_optimization: includeOptimization
         }),
@@ -186,7 +192,7 @@ const SiteOptimization: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log('✅ Réponse /optimize:', data);
+     //console.log('✅ Réponse /optimize:', data);
       
       clearInterval(progressInterval);
       setAnalysisProgress(100);
@@ -199,7 +205,7 @@ const SiteOptimization: React.FC = () => {
 
         toast({
           title: "Optimisation terminée",
-          description: `L'optimisation GEO de ${extractDomainFromUrl(newAnalysisUrl)} a été effectuée avec succès.`,
+          description: `L'optimisation GEO de ${extractDomainFromUrl(urlToAnalyze)} a été effectuée avec succès.`,
         });
 
         // Recharger les statistiques après l'optimisation
@@ -380,7 +386,7 @@ const SiteOptimization: React.FC = () => {
 
         {/* Enhanced Guide */}
         <Card className="border border-border shadow-sm bg-card overflow-hidden">
-          <CardHeader className="bg-muted border-b border-border">
+          <CardHeader className="bg-muted">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-3 text-xl text-foreground">

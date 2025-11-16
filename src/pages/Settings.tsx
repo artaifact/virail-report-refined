@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { AuthService } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
-import { ThemeToggle } from "@/components/ThemeToggle";
+// import { ThemeToggle } from "@/components/ThemeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
 
 interface UserProfile {
@@ -68,7 +68,7 @@ const Settings = () => {
                   <SettingsIcon className="w-6 h-6 text-foreground" />
                 </div>
                 <Badge className="bg-muted text-foreground border-border">
-                  ⚙️ Configuration
+                   Configuration
                 </Badge>
               </div>
               <h1 className="text-4xl font-bold text-foreground mb-3">
@@ -78,35 +78,24 @@ const Settings = () => {
                 Personnalisez votre expérience et gérez vos préférences.
               </p>
               <div className="flex items-center gap-4">
-                <Button 
+                {/* <Button 
                   className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg font-semibold px-6 py-3 h-auto"
                 >
                   <Save className="h-5 w-5 mr-2" />
                   Sauvegarder tout
-                </Button>
-                <Button 
+                </Button> */}
+                {/* <Button 
                   variant="outline"
                   className="border-border text-foreground hover:bg-muted px-6 py-3 h-auto"
                 >
                   <Eye className="h-5 w-5 mr-2" />
                   Aperçu
-                </Button>
+                </Button> */}
               </div>
             </div>
             
             {/* Stats preview */}
-            <div className="hidden lg:block">
-              <div className="bg-muted rounded-2xl p-6 border border-border">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-foreground mb-1">4</div>
-                  <div className="text-muted-foreground text-sm font-medium">Sections</div>
-                  <div className="flex items-center justify-center gap-1 mt-2">
-                    <Shield className="w-4 h-4 text-foreground" />
-                    <span className="text-muted-foreground text-sm">Sécurisé</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+           
           </div>
         </div>
       </div>
@@ -116,14 +105,14 @@ const Settings = () => {
         <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
           {/* User Profile */}
           <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted border-b border-border">
+            <CardHeader className="bg-muted">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-3 text-xl text-foreground">
                     <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
                       <User className="h-5 w-5 text-foreground" />
                     </div>
-                    Profil Utilisateur
+                    Mon Profil
                   </CardTitle>
                   <CardDescription className="mt-2 text-muted-foreground">
                     Gérez vos informations personnelles et préférences de compte
@@ -166,7 +155,7 @@ const Settings = () => {
                       className="border border-border bg-card h-11 text-foreground"
                     />
                   </div>
-                  <div className="space-y-3">
+                  {/* <div className="space-y-3">
                     <Label htmlFor="id" className="text-sm font-semibold text-muted-foreground">ID Utilisateur</Label>
                     <Input 
                       id="id" 
@@ -174,10 +163,10 @@ const Settings = () => {
                       disabled
                       className="border border-border bg-card h-11 text-foreground"
                     />
-                  </div>
+                  </div> */}
                   
                   {/* Informations du compte */}
-                  <div className="space-y-4 pt-4 border-t border-border">
+                  {/* <div className="space-y-4 pt-4 border-t border-border">
                     <h4 className="text-sm font-semibold text-foreground">Statut du compte</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
@@ -205,15 +194,15 @@ const Settings = () => {
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
                   
-                  <Button 
+                  {/* <Button 
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 font-semibold"
                     disabled
                   >
                     <Save className="h-4 w-4 mr-2" />
                     Modifications non disponibles
-                  </Button>
+                  </Button> */}
                 </>
               ) : null}
             </CardContent>
@@ -221,7 +210,7 @@ const Settings = () => {
           
           {/* Notifications */}
           <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted border-b border-border">
+            <CardHeader className="bg-muted">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-3 text-xl text-foreground">
@@ -282,8 +271,8 @@ const Settings = () => {
           </Card>
           
           {/* Security */}
-          <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted border-b border-border">
+          {/* <Card className="border border-border shadow-sm bg-card overflow-hidden">
+            <CardHeader className="bg-muted">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-3 text-xl text-foreground">
@@ -357,11 +346,11 @@ const Settings = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
           
           {/* Display Preferences */}
-          <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted border-b border-border">
+          {/* <Card className="border border-border shadow-sm bg-card overflow-hidden">
+            <CardHeader className="bg-muted">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-3 text-xl text-foreground">
@@ -380,31 +369,13 @@ const Settings = () => {
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
               <div className="space-y-3">
                 <Label className="text-sm font-semibold text-muted-foreground">Thème</Label>
                 <div className="flex justify-center">
                   <ThemeToggle />
                 </div>
-              </div>
-              
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-muted-foreground">Langue</Label>
-                <Button variant="outline" className="w-full justify-start h-11 border border-border hover:bg-muted">
-                  <Globe className="h-4 w-4 mr-2 text-foreground" />
-                  Français 🇫🇷
-                </Button>
-              </div>
-              
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-muted-foreground">Fuseau horaire</Label>
-                <Button variant="outline" className="w-full justify-start h-11 border border-border hover:bg-muted">
-                  <Clock className="h-4 w-4 mr-2 text-foreground" />
-                  Europe/Paris (UTC+1)
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </div>    
+          </Card> */}
         </div>
       </div>
     </div>

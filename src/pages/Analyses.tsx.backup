@@ -134,7 +134,7 @@ const Analyses = () => {
       }, 500);
 
       // Appel direct à l'endpoint /optimize
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
       const response = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/optimize`, {
         method: 'POST',
         headers: {
@@ -152,7 +152,7 @@ const Analyses = () => {
       }
 
       const data = await response.json();
-      console.log('✅ Réponse /optimize:', data);
+     //console.log('✅ Réponse /optimize:', data);
       
       clearInterval(progressInterval);
       setOptimizedProgress(100);

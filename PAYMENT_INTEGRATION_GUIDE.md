@@ -130,7 +130,7 @@ const MyComponent = () => {
   const handleAnalysis = async () => {
     try {
       const result = await analyzeWebsite('https://example.com');
-      console.log('Analyse réussie:', result);
+     //console.log('Analyse réussie:', result);
     } catch (error) {
       console.error('Erreur:', error);
     }
@@ -155,7 +155,7 @@ import PlanSelector from '@/components/PlanSelector';
 
 const PricingPage = () => {
   const handlePlanSelected = (planId: string) => {
-    console.log('Plan sélectionné:', planId);
+   //console.log('Plan sélectionné:', planId);
   };
 
   return (
@@ -373,7 +373,7 @@ describe('usePayment', () => {
 
 ```bash
 # .env.production
-VITE_API_BASE_URL=https://api.virail.studio
+VITE_API_BASE_URL=https://api.viraill.com
 VITE_STRIPE_PUBLISHABLE_KEY=pk_live_your_stripe_publishable_key_here
 VITE_STRIPE_SECRET_KEY=sk_live_your_stripe_secret_key_here
 VITE_ENABLE_PAYMENT_SYSTEM=true
@@ -454,7 +454,7 @@ Activez les logs de débogage :
 const DEBUG = import.meta.env.DEV;
 
 if (DEBUG) {
-  console.log('API Request:', endpoint, options);
+ //console.log('API Request:', endpoint, options);
 }
 ```
 
@@ -467,7 +467,7 @@ Pour toute question ou problème d'intégration :
 1. **Documentation API** : `http://localhost:8000/docs`
 2. **Tests d'intégration** : `npm run test:integration`
 3. **Logs** : `docker compose logs -f web`
-4. **Support** : support@virail.studio
+4. **Support** : support@viraill.com
 
 ---
 

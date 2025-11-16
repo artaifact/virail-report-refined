@@ -70,15 +70,15 @@ const SiteUrlsOverview: React.FC = () => {
       setIsLoading(true);
       setError(null);
 
-      // console.log('🔍 Récupération des sites depuis /optimize...');
+      ////console.log('🔍 Récupération des sites depuis /optimize...');
 
       // Récupérer les sites depuis l'endpoint /optimize
-              const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+              const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
               const optimizeResponse = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/optimize`);
       
       if (optimizeResponse.ok) {
         const optimizeData = await optimizeResponse.json();
-        // console.log('✅ Données reçues de /optimize:', optimizeData);
+        ////console.log('✅ Données reçues de /optimize:', optimizeData);
         
         // Adapter les données selon la structure de la réponse
         let sitesData = [];
@@ -107,7 +107,7 @@ const SiteUrlsOverview: React.FC = () => {
           optimizationId: site.id || site.optimization_id || site.optimizationId // ID pour charger l'optimisation
         })) || [];
 
-        // console.log('📊 Sites mappés:', optimizeSites);
+        ////console.log('📊 Sites mappés:', optimizeSites);
         setSites(optimizeSites);
         setFilteredSites(optimizeSites);
       } else {

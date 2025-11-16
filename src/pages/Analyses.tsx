@@ -29,6 +29,18 @@ const Analyses = () => {
   const [progress, setProgress] = useState(0);
   const [includeOptimization, setIncludeOptimization] = useState(true);
 
+  // Charger l'URL depuis sessionStorage si elle provient de l'onboarding
+  useEffect(() => {
+    const onboardingUrl = sessionStorage.getItem('onboarding-site-url');
+    if (onboardingUrl && !newAnalysisUrl) {
+      setNewAnalysisUrl(onboardingUrl);
+      // Ouvrir automatiquement le dialog si l'URL provient de l'onboarding
+      setIsDialogOpen(true);
+      // Ne pas nettoyer sessionStorage immédiatement pour permettre à l'analyse concurrentielle de l'utiliser aussi
+      // Il sera nettoyé après l'utilisation dans Competition.tsx
+    }
+  }, []);
+
   // États pour l'analyse optimisée
   const [optimizedAnalysisUrl, setOptimizedAnalysisUrl] = useState("");
   const [isOptimizedDialogOpen, setIsOptimizedDialogOpen] = useState(false);
@@ -54,7 +66,7 @@ const Analyses = () => {
       
       toast({
         title: "Analyse démarrée",
-        description: `${includeOptimization ? 'Analyse LLMO avec optimisation' : 'Analyse LLMO simple'} de ${normalizedUrl} en cours...`,
+        description: `${includeOptimization ? 'Analyse GEO avec optimisation' : 'Analyse GEO simple'} de ${normalizedUrl} en cours...`,
       });
 
       // Simuler la progression
@@ -80,9 +92,36 @@ const Analyses = () => {
           setNewAnalysisUrl("");
           setProgress(0);
 
+          // Extraire le domaine pour l'affichage
+          const domain = (() => {
+            try {
+              const urlObj = new URL(normalizedUrl);
+              return urlObj.hostname.replace('www.', '');
+            } catch {
+              return normalizedUrl;
+            }
+          })();
+
           toast({
-            title: "Analyse terminée",
-            description: `L'analyse LLMO ${includeOptimization ? 'avec optimisation' : 'simple'} est maintenant disponible.`,
+            title: "✅ Analyse lancée",
+            description: (
+              <div className="space-y-2 text-sm leading-relaxed">
+                <p>
+                  Analyse GEO {includeOptimization ? 'avec optimisation' : 'simple'} de <strong className="text-foreground">{domain}</strong> lancée avec succès.
+                </p>
+                <div className="space-y-1 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span>⏱️</span>
+                    <span>Durée estimée : <strong>5 à 15 minutes</strong></span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🔄</span>
+                    <span><strong>Actualisez la page</strong> après ce délai pour voir les résultats</span>
+                  </div>
+                </div>
+              </div>
+            ),
+            duration: 10000,
           });
 
           // Auto-sélectionner le nouveau rapport
@@ -134,7 +173,7 @@ const Analyses = () => {
       }, 500);
 
       // Appel direct à l'endpoint /optimize
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
       const response = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/optimize`, {
         method: 'POST',
         headers: {
@@ -152,7 +191,7 @@ const Analyses = () => {
       }
 
       const data = await response.json();
-      console.log('✅ Réponse /optimize:', data);
+     //console.log('✅ Réponse /optimize:', data);
       
       clearInterval(progressInterval);
       setOptimizedProgress(100);
@@ -217,7 +256,7 @@ const Analyses = () => {
             <ArrowLeft className="h-4 w-4" />
             Retour
           </Button>
-          <Card className="border border-border shadow-sm bg-card">
+          <Card className="border-none shadow-sm bg-card">
             <CardContent className="p-8 text-center">
               <h3 className="text-xl font-bold text-foreground mb-2">Erreur de chargement</h3>
               <p className="text-muted-foreground">{reportError || 'Impossible de charger les détails du rapport.'}</p>
@@ -246,7 +285,7 @@ const Analyses = () => {
 
         <BreadcrumbCustom items={breadcrumbItems} />
 
-        <Card className="border border-border shadow-sm bg-card">
+        <Card className="border-none shadow-sm bg-card">
           <Tabs defaultValue="overview" className="w-full">
             <div className="border-b border-border px-6 pt-6">
               <TabsList className="grid w-full max-w-md grid-cols-3 bg-muted p-1 rounded-xl">
@@ -377,7 +416,7 @@ const Analyses = () => {
                   </div>
                   <Progress value={optimizedProgress} className="h-3" />
                   <p className="text-xs text-muted-foreground">
-                    Optimisation en cours... Cela peut prendre quelques minutes.
+                    Optimisation en cours... Cela prend généralement entre 5 et 15 minutes. Actualisez la page une fois ce délai passé pour découvrir les résultats.
                   </p>
                 </div>
               )}
@@ -463,7 +502,7 @@ const Analyses = () => {
                   </div>
                   <Progress value={progress} className="h-3" />
                   <p className="text-xs text-muted-foreground">
-                    Analyse en cours... Cela peut prendre quelques minutes.
+                    Analyse en cours... Cela prend généralement entre 5 et 15 minutes. Actualisez la page après ce délai pour voir les résultats.
                   </p>
                 </div>
               )}
@@ -559,8 +598,8 @@ const Analyses = () => {
         </div>
         
         {/* Enhanced Reports List */}
-        <Card className="border border-border shadow-sm bg-card overflow-hidden">
-          <CardHeader className="bg-muted border-b border-border">
+        <Card className="border-none shadow-sm bg-card overflow-hidden">
+          <CardHeader className="bg-muted">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-3 text-xl text-foreground">
@@ -569,7 +608,7 @@ const Analyses = () => {
                   </div>
                   Rapports Récents
                 </CardTitle>
-                <CardDescription className="mt-2 text-muted-foreground">Dernières analyses LLMO effectuées</CardDescription>
+                <CardDescription className="mt-2 text-muted-foreground">Dernières analyses GEO effectuées</CardDescription>
               </div>
               <Badge className="bg-muted text-muted-foreground">IA</Badge>
             </div>

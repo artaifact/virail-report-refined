@@ -55,7 +55,7 @@ const handleLoadSavedAnalysis = async (id: string) => {
 ```typescript
 // src/services/competitiveAnalysisService.ts
 export const getCompetitiveAnalysisById = async (id: string) => {
-  console.log('🔍 Récupération de l\'analyse spécifique:', id);
+ //console.log('🔍 Récupération de l\'analyse spécifique:', id);
 
   const response = await fetch(`http://localhost:8000/api/v1/competitors/analyses/${id}`, {
     method: 'GET',
@@ -70,7 +70,7 @@ export const getCompetitiveAnalysisById = async (id: string) => {
   }
 
   const apiData = await response.json();
-  console.log('✅ Analyse spécifique récupérée de l\'API:', apiData);
+ //console.log('✅ Analyse spécifique récupérée de l\'API:', apiData);
   
   return mapApiAnalysisToResult(apiData);
 };

@@ -9,6 +9,7 @@ export interface AdminUser {
   is_active: boolean;
   is_verified: boolean;
   is_admin: boolean;
+  approval_status?: 'pending' | 'approved' | 'rejected';
   created_at: string;
   last_login?: string;
   total_reports?: number;
@@ -46,6 +47,7 @@ export interface AdminUserFilters {
   is_active?: boolean;
   is_admin?: boolean;
   is_verified?: boolean;
+  approval_status?: 'pending' | 'approved' | 'rejected';
   created_after?: string;
   created_before?: string;
 }
@@ -104,4 +106,54 @@ export interface AdminMessageUpdateRequest {
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   admin_response?: string;
   tags?: string[];
+}
+
+/**
+ * Types pour la gestion administrative des abonnements
+ */
+export interface AdminSubscription {
+  id: number;
+  user_id: number;
+  plan_id: string;
+  status: 'active' | 'inactive' | 'cancelled' | 'pending' | 'expired';
+  start_date: string;
+  end_date: string;
+  auto_renew: boolean;
+  created_at?: string;
+  updated_at?: string;
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  plan?: {
+    id: string;
+    name: string;
+    price: number;
+    interval: 'month' | 'year';
+  };
+}
+
+export interface AdminSubscriptionsResponse {
+  subscriptions: AdminSubscription[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+export interface AdminSubscriptionsStats {
+  total_subscriptions: number;
+  active_subscriptions: number;
+  expired_subscriptions: number;
+  cancelled_subscriptions: number;
+  pending_subscriptions?: number;
+  total_revenue?: number;
+}
+
+export interface AdminSubscriptionsQuery {
+  page?: number;
+  per_page?: number;
+  status?: string;
+  plan_id?: string;
 }

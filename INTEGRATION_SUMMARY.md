@@ -194,7 +194,7 @@ if (canUseFeature('analysis')) {
 ### ✅ **Configuration Production**
 ```bash
 # Variables d'environnement
-VITE_API_BASE_URL=https://api.virail.studio
+VITE_API_BASE_URL=https://api.viraill.com
 VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
 VITE_ENABLE_PAYMENT_SYSTEM=true
 

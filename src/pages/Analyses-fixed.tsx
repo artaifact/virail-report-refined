@@ -41,7 +41,7 @@ const Analyses = () => {
 
     try {
       const response = await AuthService.makeAuthenticatedRequest(
-        `${import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio'}/llmo/analyze`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com'}/llmo/analyze`,
         {
           method: 'POST',
           headers: {
@@ -170,7 +170,7 @@ const Analyses = () => {
                       Rapports Récents
                     </CardTitle>
                     <CardDescription className="text-blue-100 text-lg">
-                      Dernières analyses LLMO effectuées
+                      Dernières analyses GEO effectuées
                     </CardDescription>
                   </div>
                 </div>

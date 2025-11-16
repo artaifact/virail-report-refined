@@ -82,7 +82,7 @@ const ForgotPassword: React.FC = () => {
                 <div className="space-y-3">
                   <Button 
                     onClick={() => navigate('/login')} 
-                    className="w-full bg-neutral-800 hover:bg-neutral-900 text-foreground py-3 font-medium transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg"
+                    className="w-full bg-[#1A3AFF] hover:bg-[#2E4CFF] text-white py-3 font-medium transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg rounded-xl"
                   >
                     Retour à la connexion
                   </Button>
@@ -92,7 +92,7 @@ const ForgotPassword: React.FC = () => {
                       setIsEmailSent(false);
                       setEmail('');
                     }}
-                    className="w-full border-border hover:bg-gray-50"
+                    className="w-full border-2 border-[#3A3A3A] bg-card text-foreground hover:bg-[#2E2E3E] hover:text-white font-medium py-3 rounded-xl transition-all duration-200"
                   >
                     Envoyer un nouvel email
                   </Button>
@@ -186,7 +186,7 @@ const ForgotPassword: React.FC = () => {
 
                 <Button 
                   type="submit" 
-                  className="w-full bg-neutral-800 hover:bg-neutral-900 text-foreground py-3 font-medium transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg"
+                  className="w-full bg-[#1A3AFF] hover:bg-[#2E4CFF] text-white py-3 font-medium transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg rounded-xl"
                   disabled={isLoading || !email}
                 >
                   {isLoading ? (

@@ -10,7 +10,7 @@ export const runCompetitiveAnalysis = async (url: string) => {
 // APRÈS (requête POST vers votre vraie API)
 export const runCompetitiveAnalysis = async (url: string) => {
   try {
-    console.log('🚀 Lancement analyse concurrentielle pour:', url);
+   //console.log('🚀 Lancement analyse concurrentielle pour:', url);
 
     // REQUÊTE POST VERS VOTRE API RÉELLE
     const response = await fetch(`${API_BASE_URL}/analyze/competitive`, {
@@ -33,7 +33,7 @@ export const runCompetitiveAnalysis = async (url: string) => {
     }
     
     const apiData = await response.json();
-    console.log('✅ Réponse API reçue:', apiData);
+   //console.log('✅ Réponse API reçue:', apiData);
     
     // Mapper la réponse de votre API vers le format attendu
     const result = mapApiResponseToAnalysisResult(apiData, url);
@@ -75,7 +75,7 @@ function mapApiResponseToAnalysisResult(apiData, originalUrl) {
 }
 
 // Configuration API
-const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.virail.studio';
+const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.viraill.com';
 
 function getAuthToken() {
   // Récupérer le token d'authentification depuis le localStorage ou context

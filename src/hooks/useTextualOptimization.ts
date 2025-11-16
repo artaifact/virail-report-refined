@@ -49,14 +49,11 @@ export const useTextualOptimization = (optimizationId?: string): UseTextualOptim
       setIsLoading(true);
       setError(null);
       
-      console.log('🔄 Chargement des optimisations depuis l\'API...');
       const data = await listOptimizations();
-      console.log('📊 Données récupérées depuis l\'API:', data);
       
       setOptimizations(data);
       
     } catch (err) {
-      console.error('❌ Erreur lors du chargement:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des optimisations');
       
       setOptimizations([]);
@@ -190,7 +187,7 @@ export const useTextualOptimization = (optimizationId?: string): UseTextualOptim
   // Charger l'optimisation spécifique si un ID est fourni
   useEffect(() => {
     if (optimizationId) {
-      console.log('🔄 Chargement de l\'optimisation spécifique:', optimizationId);
+     //console.log('🔄 Chargement de l\'optimisation spécifique:', optimizationId);
       loadOptimization(optimizationId);
     } else {
       loadOptimizations();
@@ -200,7 +197,7 @@ export const useTextualOptimization = (optimizationId?: string): UseTextualOptim
   // Charger automatiquement la première optimisation si disponible (seulement si pas d'ID spécifique)
   useEffect(() => {
     if (!optimizationId && optimizations.length > 0 && !currentOptimization) {
-      console.log('🔄 Chargement automatique de la première optimisation');
+      ////console.log('🔄 Chargement automatique de la première optimisation');
       loadOptimization(optimizations[0].id?.toString() || '');
     }
   }, [optimizations, currentOptimization, optimizationId]);

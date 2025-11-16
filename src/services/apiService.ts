@@ -7,7 +7,7 @@
 // En développement, utiliser les chemins relatifs pour profiter du proxy Vite (port 8081)
 const API_BASE_URL = import.meta.env.DEV
   ? ''
-  : (import.meta.env.VITE_API_BASE_URL || 'https://api.virail.studio');
+  : (import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com');
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000');
 
 // Types pour les réponses API
@@ -116,25 +116,49 @@ class ApiService {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-    console.log(`🌐 apiService.request: ${options.method || 'GET'} ${this.baseURL}${endpoint}`);
-
     try {
+      const method = (options.method || 'GET').toUpperCase();
+      const isGetLike = method === 'GET' || method === 'HEAD';
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...options,
         credentials: 'include', // Important pour les cookies JWT
         headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
+          // Ne pas envoyer Content-Type pour GET/HEAD (évite un préflight CORS inutile)
+          ...(isGetLike ? {} : { 'Content-Type': 'application/json' }),
+          ...(options.headers || {}),
         },
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
-      console.log(`📡 apiService.request réponse: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
+        // Gestion spéciale pour les erreurs 401 (non authentifié)
+        if (response.status === 401) {
+          // Ne pas afficher d'erreur pour les endpoints qui peuvent échouer silencieusement
+          // (comme /auth/me si la session a expiré)
+          const isSilentEndpoint = endpoint.includes('/auth/me') || endpoint.includes('/subscriptions/current');
+          
+          if (isSilentEndpoint) {
+            // Pour les endpoints silencieux, retourner null ou une valeur par défaut
+            // plutôt que de lancer une erreur
+            console.warn(`Endpoint ${endpoint} retourne 401 - session probablement expirée`);
+            throw new Error('UNAUTHORIZED_SILENT');
+          }
+          
+          // Pour les autres endpoints, lancer une erreur normale
+          const errorData = await response.json().catch(() => ({
+            detail: { message: 'Session expirée, veuillez vous reconnecter' }
+          }));
+
+          throw new Error(
+            errorData.detail?.message ||
+            errorData.detail ||
+            'Session expirée, veuillez vous reconnecter'
+          );
+        }
+
         const errorText = await response.text();
-        console.error(`❌ apiService.request erreur ${response.status}:`, errorText);
 
         const errorData = await response.json().catch(() => ({
           detail: { message: `Erreur HTTP: ${response.status}` }
@@ -148,7 +172,6 @@ class ApiService {
       }
 
       const data = await response.json();
-      console.log(`✅ apiService.request succès:`, data);
       return data;
     } catch (error) {
       clearTimeout(timeoutId);
@@ -194,7 +217,7 @@ class ApiService {
   }
 
   /**
-   * Récupérer le profil utilisateur via Bearer (incluant is_admin)
+   * Récupérer le profil utilisateur via Bearer (incluant is_admin et onboarding)
    */
   async getMeBearer(): Promise<{
     email: string;
@@ -204,9 +227,39 @@ class ApiService {
     is_verified: boolean;
     is_admin: boolean;
     created_at: string;
-  }> {
+    onboarding_completed?: boolean;
+    onboarding_completed_at?: string | null;
+    onboarding_skipped?: boolean;
+    onboarding_data?: {
+      steps_completed: string[];
+      current_step: number;
+      started_at?: string;
+      time_spent_seconds: number;
+      skipped_steps: string[];
+    } | null;
+    onboarding_version?: string;
+  } | null> {
     // Utilise un chemin relatif pour rester en même origine et inclure les cookies httpOnly
-    return this.request('/auth/me-bearer', { method: 'GET' });
+    try {
+      return await this.request('/auth/me-bearer', { method: 'GET' });
+    } catch (e: any) {
+      // Si l'erreur est 401 (UNAUTHORIZED_SILENT), retourner null silencieusement
+      if (e?.message === 'UNAUTHORIZED_SILENT') {
+        return null;
+      }
+      
+      // Repli cookies: certains backends exposent /auth/me (cookies) au lieu de /auth/me-bearer
+      try {
+        return await this.request('/auth/me', { method: 'GET' });
+      } catch (e2: any) {
+        // Si cette requête échoue aussi avec 401, retourner null silencieusement
+        if (e2?.message === 'UNAUTHORIZED_SILENT') {
+          return null;
+        }
+        // Sinon, propager l'erreur
+        throw e2;
+      }
+    }
   }
 
   /**
@@ -240,8 +293,17 @@ class ApiService {
       period_start: string;
       period_end: string;
     } | null;
-  }> {
-    return this.request('/api/v1/subscriptions/current');
+  } | null> {
+    try {
+      return await this.request('/api/v1/subscriptions/current');
+    } catch (e: any) {
+      // Si l'erreur est 401 (UNAUTHORIZED_SILENT), retourner null silencieusement
+      if (e?.message === 'UNAUTHORIZED_SILENT') {
+        return null;
+      }
+      // Sinon, propager l'erreur
+      throw e;
+    }
   }
 
   /**
@@ -323,13 +385,10 @@ class ApiService {
    * Récupérer les quotas d'usage actuels
    */
   async getUsageLimits(): Promise<UsageLimitsResponse> {
-    console.log('🔄 apiService.getUsageLimits() appelé...');
     try {
       const result = await this.request('/api/v1/usage/limits');
-      console.log('✅ apiService.getUsageLimits() succès:', result);
       return result;
     } catch (error) {
-      console.error('❌ apiService.getUsageLimits() erreur:', error);
       throw error;
     }
   }
@@ -427,7 +486,7 @@ class ApiService {
     created_at: string;
   }> {
     try {
-      return await this.request('/api/v3/competitors/analyze', {
+      return await this.request('/api/v1/competitors/analyze', {
         method: 'POST',
         body: JSON.stringify({
           url,

@@ -70,7 +70,7 @@ const Recommendations = () => {
         <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
           {/* Priority Recommendations */}
           <Card className="lg:col-span-2 border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-emerald-50 border-b">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-emerald-50">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-3 text-xl">
@@ -198,7 +198,7 @@ const Recommendations = () => {
           
           {/* Performance Score */}
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 border-b">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-3 text-xl">
@@ -269,7 +269,7 @@ const Recommendations = () => {
         
         {/* Industry Trends */}
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-gray-50 to-indigo-50 border-b">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-indigo-50">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-3 text-xl">

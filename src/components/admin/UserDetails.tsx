@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, Mail, Calendar, Shield, CheckCircle, XCircle, Activity, UserX, UserCheck, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, User, Mail, Calendar, Shield, CheckCircle, XCircle, Activity, UserX, UserCheck, Trash2, Edit, Key, UserMinus, Loader2 } from 'lucide-react';
 import { AdminService } from '@/services/adminService';
 import { AdminUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
@@ -18,6 +19,10 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ userId, onBack, classN
   const [loading, setLoading] = useState(true);
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [editForm, setEditForm] = useState({ username: '', email: '' });
+  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -123,6 +128,115 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ userId, onBack, classN
       toast({
         title: "Erreur",
         description: "Impossible de supprimer l'utilisateur",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleEditUser = async () => {
+    if (!user) return;
+    
+    try {
+      setActionLoading(true);
+      const result = await AdminService.updateUser(user.id, {
+        username: editForm.username || undefined,
+        email: editForm.email || undefined,
+      });
+      
+      if (result.success) {
+        toast({
+          title: "Utilisateur modifié",
+          description: "Les informations ont été mises à jour",
+        });
+        const userData = await AdminService.getUserById(userId);
+        setUser(userData);
+        setShowEditForm(false);
+        setEditForm({ username: '', email: '' });
+      } else {
+        toast({
+          title: "Erreur",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier l'utilisateur",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!user || !newPassword) return;
+    
+    if (!confirm(`Êtes-vous sûr de vouloir réinitialiser le mot de passe de "${user.username}" ?`)) {
+      return;
+    }
+    
+    try {
+      setActionLoading(true);
+      const result = await AdminService.resetUserPassword(user.id, newPassword);
+      
+      if (result.success) {
+        toast({
+          title: "Mot de passe réinitialisé",
+          description: "Le nouveau mot de passe a été défini",
+        });
+        setShowPasswordForm(false);
+        setNewPassword('');
+      } else {
+        toast({
+          title: "Erreur",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de réinitialiser le mot de passe",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDemoteUser = async () => {
+    if (!user) return;
+    
+    if (!confirm(`Êtes-vous sûr de vouloir retirer les droits administrateur de "${user.username}" ?`)) {
+      return;
+    }
+    
+    try {
+      setActionLoading(true);
+      const result = await AdminService.demoteUser(user.id);
+      
+      if (result.success) {
+        toast({
+          title: "Droits retirés",
+          description: "L'utilisateur n'est plus administrateur",
+        });
+        const userData = await AdminService.getUserById(userId);
+        setUser(userData);
+      } else {
+        toast({
+          title: "Erreur",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de retirer les droits administrateur",
         variant: "destructive",
       });
     } finally {
@@ -339,6 +453,41 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ userId, onBack, classN
                 )}
                 
                 <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditForm({ username: user.username, email: user.email });
+                    setShowEditForm(!showEditForm);
+                  }}
+                  disabled={actionLoading}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Modifier
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPasswordForm(!showPasswordForm)}
+                  disabled={actionLoading}
+                  className="flex items-center gap-2"
+                >
+                  <Key className="h-4 w-4" />
+                  Réinit. MDP
+                </Button>
+
+                {user.is_admin && (
+                  <Button
+                    variant="outline"
+                    onClick={handleDemoteUser}
+                    disabled={actionLoading}
+                    className="flex items-center gap-2"
+                  >
+                    <UserMinus className="h-4 w-4" />
+                    Retirer admin
+                  </Button>
+                )}
+                
+                <Button
                   variant="destructive"
                   onClick={handleDeleteUser}
                   disabled={actionLoading}
@@ -348,9 +497,85 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ userId, onBack, classN
                   Supprimer
                 </Button>
               </div>
+
+              {/* Formulaire d'édition */}
+              {showEditForm && (
+                <div className="space-y-3 p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium text-sm">Modifier l'utilisateur</h4>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Nom d'utilisateur"
+                      value={editForm.username}
+                      onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                      disabled={actionLoading}
+                    />
+                    <Input
+                      placeholder="Email"
+                      type="email"
+                      value={editForm.email}
+                      onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                      disabled={actionLoading}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleEditUser}
+                        disabled={actionLoading}
+                        size="sm"
+                      >
+                        {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enregistrer'}
+                      </Button>
+                      <Button
+                        onClick={() => setShowEditForm(false)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Annuler
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Formulaire de réinitialisation du mot de passe */}
+              {showPasswordForm && (
+                <div className="space-y-3 p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium text-sm">Réinitialiser le mot de passe</h4>
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Nouveau mot de passe"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      disabled={actionLoading}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleResetPassword}
+                        disabled={actionLoading || !newPassword}
+                        size="sm"
+                      >
+                        {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Réinitialiser'}
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setShowPasswordForm(false);
+                          setNewPassword('');
+                        }}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Annuler
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground space-y-1">
                 <p>• <strong>Désactiver/Réactiver</strong> : Change le statut actif de l'utilisateur</p>
+                <p>• <strong>Modifier</strong> : Change le nom d'utilisateur ou l'email</p>
+                <p>• <strong>Réinit. MDP</strong> : Définit un nouveau mot de passe</p>
+                <p>• <strong>Retirer admin</strong> : Retire les droits administrateur</p>
                 <p>• <strong>Supprimer</strong> : Supprime définitivement l'utilisateur (irréversible)</p>
               </div>
             </CardContent>

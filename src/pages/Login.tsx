@@ -36,17 +36,13 @@ export default function Login() {
 
   const onSubmit = async (data: LoginRequest) => {
     try {
-      console.log('🔄 Début du processus de connexion...');
       await login(data);
-      console.log('✅ Connexion réussie, préparation de la redirection...');
       
       // Petit délai pour permettre à l'état d'authentification de se propager
       setTimeout(() => {
-        console.log('🚀 Navigation vers:', from);
         navigate(from, { replace: true });
       }, 100);
     } catch (error) {
-      console.error('❌ Erreur lors de la connexion:', error);
       // L'erreur est déjà gérée dans le hook useAuth
     }
   };
@@ -61,7 +57,7 @@ export default function Login() {
               <img 
                 src="/LOGO BLEU FOND TRANSPARENT (1).png" 
                 alt="BPC Logo" 
-                className="h-12 w-auto"
+                className="h-40 w-auto"
               />
               <h1 className="text-2xl font-bold text-foreground">Virail Studio</h1>
             </div>
@@ -163,9 +159,9 @@ export default function Login() {
                 </div>
               </div>
 
-              <div className="mt-6">
+              {/* <div className="mt-6">
                 <GoogleButton isLoading={isLoading} />
-              </div>
+              </div> */}
 
               <div className="mt-8 text-center">
                 <p className="text-muted-foreground">
@@ -182,7 +178,7 @@ export default function Login() {
           </Card>
 
           <div className="mt-8 text-center text-sm text-muted-foreground">
-            <p>© 2024 Virail Studio. Tous droits réservés.</p>
+            <p>© 2025 Viraill. Tous droits réservés.</p>
           </div>
         </div>
       </div>
@@ -196,14 +192,13 @@ export default function Login() {
             <img 
               src="/LOGO BLEU FOND TRANSPARENT (1).png" 
               alt="BPC Logo" 
-              className="h-12 w-auto"
+              className="h-40 w-auto"
             />
-            <h1 className="text-2xl font-bold text-foreground">Virail Studio</h1>
+        
           </div>
           <h2 className="text-4xl font-bold text-foreground mb-4 leading-tight">
             Bienvenue
-            <br />
-            <span className="text-muted-foreground">dans votre espace</span>
+            
           </h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
             Accédez à vos analyses et tableaux de bord personnalisés pour optimiser votre stratégie concurrentielle.

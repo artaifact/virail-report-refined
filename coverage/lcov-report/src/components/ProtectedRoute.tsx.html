@@ -222,7 +222,7 @@ interface ProtectedRouteProps {
   const { isAuthenticated, isLoading, user } = <span class="cstat-no" title="statement not covered" >useAuthContext();</span>
   const location = <span class="cstat-no" title="statement not covered" >useLocation();</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  console.log('🔐 ProtectedRoute - État actuel:', {</span>
+<span class="cstat-no" title="statement not covered" > //console.log('🔐 ProtectedRoute - État actuel:', {</span>
     isLoading,
     isAuthenticated,
     user: user?.username || 'aucun',
@@ -230,7 +230,7 @@ interface ProtectedRouteProps {
   });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  if (isLoading) {</span>
-<span class="cstat-no" title="statement not covered" >    console.log('⏳ ProtectedRoute - Chargement en cours...');</span>
+<span class="cstat-no" title="statement not covered" >   //console.log('⏳ ProtectedRoute - Chargement en cours...');</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
       &lt;div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50"&gt;
         &lt;div className="text-center"&gt;
@@ -242,12 +242,12 @@ interface ProtectedRouteProps {
   }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  if (!isAuthenticated) {</span>
-<span class="cstat-no" title="statement not covered" >    console.log('🚫 ProtectedRoute - Non authentifié, redirection vers /login');</span>
+<span class="cstat-no" title="statement not covered" >   //console.log('🚫 ProtectedRoute - Non authentifié, redirection vers /login');</span>
     // Rediriger vers la page de connexion avec l'URL de redirection
 <span class="cstat-no" title="statement not covered" >    return &lt;Navigate to="/login" state={{ from: location }} replace /&gt;;</span>
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  console.log('✅ ProtectedRoute - Authentifié, accès autorisé');</span>
+<span class="cstat-no" title="statement not covered" > //console.log('✅ ProtectedRoute - Authentifié, accès autorisé');</span>
 <span class="cstat-no" title="statement not covered" >  return &lt;&gt;{children}&lt;/&gt;;</span>
 } 
 &nbsp;

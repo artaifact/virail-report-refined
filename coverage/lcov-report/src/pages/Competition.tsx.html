@@ -3108,11 +3108,11 @@ const Competition = <span class="cstat-no" title="statement not covered" ><span 
               &lt;div className="flex gap-2 mt-2"&gt;
                 &lt;Button
                   onClick={async () =&gt; {
-                    console.log('🔄 Test manuel des quotas...');
+                   //console.log('🔄 Test manuel des quotas...');
                     const testResult = canUseFeature('competitor_analysis');
                     const featureLimits = usageLimits?.can_use_competitor_analysis;
-                    console.log('📊 Résultat test:', testResult);
-                    console.log('📋 Détails complets:', {
+                   //console.log('📊 Résultat test:', testResult);
+                   //console.log('📋 Détails complets:', {
                       canUseFeature: testResult,
                       featureLimits,
                       usageLimits: usageLimits
@@ -3126,7 +3126,7 @@ const Competition = <span class="cstat-no" title="statement not covered" ><span 
                 &lt;/Button&gt;
                 &lt;Button
                   onClick={async () =&gt; {
-                    console.log('🔄 Rechargement manuel des quotas...');
+                   //console.log('🔄 Rechargement manuel des quotas...');
                     // Forcer le rechargement
                     window.location.reload();
                   }}
@@ -3137,7 +3137,7 @@ const Competition = <span class="cstat-no" title="statement not covered" ><span 
                 &lt;/Button&gt;
                 &lt;Button
                   onClick={async () =&gt; {
-                    console.log('🔐 Test de session...');
+                   //console.log('🔐 Test de session...');
 &nbsp;
                     // Tester via une requête API pour voir si la session est valide
                     try {
@@ -3148,14 +3148,14 @@ const Competition = <span class="cstat-no" title="statement not covered" ><span 
 &nbsp;
                       if (response.ok) {
                         alert('✅ Session valide - Authentification réussie');
-                        console.log('✅ Session valide');
+                       //console.log('✅ Session valide');
                       } else if (response.status === 401) {
                         alert('❌ Session expirée - Reconnexion nécessaire\nRedirection vers la page de connexion...');
-                        console.log('❌ Session expirée');
+                       //console.log('❌ Session expirée');
                         window.location.href = '/login';
                       } else {
                         alert(`❓ Erreur inconnue: ${response.status}`);
-                        console.log('❓ Erreur inconnue:', response.status);
+                       //console.log('❓ Erreur inconnue:', response.status);
                       }
                     } catch (error) {
                       alert('❌ Erreur de réseau - Vérifiez votre connexion');
@@ -3659,10 +3659,10 @@ const Competition = <span class="cstat-no" title="statement not covered" ><span 
                 {console.log('🔍 Debug global_stats:', currentAnalysis.global_stats)}
                 &lt;DetailedCompetitiveAnalysis 
                   competitors={(<span class="fstat-no" title="function not covered" >() =</span>&gt; {
-<span class="cstat-no" title="statement not covered" >                    console.log('🔍 Fallback logic - consolidated_competitors length:', currentAnalysis.consolidated_competitors?.length || 0);</span>
+<span class="cstat-no" title="statement not covered" >                   //console.log('🔍 Fallback logic - consolidated_competitors length:', currentAnalysis.consolidated_competitors?.length || 0);</span>
                     
 <span class="cstat-no" title="statement not covered" >                    if (currentAnalysis.consolidated_competitors?.length &gt; 0) {</span>
-<span class="cstat-no" title="statement not covered" >                      console.log('✅ Using consolidated_competitors');</span>
+<span class="cstat-no" title="statement not covered" >                     //console.log('✅ Using consolidated_competitors');</span>
 <span class="cstat-no" title="statement not covered" >                      return currentAnalysis.consolidated_competitors.map(<span class="fstat-no" title="function not covered" >comp </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
                         name: comp.name,
                         domain: comp.primary_url,
@@ -3678,10 +3678,10 @@ const Competition = <span class="cstat-no" title="statement not covered" ><span 
                         opportunities: []
                       }));
                     } else {
-<span class="cstat-no" title="statement not covered" >                      console.log('🔄 Using models_analysis fallback');</span>
+<span class="cstat-no" title="statement not covered" >                     //console.log('🔄 Using models_analysis fallback');</span>
                       const extracted = <span class="cstat-no" title="statement not covered" >currentAnalysis.models_analysis?.flatMap(<span class="fstat-no" title="function not covered" >model </span>=&gt; {</span>
-<span class="cstat-no" title="statement not covered" >                        console.log('🔍 Processing model:', model.model_info?.display_name);</span>
-<span class="cstat-no" title="statement not covered" >                        console.log('🔍 Model competitors:', model.competitors?.length || 0);</span>
+<span class="cstat-no" title="statement not covered" >                       //console.log('🔍 Processing model:', model.model_info?.display_name);</span>
+<span class="cstat-no" title="statement not covered" >                       //console.log('🔍 Model competitors:', model.competitors?.length || 0);</span>
 <span class="cstat-no" title="statement not covered" >                        return model.competitors?.map(<span class="fstat-no" title="function not covered" >comp </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
                           name: comp.name,
                           domain: comp.url,
@@ -3707,7 +3707,7 @@ const Competition = <span class="cstat-no" title="statement not covered" ><span 
                           competitive_advantages: comp.competitive_advantages || []
                         })) || [];
                       }) || [];
-<span class="cstat-no" title="statement not covered" >                      console.log('🔍 Extracted competitors:', extracted.length);</span>
+<span class="cstat-no" title="statement not covered" >                     //console.log('🔍 Extracted competitors:', extracted.length);</span>
 <span class="cstat-no" title="statement not covered" >                      return extracted;</span>
                     }
                   })()} 

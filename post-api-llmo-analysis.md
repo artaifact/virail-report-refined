@@ -240,7 +240,7 @@ npm install @virail/llmo-api
 # Configuration
 const client = new LLMOClient({
   apiKey: 'your-api-key',
-  baseUrl: 'https://api.virail.studio'
+  baseUrl: 'https://api.viraill.com'
 });
 
 # Utilisation
@@ -255,4 +255,4 @@ const analysis = await client.runCompetitiveAnalysis('https://votre-site.com');
 
 ---
 
-*🔗 Documentation complète: https://docs.virail.studio/api/competitive-analysis*
+*🔗 Documentation complète: https://docs.viraill.com/api/competitive-analysis*

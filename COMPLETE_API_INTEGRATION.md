@@ -225,7 +225,7 @@ testAPI.testAuthCookies()    // Vérification cookies
 ### **Variables d'Environnement**
 ```bash
 # Production
-VITE_API_BASE_URL=https://api.virail.studio
+VITE_API_BASE_URL=https://api.viraill.com
 NODE_ENV=production
 
 # Development  

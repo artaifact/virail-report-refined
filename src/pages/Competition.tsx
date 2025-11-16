@@ -65,6 +65,18 @@ const Competition = () => {
 
   const { usageLimits, canUseFeature } = usePayment() as any;
 
+  // Charger l'URL depuis sessionStorage si elle provient de l'onboarding
+  useEffect(() => {
+    const onboardingUrl = sessionStorage.getItem('onboarding-site-url');
+    if (onboardingUrl && !userUrl) {
+      setUserUrl(onboardingUrl);
+      // Passer automatiquement à l'onglet "Nouvelle analyse" si l'URL provient de l'onboarding
+      setSelectedTab("new");
+      // Nettoyer sessionStorage après utilisation (c'est la dernière étape qui l'utilise)
+      sessionStorage.removeItem('onboarding-site-url');
+    }
+  }, []);
+
   // Charger les analyses sauvegardées
   useEffect(() => {
     const loadAnalyses = async () => {
@@ -288,7 +300,7 @@ const Competition = () => {
 
           <TabsContent value="saved" className="space-y-6 mt-8">
             <Card className="border border-border shadow-sm bg-card overflow-hidden">
-              <CardHeader className="bg-muted border-b border-border">
+              <CardHeader className="bg-muted">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-3 text-xl">
@@ -302,7 +314,6 @@ const Competition = () => {
                     </CardDescription>
                   </div>
                   <Badge className="bg-primary/10 text-primary">
-                    <Trophy className="w-3 h-3 mr-1" />
                     {competitorAnalyses.length} analyse{competitorAnalyses.length > 1 ? 's' : ''}
                   </Badge>
                 </div>
@@ -318,7 +329,7 @@ const Competition = () => {
                 ) : competitorAnalyses.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-6">
-                      <Trophy className="h-10 w-10 text-muted-foreground" />
+                  
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-3">Aucune analyse sauvegardée</h3>
                     <p className="text-muted-foreground mb-6 max-w-md mx-auto">
@@ -346,9 +357,7 @@ const Competition = () => {
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-4 mb-4">
-                              <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                <Trophy className="h-6 w-6 text-foreground" />
-                              </div>
+                              
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
                                   <h4 className="text-lg font-bold text-foreground group-hover:text-foreground transition-colors">
@@ -370,13 +379,13 @@ const Competition = () => {
                             </div>
                             
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                                 <span>Analysé {formatDistanceToNow(new Date(analysis.created_at), { 
                                   addSuffix: true, 
                                   locale: fr 
                                 })}</span>
-                              </div>
+                              </div> */}
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Users className="h-4 w-4 text-muted-foreground" />
                                 <span>{analysis.total_competitors_found} concurrent{analysis.total_competitors_found > 1 ? 's' : ''} analysé{analysis.total_competitors_found > 1 ? 's' : ''}</span>
@@ -384,54 +393,11 @@ const Competition = () => {
                             </div>
 
                             {/* Enhanced insights preview */}
-                            <div className="bg-muted rounded-xl p-4 group-hover:bg-muted/60 transition-all border border-border">
-                              <div className="grid md:grid-cols-3 gap-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                                    <Award className="h-4 w-4 text-foreground" />
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-semibold text-foreground">
-                                      {analysis.total_models_executed} Modèles
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">IA utilisés</div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                                    <Clock className="h-4 w-4 text-foreground" />
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-semibold text-foreground">
-                                      {analysis.status === 'completed' ? 'Terminée' : 'En cours'}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">Statut</div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                                    <BarChart3 className="h-4 w-4 text-foreground" />
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-semibold text-foreground">
-                                      Analyse #{analysis.analysis_id}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">ID unique</div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+                           
                           </div>
                           
                           <div className="flex items-center gap-3 ml-6">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => handleDeleteAnalysis(analysis.analysis_id, e)}
-                              className="text-muted-foreground hover:text-foreground hover:bg-muted opacity-0 group-hover:opacity-100 transition-all hover:scale-110 w-10 h-10 p-0"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                
                             <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
                               <span className="text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
                                 Voir l'analyse
@@ -450,7 +416,7 @@ const Competition = () => {
 
           <TabsContent value="setup" className="space-y-6 mt-8">
             <Card className="border-0 shadow-xl bg-card backdrop-blur-sm overflow-hidden">
-              <CardHeader className="bg-muted border-b border-border">
+              <CardHeader className="bg-muted">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-3 text-xl">
@@ -562,7 +528,7 @@ const Competition = () => {
           <TabsContent value="results" className="space-y-6 mt-8">
             {/* Enhanced Header avec informations sur l'analyse chargée */}
             {currentAnalysis && (
-              <Card className="border-0 shadow-xl bg-muted overflow-hidden">
+              <Card className="border border-border shadow-sm bg-card overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -619,11 +585,11 @@ const Competition = () => {
               <div className="flex gap-2 mt-2">
                 <Button
                   onClick={async () => {
-                    console.log('🔄 Test manuel des quotas...');
+                   //console.log('🔄 Test manuel des quotas...');
                     const testResult = canUseFeature('competitor_analysis');
                     const featureLimits = usageLimits?.can_use_competitor_analysis;
-                    console.log('📊 Résultat test:', testResult);
-                    console.log('📋 Détails complets:', {
+                   //console.log('📊 Résultat test:', testResult);
+                   //console.log('📋 Détails complets:', {
                       canUseFeature: testResult,
                       featureLimits,
                       usageLimits: usageLimits
@@ -637,7 +603,7 @@ const Competition = () => {
                 </Button>
                 <Button
                   onClick={async () => {
-                    console.log('🔄 Rechargement manuel des quotas...');
+                   //console.log('🔄 Rechargement manuel des quotas...');
                     // Forcer le rechargement
                     window.location.reload();
                   }}
@@ -648,7 +614,7 @@ const Competition = () => {
                 </Button>
                 <Button
                   onClick={async () => {
-                    console.log('🔐 Test de session...');
+                   //console.log('🔐 Test de session...');
 
                     // Tester via une requête API pour voir si la session est valide
                     try {
@@ -659,14 +625,14 @@ const Competition = () => {
 
                       if (response.ok) {
                         alert('✅ Session valide - Authentification réussie');
-                        console.log('✅ Session valide');
+                       //console.log('✅ Session valide');
                       } else if (response.status === 401) {
                         alert('❌ Session expirée - Reconnexion nécessaire\nRedirection vers la page de connexion...');
-                        console.log('❌ Session expirée');
+                       //console.log('❌ Session expirée');
                         window.location.href = '/login';
                       } else {
                         alert(`❓ Erreur inconnue: ${response.status}`);
-                        console.log('❓ Erreur inconnue:', response.status);
+                       //console.log('❓ Erreur inconnue:', response.status);
                       }
                     } catch (error) {
                       alert('❌ Erreur de réseau - Vérifiez votre connexion');
@@ -850,136 +816,219 @@ const Competition = () => {
                 {/* Détails par modèle */}
                 <Card className="bg-card border border-border">
                   <CardHeader>
-                    <CardTitle className="text-lg text-foreground">🤖 Détails par Modèle IA</CardTitle>
+                    <CardTitle className="text-lg text-foreground">Détails par Modèle IA</CardTitle>
                   </CardHeader>
                   <CardContent className="text-foreground">
-                    <div className="space-y-3">
-                      {currentAnalysis.models_analysis?.map((model, modelIdx) => (
-                        <details key={modelIdx} className="group border border-border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                          <summary className="flex items-center justify-between p-4 cursor-pointer list-none">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-card border border-border/50 flex items-center justify-center overflow-hidden">
-                                {(() => {
-                                  const modelName = model.model_info?.display_name?.toLowerCase() || '';
-                                  if (modelName.includes('claude')) {
-                                    return <img src="/prompt-model-claude.svg" alt="Claude" className="w-6 h-6" />;
-                                  } else if (modelName.includes('gpt') || modelName.includes('openai')) {
-                                    return <img src="/prompt-model-openai-for-light.svg" alt="OpenAI" className="w-6 h-6" />;
-                                  } else if (modelName.includes('gemini')) {
-                                    return <img src="/prompt-model-gemini.svg" alt="Gemini" className="w-6 h-6" />;
-                                  } else if (modelName.includes('mistral')) {
-                                    return <img src="/Mistral.png" alt="Mistral" className="w-6 h-6" />;
-                                  } else if (modelName.includes('perplexity')) {
-                                    return <img src="/prompt-model-perplexity.svg" alt="Perplexity" className="w-6 h-6" />;
-                                  } else {
-                                    return <span className="text-sm font-bold text-primary">🤖</span>;
-                                  }
-                                })()}
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-foreground text-lg">
-                                  {(() => {
-                                    const displayName = model.model_info?.display_name || '';
-                                    // Nettoyer et formater le nom du modèle
-                                    if (displayName.toLowerCase().includes('claude')) {
-                                      return 'Claude';
-                                    } else if (displayName.toLowerCase().includes('gpt')) {
-                                      // Extraire la version du modèle (ex: GPT-5, GPT-4, etc.)
-                                      const versionMatch = displayName.match(/gpt-?(\d+)/i);
-                                      if (versionMatch) {
-                                        return `GPT-${versionMatch[1]}`;
-                                      }
-                                      return 'GPT';
-                                    } else if (displayName.toLowerCase().includes('gemini')) {
-                                      return 'Gemini';
-                                    } else if (displayName.toLowerCase().includes('mistral')) {
-                                      return 'Mistral';
-                                    } else if (displayName.toLowerCase().includes('perplexity')) {
-                                      return 'Perplexity';
-                                    } else {
-                                      // Nettoyer les noms génériques
-                                      return displayName
-                                        .replace(/\([^)]*\)/g, '') // Supprimer les parenthèses
-                                        .replace(/\/.*$/, '') // Supprimer tout après le slash
-                                        .trim();
-                                    }
-                                  })()}
-                                </h4>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <span className="flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-primary rounded-full"></span>
-                                    {model.model_info?.competitors_found || 0} concurrents
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                    {Math.round((model.model_info?.average_score || 0) * 100)}% score
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant={model.model_info?.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
-                                {model.model_info?.status}
-                              </Badge>
-                              <svg className="w-4 h-4 text-muted-foreground group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </div>
-                          </summary>
-                          
-                          <div className="px-4 pb-4 border-t border-border/50">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-4">
-                              <div className="text-center p-3 bg-card rounded-lg border border-border/50">
-                                <div className="text-xl font-bold text-foreground">{model.model_info?.competitors_found || 0}</div>
-                                <div className="text-sm text-muted-foreground">Concurrents trouvés</div>
-                              </div>
-                              <div className="text-center p-3 bg-card rounded-lg border border-border/50">
-                                <div className="text-xl font-bold text-foreground">{Math.round((model.model_info?.average_score || 0) * 100)}%</div>
-                                <div className="text-sm text-muted-foreground">Score moyen</div>
-                              </div>
-                              <div className="text-center p-3 bg-card rounded-lg border border-border/50">
-                                <div className="text-xl font-bold text-foreground">
-                                  {Math.round((model.model_info?.min_score || 0) * 100)}% - {Math.round((model.model_info?.max_score || 0) * 100)}%
-                                </div>
-                                <div className="text-sm text-muted-foreground">Score min-max</div>
-                              </div>
-                            </div>
+                    <div className="space-y-4">
+                      {/* Grouper les concurrents par modèle utilisé */}
+                      {(() => {
+                        const competitorsByModel: Record<string, any[]> = {};
+                        
+                        // Grouper les concurrents par modèle
+                        const competitors = (currentAnalysis as any)?.competitors;
+                        if (competitors && Array.isArray(competitors)) {
+                          competitors.forEach((competitor: any) => {
+                            if (competitor.sources && Array.isArray(competitor.sources)) {
+                              competitor.sources.forEach((source: string) => {
+                                if (!competitorsByModel[source]) {
+                                  competitorsByModel[source] = [];
+                                }
+                                competitorsByModel[source].push(competitor);
+                              });
+                            }
+                          });
+                        }
 
-                            {model.competitors && model.competitors.length > 0 && (
-                              <div>
-                                <h5 className="font-medium mb-3 text-foreground">Concurrents identifiés:</h5>
-                                <div className="space-y-2 max-h-60 overflow-y-auto">
-                                  {model.competitors.map((competitor, compIdx) => (
-                                    <div key={compIdx} className="flex items-center justify-between p-3 bg-card rounded-lg border border-border/50 hover:bg-muted/30 transition-colors">
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-foreground truncate">{competitor.name}</div>
-                                        <div className="text-sm text-muted-foreground truncate">{competitor.url}</div>
+                        return Object.entries(competitorsByModel).map(([model, competitors]) => (
+                          <Card key={model} className="bg-muted/30 border border-border shadow-sm">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <img
+                                    src={(() => {
+                                      const modelLower = model.toLowerCase();
+                                      if (modelLower.includes('mistral') || modelLower.includes('mixtral')) return '/Mistral.png';
+                                      const id = modelLower.includes('gpt') || modelLower.includes('openai')
+                                        ? 'openai-for-light'
+                                        : modelLower.includes('claude')
+                                          ? 'claude'
+                                          : modelLower.includes('gemini')
+                                            ? 'gemini'
+                                            : modelLower.includes('sonar') || modelLower.includes('perplexity')
+                                              ? 'perplexity'
+                                              : 'claude';
+                                      return `/prompt-model-${id}.svg`;
+                                    })()}
+                                    alt="Model"
+                                    className="w-6 h-6"
+                                  />
+                                  <div>
+                                    <h4 className="font-semibold text-foreground text-sm">
+                                      {model.replace('-', ' ').toUpperCase()}
+                                    </h4>
+                                    <p className="text-xs text-muted-foreground">
+                                      {Array.isArray(competitors) ? competitors.length : 0} concurrents trouvés
+                                    </p>
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  Score moyen: {Array.isArray(competitors) && competitors.length > 0 
+                                    ? Math.round((competitors.reduce((acc, c) => acc + c.average_score, 0) / competitors.length) * 100)
+                                    : 0}/100
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              <div className="space-y-2">
+                                {Array.isArray(competitors) && competitors.slice(0, 5).map((competitor: any, index: number) => (
+                                  <div key={index} className="flex items-center justify-between p-2 bg-card rounded-lg border border-border">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 bg-muted rounded flex items-center justify-center">
+                                        <span className="text-xs font-semibold text-muted-foreground">#{index + 1}</span>
                                       </div>
-                                      <div className="text-right ml-3">
-                                        <div className="text-sm font-bold text-foreground">
-                                          {Math.round((competitor.similarity_score || 0) * 100)}%
+                                      <div>
+                                        <span className="text-sm font-medium text-foreground font-semibold">{competitor.name}</span>
+                                        <div className="text-xs text-muted-foreground">
+                                          {competitor.url}
                                         </div>
-                                        <div className="text-xs text-muted-foreground">Score</div>
                                       </div>
                                     </div>
-                                  ))}
-                                </div>
+                                    <div className="text-right">
+                                      <Badge variant="outline" className="text-xs">
+                                        Score: {Math.round(competitor.average_score * 100)}/100
+                                      </Badge>
+                                      {/* Afficher score_details si disponible */}
+                                      {competitor.score_details && competitor.score_details[model] && (
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                          {model}: {Math.round(competitor.score_details[model] * 100)}/100
+                                        </div>
+                                      )}
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        Mentions: {competitor.mentions}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            )}
-                          </div>
-                        </details>
-                      ))}
+                            </CardContent>
+                          </Card>
+                        ));
+                      })() || (
+                        <Card className="bg-card border border-border shadow-sm">
+                          <CardContent className="flex flex-col items-center justify-center py-8">
+                            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="font-semibold text-foreground mb-2">Aucun concurrent trouvé</h3>
+                            <p className="text-sm text-muted-foreground text-center">
+                              Les concurrents seront affichés ici une fois l'analyse terminée.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
 
+                {/* Analyses détaillées LLM */}
+                {currentAnalysis.mini_llm_results && currentAnalysis.mini_llm_results.length > 0 && (
+                  <Card className="bg-card border border-border">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-foreground">🧠 Analyses détaillées LLM</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-foreground">
+                      <div className="space-y-4">
+                        {currentAnalysis.mini_llm_results
+                          .filter(result => result.llm_analysis && result.llm_analysis.forces_principales)
+                          .slice(0, 3)
+                          .map((result, index) => (
+                            <Card key={index} className="bg-muted/30 border border-border shadow-sm">
+                              <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-semibold text-foreground text-sm">{result.competitor_name}</h4>
+                                    <p className="text-xs text-muted-foreground">{result.competitor_url}</p>
+                                  </div>
+                                  <Badge variant="outline" className="text-xs">
+                                    Menace: {result.llm_analysis.score_menace}/10
+                                  </Badge>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                {/* Forces principales */}
+                                {result.llm_analysis.forces_principales && result.llm_analysis.forces_principales.length > 0 && (
+                                  <div>
+                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
+                                      <TrendingUp className="h-3 w-3 text-green-500" />
+                                      Forces principales
+                                    </h5>
+                                    <ul className="space-y-1">
+                                      {result.llm_analysis.forces_principales.slice(0, 3).map((force, idx) => (
+                                        <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
+                                          <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                                          {force}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {/* Faiblesses principales */}
+                                {result.llm_analysis.faiblesses_principales && result.llm_analysis.faiblesses_principales.length > 0 && (
+                                  <div>
+                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
+                                      <TrendingDown className="h-3 w-3 text-red-500" />
+                                      Faiblesses principales
+                                    </h5>
+                                    <ul className="space-y-1">
+                                      {result.llm_analysis.faiblesses_principales.slice(0, 3).map((weakness, idx) => (
+                                        <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
+                                          <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                                          {weakness}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {/* Positionnement */}
+                                {result.llm_analysis.positionnement && (
+                                  <div>
+                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
+                                      <Target className="h-3 w-3 text-blue-500" />
+                                      Positionnement
+                                    </h5>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                      {result.llm_analysis.positionnement}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Résumé */}
+                                {result.llm_analysis.analyse_resume && result.llm_analysis.analyse_resume.trim() !== " " && (
+                                  <div className="pt-2 border-t border-border">
+                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
+                                      <Brain className="h-3 w-3 text-purple-500" />
+                                      Analyse résumée
+                                    </h5>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                      {result.llm_analysis.analyse_resume}
+                                    </p>
+                                  </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Positionnement cible */}
                 {currentAnalysis.target_positioning && (
                   <Card className="bg-card border border-border">
-                    <CardHeader>
+                    {/* <CardHeader>
                       <CardTitle className="text-lg text-foreground">Positionnement Cible</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-foreground">
+                    </CardHeader> */}
+                    {/* <CardContent className="text-foreground">
                       <div className="space-y-4">
                         {Object.entries(((currentAnalysis.target_positioning as any)?.trends_by_model || {})).map(([modelName, trends]) => {
                           const t: any = trends as any;
@@ -1056,7 +1105,7 @@ const Competition = () => {
                           );
                         })}
                       </div>
-                    </CardContent>
+                    </CardContent> */}
                   </Card>
                 )}
 
@@ -1153,6 +1202,108 @@ const Competition = () => {
                     </CardContent>
                   </Card>
                 ) : null}
+
+                {/* Position de l'utilisateur - Tout en bas */}
+                {(currentAnalysis as any).your_position && (
+                  <Card className="bg-card border border-border shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg font-semibold text-foreground">
+                        Votre Position parmi les Concurrents
+                      </CardTitle>
+                      <CardDescription className="text-xs text-muted-foreground">
+                        {(currentAnalysis as any).your_position.position_text}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="text-center p-4 bg-muted rounded-lg border border-border">
+                          <div className="text-2xl font-bold text-primary mb-1">
+                            {(currentAnalysis as any).your_position.rank}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Rang sur {(currentAnalysis as any).your_position.total_competitors}</div>
+                        </div>
+                        <div className="text-center p-4 bg-muted rounded-lg border border-border">
+                          <div className="text-2xl font-bold text-foreground mb-1">
+                            {(() => {
+                              const benchmarkScore = (currentAnalysis as any).benchmark_results?.benchmark?.classement?.find((c: any) => c.url === currentAnalysis.url)?.score;
+                              if (benchmarkScore !== undefined) return benchmarkScore;
+                              const targetScore = currentAnalysis.target_positioning?.target_benchmark_score;
+                              return targetScore ? Math.round(typeof targetScore === 'number' ? targetScore : Number(targetScore)) : 'N/A';
+                            })()}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Score Benchmark</div>
+                        </div>
+                      </div>
+
+                   
+                  
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Données Benchmark - Tout en bas */}
+                {(currentAnalysis as any).benchmark_results?.benchmark && (
+                  <Card className="bg-card border border-border">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5" />
+                        Analyse Benchmark
+                      </CardTitle>
+                      <CardDescription className="text-muted-foreground">
+                        {(currentAnalysis as any).benchmark_results.benchmark.comparaison}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-foreground">
+                      <div className="space-y-4">
+                        {/* Classement complet */}
+                        <div>
+                          <h4 className="font-semibold text-foreground mb-3">Classement complet</h4>
+                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {(currentAnalysis as any).benchmark_results.benchmark.classement.map((entry: any, idx: number) => {
+                              const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
+                              const isYourSite = entry.url === currentAnalysis.url;
+                              return (
+                                <div 
+                                  key={idx}
+                                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                                    isYourSite 
+                                      ? 'bg-primary/10 border-primary/30' 
+                                      : idx < 3
+                                        ? 'bg-yellow-50 border-yellow-200'
+                                        : 'bg-card border-border'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
+                                      isYourSite ? 'bg-primary text-primary-foreground' : 
+                                      idx === 0 ? 'bg-yellow-400 text-yellow-900' :
+                                      idx === 1 ? 'bg-gray-300 text-gray-900' :
+                                      idx === 2 ? 'bg-amber-400 text-amber-900' :
+                                      'bg-muted text-muted-foreground'
+                                    }`}>
+                                      {isYourSite ? '👤' : idx + 1}
+                                    </div>
+                                    <div>
+                                      <div className="font-medium text-foreground">
+                                        {isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url))}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">{extractDomain(entry.url)}</div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <Badge variant="outline" className="text-sm font-semibold">
+                                      {entry.score}/100
+                                    </Badge>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
 
@@ -1188,12 +1339,12 @@ const Competition = () => {
                 {console.log('🔍 Debug first model competitors length:', currentAnalysis.models_analysis?.[0]?.competitors?.length || 0)}
                 {console.log('🔍 Debug target_positioning:', currentAnalysis.target_positioning)}
                 {console.log('🔍 Debug global_stats:', currentAnalysis.global_stats)}
-                <DetailedCompetitiveAnalysis 
+                {/* <DetailedCompetitiveAnalysis 
                   competitors={(() => {
-                    console.log('🔍 Fallback logic - consolidated_competitors length:', currentAnalysis.consolidated_competitors?.length || 0);
+                   //console.log('🔍 Fallback logic - consolidated_competitors length:', currentAnalysis.consolidated_competitors?.length || 0);
                     
                     if (currentAnalysis.consolidated_competitors?.length > 0) {
-                      console.log('✅ Using consolidated_competitors');
+                     //console.log('✅ Using consolidated_competitors');
                       return currentAnalysis.consolidated_competitors.map(comp => ({
                         name: comp.name,
                         domain: comp.primary_url,
@@ -1209,10 +1360,10 @@ const Competition = () => {
                         opportunities: []
                       }));
                     } else {
-                      console.log('🔄 Using models_analysis fallback');
+                     //console.log('🔄 Using models_analysis fallback');
                       const extracted = currentAnalysis.models_analysis?.flatMap(model => {
-                        console.log('🔍 Processing model:', model.model_info?.display_name);
-                        console.log('🔍 Model competitors:', model.competitors?.length || 0);
+                       //console.log('🔍 Processing model:', model.model_info?.display_name);
+                       //console.log('🔍 Model competitors:', model.competitors?.length || 0);
                         return model.competitors?.map(comp => ({
                           name: comp.name,
                           domain: comp.url,
@@ -1238,12 +1389,13 @@ const Competition = () => {
                           competitive_advantages: comp.competitive_advantages || []
                         })) || [];
                       }) || [];
-                      console.log('🔍 Extracted competitors:', extracted.length);
+                     //console.log('🔍 Extracted competitors:', extracted.length);
                       return extracted;
                     }
                   })()} 
                   isLoading={false}
-                />
+                /> */}
+               
               </>
             )}
           </TabsContent>

@@ -9,11 +9,12 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar"
-import { LayoutDashboard, LineChart, Settings, CircleHelp, Trophy, ChevronRight, Globe2, Sparkles, Crown, ShieldCheck, UserCog, BadgeDollarSign } from "lucide-react"
+import { LayoutDashboard, LineChart, Settings, CircleHelp, ChevronRight, Globe2, Sparkles, Crown, ShieldCheck, UserCog, BadgeDollarSign, Plus, LogOut, FileText } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
 import { usePayment } from '@/contexts/PaymentContext'
-import { useLocation, Link } from "react-router-dom"
+import { useLocation, Link, useNavigate } from "react-router-dom"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
 import { useAuthContext } from "@/contexts/AuthContext"
@@ -44,7 +45,7 @@ const navigationItems = [
   {
     title: "Analyse concurrentielle",
     url: "/competition",
-    icon: Trophy,
+    icon: FileText,
     gradient: "",
   },
   {
@@ -82,12 +83,32 @@ const bottomItems = [
   },
 ]
 
+// Fonction helper pour convertir un titre en identifiant data-onboarding
+function getOnboardingId(title: string): string {
+  const mapping: Record<string, string> = {
+    "Analyses GEO": "menu-item-analyses-geo",
+    "Analyse concurrentielle": "menu-item-analyse-concurrentielle",
+    "Sites pour optimisation": "menu-item-sites-optimisation",
+    "Plans & Tarifs": "menu-item-plans-tarifs",
+    "Profile": "menu-item-profile",
+    "Aide": "menu-item-aide",
+    "Admin • Waitlist": "menu-item-admin-waitlist",
+  };
+  return mapping[title] || `menu-item-${title.toLowerCase().replace(/\s+/g, '-').replace(/[&]/g, 'et')}`;
+}
+
 export function AppSidebar() {
   const location = useLocation()
-  const { user } = useAuthContext()
+  const navigate = useNavigate()
+  const { user, logout } = useAuthContext()
   const { userPlan, isLoading } = usePayment()
+  const { isMobile, setOpenMobile } = useSidebar()
   const localUser = AuthService.getUser?.() as any
-  const isAdmin = (localUser?.is_admin || localUser?.isAdmin) ?? ((user as any)?.is_admin || (user as any)?.isAdmin)
+  const isProd = import.meta.env.PROD
+  const isAdminLocal = Boolean(localUser?.is_admin ?? localUser?.isAdmin)
+  const isAdmin = isProd 
+    ? isAdminLocal 
+    : (isAdminLocal || Boolean((user as any)?.is_admin || (user as any)?.isAdmin))
   const adminItems = isAdmin ? [{ title: "Admin • Waitlist", url: "/admin/waitlist", icon: ShieldCheck, gradient: "" }] : []
   const allItems = [...navigationItems, ...adminItems, ...bottomItems]
   const [openMenus, setOpenMenus] = React.useState<Record<string, boolean>>({})
@@ -103,17 +124,38 @@ export function AppSidebar() {
     setOpenMenus(newOpenMenus)
   }, [location.pathname])
 
+  // Fermer le sidebar sur mobile après navigation
+  React.useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }, [location.pathname, isMobile, setOpenMobile])
+
+  // Log de diagnostic pour voir la valeur retenue
+  React.useEffect(() => {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      ////console.log('[AppSidebar] isAdmin (final):', Boolean(isAdmin), { isProd, isAdminLocal, user, API_BASE_URL })
+    } catch {}
+  }, [isAdmin, isAdminLocal, isProd, user])
+
   const handleMenuToggle = (title: string, open: boolean) => {
     setOpenMenus(prev => ({ ...prev, [title]: open }))
+  }
+
+  const handleNavigation = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
   }
 
 
 
   return (
-    <Sidebar className="border-r-0 bg-sidebar shadow-xl text-sidebar-foreground">
+    <Sidebar className="border-r-0 bg-sidebar shadow-xl text-sidebar-foreground" data-sidebar="sidebar">
       {/* Header avec logo et branding */}
-      <SidebarHeader className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center justify-center mb-6">
+      <SidebarHeader className="p-3 sm:p-4 pb-0">
+        <div className="flex items-center justify-center mb-0">
           {/* <div className="w-12 h-12 bg-neutral-200 rounded-xl flex items-center justify-center shadow-lg">
             <Sparkles className="w-6 h-6 text-neutral-700" />
           </div> */}
@@ -121,7 +163,7 @@ export function AppSidebar() {
             <img
               src="/LOGO BLEU FOND TRANSPARENT (1).png"
               alt="Virail Studio"
-              className="h-36 md:h-40 w-auto object-contain mx-auto"
+              className="h-24 sm:h-32 md:h-36 lg:h-40 w-auto object-contain mx-auto"
             />
           </div>
         </div>
@@ -144,14 +186,40 @@ export function AppSidebar() {
         {/* </div> */}
       </SidebarHeader>
       
-      <SidebarContent className="px-4 pt-4 pb-0 flex-1 overflow-y-auto">
+      <SidebarContent className="px-2 sm:px-4 pt-0 pb-0 flex-1 overflow-y-auto">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/70 uppercase text-xs font-bold px-3 py-2 mb-2 tracking-wider">
-            Navigation
-          </SidebarGroupLabel>
+          {/* Bouton Nouvelle Analyse */}
+      
+          {/* Bouton Tableau de bord */}
+          <div className="px-1 sm:px-2 mb-2">
+            <Button
+              onClick={() => {
+                navigate('/')
+                handleNavigation()
+              }}
+              className={cn(
+                "w-full shadow-sm font-bold h-10 justify-start transition-all duration-200 p-0",
+                location.pathname === '/' 
+                  ? "bg-primary text-primary-foreground hover:opacity-90" 
+                  : "bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 hover:shadow-md"
+              )}
+            >
+              <div className="flex items-center gap-3 w-full pl-2 pr-3 py-2">
+                <div className={cn(
+                  "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                  location.pathname === '/' 
+                    ? "bg-primary-foreground/10" 
+                    : "bg-sidebar-accent/50"
+                )}>
+                  <LayoutDashboard className="h-4 w-4" />
+                </div>
+                <span className="text-xs font-bold">Tableau de bord</span>
+              </div>
+            </Button>
+          </div>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-2">
-              {allItems.map((item) => {
+              {allItems.filter(item => item.title !== 'Tableau de bord').map((item) => {
                 const isActive = location.pathname === item.url || 
                   ((item as any).urlPrefix && location.pathname.startsWith((item as any).urlPrefix))
                 
@@ -167,7 +235,7 @@ export function AppSidebar() {
                             className={cn(
                               "w-full justify-start group rounded-xl h-10 transition-all duration-200 hover:shadow-md",
                               isActive 
-                                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                                ? "bg-primary text-primary-foreground hover:opacity-90"
                                 : "hover:bg-sidebar-accent"
                             )}
                           >
@@ -175,12 +243,12 @@ export function AppSidebar() {
                               <div className={cn(
                                 "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
                                 isActive 
-                                  ? "bg-sidebar-primary-foreground/10" 
+                                  ? "bg-primary-foreground/10" 
                                   : "bg-sidebar-accent group-hover:bg-sidebar-accent/80"
                               )}>
                                 <item.icon className="h-4 w-4" />
                               </div>
-                              <span className="text-xs font-medium flex-1 text-left">{item.title}</span>
+                              <span className="text-xs font-bold flex-1 text-left">{item.title}</span>
                               <ChevronRight className={cn(
                                 "h-4 w-4 transition-transform duration-200", 
                                 openMenus[item.title] && "rotate-90"
@@ -197,11 +265,11 @@ export function AppSidebar() {
                                   className={cn(
                                     "w-full justify-start rounded-lg h-10 transition-all duration-200",
                                     location.pathname === child.url
-                                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                                      ? "bg-primary text-primary-foreground hover:opacity-90 shadow-sm"
                                       : "hover:bg-sidebar-accent"
                                   )}
                                 >
-                                  <Link to={child.url} className="flex items-center gap-3 px-3 py-2 text-xs">
+                                  <Link to={child.url} onClick={handleNavigation} className="flex items-center gap-3 px-3 py-2 text-xs">
                                     <div className="w-2 h-2 rounded-full bg-current opacity-60"></div>
                                     {child.title}
                                   </Link>
@@ -217,20 +285,25 @@ export function AppSidebar() {
                         className={cn(
                           "w-full justify-start group rounded-xl h-10 transition-all duration-200 hover:shadow-md",
                           isActive 
-                            ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                            ? "bg-primary text-primary-foreground hover:opacity-90"
                             : "hover:bg-sidebar-accent"
                         )}
                       >
-                        <Link to={item.url} className="flex items-center gap-3 px-3 py-2">
+                        <Link 
+                          to={item.url} 
+                          onClick={handleNavigation} 
+                          className="flex items-center gap-3 px-3 py-2"
+                          data-onboarding={getOnboardingId(item.title)}
+                        >
                           <div className={cn(
                             "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
                             isActive 
-                              ? "bg-sidebar-primary-foreground/10" 
+                              ? "bg-primary-foreground/10" 
                               : "bg-sidebar-accent group-hover:bg-sidebar-accent/80"
                           )}>
                             <item.icon className="h-4 w-4" />
                           </div>
-                          <span className="text-xs font-medium">{item.title}</span>
+                          <span className="text-xs font-bold">{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
                     )}
@@ -242,16 +315,39 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="px-4 pt-4 pb-2 border-t border-sidebar-border mt-auto">
+      <SidebarFooter className="px-2 sm:px-4 pt-4 pb-2 mt-auto space-y-3">
+        {/* Informations utilisateur */}
+        <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/50">
+          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center shrink-0">
+            <span className="text-sm font-medium">
+              {user?.username?.charAt(0).toUpperCase() || 'U'}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-medium text-sidebar-foreground truncate">
+              {user?.username || 'Utilisateur'}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-sidebar-foreground/70 truncate">
+                {user?.email || 'user@example.com'}
+              </div>
+              <Button variant="ghost" size="icon" onClick={logout} title="Se déconnecter" className="h-6 w-6 shrink-0">
+                <LogOut className="h-3 w-3 text-sidebar-foreground/70" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+
         {/* Plan actuel */}
-        <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center justify-between pt-2 border-t border-sidebar-border">
           <span className="text-xs text-sidebar-foreground/70">Plan actuel</span>
           <Badge variant="secondary" className="text-[10px]">
             {isLoading ? 'Chargement…' : (userPlan?.currentPlan?.name || 'Inconnu')}
           </Badge>
         </div>
         {/* Footer branding */}
-        <div className="mt-2 pt-1">
+        <div className="pt-1">
           <p className="text-xs text-sidebar-foreground/60 text-center">
             © 2025 Virail Studio
           </p>

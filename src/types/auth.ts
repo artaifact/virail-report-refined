@@ -20,6 +20,17 @@ export interface User {
   email: string;
   username: string;
   is_admin?: boolean;
+  onboarding_completed?: boolean;
+  onboarding_completed_at?: string | null;
+  onboarding_skipped?: boolean;
+  onboarding_data?: {
+    steps_completed: string[];
+    current_step: number;
+    started_at?: string;
+    time_spent_seconds: number;
+    skipped_steps: string[];
+  } | null;
+  onboarding_version?: string;
 }
 
 export interface AuthState {
