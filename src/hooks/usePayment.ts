@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { apiService } from '@/services/apiService';
+import { apiService, Subscription, UsageLimitsResponse } from '@/services/apiService';
 
 export interface PaymentPlan {
   id: string;
@@ -12,25 +12,10 @@ export interface PaymentPlan {
   popular?: boolean;
 }
 
-export interface Subscription {
-  id: string;
-  plan_id: string;
-  status: string;
-  current_period_start: string;
-  current_period_end: string;
-  cancel_at_period_end: boolean;
-}
-
-export interface Usage {
-  reports_used: number;
-  reports_limit: number;
-  reset_date: string;
-}
-
 export function usePayment() {
   const [plans, setPlans] = useState<PaymentPlan[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [usage, setUsage] = useState<Usage | null>(null);
+  const [usage, setUsage] = useState<UsageLimitsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated } = useAuthContext();
@@ -94,7 +79,9 @@ export function usePayment() {
   const createCheckoutSession = async (planId: string) => {
     try {
       setLoading(true);
-      const session = await apiService.createCheckoutSession(planId);
+      const successUrl = `${window.location.origin}/payment-success`;
+      const cancelUrl = `${window.location.origin}/`;
+      const session = await apiService.createCheckoutSession(planId, successUrl, cancelUrl);
       return session;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la création de la session de paiement');
@@ -105,12 +92,17 @@ export function usePayment() {
   };
 
   const cancelSubscription = async () => {
+    if (!subscription?.id) {
+      throw new Error('Aucun abonnement à annuler');
+    }
     try {
       setLoading(true);
-      await apiService.cancelSubscription();
+      await apiService.cancelSubscription(subscription.id);
       // Recharger les données
       const subscriptionData = await apiService.getCurrentSubscription();
-      setSubscription(subscriptionData);
+      if (subscriptionData) {
+        setSubscription(subscriptionData.subscription || null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'annulation de l\'abonnement');
       throw err;
@@ -122,15 +114,33 @@ export function usePayment() {
   // Calculer le plan actuel basé sur l'abonnement
   const currentPlan = subscription?.plan || null;
 
+  // Helper pour vérifier si une fonctionnalité peut être utilisée
+  const canUseFeature = (featureType: 'analysis' | 'report' | 'competitor_analysis' | 'optimize'): boolean => {
+    if (!usage) return false;
+    const featureKey = `can_use_${featureType}` as keyof UsageLimitsResponse;
+    const feature = usage[featureKey];
+    return feature?.allowed === true;
+  };
+
+  // Helper pour obtenir les limites d'une fonctionnalité
+  const getFeatureLimits = (featureType: 'analysis' | 'report' | 'competitor_analysis' | 'optimize') => {
+    if (!usage) return null;
+    const featureKey = `can_use_${featureType}` as keyof UsageLimitsResponse;
+    return usage[featureKey] || null;
+  };
+
   return {
     plans,
     subscription,
     usage,
+    usageLimits: usage, // Alias pour compatibilité
     currentPlan,
     loading,
     error,
     createCheckoutSession,
     cancelSubscription,
     loadPaymentData,
+    canUseFeature,
+    getFeatureLimits,
   };
 }

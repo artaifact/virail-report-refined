@@ -48,10 +48,13 @@ export function useReports() {
       
       if (result) {
         // Ajouter un rapport en cours à la liste pour un retour visuel immédiat
+        const statusValue = result.status === 'completed' || result.status === 'processing' || result.status === 'failed' 
+          ? result.status 
+          : 'processing';
         const newReport: ReportResponse = {
           id: result.reportId,
           url,
-          status: result.status || 'processing',
+          status: statusValue,
           createdAt: new Date().toISOString(),
           duration: 0,
           rawData: '',
