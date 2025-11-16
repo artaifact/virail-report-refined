@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { PaymentProvider } from "@/contexts/PaymentContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
+import { OnboardingProvider } from "@/components/OnboardingProvider";
 import Index from "./pages/Index";
 import Analyses from "./pages/Analyses";
 import Audience from "./pages/Audience";
@@ -36,6 +37,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import LLMODashboard from "./pages/LLMODashboard";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import AdminMessages from "./pages/AdminMessages";
+import ProjectOnboardingDemo from "./pages/ProjectOnboardingDemo";
 
 const queryClient = new QueryClient();
 
@@ -102,11 +104,14 @@ const App = () => (
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/auth/google/callback" element={<GoogleCallback />} />
               <Route path="/diagnostic" element={<Diagnostic />} />
+              <Route path="/project-onboarding-demo" element={<ProjectOnboardingDemo />} />
               
               {/* Routes protégées */}
               <Route path="/*" element={
                 <ProtectedRoute>
-                  <MainLayout />
+                  <OnboardingProvider>
+                    <MainLayout />
+                  </OnboardingProvider>
                 </ProtectedRoute>
               } />
             </Routes>

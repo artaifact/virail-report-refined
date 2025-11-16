@@ -47,7 +47,7 @@ const PaymentSuccess: React.FC = () => {
            //console.log(`✅ Abonnement ${subId} activé avec succès`);
             return true;
           } catch (error) {
-            console.error(`❌ Erreur lors de l'activation de ${subId} (source: ${source}):`, error);
+            // console.error(`❌ Erreur lors de l'activation de ${subId} (source: ${source}):`, error);
             return false;
           }
         };
@@ -66,7 +66,7 @@ const PaymentSuccess: React.FC = () => {
               activationSuccess = await tryActivateSubscription(stored, "localStorage");
             }
           } catch (e) {
-            console.warn('⚠️ Impossible d\'utiliser subscription_id stocké:', e);
+            // console.warn('⚠️ Impossible d\'utiliser subscription_id stocké:', e);
           }
         }
 
@@ -81,10 +81,10 @@ const PaymentSuccess: React.FC = () => {
              //console.log('🔄 Tentative d\'activation via session → subscription_id:', subId);
               activationSuccess = await tryActivateSubscription(subId, "checkout session");
             } else {
-              console.warn('⚠️ Aucun subscription_id trouvé dans la session');
+              // console.warn('⚠️ Aucun subscription_id trouvé dans la session');
             }
           } catch (e) {
-            console.warn('⚠️ Impossible de récupérer la session/activer via session_id:', e);
+            // console.warn('⚠️ Impossible de récupérer la session/activer via session_id:', e);
           }
         }
 
@@ -98,7 +98,7 @@ const PaymentSuccess: React.FC = () => {
               activationSuccess = await tryActivateSubscription(sub.id, "current subscription");
             }
           } catch (e) {
-            console.warn('⚠️ Impossible d\'exécuter le fallback d\'activation:', e);
+            // console.warn('⚠️ Impossible d\'exécuter le fallback d\'activation:', e);
           }
         }
 
@@ -129,7 +129,7 @@ const PaymentSuccess: React.FC = () => {
             });
           }
         } catch (e) {
-          console.warn('⚠️ Impossible de vérifier le statut final:', e);
+          // console.warn('⚠️ Impossible de vérifier le statut final:', e);
           toast({
             title: "Paiement reçu",
             description: "Votre paiement a été traité. Veuillez rafraîchir la page dans quelques instants pour vérifier votre abonnement.",
@@ -137,7 +137,7 @@ const PaymentSuccess: React.FC = () => {
         }
         
       } catch (error) {
-        console.error('Erreur lors du traitement du paiement:', error);
+        // console.error('Erreur lors du traitement du paiement:', error);
         toast({
           title: "Erreur",
           description: "Erreur lors du traitement de votre paiement. Veuillez contacter le support si le problème persiste.",
@@ -251,7 +251,7 @@ const PaymentSuccess: React.FC = () => {
           <p className="text-xl text-gray-600 mb-2">
             Votre abonnement a été activé avec succès
           </p>
-          {sessionId && (
+          {/* {sessionId && (
             <p className="text-sm text-gray-500">
               Session ID: {sessionId}
             </p>
@@ -260,7 +260,7 @@ const PaymentSuccess: React.FC = () => {
             <p className="text-sm text-gray-500">
               Abonnement ID: {subscriptionId}
             </p>
-          )}
+          )} */}
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-700">
               Redirection automatique vers l'accueil dans {countdown} secondes...

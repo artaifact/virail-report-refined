@@ -29,6 +29,18 @@ const Analyses = () => {
   const [progress, setProgress] = useState(0);
   const [includeOptimization, setIncludeOptimization] = useState(true);
 
+  // Charger l'URL depuis sessionStorage si elle provient de l'onboarding
+  useEffect(() => {
+    const onboardingUrl = sessionStorage.getItem('onboarding-site-url');
+    if (onboardingUrl && !newAnalysisUrl) {
+      setNewAnalysisUrl(onboardingUrl);
+      // Ouvrir automatiquement le dialog si l'URL provient de l'onboarding
+      setIsDialogOpen(true);
+      // Ne pas nettoyer sessionStorage immédiatement pour permettre à l'analyse concurrentielle de l'utiliser aussi
+      // Il sera nettoyé après l'utilisation dans Competition.tsx
+    }
+  }, []);
+
   // États pour l'analyse optimisée
   const [optimizedAnalysisUrl, setOptimizedAnalysisUrl] = useState("");
   const [isOptimizedDialogOpen, setIsOptimizedDialogOpen] = useState(false);

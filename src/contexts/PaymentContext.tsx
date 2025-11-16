@@ -112,6 +112,43 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({ children }) =>
   const refreshUserPlan = useCallback(async () => {
     try {
       const data = await apiService.getCurrentSubscription();
+      // Si data est null, c'est que la session a expiré ou qu'il n'y a pas d'abonnement
+      if (!data) {
+        // Utiliser un plan gratuit par défaut silencieusement
+        const free = plans.find(p => p.id === 'free') || {
+          id: 'free',
+          name: 'Free',
+          price: 0,
+          currency: 'EUR',
+          interval: 'month',
+          features: [],
+          maxAnalyses: 0,
+          maxReports: 0,
+          priority: 'low' as const,
+          color: 'blue'
+        };
+        setUserPlan({
+          currentPlan: free,
+          subscription: {
+            id: 'free_sub',
+            planId: 'free',
+            userId: 'guest',
+            status: 'active',
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            autoRenew: false,
+            paymentMethod: { id: 'free_pm', type: 'card' }
+          },
+          usage: {
+            analysesUsed: 0,
+            reportsUsed: 0,
+            periodStart: new Date().toISOString(),
+            periodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          }
+        });
+        return;
+      }
+      
       const mapped = mapApiSubscriptionToUserPlan(data, plans);
       if (mapped) {
         setUserPlan(mapped);
@@ -149,8 +186,15 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({ children }) =>
           }
         });
       }
-    } catch (e) {
-      console.error('Erreur lors du chargement de l\'abonnement:', e);
+    } catch (e: any) {
+      // Si l'erreur est 401 (session expirée), ne pas afficher d'erreur
+      // C'est normal et l'utilisateur sera redirigé vers la page de login si nécessaire
+      if (e?.message?.includes('401') || e?.message?.includes('UNAUTHORIZED')) {
+        console.warn('Session expirée lors du chargement de l\'abonnement - utilisation du plan par défaut');
+        // Utiliser un plan gratuit par défaut silencieusement
+      } else {
+        console.error('Erreur lors du chargement de l\'abonnement:', e);
+      }
       // En cas d'erreur, afficher un plan gratuit par défaut
       const free = plans.find(p => p.id === 'free') || {
         id: 'free',

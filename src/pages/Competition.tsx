@@ -65,6 +65,18 @@ const Competition = () => {
 
   const { usageLimits, canUseFeature } = usePayment() as any;
 
+  // Charger l'URL depuis sessionStorage si elle provient de l'onboarding
+  useEffect(() => {
+    const onboardingUrl = sessionStorage.getItem('onboarding-site-url');
+    if (onboardingUrl && !userUrl) {
+      setUserUrl(onboardingUrl);
+      // Passer automatiquement à l'onglet "Nouvelle analyse" si l'URL provient de l'onboarding
+      setSelectedTab("new");
+      // Nettoyer sessionStorage après utilisation (c'est la dernière étape qui l'utilise)
+      sessionStorage.removeItem('onboarding-site-url');
+    }
+  }, []);
+
   // Charger les analyses sauvegardées
   useEffect(() => {
     const loadAnalyses = async () => {

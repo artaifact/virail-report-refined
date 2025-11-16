@@ -83,6 +83,20 @@ const bottomItems = [
   },
 ]
 
+// Fonction helper pour convertir un titre en identifiant data-onboarding
+function getOnboardingId(title: string): string {
+  const mapping: Record<string, string> = {
+    "Analyses GEO": "menu-item-analyses-geo",
+    "Analyse concurrentielle": "menu-item-analyse-concurrentielle",
+    "Sites pour optimisation": "menu-item-sites-optimisation",
+    "Plans & Tarifs": "menu-item-plans-tarifs",
+    "Profile": "menu-item-profile",
+    "Aide": "menu-item-aide",
+    "Admin • Waitlist": "menu-item-admin-waitlist",
+  };
+  return mapping[title] || `menu-item-${title.toLowerCase().replace(/\s+/g, '-').replace(/[&]/g, 'et')}`;
+}
+
 export function AppSidebar() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -138,7 +152,7 @@ export function AppSidebar() {
 
 
   return (
-    <Sidebar className="border-r-0 bg-sidebar shadow-xl text-sidebar-foreground">
+    <Sidebar className="border-r-0 bg-sidebar shadow-xl text-sidebar-foreground" data-sidebar="sidebar">
       {/* Header avec logo et branding */}
       <SidebarHeader className="p-3 sm:p-4 pb-0">
         <div className="flex items-center justify-center mb-0">
@@ -275,7 +289,12 @@ export function AppSidebar() {
                             : "hover:bg-sidebar-accent"
                         )}
                       >
-                        <Link to={item.url} onClick={handleNavigation} className="flex items-center gap-3 px-3 py-2">
+                        <Link 
+                          to={item.url} 
+                          onClick={handleNavigation} 
+                          className="flex items-center gap-3 px-3 py-2"
+                          data-onboarding={getOnboardingId(item.title)}
+                        >
                           <div className={cn(
                             "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
                             isActive 

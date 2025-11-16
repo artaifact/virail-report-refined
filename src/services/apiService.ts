@@ -133,6 +133,31 @@ class ApiService {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        // Gestion spéciale pour les erreurs 401 (non authentifié)
+        if (response.status === 401) {
+          // Ne pas afficher d'erreur pour les endpoints qui peuvent échouer silencieusement
+          // (comme /auth/me si la session a expiré)
+          const isSilentEndpoint = endpoint.includes('/auth/me') || endpoint.includes('/subscriptions/current');
+          
+          if (isSilentEndpoint) {
+            // Pour les endpoints silencieux, retourner null ou une valeur par défaut
+            // plutôt que de lancer une erreur
+            console.warn(`Endpoint ${endpoint} retourne 401 - session probablement expirée`);
+            throw new Error('UNAUTHORIZED_SILENT');
+          }
+          
+          // Pour les autres endpoints, lancer une erreur normale
+          const errorData = await response.json().catch(() => ({
+            detail: { message: 'Session expirée, veuillez vous reconnecter' }
+          }));
+
+          throw new Error(
+            errorData.detail?.message ||
+            errorData.detail ||
+            'Session expirée, veuillez vous reconnecter'
+          );
+        }
+
         const errorText = await response.text();
 
         const errorData = await response.json().catch(() => ({
@@ -192,7 +217,7 @@ class ApiService {
   }
 
   /**
-   * Récupérer le profil utilisateur via Bearer (incluant is_admin)
+   * Récupérer le profil utilisateur via Bearer (incluant is_admin et onboarding)
    */
   async getMeBearer(): Promise<{
     email: string;
@@ -202,13 +227,38 @@ class ApiService {
     is_verified: boolean;
     is_admin: boolean;
     created_at: string;
-  }> {
+    onboarding_completed?: boolean;
+    onboarding_completed_at?: string | null;
+    onboarding_skipped?: boolean;
+    onboarding_data?: {
+      steps_completed: string[];
+      current_step: number;
+      started_at?: string;
+      time_spent_seconds: number;
+      skipped_steps: string[];
+    } | null;
+    onboarding_version?: string;
+  } | null> {
     // Utilise un chemin relatif pour rester en même origine et inclure les cookies httpOnly
     try {
       return await this.request('/auth/me-bearer', { method: 'GET' });
-    } catch (e) {
+    } catch (e: any) {
+      // Si l'erreur est 401 (UNAUTHORIZED_SILENT), retourner null silencieusement
+      if (e?.message === 'UNAUTHORIZED_SILENT') {
+        return null;
+      }
+      
       // Repli cookies: certains backends exposent /auth/me (cookies) au lieu de /auth/me-bearer
-      return await this.request('/auth/me', { method: 'GET' });
+      try {
+        return await this.request('/auth/me', { method: 'GET' });
+      } catch (e2: any) {
+        // Si cette requête échoue aussi avec 401, retourner null silencieusement
+        if (e2?.message === 'UNAUTHORIZED_SILENT') {
+          return null;
+        }
+        // Sinon, propager l'erreur
+        throw e2;
+      }
     }
   }
 
@@ -243,8 +293,17 @@ class ApiService {
       period_start: string;
       period_end: string;
     } | null;
-  }> {
-    return this.request('/api/v1/subscriptions/current');
+  } | null> {
+    try {
+      return await this.request('/api/v1/subscriptions/current');
+    } catch (e: any) {
+      // Si l'erreur est 401 (UNAUTHORIZED_SILENT), retourner null silencieusement
+      if (e?.message === 'UNAUTHORIZED_SILENT') {
+        return null;
+      }
+      // Sinon, propager l'erreur
+      throw e;
+    }
   }
 
   /**

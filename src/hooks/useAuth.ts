@@ -23,8 +23,10 @@ export function useAuth() {
         let userFromApi: any | null = null;
         try {
           userFromApi = await apiService.getMeBearer();
+          // getMeBearer peut retourner null si la session a expiré (401)
+          // C'est normal, on continue avec les données locales
         } catch (e) {
-          // silencieux si endpoint non dispo
+          // silencieux si endpoint non dispo ou erreur réseau
           userFromApi = null;
         }
 

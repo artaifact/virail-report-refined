@@ -2480,7 +2480,7 @@ const Index = () => {
 
 
       {/* Enhanced Quick Actions */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8" data-onboarding="quick-actions">
         <Card className="shadow-lg bg-white dark:bg-slate-800 border border-blue-100/60 dark:border-slate-700 overflow-hidden">
         <CardHeader className="bg-white dark:bg-slate-800 border-b border-blue-100/40 dark:border-slate-700">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -2504,18 +2504,21 @@ const Index = () => {
                 title: "Analyser un nouveau site",
                 description: "Lancer une analyse GEO complète",
                 action: () => navigate('/analyses'),
-                icon: Plus
+                icon: Plus,
+                dataAttr: "new-analysis-btn"
               },
               {
                 title: "Analyse concurrentielle",
                 description: "Comparer avec vos concurrents",
                 action: () => navigate('/competition'),
-                icon: Globe2
+                icon: Globe2,
+                dataAttr: "competitor-analysis-btn"
               }
             ].map((action, index) => (
               <Button
                 key={index}
                 variant="ghost"
+                data-onboarding={action.dataAttr}
                 className="h-auto p-4 flex flex-col items-start text-left hover:shadow-lg transition-all duration-300 bg-white dark:bg-slate-700 rounded-lg border border-blue-100/50 dark:border-slate-600 group hover:border-blue-200 dark:hover:border-slate-500 hover:scale-[1.02]"
                 onClick={action.action}
               >
