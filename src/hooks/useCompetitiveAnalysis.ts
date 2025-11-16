@@ -50,7 +50,8 @@ export const useCompetitiveAnalysis = () => {
     }
   }, []);
 
-  const startAnalysis = useCallback(async (url: string) => {
+  const startAnalysis = useCallback(async (url: string): Promise<any> => {
+    let progressInterval: NodeJS.Timeout | null = null;
    //console.log('🚀 Démarrage de l\'analyse concurrentielle pour:', url);
 
     setState(prev => ({
@@ -59,8 +60,6 @@ export const useCompetitiveAnalysis = () => {
       error: null,
       progress: 0
     }));
-
-    let progressInterval: NodeJS.Timeout | null = null;
 
     try {
      //console.log('🔐 Vérification de la connexion...');
@@ -129,11 +128,11 @@ export const useCompetitiveAnalysis = () => {
 
         // Diagnostic détaillé
        //console.log('🔍 Diagnostic quotas:', {
-          usageLimits: !!usageLimits,
-          hasCompetitorAnalysis: !!(usageLimits?.can_use_competitor_analysis),
-          competitorAnalysis: usageLimits?.can_use_competitor_analysis,
-          allKeys: usageLimits ? Object.keys(usageLimits) : []
-        });
+       //   usageLimits: !!usageLimits,
+       //   hasCompetitorAnalysis: !!(usageLimits?.can_use_competitor_analysis),
+       //   competitorAnalysis: usageLimits?.can_use_competitor_analysis,
+       //   allKeys: usageLimits ? Object.keys(usageLimits) : []
+       // });
 
         // Essayer quand même
        //console.log('🔄 Tentative malgré données manquantes...');
@@ -146,12 +145,12 @@ export const useCompetitiveAnalysis = () => {
      //console.log('✅ Résultat canUseFeature:', isAllowed);
      //console.log('📊 Détails des quotas:', featureLimits);
      //console.log('📋 État complet:', {
-        isAllowed,
-        type: typeof isAllowed,
-        usageLimitsLoaded: !!usageLimits,
-        featureLimits,
-        rawUsageLimits: usageLimits
-      });
+     //   isAllowed,
+     //   type: typeof isAllowed,
+     //   usageLimitsLoaded: !!usageLimits,
+     //   featureLimits,
+     //   rawUsageLimits: usageLimits
+     // });
 
       // Vérification finale avec logique de secours
       const finalAllowed = isAllowed || (usageLimits?.can_use_competitor_analysis?.allowed === true);
@@ -226,7 +225,7 @@ export const useCompetitiveAnalysis = () => {
 
       throw error;
     }
-  }, []);
+  }, [canUseFeature, getFeatureLimits, usageLimits, loadSavedAnalyses]);
 
   const loadAnalysis = useCallback(async (id: string) => {
     try {
