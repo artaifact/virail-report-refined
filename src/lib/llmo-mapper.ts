@@ -31,6 +31,7 @@ export function mapLLMOReportData(data: FullReportData | null): MappedReportData
     const valueProps = mapValuePropData(analyses);
     const semanticAnalyses = mapSemanticAnalysisData(analyses);
     const strategicSyntheses = mapStrategicSynthesisData(analyses);
+    const analyseCitation = data.analyse_citation;
 
     return {
       url: report.url,
@@ -40,7 +41,8 @@ export function mapLLMOReportData(data: FullReportData | null): MappedReportData
       recommendations,
       valueProps,
       semanticAnalyses,
-      strategicSyntheses
+      strategicSyntheses,
+      analyseCitation
     };
   } catch (error) {
     console.error('Erreur lors du mapping des données LLMO:', error);
@@ -155,5 +157,6 @@ function createEmptyMappedData(): MappedReportData {
     valueProps: [],
     semanticAnalyses: [],
     strategicSyntheses: [],
+    analyseCitation: undefined,
   };
 } 

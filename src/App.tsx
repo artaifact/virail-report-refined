@@ -2,9 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PaymentProvider } from "@/contexts/PaymentContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -41,14 +43,79 @@ import ProjectOnboardingDemo from "./pages/ProjectOnboardingDemo";
 
 const queryClient = new QueryClient();
 
-// Composant Header simplifié
-function AppHeader() {
-  return (
-    <header className="flex h-10 sm:h-12 shrink-0 items-center gap-4 px-4 sm:px-6 supports-[backdrop-filter]:bg-background/80 bg-background/90 backdrop-blur-sm border-b border-border">
-      <SidebarTrigger className="-ml-1 text-muted-foreground h-8 w-8 sm:h-7 sm:w-7" />
-    </header>
-  );
-}
+// Composant Header avec filtres
+// function AppHeader() {
+//   const location = useLocation();
+//   const isHomePage = location.pathname === '/';
+  
+//   // États pour les filtres
+//   const [selectedPeriod, setSelectedPeriod] = useState('Last 7 days');
+//   const [selectedModel, setSelectedModel] = useState('All Models');
+//   const [selectedTopic, setSelectedTopic] = useState('All Topics');
+
+  // return (
+    // <header className="flex h-auto min-h-[3rem] sm:min-h-[3.5rem] shrink-0 items-center gap-4 px-4 sm:px-6 supports-[backdrop-filter]:bg-background/80 bg-background/90 backdrop-blur-sm border-b border-border">
+    //   <SidebarTrigger className="-ml-1 text-muted-foreground h-8 w-8 sm:h-7 sm:w-7" />
+      
+    //   {/* Filtres - Affichés uniquement sur la page d'accueil */}
+    //   {isHomePage && (
+    //     <div className="flex items-center gap-3 flex-1 ml-4">
+          
+    //       {/* Filtre Période */}
+    //       {/* <div className="flex items-center gap-2">
+    //         <span className="text-sm">📅</span>
+    //         <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+    //           <SelectTrigger className="w-[140px] h-8 text-sm">
+    //             <SelectValue />
+    //           </SelectTrigger>
+    //           <SelectContent>
+    //             <SelectItem value="Last 7 days">Last 7 days</SelectItem>
+    //             <SelectItem value="Last 30 days">Last 30 days</SelectItem>
+    //             <SelectItem value="Last 90 days">Last 90 days</SelectItem>
+    //             <SelectItem value="All time">All time</SelectItem>
+    //           </SelectContent>
+    //         </Select>
+    //       </div> */}
+
+    //       {/* Filtre Modèles */}
+    //       <div className="flex items-center gap-2">
+    //         <Select value={selectedModel} onValueChange={setSelectedModel}>
+    //           <SelectTrigger className="w-[140px] h-8 text-sm">
+    //             <SelectValue />
+    //           </SelectTrigger>
+    //           <SelectContent>
+    //             <SelectItem value="models">Models</SelectItem>
+    //             <SelectItem value="ChatGPT">ChatGPT</SelectItem>
+    //             <SelectItem value="Perplexity">Perplexity</SelectItem>
+    //             <SelectItem value="AI Overview">AI Overview</SelectItem>
+    //             <SelectItem value="Gemini">Gemini</SelectItem>
+    //             <SelectItem value="Claude">Claude</SelectItem>
+    //           </SelectContent>
+    //         </Select>
+    //       </div>
+
+    //       {/* Filtre Topics */}
+    //       {/* <div className="flex items-center gap-2">
+    //         <span className="text-sm">📋</span>
+    //         <Select value={selectedTopic} onValueChange={setSelectedTopic}>
+    //           <SelectTrigger className="w-[180px] h-8 text-sm">
+    //             <SelectValue />
+    //           </SelectTrigger>
+    //           <SelectContent>
+    //             <SelectItem value="All Topics">All Topics</SelectItem>
+    //             <SelectItem value="Gestion de la réputation en ligne">Gestion de la réputation en ligne</SelectItem>
+    //             <SelectItem value="Marketing digital local">Marketing digital local</SelectItem>
+    //             <SelectItem value="Solutions de communication omnicanale">Solutions de communication omnicanale</SelectItem>
+    //             <SelectItem value="Stratégies de publicité locale">Stratégies de publicité locale</SelectItem>
+    //             <SelectItem value="Visibilité en ligne PME">Visibilité en ligne PME</SelectItem>
+    //           </SelectContent>
+    //         </Select>
+    //       </div> */}
+    //     </div>
+    //   )}
+    // </header>
+//   );
+// }
 
 // Layout principal avec authentification
 function MainLayout() {
@@ -57,7 +124,7 @@ function MainLayout() {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <SidebarInset className="flex-1">
-          <AppHeader />
+          {/* <AppHeader /> */}
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/analyses" element={<Analyses />} />

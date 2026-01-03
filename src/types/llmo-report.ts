@@ -113,6 +113,30 @@ export interface MappedReportData {
   valueProps: ValuePropData[];
   semanticAnalyses: SemanticAnalysisData[];
   strategicSyntheses: StrategicSynthesisData[];
+  analyseCitation?: CitationAnalysisData;
+}
+
+export interface CitationAnalysisData {
+  client_site_url: string;
+  client_site_name: string;
+  total_queries: number;
+  total_llm_calls: number;
+  global_probability: number;
+  probability_by_model: Record<string, number>;
+  total_citations: number;
+  citations_by_model: Record<string, number>;
+  average_position: number;
+  detailed_results: DetailedCitationResult[];
+}
+
+export interface DetailedCitationResult {
+  query: string;
+  llm_model: string;
+  citation_detected: boolean;
+  citation_text: string | null;
+  position_in_response: number | null;
+  confidence_score: number;
+  mentions: number;
 }
 
 export interface OverviewData {

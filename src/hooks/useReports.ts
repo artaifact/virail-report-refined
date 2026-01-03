@@ -110,19 +110,30 @@ export function useReport(reportId: string | null) {
 
   const loadReport = async () => {
     if (!reportId) {
+      console.log('⚠️ useReport: Aucun reportId fourni');
       setReport(null);
+      setLoading(false);
       return;
     }
 
     try {
+      console.log('🔄 useReport: Chargement du rapport avec ID:', reportId);
       setLoading(true);
       setError(null);
       const reportData = await fetchReport(reportId);
-      setReport(reportData);
+      
+      if (reportData) {
+        console.log('✅ useReport: Rapport chargé avec succès:', reportData);
+        setReport(reportData);
+      } else {
+        console.warn('⚠️ useReport: Aucune donnée retournée par fetchReport');
+        setError('Aucune donnée retournée par le serveur');
+        setReport(null);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement du rapport';
+      console.error('❌ useReport: Erreur:', err);
       setError(errorMessage);
-      console.error('Erreur useReport:', err);
       setReport(null);
     } finally {
       setLoading(false);

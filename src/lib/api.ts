@@ -7,7 +7,7 @@ import { AuthService } from '@/services/authService';
 
 // Configuration pour le développement
 const isDevelopment = import.meta.env.DEV;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://api.viraill.com');
 
 
 
@@ -76,6 +76,8 @@ export interface Analysis {
 export interface FullReportData {
   report: Report;
   analyses: Analysis[];
+  analyse_citation?: any;
+  competitor_analysis?: any;
 }
 
 /**
@@ -83,7 +85,16 @@ export interface FullReportData {
  */
 export async function fetchReport(reportId: string): Promise<FullReportData | null> {
   try {
-    const response = await fetchWithAuth(`${API_BASE_URL}/llmo/reports/${reportId}`);
+    const url = `${API_BASE_URL}/llmo/reports/${reportId}`;
+    console.log('📡 Appel API pour récupérer le rapport:', url);
+    
+    // Utiliser AuthService.makeAuthenticatedRequest comme dans LLMODashboard
+    const response = await AuthService.makeAuthenticatedRequest(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
     if (!response.ok) {
       let errorMessage = `Erreur lors du chargement du rapport: ${response.status} ${response.statusText}`;
@@ -112,15 +123,16 @@ export async function fetchReport(reportId: string): Promise<FullReportData | nu
           break;
       }
 
-      console.error(errorMessage);
+      console.error('❌ Erreur API:', errorMessage);
       throw new Error(errorMessage);
     }
 
     const data: FullReportData = await response.json();
+    console.log('✅ Données du rapport récupérées avec succès:', data);
     return data;
 
   } catch (error) {
-    console.error('Erreur lors de la récupération du rapport:', error);
+    console.error('❌ Erreur lors de la récupération du rapport:', error);
     return null;
   }
 }
@@ -542,6 +554,16 @@ function getMockReports(): ReportResponse[] {
         llmsUsed: ['gpt-4o', 'claude-3-sonnet', 'gemini-pro', 'mixtral-8x7b', 'sonar'],
         totalAnalyses: 5,
         completionRate: 100
+      },
+      analyse_citation: {
+        total_citations: 6,
+        citations_by_model: {
+          "gpt-5": 0,
+          "claude-4-sonnet": 2,
+          "gemini-2.5-pro": 2,
+          "mixtral-3.1": 2,
+          "sonar": 0
+        }
       }
     },
     {

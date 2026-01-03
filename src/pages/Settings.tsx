@@ -1,15 +1,9 @@
 import { useState, useEffect } from "react";
-import { Settings as SettingsIcon, User, Bell, Shield, Palette, Key, Globe, Clock, Save, Smartphone, Mail, Lock, Eye, Loader2, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { AuthService } from "@/services/authService";
-import { useToast } from "@/hooks/use-toast";
-// import { ThemeToggle } from "@/components/ThemeToggle";
-import { useTheme } from "@/contexts/ThemeContext";
+import { Settings as SettingsIcon, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface UserProfile {
   email: string;
@@ -21,361 +15,175 @@ interface UserProfile {
   created_at: string;
 }
 
+
 const Settings = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [sessions, setSessions] = useState<Array<any>>([]);
-  const { toast } = useToast();
+  const [firstName, setFirstName] = useState('Herby');
+  const [lastName, setLastName] = useState('Nerilus');
 
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
-        setLoading(true);
-        setError(null);
         const profile = await AuthService.getUserProfile();
         setUserProfile(profile);
-        // Charger les sessions actives
-        const sess = await AuthService.getSessions();
-        setSessions(sess || []);
+        // Extraire le prénom et nom depuis le username si disponible
+        if (profile.username) {
+          const nameParts = profile.username.split(' ');
+          if (nameParts.length >= 2) {
+            setFirstName(nameParts[0]);
+            setLastName(nameParts.slice(1).join(' '));
+          }
+        }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement du profil';
-        setError(errorMessage);
-        toast({
-          title: "Erreur",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+        console.error('Erreur lors du chargement du profil:', err);
       }
     };
 
     loadUserProfile();
-  }, [toast]);
+  }, []);
+
+  // Obtenir l'initiale pour l'avatar
+  const getInitial = () => {
+    if (firstName && lastName) {
+      return firstName[0].toUpperCase();
+    }
+    if (userProfile?.username) {
+      return userProfile.username[0].toUpperCase();
+    }
+    return 'U';
+  };
+
+
   return (
-    <div className="flex-1 min-h-screen bg-background">
-      {/* Hero Header Section */}
-      <div className="relative overflow-hidden bg-card px-8 py-12 border-b border-border">
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 bg-muted/30"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center justify-between">
-            <div className="max-w-3xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center">
-                  <SettingsIcon className="w-6 h-6 text-foreground" />
-                </div>
-                <Badge className="bg-muted text-foreground border-border">
-                   Configuration
-                </Badge>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Personal Information Section */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Personal Information</h2>
+            
+            {/* Avatar */}
+            <div className="mb-8">
+              <div className="w-20 h-20 rounded-full bg-amber-800 flex items-center justify-center shadow-md">
+                <span className="text-3xl font-semibold text-white">{getInitial()}</span>
               </div>
-              <h1 className="text-4xl font-bold text-foreground mb-3">
-                Paramètres
-              </h1>
-              <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
-                Personnalisez votre expérience et gérez vos préférences.
-              </p>
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+                  First Name
+                </Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
+                  Last Name
+                </Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Current Usage Section */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Current Usage</h2>
+              <Button variant="outline" size="sm" className="flex items-center gap-2 text-sm">
+                <SettingsIcon size={14} />
+                Set Limits
+              </Button>
+            </div>
+            
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="mb-3">
+                <span className="text-sm font-medium text-gray-700">Included In Plan</span>
+              </div>
               <div className="flex items-center gap-4">
-                {/* <Button 
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg font-semibold px-6 py-3 h-auto"
-                >
-                  <Save className="h-5 w-5 mr-2" />
-                  Sauvegarder tout
-                </Button> */}
-                {/* <Button 
-                  variant="outline"
-                  className="border-border text-foreground hover:bg-muted px-6 py-3 h-auto"
-                >
-                  <Eye className="h-5 w-5 mr-2" />
-                  Aperçu
-                </Button> */}
+                <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: '0%' }}></div>
+                </div>
+                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">0/75,000 tasks used</span>
               </div>
             </div>
             
-            {/* Stats preview */}
-           
+            <p className="mt-4 text-sm text-gray-600">
+              <span className="underline cursor-pointer hover:text-gray-900">Tasks</span> will be reset in 6 days (01 Dec 01:00 hs).
+            </p>
           </div>
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="px-8 py-8 space-y-8">
-        <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
-          {/* User Profile */}
-          <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-3 text-xl text-foreground">
-                    <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
-                      <User className="h-5 w-5 text-foreground" />
-                    </div>
-                    Mon Profil
-                  </CardTitle>
-                  <CardDescription className="mt-2 text-muted-foreground">
-                    Gérez vos informations personnelles et préférences de compte
-                  </CardDescription>
-                </div>
-                <Badge className="bg-muted text-foreground">
-                  Profil
-                </Badge>
+          {/* Plan Details Section */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Plan Details</h2>
+            
+            <div className="space-y-3 mb-6">
+              <div className="flex items-center">
+                <span className="text-sm text-gray-600 w-24">Plan:</span>
+                <span className="text-sm font-medium text-gray-900">Pro</span>
               </div>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-foreground" />
-                  <span className="ml-2 text-muted-foreground">Chargement du profil...</span>
-                </div>
-              ) : error ? (
-                <div className="flex items-center justify-center py-8">
-                  <AlertCircle className="h-8 w-8 text-destructive" />
-                  <span className="ml-2 text-destructive">{error}</span>
-                </div>
-              ) : userProfile ? (
-                <>
-                  <div className="space-y-3">
-                    <Label htmlFor="username" className="text-sm font-semibold text-muted-foreground">Nom d'utilisateur</Label>
-                    <Input 
-                      id="username" 
-                      value={userProfile.username || "Non défini"} 
-                      disabled
-                      className="border border-border bg-card h-11 text-foreground"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <Label htmlFor="email" className="text-sm font-semibold text-muted-foreground">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      value={userProfile.email || "Non défini"} 
-                      disabled
-                      className="border border-border bg-card h-11 text-foreground"
-                    />
-                  </div>
-                  {/* <div className="space-y-3">
-                    <Label htmlFor="id" className="text-sm font-semibold text-muted-foreground">ID Utilisateur</Label>
-                    <Input 
-                      id="id" 
-                      value={userProfile.id.toString()} 
-                      disabled
-                      className="border border-border bg-card h-11 text-foreground"
-                    />
-                  </div> */}
-                  
-                  {/* Informations du compte */}
-                  {/* <div className="space-y-4 pt-4 border-t border-border">
-                    <h4 className="text-sm font-semibold text-foreground">Statut du compte</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <span className="text-sm text-muted-foreground">Actif</span>
-                        <Badge variant={userProfile.is_active ? "default" : "destructive"}>
-                          {userProfile.is_active ? "Oui" : "Non"}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <span className="text-sm text-muted-foreground">Vérifié</span>
-                        <Badge variant={userProfile.is_verified ? "default" : "secondary"}>
-                          {userProfile.is_verified ? "Oui" : "Non"}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <span className="text-sm text-muted-foreground">Administrateur</span>
-                        <Badge variant={userProfile.is_admin ? "default" : "outline"}>
-                          {userProfile.is_admin ? "Oui" : "Non"}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <span className="text-sm text-muted-foreground">Créé le</span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(userProfile.created_at).toLocaleDateString('fr-FR')}
-                        </span>
-                      </div>
-                    </div>
-                  </div> */}
-                  
-                  {/* <Button 
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 font-semibold"
-                    disabled
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    Modifications non disponibles
-                  </Button> */}
-                </>
-              ) : null}
-            </CardContent>
-          </Card>
-          
-          {/* Notifications */}
-          <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-3 text-xl text-foreground">
-                    <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
-                      <Bell className="h-5 w-5 text-foreground" />
-                    </div>
-                    Notifications
-                  </CardTitle>
-                  <CardDescription className="mt-2 text-muted-foreground">
-                    Configurez vos préférences de notifications
-                  </CardDescription>
-                </div>
-                <Badge className="bg-muted text-foreground">
-                  3 Actives
-                </Badge>
+              <div className="flex items-center">
+                <span className="text-sm text-gray-600 w-24">Status:</span>
+                <span className="text-sm font-medium text-amber-600">Trialing</span>
               </div>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                    <Mail className="h-4 w-4 text-foreground" />
-                  </div>
+              <div className="flex items-center">
+                <span className="text-sm text-gray-600 w-24">Trial ends at:</span>
+                <span className="text-sm text-gray-900">Dec 5, 2025</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+              <Button className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm">
+                <Sparkles size={14} />
+                Upgrade Plan
+              </Button>
+              <Button variant="outline" className="flex items-center gap-2 text-sm">
+                <SettingsIcon size={14} />
+                Manage Plan
+              </Button>
+            </div>
+          </div>
+
+          {/* Invoices Section */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Invoices</h2>
+            
+            <div className="flex items-center gap-4">
+              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <ChevronLeft size={18} />
+              </button>
+              
+              <div className="flex-1 border border-gray-200 rounded-lg p-5 bg-gray-50">
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-600">Nov 21, 2025</div>
+                  <div className="text-base font-semibold text-gray-900">$0.00</div>
                   <div>
-                    <Label htmlFor="email-notifications" className="font-semibold text-foreground">Notifications par email</Label>
-                    <p className="text-sm text-muted-foreground">Recevoir les rapports hebdomadaires</p>
+                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
+                      paid
+                    </span>
                   </div>
-                </div>
-                <Switch id="email-notifications" defaultChecked />
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                    <Smartphone className="h-4 w-4 text-foreground" />
-                  </div>
-                  <div>
-                    <Label htmlFor="push-notifications" className="font-semibold text-foreground">Notifications push</Label>
-                    <p className="text-sm text-muted-foreground">Alertes en temps réel</p>
-                  </div>
-                </div>
-                <Switch id="push-notifications" defaultChecked />
-              </div>
-              
-              <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                    <Bell className="h-4 w-4 text-foreground" />
-                  </div>
-                  <div>
-                    <Label htmlFor="marketing-emails" className="font-semibold text-foreground">Emails marketing</Label>
-                    <p className="text-sm text-muted-foreground">Conseils et nouvelles fonctionnalités</p>
-                  </div>
-                </div>
-                <Switch id="marketing-emails" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Security */}
-          {/* <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-3 text-xl text-foreground">
-                    <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
-                      <Shield className="h-5 w-5 text-foreground" />
-                    </div>
-                    Sécurité et Confidentialité
-                  </CardTitle>
-                  <CardDescription className="mt-2 text-muted-foreground">
-                    Gérez la sécurité de votre compte
-                  </CardDescription>
-                </div>
-                <Badge className="bg-muted text-foreground">
-                  <Lock className="w-3 h-3 mr-1" />
-                  Sécurisé
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-muted-foreground">Mot de passe</Label>
-                <Button variant="outline" className="w-full justify-start h-11 border border-border hover:bg-muted">
-                  <Key className="h-4 w-4 mr-2 text-foreground" />
-                  Changer le mot de passe
-                </Button>
-              </div>
-              
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-muted-foreground">Authentification à deux facteurs</Label>
-                <div className="flex items-center justify-between p-4 bg-muted rounded-xl border border-border">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                      <Shield className="h-4 w-4 text-foreground" />
-                    </div>
-                    <div>
-                      <Label htmlFor="2fa" className="font-semibold text-foreground">Activer 2FA</Label>
-                      <p className="text-sm text-muted-foreground">Protection supplémentaire</p>
-                    </div>
-                  </div>
-                  <Switch id="2fa" />
+                  <div className="text-sm text-gray-600 mt-3">Trial period for AirOps Pro</div>
                 </div>
               </div>
               
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-muted-foreground">Sessions actives</Label>
-                <div className="rounded-xl border border-border bg-card">
-                  {sessions && sessions.length > 0 ? (
-                    <div className="divide-y divide-border">
-                      {sessions.map((s, idx) => (
-                        <div key={idx} className="p-3 flex items-center justify-between">
-                          <div className="min-w-0">
-                            <div className="text-sm text-foreground font-medium truncate">
-                              {s.user_agent || 'Session'} {s.current ? '(courante)' : ''}
-                            </div>
-                          <div className="text-xs text-muted-foreground truncate">
-                              Dernière activité: {s.last_active_at ? new Date(s.last_active_at).toLocaleString('fr-FR') : '—'}
-                            </div>
-                          </div>
-                          <Badge variant={s.current ? 'default' : 'secondary'} className="text-xs">
-                            {s.current ? 'Active' : 'Ouverte'}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-3 text-sm text-muted-foreground flex items-center gap-2">
-                      <Smartphone className="h-4 w-4" />
-                      Aucune session active trouvée
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card> */}
-          
-          {/* Display Preferences */}
-          {/* <Card className="border border-border shadow-sm bg-card overflow-hidden">
-            <CardHeader className="bg-muted">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-3 text-xl text-foreground">
-                    <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
-                      <Palette className="h-5 w-5 text-foreground" />
-                    </div>
-                    Préférences d'Affichage
-                  </CardTitle>
-                  <CardDescription className="mt-2 text-muted-foreground">
-                    Personnalisez l'apparence de l'application
-                  </CardDescription>
-                </div>
-                <Badge className="bg-muted text-foreground">
-                  <Palette className="w-3 h-3 mr-1" />
-                  Thème
-                </Badge>
-              </div>
-            </CardHeader>
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-muted-foreground">Thème</Label>
-                <div className="flex justify-center">
-                  <ThemeToggle />
-                </div>
-              </div>    
-          </Card> */}
+              <button className="p-2 text-gray-300 hover:text-gray-400 hover:bg-gray-100 rounded-lg transition-colors opacity-50 pointer-events-none">
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

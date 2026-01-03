@@ -3,12 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, User, Lock, LogIn, Sparkles, Shield, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Eye, EyeOff } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { GoogleButton } from '@/components/ui/GoogleButton';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { LoginRequest } from '@/types/auth';
 
@@ -48,184 +44,141 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground">
-      {/* Section gauche - Formulaire */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="lg:hidden flex items-center justify-center gap-3 mb-6">
-              <img 
-                src="/LOGO BLEU FOND TRANSPARENT (1).png" 
-                alt="BPC Logo" 
-                className="h-40 w-auto"
-              />
-              <h1 className="text-2xl font-bold text-foreground">Virail Studio</h1>
+    <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
+      {/* Header - Logo en haut */}
+      <header className="w-full px-6 py-4">
+        <div className="max-w-7xl mx-auto">
+          <img 
+            src="/LOGO BLEU FOND TRANSPARENT (1).png" 
+            alt="Virail Logo" 
+            className="h-12 w-auto"
+          />
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 flex items-center justify-center py-16 px-4">
+        <div className="w-full max-w-md mx-auto">
+          <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
+            {/* En-tête */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl md:text-4xl font-semibold text-[#1b1b1f] mb-3">
+                Se connecter
+              </h1>
+              <p className="text-[15px] md:text-[16px] text-[#6e6e73]">
+                Accédez à votre tableau de bord Virail
+              </p>
             </div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">Bon retour !</h2>
-            <p className="text-muted-foreground">Connectez-vous pour accéder à vos analyses</p>
-          </div>
 
-          <Card className="shadow-sm border border-border bg-card">
-            <CardContent className="p-8">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">Nom d'utilisateur</FormLabel>
-                        <FormControl>
-                          <div className="relative group">
-                            <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-foreground transition-colors" />
-                            <Input
-                              placeholder="Votre nom d'utilisateur"
-                              className="pl-12 py-3 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 bg-card text-foreground"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {/* Formulaire */}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-[11px] uppercase tracking-wide font-bold text-[#1b1b1f] mb-2 ml-1">
+                        Nom d'utilisateur
+                      </FormLabel>
+                      <FormControl>
+                        <input
+                          type="text"
+                          placeholder="Votre nom d'utilisateur"
+                          className="w-full bg-[#f7f8fc] rounded-xl px-4 py-3.5 text-sm md:text-[15px] text-[#1b1b1f] placeholder:text-slate-300 border border-transparent focus:bg-white focus:border-[#9cb5ff] focus:ring-0 outline-none transition-all"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">Mot de passe</FormLabel>
-                        <FormControl>
-                          <div className="relative group">
-                            <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-foreground transition-colors" />
-                            <Input
-                              type={showPassword ? 'text' : 'password'}
-                              placeholder="Votre mot de passe"
-                              className="pl-12 pr-12 py-3 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 bg-card text-foreground"
-                              {...field}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                            </button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-[11px] uppercase tracking-wide font-bold text-[#1b1b1f] mb-2 ml-1">
+                        Mot de passe
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="••••••••"
+                            className="w-full bg-[#f7f8fc] rounded-xl px-4 py-3.5 pr-12 text-sm md:text-[15px] text-[#1b1b1f] placeholder:text-slate-300 border border-transparent focus:bg-white focus:border-[#9cb5ff] focus:ring-0 outline-none transition-all"
+                            {...field}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute inset-y-0 right-3 flex items-center text-[11px] text-[#6e6e73] hover:text-[#1b1b1f] transition-colors"
+                          >
+                            {showPassword ? 'Masquer' : 'Afficher'}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 font-medium transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center gap-3">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Connexion en cours...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <LogIn className="w-5 h-5" />
-                        Se connecter
-                      </div>
-                    )}
-                  </Button>
-                </form>
-              </Form>
-
-              <div className="mt-4 text-center">
-                <Link 
-                  to="/forgot-password" 
-                  className="text-sm text-primary hover:text-primary/90 transition-colors"
-                >
-                  Mot de passe oublié ?
-                </Link>
-              </div>
-
-              <div className="mt-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Ou</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* <div className="mt-6">
-                <GoogleButton isLoading={isLoading} />
-              </div> */}
-
-              <div className="mt-8 text-center">
-                <p className="text-muted-foreground">
-                  Pas encore de compte ?{' '}
+                <div className="flex items-center justify-between text-sm mt-1">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-slate-300 text-[#9cb5ff] focus:ring-[#9cb5ff]"
+                    />
+                    <span className="text-[#6e6e73] text-[13px] md:text-sm">
+                      Se souvenir de moi
+                    </span>
+                  </label>
                   <Link
-                    to="/register"
-                    className="text-foreground hover:text-foreground font-medium hover:underline transition-colors"
+                    to="/forgot-password"
+                    className="text-[13px] md:text-sm text-[#9cb5ff] hover:text-[#8ca5ef] transition-colors font-medium"
                   >
-                    Créer un compte
+                    Mot de passe oublié ?
                   </Link>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                </div>
 
-          <div className="mt-8 text-center text-sm text-muted-foreground">
-            <p>© 2025 Viraill. Tous droits réservés.</p>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Connexion en cours...
+                    </div>
+                  ) : (
+                    'Se connecter'
+                  )}
+                </button>
+              </form>
+            </Form>
+
+            {/* Lien vers register */}
+            <div className="mt-6 text-center">
+              <p className="text-sm md:text-[15px] text-[#6e6e73]">
+                Pas encore de compte ?{' '}
+                <Link
+                  to="/register"
+                  className="text-[#9cb5ff] hover:text-[#8ca5ef] font-semibold transition-colors"
+                >
+                  S&apos;inscrire
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
 
-      {/* Section droite - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-card p-12 flex-col justify-between relative overflow-hidden border-l border-border">
-        <div className="absolute inset-0 bg-muted/20"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-6">
-            <img 
-              src="/LOGO BLEU FOND TRANSPARENT (1).png" 
-              alt="BPC Logo" 
-              className="h-40 w-auto"
-            />
-        
-          </div>
-          <h2 className="text-4xl font-bold text-foreground mb-4 leading-tight">
-            Bienvenue
-            
-          </h2>
-          <p className="text-xl text-muted-foreground leading-relaxed">
-            Accédez à vos analyses et tableaux de bord personnalisés pour optimiser votre stratégie concurrentielle.
-          </p>
-        </div>
-
-        <div className="relative z-10 space-y-6">
-          <div className="flex items-center gap-4 text-foreground/90">
-            <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-4 h-4" />
-            </div>
-            <span>Accès à toutes vos analyses</span>
-          </div>
-          <div className="flex items-center gap-4 text-foreground/90">
-            <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <span>Tableaux de bord personnalisés</span>
-          </div>
-          <div className="flex items-center gap-4 text-foreground/90">
-            <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-              <Shield className="w-4 h-4" />
-            </div>
-            <span>Vos données sont protégées et sécurisées</span>
-          </div>
-        </div>
-      </div>
+      {/* Footer */}
+      <footer className="w-full px-6 py-4 text-center">
+        <p className="text-sm text-[#6e6e73]">© 2025 Virail. Tous droits réservés.</p>
+      </footer>
     </div>
   );
 }

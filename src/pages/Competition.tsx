@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Search,
   Plus,
@@ -42,6 +43,43 @@ import { useToast } from "@/hooks/use-toast";
 import { useCompetitiveAnalysis } from "@/hooks/useCompetitiveAnalysis";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+
+// === CONSTANTES ===
+const modelLogos: Record<string, string> = {
+  'openai': '/prompt-model-openai-for-light.svg',
+  'chatgpt': '/prompt-model-openai-for-light.svg',
+  'gpt': '/prompt-model-openai-for-light.svg',
+  'perplexity': '/prompt-model-perplexity.svg',
+  'gemini': '/prompt-model-gemini.svg',
+  'google': '/prompt-model-gemini.svg',
+  'ai overview': '/prompt-model-gemini.svg',
+  'claude': '/prompt-model-claude.svg',
+  'anthropic': '/prompt-model-claude.svg',
+  'mistral': '/Mistral.png',
+};
+
+/**
+ * Récupère le logo d'un modèle avec une recherche par mot-clé
+ */
+const getModelLogo = (modelName: string): string | null => {
+  if (!modelName) return null;
+  const name = modelName.toLowerCase();
+  
+  for (const [key, path] of Object.entries(modelLogos)) {
+    if (name.includes(key)) return path;
+  }
+  return null;
+};
+
+// Fonction pour obtenir le suffixe ordinal (1st, 2nd, 3rd, etc.)
+const getOrdinalSuffix = (n: number): string => {
+  const j = n % 10;
+  const k = n % 100;
+  if (j === 1 && k !== 11) return 'er';
+  if (j === 2 && k !== 12) return 'ème';
+  if (j === 3 && k !== 13) return 'ème';
+  return 'ème';
+};
 import CompetitiveAnalysisDisplay from "@/components/competitive-analysis/CompetitiveAnalysisDisplay";
 import DetailedCompetitiveAnalysis from "@/components/competitive-analysis/DetailedCompetitiveAnalysis";
 import MiniLLMAnalysis from "@/components/competitive-analysis/MiniLLMAnalysis";
@@ -50,6 +88,9 @@ import { listCompetitorAnalyses, getCompetitorAnalysisById, startCompetitorAnaly
 const Competition = () => {
   const [userUrl, setUserUrl] = useState("");
   const [selectedTab, setSelectedTab] = useState("saved");
+  const [dateFilter, setDateFilter] = useState('15 nov - 21 nov');
+  const [regionFilter, setRegionFilter] = useState('France');
+  const [selectedModel, setSelectedModel] = useState<string>('');
   const { toast } = useToast();
   
   // États pour la nouvelle API
@@ -138,6 +179,7 @@ const Competition = () => {
       const errorMessage = error instanceof Error ? error.message : 'Une erreur inconnue est survenue';
 
       console.error('❌ Erreur dans handleStartAnalysis:', error);
+ 
       setError(errorMessage);
 
       toast({
@@ -207,82 +249,60 @@ const Competition = () => {
   };
 
   return (
-    <div className="flex-1 min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto">
-        {/* Hero Header Section */}
-        <div className="relative overflow-hidden bg-card px-8 py-12 border-b border-border">
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 bg-muted/50"></div>
-        <div className="absolute top-0 left-1/3 w-96 h-96 bg-muted/50 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-1/3 w-96 h-96 bg-muted/50 rounded-full blur-3xl"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center justify-between">
-            <div className="max-w-3xl">
-              <div className="flex items-center gap-3 mb-4">
-                {/* <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center">
-                  <Trophy className="w-6 h-6 text-white" />
-                </div> */}
-                {/* <Badge className="bg-neutral-900 text-white border-neutral-900">
-                  ⚔️ Analyse Concurrentielle
-                </Badge> */}
+    <div className="min-h-screen bg-[#F5F6F7] p-6">
+      <div className="mx-auto space-y-6" style={{ maxWidth: '1700px' }}>
+        {/* Header avec titre et filtres */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-gray-900">Concurrence.</h1>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger className="w-[180px] border-gray-300 bg-white hover:bg-gray-50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="15 nov - 21 nov">15 nov - 21 nov</SelectItem>
+                    <SelectItem value="8 nov - 14 nov">8 nov - 14 nov</SelectItem>
+                    <SelectItem value="1 nov - 7 nov">1 nov - 7 nov</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <h1 className="text-4xl font-bold text-foreground mb-3">
-                Analyse Concurrentielle GEO
-              </h1>
-              <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
-                Comparez votre positionnement avec vos concurrents et dominez votre marché.
-              </p>
-              <div className="flex items-center gap-4">
-                <Button 
-                  onClick={() => setSelectedTab("setup")}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg font-semibold px-6 py-3 h-auto"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Nouvelle Analyse
-                </Button>
-                <Button 
-                  onClick={() => setSelectedTab("saved")}
-                  className="bg-card text-foreground hover:bg-muted shadow-lg font-semibold px-6 py-3 h-auto transition-all duration-300 border border-border"
-                >
-                  <History className="h-5 w-5 mr-2" />
-                  Mes Analyses
-                </Button>
+              <div className="relative">
+                <Select value={regionFilter} onValueChange={setRegionFilter}>
+                  <SelectTrigger className="w-[180px] border-gray-300 bg-white hover:bg-gray-50">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="France">France</SelectItem>
+                    <SelectItem value="États-Unis">États-Unis</SelectItem>
+                    <SelectItem value="Royaume-Uni">Royaume-Uni</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-            
-            {/* Stats preview */}
-            <div className="hidden lg:block">
-              <div className="bg-primary rounded-2xl p-6 border border-primary">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-primary-foreground mb-1">{competitorAnalyses.length}</div>
-                  <div className="text-primary-foreground/80 text-sm font-medium">Analyses Sauvées</div>
-                  <div className="flex items-center justify-center gap-1 mt-2">
-                    <Star className="w-4 h-4 text-yellow-300" />
-                    <span className="text-primary-foreground text-sm">Premium</span>
-                  </div>
-                </div>
-              </div>
+              <Button variant="outline" className="border-gray-300 bg-white hover:bg-gray-50">
+                <Search className="h-4 w-4 mr-2" />
+                Ajouter un filtre
+              </Button>
             </div>
           </div>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            Analysez votre positionnement concurrentiel et identifiez les opportunités d'amélioration de votre visibilité GEO.
+          </p>
         </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="px-8 py-8 space-y-8">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <div className="bg-card rounded-2xl p-2 shadow-sm border border-border">
-            <TabsList className="grid w-full grid-cols-3 bg-muted p-1 h-auto rounded-xl">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2">
+            <TabsList className="grid w-full grid-cols-3 bg-gray-50 p-1 h-auto rounded-lg">
               <TabsTrigger 
                 value="saved" 
-                className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg h-12 font-semibold transition-all duration-300 text-muted-foreground"
+                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm rounded-md h-12 font-semibold transition-all duration-300 text-gray-600"
               >
                 <History className="h-4 w-4 mr-2" />
                 Analyses sauvegardées
               </TabsTrigger>
               <TabsTrigger 
                 value="setup" 
-                className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg h-12 font-semibold transition-all duration-300 text-muted-foreground"
+                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm rounded-md h-12 font-semibold transition-all duration-300 text-gray-600"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Nouvelle analyse
@@ -290,7 +310,7 @@ const Competition = () => {
               <TabsTrigger 
                 value="results" 
                 disabled={!currentAnalysis && !isAnalyzing} 
-                className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg h-12 font-semibold transition-all duration-300 disabled:opacity-50 text-muted-foreground"
+                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm rounded-md h-12 font-semibold transition-all duration-300 disabled:opacity-50 text-gray-600"
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Résultats
@@ -298,80 +318,74 @@ const Competition = () => {
             </TabsList>
           </div>
 
-          <TabsContent value="saved" className="space-y-6 mt-8">
-            <Card className="border border-border shadow-sm bg-card overflow-hidden">
-              <CardHeader className="bg-muted">
+          <TabsContent value="saved" className="space-y-6 mt-6">
+            <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
+              <CardHeader className="bg-white border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
-                        <History className="h-5 w-5 text-muted-foreground" />
-                      </div>
+                    <CardTitle className="flex items-center gap-3 text-lg font-semibold text-gray-900">
+                      <History className="h-5 w-5 text-gray-600" />
                       Analyses Concurrentielles
                     </CardTitle>
-                    <CardDescription className="mt-2 text-muted-foreground">
+                    <CardDescription className="mt-2 text-gray-600">
                       Accédez à vos analyses et comparez l'évolution de votre positionnement
                     </CardDescription>
                   </div>
-                  <Badge className="bg-primary/10 text-primary">
+                  <Badge className="bg-gray-100 text-gray-700 border-gray-300">
                     {competitorAnalyses.length} analyse{competitorAnalyses.length > 1 ? 's' : ''}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="p-0 bg-white">
                 {loadingSavedAnalyses ? (
-                  <div className="text-center py-16">
+                  <div className="text-center py-16 bg-white">
                     <div className="flex items-center justify-center gap-2 mb-4">
-                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                      <span className="text-muted-foreground">Chargement des analyses...</span>
+                      <Loader2 className="w-6 h-6 animate-spin text-gray-600" />
+                      <span className="text-gray-600">Chargement des analyses...</span>
                     </div>
                   </div>
                 ) : competitorAnalyses.length === 0 ? (
-                  <div className="text-center py-16">
-                    <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <div className="text-center py-16 bg-white">
+                    <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   
                     </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-3">Aucune analyse sauvegardée</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">Aucune analyse sauvegardée</h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
                       Commencez votre première analyse concurrentielle et découvrez comment vous vous positionnez face à vos concurrents.
                     </p>
                     <Button 
                       onClick={() => setSelectedTab("setup")} 
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm font-semibold px-8 py-3 h-auto"
+                      className="bg-black hover:bg-gray-900 text-white shadow-sm font-semibold px-8 py-3 h-auto"
                     >
                       <Rocket className="h-5 w-5 mr-2" />
                       Lancer ma première analyse
                     </Button>
                   </div>
                 ) : (
-                  <div className="divide-y divide-border">
+                  <div className="divide-y divide-gray-200">
                     {competitorAnalyses.map((analysis, index) => (
                       <div 
                         key={analysis.analysis_id} 
-                        className="group p-6 hover:bg-muted/40 cursor-pointer transition-all duration-300 hover:shadow-sm relative overflow-hidden"
+                        className="group p-6 hover:bg-gray-50 cursor-pointer transition-all duration-300 relative overflow-hidden bg-white"
                         onClick={() => handleLoadSavedAnalysis(analysis.analysis_id)}
                       >
-                        {/* Decorative line */}
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-muted opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-4 mb-4">
-                              
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
-                                  <h4 className="text-lg font-bold text-foreground group-hover:text-foreground transition-colors">
+                                  <h4 className="text-lg font-semibold text-gray-900 group-hover:text-gray-900 transition-colors">
                                     {extractDomain(analysis.url)}
                                   </h4>
-                                  <Badge className="bg-muted text-foreground font-semibold shadow-sm">
+                                  <Badge className="bg-gray-100 text-gray-700 font-semibold border-gray-300">
                                     #{index + 1}
                                   </Badge>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                  <Badge className="bg-muted text-foreground font-medium">
+                                  <Badge className="bg-gray-100 text-gray-700 font-medium border-gray-300">
                                     {analysis.status === 'completed' ? 'Terminée' : 'En cours'}
                                   </Badge>
-                                  <Badge variant="outline" className="bg-muted text-muted-foreground border-border">
+                                  <Badge variant="outline" className="bg-white text-gray-600 border-gray-300">
                                     {analysis.total_competitors_found} concurrent{analysis.total_competitors_found > 1 ? 's' : ''}
                                   </Badge>
                                 </div>
@@ -379,26 +393,15 @@ const Competition = () => {
                             </div>
                             
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
-                              {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                <span>Analysé {formatDistanceToNow(new Date(analysis.created_at), { 
-                                  addSuffix: true, 
-                                  locale: fr 
-                                })}</span>
-                              </div> */}
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Users className="h-4 w-4 text-muted-foreground" />
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <Users className="h-4 w-4 text-gray-500" />
                                 <span>{analysis.total_competitors_found} concurrent{analysis.total_competitors_found > 1 ? 's' : ''} analysé{analysis.total_competitors_found > 1 ? 's' : ''}</span>
                               </div>
                             </div>
-
-                            {/* Enhanced insights preview */}
-                           
                           </div>
                           
                           <div className="flex items-center gap-3 ml-6">
-                
-                            <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
+                            <div className="flex items-center gap-2 text-gray-500 group-hover:text-gray-900 transition-colors">
                               <span className="text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
                                 Voir l'analyse
                               </span>
@@ -414,28 +417,28 @@ const Competition = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="setup" className="space-y-6 mt-8">
-            <Card className="border-0 shadow-xl bg-card backdrop-blur-sm overflow-hidden">
-              <CardHeader className="bg-muted">
+          <TabsContent value="setup" className="space-y-6 mt-6">
+            <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
+              <CardHeader className="bg-white border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                        <Search className="h-5 w-5 text-primary-foreground" />
+                    <CardTitle className="flex items-center gap-3 text-lg font-semibold text-gray-900">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <Search className="h-5 w-5 text-gray-700" />
                       </div>
                       Nouvelle Analyse Concurrentielle
                     </CardTitle>
-                    <CardDescription className="mt-2 text-muted-foreground">
+                    <CardDescription className="mt-2 text-gray-600">
                       Entrez l'URL de votre site pour commencer l'analyse GEO
                     </CardDescription>
                   </div>
-                  <Badge className="bg-primary text-primary-foreground">
+                  <Badge className="bg-gray-100 text-gray-700 border-gray-300">
                     <Zap className="w-3 h-3 mr-1" />
                     IA Powered
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="p-8">
+              <CardContent className="p-8 bg-white">
                 <div className="max-w-2xl mx-auto space-y-6">
                   <div className="flex gap-4">
                     <div className="flex-1">
@@ -448,13 +451,13 @@ const Competition = () => {
                             setUserUrl(`https://${userUrl}`)
                           }
                         }}
-                        className="h-14 text-lg border border-border focus:border-primary rounded-xl shadow-sm"
+                        className="h-14 text-lg border border-gray-300 focus:border-gray-400 rounded-lg shadow-sm bg-white"
                       />
                     </div>
                     <Button 
                       onClick={handleStartAnalysis}
                       disabled={!userUrl.trim() || isAnalyzing}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg h-14 px-8 font-semibold text-lg rounded-xl"
+                      className="bg-black hover:bg-gray-900 text-white shadow-sm h-14 px-8 font-semibold text-lg rounded-lg"
                     >
                       {isAnalyzing ? (
                         <>
@@ -470,52 +473,52 @@ const Competition = () => {
                     </Button>
                   </div>
                   
-                  <div className="bg-muted rounded-2xl p-6 border border-border">
-                    <h3 className="font-bold text-foreground mb-4 flex items-center gap-3 text-lg">
-                      <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                        <Info className="h-4 w-4 text-primary-foreground" />
+                  <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                    <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-3 text-lg">
+                      <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <Info className="h-4 w-4 text-gray-700" />
                       </div>
                       Comment ça fonctionne ?
                     </h3>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">1</span>
+                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-xs font-bold">1</span>
                           </div>
-                          <span className="text-sm text-muted-foreground">Analyse GEO complète de votre site</span>
+                          <span className="text-sm text-gray-700">Analyse GEO complète de votre site</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">2</span>
+                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-xs font-bold">2</span>
                           </div>
-                          <span className="text-sm text-muted-foreground">Identification des concurrents par IA</span>
+                          <span className="text-sm text-gray-700">Identification des concurrents par IA</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">3</span>
+                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-xs font-bold">3</span>
                           </div>
-                          <span className="text-sm text-muted-foreground">Analyse GEO de chaque concurrent</span>
+                          <span className="text-sm text-gray-700">Analyse GEO de chaque concurrent</span>
                         </div>
                       </div>
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">4</span>
+                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-xs font-bold">4</span>
                           </div>
-                          <span className="text-sm text-muted-foreground">Comparaison détaillée et insights</span>
+                          <span className="text-sm text-gray-700">Comparaison détaillée et insights</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">5</span>
+                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-xs font-bold">5</span>
                           </div>
-                          <span className="text-sm text-muted-foreground">Recommandations personnalisées</span>
+                          <span className="text-sm text-gray-700">Recommandations personnalisées</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">6</span>
+                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-xs font-bold">6</span>
                           </div>
-                          <span className="text-sm text-muted-foreground">Sauvegarde pour suivi temporel</span>
+                          <span className="text-sm text-gray-700">Sauvegarde pour suivi temporel</span>
                         </div>
                       </div>
                     </div>
@@ -525,28 +528,28 @@ const Competition = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="results" className="space-y-6 mt-8">
+          <TabsContent value="results" className="space-y-6 mt-6">
             {/* Enhanced Header avec informations sur l'analyse chargée */}
             {currentAnalysis && (
-              <Card className="border border-border shadow-sm bg-card overflow-hidden">
-                <CardContent className="p-6">
+              <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
+                <CardContent className="p-6 bg-white">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse"></div>
+                      <div className="w-2.5 h-2.5 bg-gray-700 rounded-full animate-pulse"></div>
                       <div>
-                        <h3 className="text-xl font-semibold text-foreground tracking-tight">
+                        <h3 className="text-xl font-semibold text-gray-900 tracking-tight">
                           Analyse de {extractDomain(currentAnalysis.url)}
                         </h3>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                          <span className="px-2 py-0.5 rounded-full bg-card border border-border text-muted-foreground">
+                          <span className="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-300 text-gray-600">
                             {formatDistanceToNow(new Date(currentAnalysis.created_at), { addSuffix: true, locale: fr })}
                           </span>
                           {currentAnalysis.target_positioning ? (
-                            <span className="px-2 py-0.5 rounded-full bg-card border border-border text-muted-foreground">
+                            <span className="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-300 text-gray-600">
                               Rang {currentAnalysis.target_positioning.overall_rank}/{currentAnalysis.target_positioning.total_competitors}
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-card border border-border text-muted-foreground">
+                            <span className="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-300 text-gray-600">
                               {currentAnalysis.consolidated_competitors?.length || 0} concurrents
                             </span>
                           )}
@@ -554,14 +557,14 @@ const Competition = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Badge className="bg-primary text-primary-foreground font-semibold px-3 py-1.5 rounded-md">
+                      <Badge className="bg-gray-100 text-gray-700 font-semibold px-3 py-1.5 rounded-md border-gray-300">
                         {currentAnalysis.target_positioning?.market_position || 'En cours d\'analyse'}
                       </Badge>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => setSelectedTab("saved")}
-                        className="text-muted-foreground hover:text-foreground border border-transparent hover:border-border bg-transparent hover:bg-muted/40 rounded-md"
+                        className="text-gray-700 hover:text-gray-900 border-gray-300 bg-white hover:bg-gray-50 rounded-md"
                       >
                         Retour aux analyses
                       </Button>
@@ -649,15 +652,15 @@ const Competition = () => {
 
             {/* Affichage des erreurs */}
             {error && !isAnalyzing && (
-              <Card className="border-border bg-muted shadow-sm">
+              <Card className="border-gray-200 bg-gray-50 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                      <Loader2 className="h-5 w-5 text-foreground animate-spin" />
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 text-gray-700 animate-spin" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground">Veuillez patienter</h3>
-                      <p className="text-muted-foreground mt-1">Votre analyse est en cours de finalisation. Les résultats vont s'afficher dès qu'ils sont prêts.</p>
+                      <h3 className="text-lg font-semibold text-gray-900">Veuillez patienter</h3>
+                      <p className="text-gray-600 mt-1">Votre analyse est en cours de finalisation. Les résultats vont s'afficher dès qu'ils sont prêts.</p>
                     </div>
                   </div>
                 </CardContent>
@@ -666,29 +669,29 @@ const Competition = () => {
 
             {/* Enhanced État de chargement */}
             {isAnalyzing && (
-              <Card className="border-0 shadow-xl bg-muted overflow-hidden">
-                <CardContent className="p-12 text-center">
+              <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
+                <CardContent className="p-12 text-center bg-white">
                   <div className="flex flex-col items-center gap-6">
                     <div className="relative">
-                      <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center shadow-xl">
-                        <Loader2 className="h-10 w-10 text-primary-foreground animate-spin" />
+                      <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center shadow-xl">
+                        <Loader2 className="h-10 w-10 text-white animate-spin" />
                       </div>
-                      <div className="absolute inset-0 rounded-full border-4 border-border border-t-primary animate-spin"></div>
+                      <div className="absolute inset-0 rounded-full border-4 border-gray-200 border-t-gray-900 animate-spin"></div>
                     </div>
                     <div className="max-w-md">
-                      <h3 className="text-2xl font-bold text-foreground mb-3">
+                      <h3 className="text-2xl font-bold text-gray-900 mb-3">
                         Analyse concurrentielle en cours...
                       </h3>
-                      <p className="text-muted-foreground mb-6 text-lg">
+                      <p className="text-gray-600 mb-6 text-lg">
                         Notre IA analyse votre site et identifie vos concurrents avec 3 modèles différents
                       </p>
-                      <div className="w-80 bg-muted rounded-full h-3 mx-auto shadow-inner">
+                      <div className="w-80 bg-gray-200 rounded-full h-3 mx-auto shadow-inner">
                         <div 
-                          className="bg-primary h-3 rounded-full transition-all duration-1000 shadow-sm animate-pulse"
+                          className="bg-gray-900 h-3 rounded-full transition-all duration-1000 shadow-sm animate-pulse"
                           style={{ width: `75%` }}
                         ></div>
                       </div>
-                      <p className="text-muted-foreground mt-3 font-semibold">Analyse en cours...</p>
+                      <p className="text-gray-600 mt-3 font-semibold">Analyse en cours...</p>
                     </div>
                   </div>
                 </CardContent>
@@ -699,54 +702,54 @@ const Competition = () => {
             {!isAnalyzing && currentAnalysis && (
               <div className="space-y-6 mb-6">
                 {/* Informations générales de l'analyse */}
-                <Card className="bg-card border border-border">
-                  <CardContent className="space-y-6 text-foreground p-6">
+                <Card className="bg-white border-gray-200 shadow-sm">
+                  <CardContent className="space-y-6 text-gray-900 p-6">
                     {/* Métriques principales */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl border border-primary/20">
-                        <div className="text-2xl font-bold text-foreground">{currentAnalysis.models_analysis?.length || 0}</div>
-                        <div className="text-sm text-muted-foreground">Modèles IA</div>
+                      <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="text-2xl font-bold text-gray-900">{currentAnalysis.models_analysis?.length || 0}</div>
+                        <div className="text-sm text-gray-600">Modèles IA</div>
                       </div>
-                      <div className="text-center p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-xl border border-green-500/20">
-                        <div className="text-2xl font-bold text-foreground">
+                      <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="text-2xl font-bold text-gray-900">
                           {currentAnalysis.models_analysis?.reduce((total, model) => total + (model.competitors?.length || 0), 0) || 0}
                         </div>
-                        <div className="text-sm text-muted-foreground">Concurrents Trouvés</div>
+                        <div className="text-sm text-gray-600">Concurrents Trouvés</div>
                       </div>
-                      <div className="text-center p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-xl border border-blue-500/20">
-                        <div className="text-2xl font-bold text-foreground">
+                      <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="text-2xl font-bold text-gray-900">
                           {new Date(currentAnalysis.created_at).toLocaleDateString('fr-FR', { 
                             day: '2-digit', 
                             month: '2-digit' 
                           })}
                         </div>
-                        <div className="text-sm text-muted-foreground">Date d'Analyse</div>
+                        <div className="text-sm text-gray-600">Date d'Analyse</div>
                       </div>
                     </div>
                     
                     {/* Détails de l'analyse */}
                     <div className="space-y-4">
-                      <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
-                        <div className="text-sm font-medium text-muted-foreground mb-2">URL Analysée</div>
+                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="text-sm font-medium text-gray-600 mb-2">URL Analysée</div>
                         <a 
                           href={currentAnalysis.url} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="text-primary hover:underline break-all"
+                          className="text-gray-900 hover:underline break-all"
                         >
                           {currentAnalysis.url}
                         </a>
                       </div>
                       
-                      <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
-                        <div className="text-sm font-medium text-muted-foreground mb-2">Titre</div>
-                        <div className="text-foreground">{currentAnalysis.title}</div>
+                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="text-sm font-medium text-gray-600 mb-2">Titre</div>
+                        <div className="text-gray-900">{currentAnalysis.title}</div>
                       </div>
                       
                       {currentAnalysis.description && (
-                        <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
-                          <div className="text-sm font-medium text-muted-foreground mb-2">Description</div>
-                          <div className="text-foreground">{currentAnalysis.description}</div>
+                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="text-sm font-medium text-gray-600 mb-2">Description</div>
+                          <div className="text-gray-900">{currentAnalysis.description}</div>
                         </div>
                       )}
                     </div>
@@ -813,327 +816,29 @@ const Competition = () => {
                   </CardContent>
                 </Card> */}
 
-                {/* Détails par modèle */}
-                <Card className="bg-card border border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground">Détails par Modèle IA</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-foreground">
-                    <div className="space-y-4">
-                      {/* Grouper les concurrents par modèle utilisé */}
-                      {(() => {
-                        const competitorsByModel: Record<string, any[]> = {};
-                        
-                        // Grouper les concurrents par modèle
-                        const competitors = (currentAnalysis as any)?.competitors;
-                        if (competitors && Array.isArray(competitors)) {
-                          competitors.forEach((competitor: any) => {
-                            if (competitor.sources && Array.isArray(competitor.sources)) {
-                              competitor.sources.forEach((source: string) => {
-                                if (!competitorsByModel[source]) {
-                                  competitorsByModel[source] = [];
-                                }
-                                competitorsByModel[source].push(competitor);
-                              });
-                            }
-                          });
-                        }
-
-                        return Object.entries(competitorsByModel).map(([model, competitors]) => (
-                          <Card key={model} className="bg-muted/30 border border-border shadow-sm">
-                            <CardHeader className="pb-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <img
-                                    src={(() => {
-                                      const modelLower = model.toLowerCase();
-                                      if (modelLower.includes('mistral') || modelLower.includes('mixtral')) return '/Mistral.png';
-                                      const id = modelLower.includes('gpt') || modelLower.includes('openai')
-                                        ? 'openai-for-light'
-                                        : modelLower.includes('claude')
-                                          ? 'claude'
-                                          : modelLower.includes('gemini')
-                                            ? 'gemini'
-                                            : modelLower.includes('sonar') || modelLower.includes('perplexity')
-                                              ? 'perplexity'
-                                              : 'claude';
-                                      return `/prompt-model-${id}.svg`;
-                                    })()}
-                                    alt="Model"
-                                    className="w-6 h-6"
-                                  />
-                                  <div>
-                                    <h4 className="font-semibold text-foreground text-sm">
-                                      {model.replace('-', ' ').toUpperCase()}
-                                    </h4>
-                                    <p className="text-xs text-muted-foreground">
-                                      {Array.isArray(competitors) ? competitors.length : 0} concurrents trouvés
-                                    </p>
-                                  </div>
-                                </div>
-                                <Badge variant="outline" className="text-xs">
-                                  Score moyen: {Array.isArray(competitors) && competitors.length > 0 
-                                    ? Math.round((competitors.reduce((acc, c) => acc + c.average_score, 0) / competitors.length) * 100)
-                                    : 0}/100
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <div className="space-y-2">
-                                {Array.isArray(competitors) && competitors.slice(0, 5).map((competitor: any, index: number) => (
-                                  <div key={index} className="flex items-center justify-between p-2 bg-card rounded-lg border border-border">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-6 h-6 bg-muted rounded flex items-center justify-center">
-                                        <span className="text-xs font-semibold text-muted-foreground">#{index + 1}</span>
-                                      </div>
-                                      <div>
-                                        <span className="text-sm font-medium text-foreground font-semibold">{competitor.name}</span>
-                                        <div className="text-xs text-muted-foreground">
-                                          {competitor.url}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <Badge variant="outline" className="text-xs">
-                                        Score: {Math.round(competitor.average_score * 100)}/100
-                                      </Badge>
-                                      {/* Afficher score_details si disponible */}
-                                      {competitor.score_details && competitor.score_details[model] && (
-                                        <div className="text-xs text-muted-foreground mt-1">
-                                          {model}: {Math.round(competitor.score_details[model] * 100)}/100
-                                        </div>
-                                      )}
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        Mentions: {competitor.mentions}
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ));
-                      })() || (
-                        <Card className="bg-card border border-border shadow-sm">
-                          <CardContent className="flex flex-col items-center justify-center py-8">
-                            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="font-semibold text-foreground mb-2">Aucun concurrent trouvé</h3>
-                            <p className="text-sm text-muted-foreground text-center">
-                              Les concurrents seront affichés ici une fois l'analyse terminée.
-                            </p>
-                          </CardContent>
-                        </Card>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Analyses détaillées LLM */}
-                {currentAnalysis.mini_llm_results && currentAnalysis.mini_llm_results.length > 0 && (
-                  <Card className="bg-card border border-border">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-foreground">🧠 Analyses détaillées LLM</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-foreground">
-                      <div className="space-y-4">
-                        {currentAnalysis.mini_llm_results
-                          .filter(result => result.llm_analysis && result.llm_analysis.forces_principales)
-                          .slice(0, 3)
-                          .map((result, index) => (
-                            <Card key={index} className="bg-muted/30 border border-border shadow-sm">
-                              <CardHeader className="pb-3">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <h4 className="font-semibold text-foreground text-sm">{result.competitor_name}</h4>
-                                    <p className="text-xs text-muted-foreground">{result.competitor_url}</p>
-                                  </div>
-                                  <Badge variant="outline" className="text-xs">
-                                    Menace: {result.llm_analysis.score_menace}/10
-                                  </Badge>
-                                </div>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                {/* Forces principales */}
-                                {result.llm_analysis.forces_principales && result.llm_analysis.forces_principales.length > 0 && (
-                                  <div>
-                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                                      <TrendingUp className="h-3 w-3 text-green-500" />
-                                      Forces principales
-                                    </h5>
-                                    <ul className="space-y-1">
-                                      {result.llm_analysis.forces_principales.slice(0, 3).map((force, idx) => (
-                                        <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
-                                          <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
-                                          {force}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-
-                                {/* Faiblesses principales */}
-                                {result.llm_analysis.faiblesses_principales && result.llm_analysis.faiblesses_principales.length > 0 && (
-                                  <div>
-                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                                      <TrendingDown className="h-3 w-3 text-red-500" />
-                                      Faiblesses principales
-                                    </h5>
-                                    <ul className="space-y-1">
-                                      {result.llm_analysis.faiblesses_principales.slice(0, 3).map((weakness, idx) => (
-                                        <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
-                                          <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
-                                          {weakness}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-
-                                {/* Positionnement */}
-                                {result.llm_analysis.positionnement && (
-                                  <div>
-                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                                      <Target className="h-3 w-3 text-blue-500" />
-                                      Positionnement
-                                    </h5>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                      {result.llm_analysis.positionnement}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Résumé */}
-                                {result.llm_analysis.analyse_resume && result.llm_analysis.analyse_resume.trim() !== " " && (
-                                  <div className="pt-2 border-t border-border">
-                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                                      <Brain className="h-3 w-3 text-purple-500" />
-                                      Analyse résumée
-                                    </h5>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                      {result.llm_analysis.analyse_resume}
-                                    </p>
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))}
+                {/* Section Top concurrents et Détails par Modèle IA côte à côte */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Top concurrents */}
+                  {currentAnalysis.target_positioning?.top_competitors && currentAnalysis.target_positioning.top_competitors.length > 0 && (
+                    <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                      <div className="mb-5">
+                        <h3 className="text-sm font-semibold text-gray-900 mb-1">Top concurrents</h3>
+                        <p className="text-xs text-gray-600">
+                          Classement des meilleurs concurrents identifiés pour votre marché
+                        </p>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Positionnement cible */}
-                {currentAnalysis.target_positioning && (
-                  <Card className="bg-card border border-border">
-                    {/* <CardHeader>
-                      <CardTitle className="text-lg text-foreground">Positionnement Cible</CardTitle>
-                    </CardHeader> */}
-                    {/* <CardContent className="text-foreground">
-                      <div className="space-y-4">
-                        {Object.entries(((currentAnalysis.target_positioning as any)?.trends_by_model || {})).map(([modelName, trends]) => {
-                          const t: any = trends as any;
-                          return (
-                          <div key={modelName} className="border border-border rounded-lg p-4">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="w-8 h-8 rounded-lg bg-card border border-border/50 flex items-center justify-center overflow-hidden">
-                                {(() => {
-                                  const name = modelName.toLowerCase();
-                                  if (name.includes('claude')) {
-                                    return <img src="/prompt-model-claude.svg" alt="Claude" className="w-5 h-5" />;
-                                  } else if (name.includes('gpt') || name.includes('openai')) {
-                                    return <img src="/prompt-model-openai-for-light.svg" alt="OpenAI" className="w-5 h-5" />;
-                                  } else if (name.includes('gemini')) {
-                                    return <img src="/prompt-model-gemini.svg" alt="Gemini" className="w-5 h-5" />;
-                                  } else if (name.includes('mistral')) {
-                                    return <img src="/Mistral.png" alt="Mistral" className="w-5 h-5" />;
-                                  } else if (name.includes('perplexity')) {
-                                    return <img src="/prompt-model-perplexity.svg" alt="Perplexity" className="w-5 h-5" />;
-                                  } else {
-                                    return <span className="text-sm font-bold text-primary">🎯</span>;
-                                  }
-                                })()}
-                              </div>
-                              <h4 className="font-semibold text-foreground">
-                                {(() => {
-                                  // Nettoyer et formater le nom du modèle
-                                  if (modelName.toLowerCase().includes('claude')) {
-                                    return 'Claude';
-                                  } else if (modelName.toLowerCase().includes('gpt')) {
-                                    const versionMatch = modelName.match(/gpt-?(\d+)/i);
-                                    if (versionMatch) {
-                                      return `GPT-${versionMatch[1]}`;
-                                    }
-                                    return 'GPT';
-                                  } else if (modelName.toLowerCase().includes('gemini')) {
-                                    return 'Gemini';
-                                  } else if (modelName.toLowerCase().includes('mistral')) {
-                                    return 'Mistral';
-                                  } else if (modelName.toLowerCase().includes('perplexity')) {
-                                    return 'Perplexity';
-                                  } else {
-                                    return modelName
-                                      .replace(/\([^)]*\)/g, '')
-                                      .replace(/\/.*$/, '')
-                                      .trim();
-                                  }
-                                })()}
-                              </h4>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              <div className="text-center">
-                                <div className="text-lg font-bold">{t.count}</div>
-                                <div className="text-sm text-muted-foreground">Points</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-lg font-bold text-foreground">{t.delta_30d > 0 ? '+' : ''}{t.delta_30d}%</div>
-                                <div className="text-sm text-muted-foreground">Delta 30j</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-lg font-bold text-foreground">
-                                  {t.points?.[0]?.global_score || 0}
-                                </div>
-                                <div className="text-sm text-muted-foreground">Score global</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-lg font-bold text-foreground">
-                                  {t.points?.[0]?.llmo_score || 0}
-                                </div>
-                                <div className="text-sm text-muted-foreground">Score LLMO</div>
-                              </div>
-                            </div>
-                          </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent> */}
-                  </Card>
-                )}
-
-                {/* Top concurrents */}
-                {currentAnalysis.target_positioning?.top_competitors && currentAnalysis.target_positioning.top_competitors.length > 0 && (
-                  <Card className="bg-card border border-border">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                        <Award className="h-5 w-5 text-muted-foreground" />
-                        Top concurrents
-                      </CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                        Classement des meilleurs concurrents identifiés pour votre marché
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="divide-y divide-border rounded-lg overflow-hidden border border-border">
+                      <div className="divide-y divide-gray-200 rounded-lg overflow-hidden border border-gray-200">
                         {currentAnalysis.target_positioning.top_competitors.map((c, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-4 bg-card hover:bg-muted/40 transition-colors">
+                          <div key={idx} className="flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors">
                             <div className="flex items-center gap-4 min-w-0">
-                              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center border border-border text-sm font-bold">
+                              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-300 text-sm font-bold text-gray-900">
                                 #{c.rank}
                               </div>
                               <div className="min-w-0">
-                                <div className="font-semibold text-foreground truncate">
+                                <div className="font-semibold text-gray-900 truncate text-sm">
                                   {c.name}
                                 </div>
-                                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                <div className="text-xs text-gray-600 flex items-center gap-2">
                                   <span>Score: {Math.round(Number(c.score))}/100</span>
                                   <span>•</span>
                                   <span>Écart: {c.gap_vs_you > 0 ? '+' : ''}{Number(c.gap_vs_you).toFixed(1)}</span>
@@ -1142,7 +847,7 @@ const Competition = () => {
                             </div>
                             <div className="flex items-center gap-3">
                               <Badge
-                                className={`${String(c.status).includes('devant') || String(c.status).includes('Leader') ? 'bg-red-500/10 text-red-600' : String(c.status).includes('derrière') ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'}`}
+                                className={`text-xs ${String(c.status).includes('devant') || String(c.status).includes('Leader') ? 'bg-red-100 text-red-700 border-red-300' : String(c.status).includes('derrière') ? 'bg-green-100 text-green-700 border-green-300' : 'bg-gray-100 text-gray-700 border-gray-300'}`}
                               >
                                 {c.status}
                               </Badge>
@@ -1150,52 +855,157 @@ const Competition = () => {
                           </div>
                         ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    </Card>
+                  )}
+
+                  {/* Détails par modèle */}
+                  {(() => {
+                    const competitorsByModel: Record<string, any[]> = {};
+                    
+                    // Grouper les concurrents par modèle
+                    const competitors = (currentAnalysis as any)?.competitors;
+                    if (competitors && Array.isArray(competitors)) {
+                      competitors.forEach((competitor: any) => {
+                        if (competitor.sources && Array.isArray(competitor.sources)) {
+                          competitor.sources.forEach((source: string) => {
+                            if (!competitorsByModel[source]) {
+                              competitorsByModel[source] = [];
+                            }
+                            competitorsByModel[source].push(competitor);
+                          });
+                        }
+                      });
+                    }
+
+                    const modelNames = Object.keys(competitorsByModel);
+                    const defaultModel = modelNames[0] || '';
+                    const currentSelectedModel = selectedModel || defaultModel;
+                    const currentCompetitors = competitorsByModel[currentSelectedModel] || [];
+                    
+                    // Initialiser le modèle sélectionné si vide
+                    if (!selectedModel && defaultModel) {
+                      setSelectedModel(defaultModel);
+                    }
+
+                    if (modelNames.length === 0) {
+                      return (
+                        <Card className="bg-white border-gray-200 shadow-sm">
+                          <CardContent className="flex flex-col items-center justify-center py-8">
+                            <Users className="h-12 w-12 text-gray-400 mb-4" />
+                            <h3 className="font-semibold text-gray-900 mb-2">Aucun concurrent trouvé</h3>
+                            <p className="text-sm text-gray-600 text-center">
+                              Les concurrents seront affichés ici une fois l'analyse terminée.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+
+                    return (
+                      <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                        <div className="flex justify-between items-center mb-5">
+                          <h3 className="text-sm font-semibold text-gray-900">Détails par Modèle IA</h3>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-600">Modèle:</span>
+                            <Select value={currentSelectedModel} onValueChange={setSelectedModel}>
+                              <SelectTrigger className="w-[180px] h-8 text-xs border-gray-300 bg-white rounded-md px-2.5 py-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {modelNames.map((model) => (
+                                  <SelectItem key={model} value={model}>
+                                    <div className="flex items-center gap-2">
+                                      {getModelLogo(model) ? (
+                                        <img src={getModelLogo(model)!} alt={model} className="w-4 h-4 object-contain" />
+                                      ) : (
+                                        <Zap size={14} className="text-blue-500" />
+                                      )}
+                                      <span>{model.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3" style={{ letterSpacing: '1.2px' }}>
+                            {currentCompetitors.length} Concurrent{currentCompetitors.length > 1 ? 's' : ''} - {currentSelectedModel.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </div>
+                          
+                          <div className="max-h-[500px] overflow-y-auto pr-2">
+                            {currentCompetitors.map((competitor: any, index: number) => {
+                              const rank = competitor.model_rank || `#${index + 1}`;
+                              const domain = extractDomain(competitor.url || competitor.primary_url || '');
+                              return (
+                                <div key={index} className="flex items-center gap-3 py-3 border-b border-gray-200 last:border-b-0 hover:bg-blue-50/30 transition-colors" style={{ borderBottom: index < currentCompetitors.length - 1 ? '1px solid #edf2f7' : 'none' }}>
+                                  <div className="text-base font-bold text-gray-400 min-w-[32px]" style={{ fontSize: '13px', fontWeight: 700 }}>{rank}</div>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-gray-900 mb-0.5" style={{ fontSize: '15px', fontWeight: 600 }}>{competitor.name || domain}</div>
+                                    <div className="text-gray-500" style={{ fontSize: '13px', color: '#94a3b8' }}>{domain}</div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          
+                          <Button 
+                            variant="outline" 
+                            className="w-full mt-6 border-gray-300 bg-white hover:bg-gray-50 text-sm font-medium py-2.5"
+                            onClick={() => setSelectedTab("saved")}
+                          >
+                            → Voir l'analyse concurrentielle complète
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })()}
+
+                {/* Analyses détaillées LLM */}
 
                 {/* Avantages concurrentiels et axes d'amélioration */}
                 {(currentAnalysis.target_positioning?.competitive_advantages?.length || 0) > 0 || (currentAnalysis.target_positioning?.improvement_areas?.length || 0) > 0 ? (
-                  <Card className="bg-card border border-border">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-foreground">Analyse qualitative</CardTitle>
-                      <CardDescription className="text-muted-foreground">
+                  <Card className="bg-white border-gray-200 shadow-sm">
+                    <CardHeader className="border-b border-gray-200">
+                      <CardTitle className="text-lg font-semibold text-gray-900">Analyse qualitative</CardTitle>
+                      <CardDescription className="text-gray-600">
                         Points forts identifiés et axes d'amélioration recommandés
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid md:grid-cols-2 gap-4">
                         {/* Points forts */}
-                        <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
-                          <h4 className="text-sm font-semibold text-green-600 mb-3 flex items-center gap-2">
+                        <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                          <h4 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
                             <CheckCircle className="w-4 h-4" />
                             Points forts
                           </h4>
                           {(currentAnalysis.target_positioning?.competitive_advantages || []).length > 0 ? (
                             <ul className="space-y-2 list-disc list-inside">
                               {currentAnalysis.target_positioning!.competitive_advantages.map((item, idx) => (
-                                <li key={idx} className="text-sm text-foreground">{item}</li>
+                                <li key={idx} className="text-sm text-gray-900">{item}</li>
                               ))}
                             </ul>
                           ) : (
-                            <div className="text-sm text-muted-foreground">Aucun point fort listé</div>
+                            <div className="text-sm text-gray-600">Aucun point fort listé</div>
                           )}
                         </div>
 
                         {/* À améliorer */}
-                        <div className="p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                          <h4 className="text-sm font-semibold text-amber-600 mb-3 flex items-center gap-2">
+                        <div className="p-4 rounded-lg bg-amber-50 border border-amber-200">
+                          <h4 className="text-sm font-semibold text-amber-700 mb-3 flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4" />
                             À améliorer
                           </h4>
                           {(currentAnalysis.target_positioning?.improvement_areas || []).length > 0 ? (
                             <ul className="space-y-2 list-disc list-inside">
                               {currentAnalysis.target_positioning!.improvement_areas.map((item, idx) => (
-                                <li key={idx} className="text-sm text-foreground">{item}</li>
+                                <li key={idx} className="text-sm text-gray-900">{item}</li>
                               ))}
                             </ul>
                           ) : (
-                            <div className="text-sm text-muted-foreground">Aucun axe d'amélioration listé</div>
+                            <div className="text-sm text-gray-600">Aucun axe d'amélioration listé</div>
                           )}
                         </div>
                       </div>
@@ -1203,118 +1013,101 @@ const Competition = () => {
                   </Card>
                 ) : null}
 
-                {/* Position de l'utilisateur - Tout en bas */}
-                {(currentAnalysis as any).your_position && (
-                  <Card className="bg-card border border-border shadow-sm">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg font-semibold text-foreground">
-                        Votre Position parmi les Concurrents
-                      </CardTitle>
-                      <CardDescription className="text-xs text-muted-foreground">
-                        {(currentAnalysis as any).your_position.position_text}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="text-center p-4 bg-muted rounded-lg border border-border">
-                          <div className="text-2xl font-bold text-primary mb-1">
-                            {(currentAnalysis as any).your_position.rank}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Rang sur {(currentAnalysis as any).your_position.total_competitors}</div>
-                        </div>
-                        <div className="text-center p-4 bg-muted rounded-lg border border-border">
-                          <div className="text-2xl font-bold text-foreground mb-1">
-                            {(() => {
-                              const benchmarkScore = (currentAnalysis as any).benchmark_results?.benchmark?.classement?.find((c: any) => c.url === currentAnalysis.url)?.score;
-                              if (benchmarkScore !== undefined) return benchmarkScore;
-                              const targetScore = currentAnalysis.target_positioning?.target_benchmark_score;
-                              return targetScore ? Math.round(typeof targetScore === 'number' ? targetScore : Number(targetScore)) : 'N/A';
-                            })()}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Score Benchmark</div>
-                        </div>
-                      </div>
 
-                   
+                  {/* Données Benchmark */}
+                  {(currentAnalysis as any).benchmark_results?.benchmark && (() => {
+                  const benchmarkData = (currentAnalysis as any).benchmark_results.benchmark;
+                  const classement = benchmarkData.classement || [];
+                  const yourSiteIndex = classement.findIndex((e: any) => e.url === currentAnalysis.url);
+                  const yourSiteRank = yourSiteIndex >= 0 ? yourSiteIndex + 1 : null;
                   
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Données Benchmark - Tout en bas */}
-                {(currentAnalysis as any).benchmark_results?.benchmark && (
-                  <Card className="bg-card border border-border">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5" />
-                        Analyse Benchmark
-                      </CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                        {(currentAnalysis as any).benchmark_results.benchmark.comparaison}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-foreground">
-                      <div className="space-y-4">
-                        {/* Classement complet */}
-                        <div>
-                          <h4 className="font-semibold text-foreground mb-3">Classement complet</h4>
-                          <div className="space-y-2 max-h-96 overflow-y-auto">
-                            {(currentAnalysis as any).benchmark_results.benchmark.classement.map((entry: any, idx: number) => {
-                              const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
-                              const isYourSite = entry.url === currentAnalysis.url;
-                              return (
-                                <div 
-                                  key={idx}
-                                  className={`flex items-center justify-between p-3 rounded-lg border ${
-                                    isYourSite 
-                                      ? 'bg-primary/10 border-primary/30' 
-                                      : idx < 3
-                                        ? 'bg-yellow-50 border-yellow-200'
-                                        : 'bg-card border-border'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
-                                      isYourSite ? 'bg-primary text-primary-foreground' : 
-                                      idx === 0 ? 'bg-yellow-400 text-yellow-900' :
-                                      idx === 1 ? 'bg-gray-300 text-gray-900' :
-                                      idx === 2 ? 'bg-amber-400 text-amber-900' :
-                                      'bg-muted text-muted-foreground'
-                                    }`}>
-                                      {isYourSite ? '👤' : idx + 1}
-                                    </div>
-                                    <div>
-                                      <div className="font-medium text-foreground">
-                                        {isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url))}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">{extractDomain(entry.url)}</div>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <Badge variant="outline" className="text-sm font-semibold">
-                                      {entry.score}/100
-                                    </Badge>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                  return (
+                    <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                            Analyse Benchmark
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {benchmarkData.comparaison || 'Comparaison de votre positionnement avec vos concurrents'}
+                          </p>
+                        </div>
+                        {yourSiteRank && (
+                          <div className="text-right">
+                            <div className="text-3xl font-bold text-gray-900">{yourSiteRank}{getOrdinalSuffix(yourSiteRank)}</div>
+                            <div className="text-sm font-medium text-orange-500">+0</div>
                           </div>
+                        )}
+                      </div>
+                      
+                      {/* Dropdown et liste */}
+                      <div>
+                        <div className="flex justify-end mb-4">
+                          <Select defaultValue="score">
+                            <SelectTrigger className="w-[160px] h-9 text-sm border-gray-300 bg-white">
+                              <SelectValue placeholder="Score Benchmark" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="score">Score Benchmark</SelectItem>
+                              <SelectItem value="mention">Taux de Mention</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {/* Table Header */}
+                        <div className="grid grid-cols-[40px_1fr_120px] gap-4 pb-2 border-b border-gray-200 mb-2">
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide"></div>
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque</div>
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Score</div>
+                        </div>
+                        
+                        {/* Liste scrollable */}
+                        <div className="max-h-[500px] overflow-y-auto pr-2">
+                          {classement.map((entry: any, idx: number) => {
+                            const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
+                            const isYourSite = entry.url === currentAnalysis.url;
+                            const brandName = isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url));
+                            const domain = extractDomain(entry.url);
+                            const rank = idx + 1;
+                            
+                            return (
+                              <div 
+                                key={idx}
+                                className="grid grid-cols-[40px_1fr_120px] gap-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors items-center"
+                              >
+                                <div className="text-xs text-gray-400 flex-shrink-0">
+                                  {rank}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-gray-900 text-sm truncate">{brandName}</div>
+                                  <div className="text-xs text-gray-500 truncate">{domain}</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-sm font-semibold text-gray-900">{entry.score || 0}%</div>
+                                  <div className="text-xs font-medium text-orange-500">+0.0%</div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    </Card>
+                  );
+                })()}
+                </div>
+
               </div>
             )}
 
             {/* Analyses LLM détaillées */}
             {!isAnalyzing && currentAnalysis && miniLLMResults.length > 0 && (
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold text-foreground">
-                    Analyses  Détaillées
+              <Card className="border-gray-200 shadow-sm bg-white">
+                <CardHeader className="border-b border-gray-200">
+                  <CardTitle className="text-xl font-bold text-gray-900">
+                    Analyses Détaillées
                   </CardTitle>
-                  <p className="text-muted-foreground">
+                  <p className="text-gray-600">
                     Analyses approfondies de vos concurrents principaux
                   </p>
                 </CardHeader>
@@ -1330,15 +1123,6 @@ const Competition = () => {
             {/* Affichage détaillé de l'analyse concurrentielle */}
             {!isAnalyzing && currentAnalysis && (
               <>
-                {console.log('🔍 Debug currentAnalysis:', currentAnalysis)}
-                {console.log('🔍 Debug consolidated_competitors:', currentAnalysis.consolidated_competitors)}
-                {console.log('🔍 Debug competitors length:', currentAnalysis.consolidated_competitors?.length || 0)}
-                {console.log('🔍 Debug models_analysis:', currentAnalysis.models_analysis)}
-                {console.log('🔍 Debug models_analysis length:', currentAnalysis.models_analysis?.length || 0)}
-                {console.log('🔍 Debug first model competitors:', currentAnalysis.models_analysis?.[0]?.competitors)}
-                {console.log('🔍 Debug first model competitors length:', currentAnalysis.models_analysis?.[0]?.competitors?.length || 0)}
-                {console.log('🔍 Debug target_positioning:', currentAnalysis.target_positioning)}
-                {console.log('🔍 Debug global_stats:', currentAnalysis.global_stats)}
                 {/* <DetailedCompetitiveAnalysis 
                   competitors={(() => {
                    //console.log('🔍 Fallback logic - consolidated_competitors length:', currentAnalysis.consolidated_competitors?.length || 0);
@@ -1400,7 +1184,6 @@ const Competition = () => {
             )}
           </TabsContent>
         </Tabs>
-      </div>
       </div>
     </div>
   );
