@@ -27,7 +27,8 @@ import {
   Plus, 
   LogOut,
   ShieldCheck,
-  BadgeDollarSign
+  BadgeDollarSign,
+  PlusCircle
 } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
 import { usePayment } from '@/contexts/PaymentContext'
@@ -38,6 +39,7 @@ import { AuthService } from "@/services/authService"
 import { useReports, useReport } from "@/hooks/useReports"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { NewAnalysisModal } from "./NewAnalysisModal"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +58,7 @@ export function AppSidebar() {
   const { user, logout } = useAuthContext()
   const { userPlan, isLoading } = usePayment()
   const { isMobile, setOpenMobile } = useSidebar()
+  const [isNewAnalysisModalOpen, setIsNewAnalysisModalOpen] = React.useState(false)
 
   // Récupérer le nom de domaine pour l'afficher à la place de "Virail Studio"
   const explicitReportId = location.state?.selectedReportId || searchParams.get('reportId');
@@ -96,32 +99,13 @@ export function AppSidebar() {
             title: "Vue d'ensemble",
             url: "/",
             icon: Home,
+            badge: undefined as string | undefined,
           },
           {
             title: "Prompts",
             url: "/optimization-agent",
             icon: MessageSquare,
-          },
-          {
-            title: "Sources",
-            url: "/sites-optimization",
-            icon: Globe,
-          },
-        ],
-      },
-      {
-        title: "Préférences",
-        items: [
-          {
-            title: "Concurrents",
-            url: "/competition",
-            icon: Swords,
-            badge: "10",
-          },
-          {
-            title: "Tags",
-            url: "/analyses", // Mapping Analyses GEO to Tags for now as per visual similarity request
-            icon: Tag,
+            badge: undefined as string | undefined,
           },
         ],
       },
@@ -132,17 +116,20 @@ export function AppSidebar() {
             title: "Personnes",
             url: "/settings",
             icon: Users,
+            badge: undefined as string | undefined,
           },
           {
             title: "Facturation",
             url: "/pricing",
             icon: CreditCard,
+            badge: undefined as string | undefined,
           },
           // Admin items only if admin
           ...(isAdmin ? [{
             title: "Admin • Waitlist",
             url: "/admin/waitlist",
             icon: ShieldCheck,
+            badge: undefined as string | undefined,
           }] : []),
         ],
       },
@@ -162,9 +149,7 @@ export function AppSidebar() {
                 >
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">{domainName || "Virail Studio"}</span>
-                    
                   </div>
-                  
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -201,6 +186,18 @@ export function AppSidebar() {
             <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                {group.title === "Général" && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton 
+                      onClick={() => setIsNewAnalysisModalOpen(true)}
+                      tooltip="Nouvelle Analyse"
+                      className="text-meetmind-primary font-medium hover:text-meetmind-primary hover:bg-blue-50/50"
+                    >
+                      <PlusCircle className="size-4" />
+                      <span>Nouvelle Analyse</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
@@ -284,6 +281,11 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarFooter>
       <SidebarRail />
+      
+      <NewAnalysisModal 
+        open={isNewAnalysisModalOpen} 
+        onOpenChange={setIsNewAnalysisModalOpen} 
+      />
     </Sidebar>
   )
 }

@@ -583,6 +583,52 @@ function getMockReports(): ReportResponse[] {
 }
 
 /**
+ * Lance une analyse personnalisée avec les paramètres spécifiés par l'utilisateur
+ */
+export async function startCustomAnalysis(params: {
+  url: string;
+  min_score?: number;
+  min_mentions?: number;
+  include_raw?: boolean;
+  include_competitor_analysis?: boolean;
+}): Promise<{ reportId: string; status: string; data?: any } | null> {
+  try {
+    const payload = {
+      url: params.url,
+      min_score: params.min_score ?? 0.3,
+      min_mentions: params.min_mentions ?? 1,
+      include_raw: params.include_raw ?? false,
+      include_competitor_analysis: params.include_competitor_analysis ?? true
+    };
+
+    console.log('🚀 Lancement de l\'analyse personnalisée:', payload);
+
+    const response = await fetchWithAuth(`${API_BASE_URL}/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Erreur lors de l\'analyse' }));
+      throw new Error(errorData.message || `Erreur HTTP: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return {
+      reportId: data.id || data.reportId || data.analysis_id || `analysis-${Date.now()}`,
+      status: data.status || 'processing',
+      data
+    };
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'analyse personnalisée:', error);
+    return null;
+  }
+}
+
+/**
  * Fonction utilitaire pour choisir automatiquement la meilleure stratégie d'appels API
  */
 export async function startOptimizedAnalysis(

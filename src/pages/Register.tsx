@@ -70,17 +70,6 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
-      {/* Header - Logo en haut */}
-      <header className="w-full px-6 py-4">
-        <div className="max-w-7xl mx-auto">
-          <img 
-            src="/LOGO BLEU FOND TRANSPARENT (1).png" 
-            alt="Virail Logo" 
-            className="h-12 w-auto"
-          />
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center py-16 px-4">
         <div className="w-full max-w-md mx-auto">

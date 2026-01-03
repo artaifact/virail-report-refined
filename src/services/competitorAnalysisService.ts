@@ -282,7 +282,7 @@ export const startCompetitorAnalysis = async (request: CompetitorAnalysisRequest
 /**
  * Mapper les données de l'API vers le format CompetitorAnalysisResponse
  */
-const mapApiResponseToCompetitorAnalysisResponse = (apiData: any): CompetitorAnalysisResponse => {
+export const mapApiResponseToCompetitorAnalysisResponse = (apiData: any): CompetitorAnalysisResponse => {
   // Si le format est déjà le bon, le retourner tel quel
   if (apiData.consolidated_competitors && apiData.models_analysis && apiData.target_positioning) {
     return apiData;

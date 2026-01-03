@@ -56,6 +56,8 @@ const modelLogos: Record<string, string> = {
   'claude': '/prompt-model-claude.svg',
   'anthropic': '/prompt-model-claude.svg',
   'mistral': '/Mistral.png',
+  'mixtral': '/Mistral.png',
+  'sonar': '/prompt-model-perplexity.svg',
 };
 
 /**

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './Index.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,7 +7,7 @@ import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, Clock, Tar
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useReport, useReports } from '@/hooks/useReports';
 import type { FullReportData } from '@/lib/api';
-import { listCompetitorAnalyses, getCompetitorAnalysisById, extractDomain, CompetitorAnalysisResponse } from '@/services/competitorAnalysisService';
+import { listCompetitorAnalyses, getCompetitorAnalysisById, extractDomain, CompetitorAnalysisResponse, mapApiResponseToCompetitorAnalysisResponse } from '@/services/competitorAnalysisService';
 
 // === CONSTANTES ===
 const modelLogos: Record<string, string> = {
@@ -21,6 +21,8 @@ const modelLogos: Record<string, string> = {
   'claude': '/prompt-model-claude.svg',
   'anthropic': '/prompt-model-claude.svg',
   'mistral': '/Mistral.png',
+  'mixtral': '/Mistral.png',
+  'sonar': '/prompt-model-perplexity.svg',
 };
 
 /**
@@ -1957,34 +1959,66 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
   const [competitorAnalysis, setCompetitorAnalysis] = useState<CompetitorAnalysisResponse | null>(null);
   const [loadingCompetitors, setLoadingCompetitors] = useState(false);
 
-  // Extraire les modèles disponibles depuis l'API
-  const availableModels = reportData?.analyses?.map(a => a.llm_name).filter(Boolean) || [];
+  // Extraire les modèles disponibles depuis l'API de manière mémorisée
+  const availableModels = useMemo(() => {
+    return reportData?.analyses?.map(a => a.llm_name).filter(Boolean) || [];
+  }, [reportData?.analyses]);
   
-  // Charger l'analyse concurrentielle correspondante à l'URL du rapport
+  // Charger l'analyse concurrentielle
   useEffect(() => {
     const loadCompetitorAnalysis = async () => {
-      if (!reportData?.report?.url) return;
+      if (!reportData) return;
+      
+      // SOURCE 1: Données déjà présentes dans le rapport (chemin le plus rapide)
+      if (reportData.competitor_analysis) {
+        console.log('📊 Source: competitor_analysis du rapport /llmo/reports/:id');
+        const mappedAnalysis = mapApiResponseToCompetitorAnalysisResponse(reportData.competitor_analysis);
+        setCompetitorAnalysis(mappedAnalysis);
+        
+        // Sélectionner le premier modèle par défaut s'il n'y en a pas encore
+        if (!selectedModel) {
+          const firstModel = mappedAnalysis.models_analysis?.[0]?.model_info?.display_name || 
+                            mappedAnalysis.models_analysis?.[0]?.model_info?.model_name || '';
+          if (firstModel) {
+            console.log('🎯 Définition du modèle par défaut (Source 1):', firstModel);
+            setSelectedModel(firstModel);
+          }
+        }
+        return;
+      }
+
+      // SOURCE 2: Recherche par URL si non présent dans le rapport (fallback)
+      if (!reportData.report?.url) return;
       
       try {
         setLoadingCompetitors(true);
-        // Lister toutes les analyses pour trouver celle correspondante à l'URL
+        console.log('🔍 Source: Recherche manuelle par URL (fallback)');
         const analyses = await listCompetitorAnalyses();
+        
+        const reportUrl = reportData.report.url.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^www\./, '');
+        const reportDomain = extractDomain(reportData.report.url).toLowerCase();
+
         const matchingAnalysis = analyses.find(analysis => {
-          const reportUrl = reportData.report.url.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
-          const analysisUrl = analysis.url?.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '') || '';
-          return reportUrl === analysisUrl || reportUrl.includes(analysisUrl) || analysisUrl.includes(reportUrl);
+          const analysisUrl = (analysis.url || '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^www\./, '');
+          const analysisDomain = extractDomain(analysis.url || '').toLowerCase();
+          
+          return (
+            reportUrl === analysisUrl || 
+            analysisUrl.includes(reportUrl) || 
+            reportUrl.includes(analysisUrl) ||
+            reportDomain === analysisDomain
+          );
         });
 
         if (matchingAnalysis) {
-          // Charger les détails complets de l'analyse
           const fullAnalysis = await getCompetitorAnalysisById(matchingAnalysis.analysis_id);
           setCompetitorAnalysis(fullAnalysis);
           
-          // Définir le modèle par défaut si disponible
-          if (fullAnalysis.models_analysis && fullAnalysis.models_analysis.length > 0) {
+          if (!selectedModel && fullAnalysis.models_analysis && fullAnalysis.models_analysis.length > 0) {
             const firstModel = fullAnalysis.models_analysis[0].model_info?.display_name || 
                               fullAnalysis.models_analysis[0].model_info?.model_name || '';
-            if (firstModel && !selectedModel) {
+            if (firstModel) {
+              console.log('🎯 Définition du modèle par défaut (Source 2):', firstModel);
               setSelectedModel(firstModel);
             }
           }
@@ -1997,22 +2031,32 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
     };
 
     loadCompetitorAnalysis();
-  }, [reportData?.report?.url, selectedModel]);
+  }, [reportData]);
 
-  // Mettre à jour le modèle sélectionné si nécessaire
+  // Mettre à jour le modèle sélectionné uniquement si nécessaire (modèle plus présent)
   useEffect(() => {
+    let modelNames: string[] = [];
     if (competitorAnalysis?.models_analysis && competitorAnalysis.models_analysis.length > 0) {
-      const modelNames = competitorAnalysis.models_analysis.map(m => 
+      modelNames = competitorAnalysis.models_analysis.map(m => 
         m.model_info?.display_name || m.model_info?.model_name || ''
       ).filter(Boolean);
-      
-      if (modelNames.length > 0 && !modelNames.includes(selectedModel)) {
+    } else {
+      modelNames = availableModels;
+    }
+
+    if (modelNames.length > 0) {
+      // Si rien n'est sélectionné, on prend le premier
+      if (!selectedModel) {
+        console.log('🎯 Init: Sélection du premier modèle disponible:', modelNames[0]);
+        setSelectedModel(modelNames[0]);
+      } 
+      // Si ce qui est sélectionné n'existe plus dans la liste actuelle, on reset au premier
+      else if (!modelNames.includes(selectedModel)) {
+        console.log('⚠️ Modèle actuel non trouvé, reset vers:', modelNames[0]);
         setSelectedModel(modelNames[0]);
       }
-    } else if (availableModels.length > 0 && !availableModels.includes(selectedModel)) {
-      setSelectedModel(availableModels[0]);
     }
-  }, [competitorAnalysis, availableModels, selectedModel]);
+  }, [competitorAnalysis, availableModels]); // Ne pas mettre selectedModel ici pour éviter les boucles de reset
 
   // Extraire les concurrents depuis les données de l'API
   const getCompetitorsFromAPI = () => {
@@ -2070,24 +2114,6 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
 
   const competitors = getCompetitorsFromAPI();
 
-  // Calculer le score moyen
-  const averageScore = competitors.length > 0
-    ? Math.round(competitors.reduce((sum, c) => sum + c.score, 0) / competitors.length)
-    : 0;
-
-  if (competitors.length === 0 && !loadingCompetitors) {
-    return (
-      <div className="chart-card competitor-card">
-        <div className="card-header-with-selector">
-          <h3 className="text-8xl font-bold text-slate-900">Analyse concurrentielle</h3>
-        </div>
-        <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
-          Aucune analyse concurrentielle disponible pour ce modèle.
-        </div>
-      </div>
-    );
-  }
-
   // Obtenir les modèles disponibles depuis l'analyse concurrentielle
   const competitorModels = competitorAnalysis?.models_analysis?.map(m => 
     m.model_info?.display_name || m.model_info?.model_name || ''
@@ -2096,12 +2122,15 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
   return (
     <div className="chart-card competitor-card">
       <div className="card-header-with-selector">
-        <h3 className="text-8xl font-bold text-slate-900">Analyse concurrentielle</h3>
+        <h3 className="text-xl font-bold text-slate-900">Analyse concurrentielle</h3>
         <div className="model-selector">
           <span className="selector-label">Modèle:</span>
           <Select 
             value={selectedModel} 
-            onValueChange={setSelectedModel}
+            onValueChange={(val) => {
+              console.log('🔄 Manuel: Changement de modèle vers:', val);
+              setSelectedModel(val);
+            }}
             disabled={loadingCompetitors || competitorModels.length === 0}
           >
             <SelectTrigger className="w-[200px] h-9 bg-white border-slate-200">
@@ -2134,6 +2163,18 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
           <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
             Chargement de l'analyse concurrentielle...
           </div>
+        ) : competitors.length === 0 ? (
+          <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
+            <p className="mb-4">Aucune analyse concurrentielle disponible pour ce modèle.</p>
+            <Button 
+              onClick={() => window.location.href = '/competition'}
+              variant="outline"
+              size="sm"
+              className="mt-2"
+            >
+              Lancer une analyse concurrentielle
+            </Button>
+          </div>
         ) : (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -2142,105 +2183,20 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
               </div>
             </div>
         
-        {competitors.map((competitor, index) => (
-          <div 
-            key={index} 
-            className="competitor-item"
-            onClick={() => setSelectedCompetitor(selectedCompetitor === competitor.domain ? null : competitor.domain)}
-            style={{ cursor: 'pointer' }}
-          >
-            <div className="competitor-info" style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div className="competitor-name">{competitor.name}</div>
-                {selectedCompetitor === competitor.domain && <ChevronRight size={14} style={{ color: '#3B82F6' }} />}
-              </div>
-              <div className="competitor-domain">{competitor.domain}</div>
-            </div>
-          </div>
-        ))}
-        
-        {selectedCompetitor && (
-          <div style={{ 
-            marginTop: '16px', 
-            padding: '16px', 
-            background: '#F0F7FF', 
-            borderRadius: '12px', 
-            border: '1px solid #BFDBFE' 
-          }}>
-            {(() => {
-              const comp = competitors.find(c => c.domain === selectedCompetitor);
-              if (!comp) return null;
-              return (
-                <div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '16px' }}>
-                    <div>
-                      <div style={{ fontSize: '11px', color: '#64748B', marginBottom: '4px' }}>Score</div>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>{comp.score}/100</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '11px', color: '#64748B', marginBottom: '4px' }}>Mots-clés</div>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>{comp.keywords}</div>
-                    </div>
-                  </div>
-                  {comp.strengths && comp.strengths.length > 0 && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#10B981', marginBottom: '6px' }}>Points forts</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {comp.strengths.map((strength: string, idx: number) => (
-                          <div key={idx} style={{ fontSize: '12px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <CheckCircle2 size={12} style={{ color: '#10B981' }} />
-                            {strength}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {comp.weaknesses && comp.weaknesses.length > 0 && (
-                    <div>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#F97316', marginBottom: '6px' }}>Points faibles</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {comp.weaknesses.map((weakness: string, idx: number) => (
-                          <div key={idx} style={{ fontSize: '12px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <AlertCircle size={12} style={{ color: '#F97316' }} />
-                            {weakness}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {(comp as any).reasoning && (
-                    <div style={{ marginTop: '12px' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#3B82F6', marginBottom: '6px' }}>Analyse</div>
-                      <div style={{ fontSize: '12px', color: '#475569', lineHeight: '1.5' }}>
-                        {(comp as any).reasoning}
-                      </div>
-                    </div>
-                  )}
-                  {(comp as any).mentionedFeatures && (comp as any).mentionedFeatures.length > 0 && (
-                    <div style={{ marginTop: '12px' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>Fonctionnalités mentionnées</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                        {(comp as any).mentionedFeatures.map((feature: string, idx: number) => (
-                          <span key={idx} style={{ 
-                            padding: '4px 8px', 
-                            background: '#F1F5F9', 
-                            color: '#475569', 
-                            borderRadius: '4px', 
-                            fontSize: '11px' 
-                          }}>
-                            {feature}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+            {competitors.map((competitor, index) => (
+              <div 
+                key={index} 
+                className="competitor-item"
+                style={{ cursor: 'default' }}
+              >
+                <div className="competitor-info" style={{ flex: 1 }}>
+                  <div className="competitor-name">{competitor.name}</div>
+                  <div className="competitor-domain">{competitor.domain}</div>
                 </div>
-              );
-            })()}
-          </div>
-        )}
-        
-            <button className="btn-full-analysis">
+              </div>
+            ))}
+            
+            <button className="btn-full-analysis" onClick={() => window.location.href = '/competition'}>
               → Voir l'analyse concurrentielle complète
             </button>
           </>
@@ -2581,24 +2537,6 @@ const Index = () => {
               {/* Vue Améliorer - Affiche le contenu d'Infos détaillées */}
               {activeView === 'ameliorer' && <InfosDetailleesView reportData={reportData} />}
             </>
-          )}
-          {/* Message informatif si aucun reportId */}
-          {!reportId && !loading && (
-            <div style={{ 
-              padding: '20px', 
-              margin: '20px', 
-              background: '#F0F7FF', 
-              borderRadius: '8px', 
-              border: '1px solid #BFDBFE',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '14px', color: '#1E40AF', marginBottom: '8px', fontWeight: 600 }}>
-                💡 Aucun rapport sélectionné
-              </div>
-              <div style={{ fontSize: '13px', color: '#475569' }}>
-                Ajoutez <code style={{ background: '#E0E7FF', padding: '2px 6px', borderRadius: '4px', color: '#4338CA' }}>?reportId=1</code> à l'URL pour charger un rapport spécifique
-              </div>
-            </div>
           )}
         </div>
       </div>
