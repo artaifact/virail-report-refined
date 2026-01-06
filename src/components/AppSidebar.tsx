@@ -28,7 +28,9 @@ import {
   LogOut,
   ShieldCheck,
   BadgeDollarSign,
-  PlusCircle
+  PlusCircle,
+  Target,
+  TrendingUp
 } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
 import { usePayment } from '@/contexts/PaymentContext'
@@ -99,6 +101,12 @@ export function AppSidebar() {
             title: "Vue d'ensemble",
             url: "/",
             icon: Home,
+            badge: undefined as string | undefined,
+          },
+          {
+            title: "Concurentielle",
+            url: "/competition",
+            icon: Target,
             badge: undefined as string | undefined,
           },
           {
@@ -191,7 +199,18 @@ export function AppSidebar() {
                     <SidebarMenuButton 
                       onClick={() => setIsNewAnalysisModalOpen(true)}
                       tooltip="Nouvelle Analyse"
-                      className="text-meetmind-primary font-medium hover:text-meetmind-primary hover:bg-blue-50/50"
+                      className="font-medium"
+                      style={{ 
+                        color: '#3B82F6'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = '#3B82F6';
+                        e.currentTarget.style.backgroundColor = 'rgba(239, 246, 255, 0.5)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = '#3B82F6';
+                        e.currentTarget.style.backgroundColor = '';
+                      }}
                     >
                       <PlusCircle className="size-4" />
                       <span>Nouvelle Analyse</span>

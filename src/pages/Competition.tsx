@@ -32,12 +32,8 @@ import {
   History,
   Trash2,
   Calendar,
-  Sparkles,
   Trophy,
-  Rocket,
-  Star,
-  Zap,
-  Brain
+  Star
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCompetitiveAnalysis } from "@/hooks/useCompetitiveAnalysis";
@@ -252,46 +248,9 @@ const Competition = () => {
 
   return (
     <div className="min-h-screen bg-[#F5F6F7] p-6">
-      <div className="mx-auto space-y-6" style={{ maxWidth: '1700px' }}>
+      <div className="w-full space-y-6">
         {/* Header avec titre et filtres */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Concurrence.</h1>
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger className="w-[180px] border-gray-300 bg-white hover:bg-gray-50">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15 nov - 21 nov">15 nov - 21 nov</SelectItem>
-                    <SelectItem value="8 nov - 14 nov">8 nov - 14 nov</SelectItem>
-                    <SelectItem value="1 nov - 7 nov">1 nov - 7 nov</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="relative">
-                <Select value={regionFilter} onValueChange={setRegionFilter}>
-                  <SelectTrigger className="w-[180px] border-gray-300 bg-white hover:bg-gray-50">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="France">France</SelectItem>
-                    <SelectItem value="États-Unis">États-Unis</SelectItem>
-                    <SelectItem value="Royaume-Uni">Royaume-Uni</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button variant="outline" className="border-gray-300 bg-white hover:bg-gray-50">
-                <Search className="h-4 w-4 mr-2" />
-                Ajouter un filtre
-              </Button>
-            </div>
-          </div>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            Analysez votre positionnement concurrentiel et identifiez les opportunités d'amélioration de votre visibilité GEO.
-          </p>
-        </div>
+        
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2">
             <TabsList className="grid w-full grid-cols-3 bg-gray-50 p-1 h-auto rounded-lg">
@@ -357,9 +316,11 @@ const Competition = () => {
                     </p>
                     <Button 
                       onClick={() => setSelectedTab("setup")} 
-                      className="bg-black hover:bg-gray-900 text-white shadow-sm font-semibold px-8 py-3 h-auto"
+                      className="text-white shadow-sm font-semibold px-8 py-3 h-auto"
+                      style={{
+                        background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)'
+                      }}
                     >
-                      <Rocket className="h-5 w-5 mr-2" />
                       Lancer ma première analyse
                     </Button>
                   </div>
@@ -434,10 +395,6 @@ const Competition = () => {
                       Entrez l'URL de votre site pour commencer l'analyse GEO
                     </CardDescription>
                   </div>
-                  <Badge className="bg-gray-100 text-gray-700 border-gray-300">
-                    <Zap className="w-3 h-3 mr-1" />
-                    IA Powered
-                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="p-8 bg-white">
@@ -459,7 +416,10 @@ const Competition = () => {
                     <Button 
                       onClick={handleStartAnalysis}
                       disabled={!userUrl.trim() || isAnalyzing}
-                      className="bg-black hover:bg-gray-900 text-white shadow-sm h-14 px-8 font-semibold text-lg rounded-lg"
+                      className="text-white shadow-sm h-14 px-8 font-semibold text-lg rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={!userUrl.trim() || isAnalyzing ? undefined : {
+                        background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)'
+                      }}
                     >
                       {isAnalyzing ? (
                         <>
@@ -467,10 +427,7 @@ const Competition = () => {
                           Analyse...
                         </>
                       ) : (
-                        <>
-                          <Rocket className="h-5 w-5 mr-3" />
-                          Lancer l'analyse
-                        </>
+                        'Lancer l\'analyse'
                       )}
                     </Button>
                   </div>
@@ -485,19 +442,19 @@ const Competition = () => {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
                             <span className="text-white text-xs font-bold">1</span>
                           </div>
                           <span className="text-sm text-gray-700">Analyse GEO complète de votre site</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
                             <span className="text-white text-xs font-bold">2</span>
                           </div>
-                          <span className="text-sm text-gray-700">Identification des concurrents par IA</span>
+                          <span className="text-sm text-gray-700">Identification automatique des concurrents</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
                             <span className="text-white text-xs font-bold">3</span>
                           </div>
                           <span className="text-sm text-gray-700">Analyse GEO de chaque concurrent</span>
@@ -505,19 +462,19 @@ const Competition = () => {
                       </div>
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
                             <span className="text-white text-xs font-bold">4</span>
                           </div>
                           <span className="text-sm text-gray-700">Comparaison détaillée et insights</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
                             <span className="text-white text-xs font-bold">5</span>
                           </div>
                           <span className="text-sm text-gray-700">Recommandations personnalisées</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
                             <span className="text-white text-xs font-bold">6</span>
                           </div>
                           <span className="text-sm text-gray-700">Sauvegarde pour suivi temporel</span>
@@ -537,7 +494,7 @@ const Competition = () => {
                 <CardContent className="p-6 bg-white">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-2.5 h-2.5 bg-gray-700 rounded-full animate-pulse"></div>
+                      <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: '#3B82F6' }}></div>
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900 tracking-tight">
                           Analyse de {extractDomain(currentAnalysis.url)}
@@ -675,22 +632,25 @@ const Competition = () => {
                 <CardContent className="p-12 text-center bg-white">
                   <div className="flex flex-col items-center gap-6">
                     <div className="relative">
-                      <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center shadow-xl">
+                      <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl" style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)' }}>
                         <Loader2 className="h-10 w-10 text-white animate-spin" />
                       </div>
-                      <div className="absolute inset-0 rounded-full border-4 border-gray-200 border-t-gray-900 animate-spin"></div>
+                      <div className="absolute inset-0 rounded-full border-4 border-gray-200 animate-spin" style={{ borderTopColor: '#3B82F6' }}></div>
                     </div>
                     <div className="max-w-md">
                       <h3 className="text-2xl font-bold text-gray-900 mb-3">
                         Analyse concurrentielle en cours...
                       </h3>
                       <p className="text-gray-600 mb-6 text-lg">
-                        Notre IA analyse votre site et identifie vos concurrents avec 3 modèles différents
+                        Analyse de votre site et identification de vos concurrents avec 3 modèles
                       </p>
                       <div className="w-80 bg-gray-200 rounded-full h-3 mx-auto shadow-inner">
                         <div 
-                          className="bg-gray-900 h-3 rounded-full transition-all duration-1000 shadow-sm animate-pulse"
-                          style={{ width: `75%` }}
+                          className="h-3 rounded-full transition-all duration-1000 shadow-sm animate-pulse"
+                          style={{ 
+                            width: `75%`,
+                            background: 'linear-gradient(90deg, #3B82F6 0%, #6366F1 100%)'
+                          }}
                         ></div>
                       </div>
                       <p className="text-gray-600 mt-3 font-semibold">Analyse en cours...</p>
@@ -703,60 +663,6 @@ const Competition = () => {
             {/* Affichage complet de toutes les données */}
             {!isAnalyzing && currentAnalysis && (
               <div className="space-y-6 mb-6">
-                {/* Informations générales de l'analyse */}
-                <Card className="bg-white border-gray-200 shadow-sm">
-                  <CardContent className="space-y-6 text-gray-900 p-6">
-                    {/* Métriques principales */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="text-2xl font-bold text-gray-900">{currentAnalysis.models_analysis?.length || 0}</div>
-                        <div className="text-sm text-gray-600">Modèles IA</div>
-                      </div>
-                      <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="text-2xl font-bold text-gray-900">
-                          {currentAnalysis.models_analysis?.reduce((total, model) => total + (model.competitors?.length || 0), 0) || 0}
-                        </div>
-                        <div className="text-sm text-gray-600">Concurrents Trouvés</div>
-                      </div>
-                      <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="text-2xl font-bold text-gray-900">
-                          {new Date(currentAnalysis.created_at).toLocaleDateString('fr-FR', { 
-                            day: '2-digit', 
-                            month: '2-digit' 
-                          })}
-                        </div>
-                        <div className="text-sm text-gray-600">Date d'Analyse</div>
-                      </div>
-                    </div>
-                    
-                    {/* Détails de l'analyse */}
-                    <div className="space-y-4">
-                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="text-sm font-medium text-gray-600 mb-2">URL Analysée</div>
-                        <a 
-                          href={currentAnalysis.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-gray-900 hover:underline break-all"
-                        >
-                          {currentAnalysis.url}
-                        </a>
-                      </div>
-                      
-                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="text-sm font-medium text-gray-600 mb-2">Titre</div>
-                        <div className="text-gray-900">{currentAnalysis.title}</div>
-                      </div>
-                      
-                      {currentAnalysis.description && (
-                        <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <div className="text-sm font-medium text-gray-600 mb-2">Description</div>
-                          <div className="text-gray-900">{currentAnalysis.description}</div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
 
                 {/* Statistiques globales */}
                 {/* <Card className="bg-card border border-border">
@@ -818,7 +724,7 @@ const Competition = () => {
                   </CardContent>
                 </Card> */}
 
-                {/* Section Top concurrents et Détails par Modèle IA côte à côte */}
+                {/* Section Top concurrents et Détails par Modèle côte à côte */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Top concurrents */}
                   {currentAnalysis.target_positioning?.top_competitors && currentAnalysis.target_positioning.top_competitors.length > 0 && (
@@ -840,19 +746,7 @@ const Competition = () => {
                                 <div className="font-semibold text-gray-900 truncate text-sm">
                                   {c.name}
                                 </div>
-                                <div className="text-xs text-gray-600 flex items-center gap-2">
-                                  <span>Score: {Math.round(Number(c.score))}/100</span>
-                                  <span>•</span>
-                                  <span>Écart: {c.gap_vs_you > 0 ? '+' : ''}{Number(c.gap_vs_you).toFixed(1)}</span>
-                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <Badge
-                                className={`text-xs ${String(c.status).includes('devant') || String(c.status).includes('Leader') ? 'bg-red-100 text-red-700 border-red-300' : String(c.status).includes('derrière') ? 'bg-green-100 text-green-700 border-green-300' : 'bg-gray-100 text-gray-700 border-gray-300'}`}
-                              >
-                                {c.status}
-                              </Badge>
                             </div>
                           </div>
                         ))}
@@ -906,7 +800,7 @@ const Competition = () => {
                     return (
                       <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
                         <div className="flex justify-between items-center mb-5">
-                          <h3 className="text-sm font-semibold text-gray-900">Détails par Modèle IA</h3>
+                          <h3 className="text-sm font-semibold text-gray-900">Détails par Modèle</h3>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-600">Modèle:</span>
                             <Select value={currentSelectedModel} onValueChange={setSelectedModel}>
@@ -919,9 +813,7 @@ const Competition = () => {
                                     <div className="flex items-center gap-2">
                                       {getModelLogo(model) ? (
                                         <img src={getModelLogo(model)!} alt={model} className="w-4 h-4 object-contain" />
-                                      ) : (
-                                        <Zap size={14} className="text-blue-500" />
-                                      )}
+                                      ) : null}
                                       <span>{model.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
                                     </div>
                                   </SelectItem>
@@ -1100,26 +992,6 @@ const Competition = () => {
                 </div>
 
               </div>
-            )}
-
-            {/* Analyses LLM détaillées */}
-            {!isAnalyzing && currentAnalysis && miniLLMResults.length > 0 && (
-              <Card className="border-gray-200 shadow-sm bg-white">
-                <CardHeader className="border-b border-gray-200">
-                  <CardTitle className="text-xl font-bold text-gray-900">
-                    Analyses Détaillées
-                  </CardTitle>
-                  <p className="text-gray-600">
-                    Analyses approfondies de vos concurrents principaux
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <MiniLLMAnalysis 
-                    data={miniLLMResults} 
-                    isLoading={loadingMiniLLM}
-                  />
-                </CardContent>
-              </Card>
             )}
 
             {/* Affichage détaillé de l'analyse concurrentielle */}

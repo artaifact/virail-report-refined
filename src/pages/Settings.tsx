@@ -3,8 +3,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { AuthService } from "@/services/authService";
-import { Settings as SettingsIcon, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
-
+import { Settings as SettingsIcon, Sparkles, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiService } from "@/services/apiService";
 import { useNavigate } from "react-router-dom";
 
 interface UserProfile {
@@ -20,9 +21,11 @@ interface UserProfile {
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [firstName, setFirstName] = useState('Herby');
   const [lastName, setLastName] = useState('Nerilus');
+  const [isResettingOnboarding, setIsResettingOnboarding] = useState(false);
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -56,6 +59,49 @@ const Settings = () => {
     return 'U';
   };
 
+  const handleResetOnboarding = async () => {
+    if (!window.confirm('Êtes-vous sûr de vouloir réinitialiser l\'onboarding ? Cela vous permettra de recommencer le processus d\'intégration.')) {
+      return;
+    }
+
+    setIsResettingOnboarding(true);
+    try {
+      // Appeler l'endpoint de réinitialisation
+      const response = await fetch(`${import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com')}/auth/user/onboarding/reset`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la réinitialisation');
+      }
+
+      toast({
+        title: 'Onboarding réinitialisé',
+        description: 'Vous allez être redirigé vers l\'onboarding.',
+      });
+
+      // Recharger les données utilisateur
+      await apiService.getMeBearer();
+
+      // Rediriger vers l'onboarding
+      setTimeout(() => {
+        navigate('/onboarding/setup');
+      }, 1000);
+    } catch (error) {
+      console.error('Erreur lors de la réinitialisation:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de réinitialiser l\'onboarding',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsResettingOnboarding(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -165,6 +211,23 @@ const Settings = () => {
                 Gérer le forfait
               </Button>
             </div>
+          </div>
+
+          {/* Onboarding Section */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Onboarding</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Réinitialisez l'onboarding pour recommencer le processus d'intégration et configurer à nouveau votre compte.
+            </p>
+            <Button
+              onClick={handleResetOnboarding}
+              disabled={isResettingOnboarding}
+              variant="outline"
+              className="w-full"
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              {isResettingOnboarding ? 'Réinitialisation...' : 'Réinitialiser l\'onboarding'}
+            </Button>
           </div>
 
           {/* Invoices Section */}

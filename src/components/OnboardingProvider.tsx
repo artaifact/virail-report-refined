@@ -51,9 +51,11 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
       // Ne PAS afficher si :
       // - Le statut est marqué comme complété (completed: true)
       // - Le current_step est 0 (pas d'onboarding en cours)
+      // - L'utilisateur a skip l'onboarding (double vérification au cas où user n'est pas encore à jour)
       const shouldShow = 
         status.completed === false && 
-        status.current_step > 0;
+        status.current_step > 0 &&
+        !user?.onboarding_skipped; // Vérifier aussi ici au cas où user n'est pas encore mis à jour
       console.log('OnboardingProvider: shouldShow from status:', shouldShow, { 
         status, 
         user_skipped: user?.onboarding_skipped,

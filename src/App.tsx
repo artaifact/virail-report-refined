@@ -40,6 +40,13 @@ import LLMODashboard from "./pages/LLMODashboard";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import AdminMessages from "./pages/AdminMessages";
 import ProjectOnboardingDemo from "./pages/ProjectOnboardingDemo";
+import { OnboardingLayout } from "./pages/onboarding/OnboardingLayout";
+import { SetupStep } from "./pages/onboarding/SetupStep";
+import { ProjectStep } from "./pages/onboarding/ProjectStep";
+import { TopicsStep } from "./pages/onboarding/TopicsStep";
+import { PromptsStep } from "./pages/onboarding/PromptsStep";
+import { ResultsStep } from "./pages/onboarding/ResultsStep";
+import { PlanStep } from "./pages/onboarding/PlanStep";
 
 const queryClient = new QueryClient();
 
@@ -172,6 +179,21 @@ const App = () => (
               {/* <Route path="/auth/google/callback" element={<GoogleCallback />} /> */}
               <Route path="/diagnostic" element={<Diagnostic />} />
               <Route path="/project-onboarding-demo" element={<ProjectOnboardingDemo />} />
+              
+              {/* Routes d'onboarding (protégées) */}
+              <Route path="/onboarding" element={
+                <ProtectedRoute>
+                  <OnboardingLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<SetupStep />} />
+                <Route path="setup" element={<SetupStep />} />
+                <Route path="project" element={<ProjectStep />} />
+                <Route path="topics" element={<TopicsStep />} />
+                <Route path="prompts" element={<PromptsStep />} />
+                <Route path="results" element={<ResultsStep />} />
+                <Route path="plan" element={<PlanStep />} />
+              </Route>
               
               {/* Routes protégées */}
               <Route path="/*" element={
