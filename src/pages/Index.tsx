@@ -2270,7 +2270,7 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
       used: `${Math.round((s.mentions / totalCalls) * 100)} %`,
       citations: s.mentions.toString(),
       type: s.isClient ? 'you' : 'corporate',
-      label: s.isClient ? 'Your Site' : 'Source',
+      label: s.isClient ? 'Votre Site' : 'Source',
       pages: s.urls.size,
       lastSeen: new Date().toLocaleDateString('fr-FR'),
       description: `Source identifiée. Apparaît dans les réponses générées par les modèles d'IA.`,
@@ -2291,7 +2291,7 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
 
   if (domains.length === 0) {
     return (
-      <div className="domains-table-card" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', padding: '0', overflow: 'hidden', background: '#FFFFFF' }}>
+      <div id="domaines-les-plus-cites" className="domains-table-card" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', padding: '0', overflow: 'hidden', background: '#FFFFFF', scrollMarginTop: '80px' }}>
         <div style={{ padding: '20px 26px', borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Domaines les plus cités</h3>
           <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', margin: 0 }}>Sources citées</p>
@@ -2304,7 +2304,7 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
   }
 
   return (
-    <div className="domains-table-card" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', padding: '0', overflow: 'hidden', background: '#FFFFFF' }}>
+    <div id="domaines-les-plus-cites" className="domains-table-card" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', padding: '0', overflow: 'hidden', background: '#FFFFFF', scrollMarginTop: '80px' }}>
       <div style={{ padding: '20px 26px', borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
         <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Domaines les plus cités</h3>
         <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', margin: 0 }}>Sources citées</p>
@@ -2345,10 +2345,10 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
           <table className="domains-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>
               <tr style={{ textAlign: 'left', fontSize: '12px', textTransform: 'uppercase', color: '#94A3B8', fontWeight: 600, letterSpacing: '0.05em', background: '#F8FAFC' }}>
-                <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0' }}>Domain</th>
-                <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0' }}>Used</th>
+                <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0' }}>Domaine</th>
+                <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0' }}>Utilisé</th>
                 <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0' }}>Pages</th>
-                <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0' }}>Avg. Citations</th>
+                <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0' }}>Citations moy.</th>
                 <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0', textAlign: 'right' }}>Type</th>
               </tr>
             </thead>
@@ -2420,19 +2420,66 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
                       <div style={{ marginTop: '12px' }}>
                         <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '8px' }}>URLs sources identifiées :</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {dom.sourceDetails.map((src: any, idx: number) => (
-                            <div key={idx} style={{ padding: '8px 12px', background: '#FFFFFF', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-                              <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '2px' }}>{src.title}</div>
-                              <a 
-                                href={src.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                style={{ fontSize: '11px', color: '#3B82F6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
-                              >
-                                {src.url} <ExternalLink size={10} />
-                              </a>
-                            </div>
-                          ))}
+                          {dom.sourceDetails.map((src: any, idx: number) => {
+                            // Détecter si c'est une URL "main" (principale du domaine)
+                            const isMainUrl = (() => {
+                              // Vérifier si le titre ou l'URL contient "main"
+                              const titleLower = (src.title || '').toLowerCase();
+                              const urlLower = src.url.toLowerCase();
+                              
+                              if (titleLower.includes('main') || urlLower.includes('main')) {
+                                return true;
+                              }
+                              
+                              try {
+                                const urlObj = new URL(src.url);
+                                const path = urlObj.pathname;
+                                // Considérer comme "main" si c'est la page d'accueil ou très proche
+                                return path === '/' || path === '' || path === '/index.html' || path === '/index.php';
+                              } catch {
+                                return false;
+                              }
+                            })();
+
+                            return (
+                              <div key={idx} style={{ padding: '8px 12px', background: '#FFFFFF', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+                                <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '2px' }}>{src.title}</div>
+                                <a 
+                                  href={src.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Si c'est une URL "main", scroller vers la section Domaines les plus cités
+                                    if (isMainUrl) {
+                                      e.preventDefault();
+                                      
+                                      // S'assurer que le domaine est sélectionné pour le mettre en évidence
+                                      if (selectedDomain !== dom.domain) {
+                                        setSelectedDomain(dom.domain);
+                                      }
+                                      
+                                      // Scroller vers la section après un court délai pour que le DOM soit mis à jour
+                                      setTimeout(() => {
+                                        const section = document.getElementById('domaines-les-plus-cites');
+                                        if (section) {
+                                          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        }
+                                      }, 100);
+                                      
+                                      // Ouvrir l'URL dans un nouvel onglet après le scroll
+                                      setTimeout(() => {
+                                        window.open(src.url, '_blank', 'noopener,noreferrer');
+                                      }, 500);
+                                    }
+                                  }}
+                                  style={{ fontSize: '11px', color: '#3B82F6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                                >
+                                  {src.url} <ExternalLink size={10} />
+                                </a>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

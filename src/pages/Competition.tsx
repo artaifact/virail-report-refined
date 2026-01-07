@@ -995,67 +995,7 @@ const Competition = () => {
             )}
 
             {/* Affichage détaillé de l'analyse concurrentielle */}
-            {!isAnalyzing && currentAnalysis && (
-              <>
-                {/* <DetailedCompetitiveAnalysis 
-                  competitors={(() => {
-                   //console.log('🔍 Fallback logic - consolidated_competitors length:', currentAnalysis.consolidated_competitors?.length || 0);
-                    
-                    if (currentAnalysis.consolidated_competitors?.length > 0) {
-                     //console.log('✅ Using consolidated_competitors');
-                      return currentAnalysis.consolidated_competitors.map(comp => ({
-                        name: comp.name,
-                        domain: comp.primary_url,
-                        traffic: 0,
-                        keywords: 0,
-                        backlinks: 0,
-                        domain_rating: comp.average_score,
-                        organic_keywords: 0,
-                        paid_keywords: 0,
-                        top_keywords: [],
-                        strengths: [],
-                        weaknesses: [],
-                        opportunities: []
-                      }));
-                    } else {
-                     //console.log('🔄 Using models_analysis fallback');
-                      const extracted = currentAnalysis.models_analysis?.flatMap(model => {
-                       //console.log('🔍 Processing model:', model.model_info?.display_name);
-                       //console.log('🔍 Model competitors:', model.competitors?.length || 0);
-                        return model.competitors?.map(comp => ({
-                          name: comp.name,
-                          domain: comp.url,
-                          traffic: 0,
-                          keywords: 0,
-                          backlinks: 0,
-                          domain_rating: comp.similarity_score,
-                          organic_keywords: 0,
-                          paid_keywords: 0,
-                          top_keywords: comp.mentioned_features || [],
-                          strengths: comp.competitive_advantages || [],
-                          weaknesses: [],
-                          opportunities: [],
-                          // Toutes les données supplémentaires
-                          url: comp.url,
-                          alternative_urls: comp.alternative_urls || [],
-                          similarity_score: comp.similarity_score,
-                          confidence_level: comp.confidence_level,
-                          model_rank: comp.model_rank,
-                          reasoning: comp.reasoning,
-                          context_snippet: comp.context_snippet,
-                          mentioned_features: comp.mentioned_features || [],
-                          competitive_advantages: comp.competitive_advantages || []
-                        })) || [];
-                      }) || [];
-                     //console.log('🔍 Extracted competitors:', extracted.length);
-                      return extracted;
-                    }
-                  })()} 
-                  isLoading={false}
-                /> */}
-               
-              </>
-            )}
+            
           </TabsContent>
         </Tabs>
       </div>
