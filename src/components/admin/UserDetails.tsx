@@ -522,7 +522,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ userId, onBack, classN
                         disabled={actionLoading}
                         size="sm"
                       >
-                        {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enregistrer'}
+                        {actionLoading ? <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> : 'Enregistrer'}
                       </Button>
                       <Button
                         onClick={() => setShowEditForm(false)}

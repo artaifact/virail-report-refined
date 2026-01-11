@@ -378,7 +378,7 @@ export default function AdminWaitlist() {
             <CardContent>
               {loading ? (
                 <div className="py-12 flex items-center justify-center text-neutral-500">
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin"/> Chargement…
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin text-blue-600"/> Chargement…
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -507,7 +507,7 @@ export default function AdminWaitlist() {
               >
                 {createAdminLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
                     Création en cours...
                   </>
                 ) : (
@@ -543,7 +543,7 @@ export default function AdminWaitlist() {
             <Card>
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
                   <p className="text-muted-foreground">Chargement des messages...</p>
                 </div>
               </CardContent>
@@ -570,7 +570,7 @@ export default function AdminWaitlist() {
             <Card>
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
                   <p className="text-muted-foreground">Chargement des abonnements...</p>
                 </div>
               </CardContent>

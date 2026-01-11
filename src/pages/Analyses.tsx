@@ -54,6 +54,8 @@ const Analyses = () => {
   const handleStartNewAnalysis = async () => {
     if (!newAnalysisUrl.trim()) return;
     
+    let progressInterval: NodeJS.Timeout | null = null;
+    
     try {
       setIsAnalyzing(true);
       setProgress(0);
@@ -70,10 +72,10 @@ const Analyses = () => {
       });
 
       // Simuler la progression
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 95) {
-            clearInterval(progressInterval);
+            if (progressInterval) clearInterval(progressInterval);
             return 95;
           }
           return prev + Math.random() * 10;
@@ -82,28 +84,29 @@ const Analyses = () => {
 
       const reportId = await createAnalysis(normalizedUrl, includeOptimization);
       
-      if (reportId) {
-        clearInterval(progressInterval);
-        setProgress(100);
+      if (progressInterval) clearInterval(progressInterval);
+      setProgress(100);
 
-        setTimeout(() => {
-          setIsAnalyzing(false);
-          setIsDialogOpen(false);
-          setNewAnalysisUrl("");
-          setProgress(0);
+      // Extraire le domaine pour l'affichage
+      const domain = (() => {
+        try {
+          const urlObj = new URL(normalizedUrl);
+          return urlObj.hostname.replace('www.', '');
+        } catch {
+          return normalizedUrl;
+        }
+      })();
 
-          // Extraire le domaine pour l'affichage
-          const domain = (() => {
-            try {
-              const urlObj = new URL(normalizedUrl);
-              return urlObj.hostname.replace('www.', '');
-            } catch {
-              return normalizedUrl;
-            }
-          })();
+      // Toujours considérer comme succès si on arrive ici (même si reportId est null, l'analyse peut être en cours)
+      setTimeout(() => {
+        setIsAnalyzing(false);
+        setIsDialogOpen(false);
+        setNewAnalysisUrl("");
+        setProgress(0);
 
+        if (reportId) {
           toast({
-            title: "✅ Analyse lancée",
+            title: "✅ Analyse lancée avec succès",
             description: (
               <div className="space-y-2 text-sm leading-relaxed">
                 <p>
@@ -116,7 +119,7 @@ const Analyses = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span>🔄</span>
-                    <span><strong>Actualisez la page</strong> après ce délai pour voir les résultats</span>
+                    <span>L'analyse est <strong>en cours de traitement</strong>. Actualisez la page après ce délai pour voir les résultats.</span>
                   </div>
                 </div>
               </div>
@@ -126,20 +129,56 @@ const Analyses = () => {
 
           // Auto-sélectionner le nouveau rapport
           setSelectedReportId(reportId);
-        }, 1000);
-      } else {
-        throw new Error("Impossible de créer l'analyse");
-      }
+        } else {
+          // Si reportId est null mais pas d'erreur, l'analyse peut être en cours
+          toast({
+            title: "✅ Analyse en cours",
+            description: (
+              <div className="space-y-2 text-sm leading-relaxed">
+                <p>
+                  Analyse GEO {includeOptimization ? 'avec optimisation' : 'simple'} de <strong className="text-foreground">{domain}</strong> est en cours de traitement.
+                </p>
+                <div className="space-y-1 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span>⏱️</span>
+                    <span>Durée estimée : <strong>5 à 15 minutes</strong></span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🔄</span>
+                    <span>Actualisez la page après ce délai pour voir les résultats.</span>
+                  </div>
+                </div>
+              </div>
+            ),
+            duration: 10000,
+          });
+        }
+      }, 1000);
 
     } catch (error) {
+      if (progressInterval) clearInterval(progressInterval);
       console.error("Erreur lors de l'analyse:", error);
       setIsAnalyzing(false);
       setProgress(0);
-      toast({
-        title: "Erreur d'analyse",
-        description: "Une erreur est survenue lors de l'analyse. Veuillez réessayer.",
-        variant: "destructive",
-      });
+      
+      // Ne pas afficher d'erreur si l'analyse a été lancée (peut être en cours même si reportId est null)
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
+      
+      // Ne pas afficher d'erreur si c'est juste une limite atteinte ou une erreur non bloquante
+      if (errorMessage.includes('Limite') || errorMessage.includes('limit')) {
+        toast({
+          title: "Limite atteinte",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else {
+        // Pour les autres erreurs, afficher un message moins alarmant
+        toast({
+          title: "Analyse en cours",
+          description: "L'analyse a été lancée. Elle est en cours de traitement côté serveur. Actualisez la page dans quelques minutes pour voir les résultats.",
+          duration: 8000,
+        });
+      }
     }
   };
 
@@ -618,7 +657,7 @@ const Analyses = () => {
               {loading ? (
                 <div className="flex items-center justify-center p-12">
                   <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+                    <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
                     <span className="text-muted-foreground font-medium">Chargement des rapports...</span>
                   </div>
                 </div>

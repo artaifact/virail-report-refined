@@ -5,9 +5,23 @@
 
 // Configuration
 // En développement, utiliser les chemins relatifs pour profiter du proxy Vite (port 8081)
-const API_BASE_URL = import.meta.env.DEV
-  ? ''
-  : (import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com');
+const getApiBaseUrl = () => {
+  // Si VITE_API_BASE_URL est défini explicitement, toujours l'utiliser
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // En développement sans URL explicite, utiliser un chemin relatif pour le proxy Vite
+  const mode = import.meta.env.MODE || import.meta.env.NODE_ENV || 'development';
+  if (mode === 'development' || import.meta.env.DEV) {
+    return '';
+  }
+  
+  // En production sans URL explicite, utiliser l'URL par défaut
+  return 'https://api.viraill.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000');
 
 // Types pour les réponses API

@@ -174,7 +174,7 @@ const AnalysisExample: React.FC = () => {
                   className="flex items-center gap-2"
                 >
                   {isProcessing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   ) : (
                     <BarChart3 className="h-4 w-4" />
                   )}
@@ -189,7 +189,7 @@ const AnalysisExample: React.FC = () => {
                   className="flex items-center gap-2"
                 >
                   {isProcessing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   ) : (
                     <Target className="h-4 w-4" />
                   )}
@@ -204,7 +204,7 @@ const AnalysisExample: React.FC = () => {
                   className="flex items-center gap-2"
                 >
                   {isProcessing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   ) : (
                     <Zap className="h-4 w-4" />
                   )}

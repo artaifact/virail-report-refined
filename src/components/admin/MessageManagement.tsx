@@ -263,7 +263,7 @@ export function MessageManagement({ onMessageSelect, className = '' }: MessageMa
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
             </div>
           ) : messages.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">

@@ -83,7 +83,7 @@ const PaymentTest: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
           <p>Chargement des données de paiement...</p>
         </div>
       </div>

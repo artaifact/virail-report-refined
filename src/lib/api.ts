@@ -6,8 +6,22 @@ import { AuthService } from '@/services/authService';
  */
 
 // Configuration pour le développement
-const isDevelopment = import.meta.env.DEV;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://api.viraill.com');
+const getApiBaseUrl = () => {
+  // Si VITE_API_BASE_URL est défini, l'utiliser en priorité
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  // Sinon, utiliser le mode pour déterminer l'URL par défaut
+  const mode = import.meta.env.MODE || import.meta.env.NODE_ENV || 'development';
+  if (mode === 'production' || import.meta.env.PROD) {
+    return 'https://api.viraill.com';
+  }
+  // Mode développement par défaut
+  return 'http://localhost:8000';
+};
+
+const isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development';
+const API_BASE_URL = getApiBaseUrl();
 
 
 

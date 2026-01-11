@@ -109,12 +109,7 @@ export function AppSidebar() {
             icon: Target,
             badge: undefined as string | undefined,
           },
-          {
-            title: "Prompts",
-            url: "/optimization-agent",
-            icon: MessageSquare,
-            badge: undefined as string | undefined,
-          },
+         
         ],
       },
       {

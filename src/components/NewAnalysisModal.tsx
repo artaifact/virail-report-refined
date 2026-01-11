@@ -141,7 +141,7 @@ export function NewAnalysisModal({ open, onOpenChange }: NewAnalysisModalProps) 
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin text-blue-600" />
                   Analyse en cours...
                 </>
               ) : (

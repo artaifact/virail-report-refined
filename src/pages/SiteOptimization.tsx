@@ -277,7 +277,7 @@ const SiteOptimization: React.FC = () => {
                       className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-semibold px-6 py-3 h-auto"
                       disabled={isAnalyzing}
                     >
-                      {isAnalyzing ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <BarChart3 className="h-5 w-5 mr-2" />}
+                      {isAnalyzing ? <Loader2 className="h-5 w-5 mr-2 animate-spin text-blue-600" /> : <BarChart3 className="h-5 w-5 mr-2" />}
                       {isAnalyzing ? "Analyse en cours..." : "Nouvelle Optimisation"}
                     </Button>
                   </DialogTrigger>
@@ -361,7 +361,7 @@ const SiteOptimization: React.FC = () => {
                   disabled={!newAnalysisUrl.trim() || isAnalyzing}
                   className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
-                  {isAnalyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Rocket className="h-4 w-4 mr-2" />}
+                  {isAnalyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" /> : <Rocket className="h-4 w-4 mr-2" />}
                   {isAnalyzing ? 'Optimisation en cours...' : 'Lancer l\'Optimisation'}
                 </Button>
                 <Button 

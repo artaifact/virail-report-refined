@@ -301,7 +301,7 @@ const Competition = () => {
                 {loadingSavedAnalyses ? (
                   <div className="text-center py-16 bg-white">
                     <div className="flex items-center justify-center gap-2 mb-4">
-                      <Loader2 className="w-6 h-6 animate-spin text-gray-600" />
+                      <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
                       <span className="text-gray-600">Chargement des analyses...</span>
                     </div>
                   </div>
@@ -423,7 +423,7 @@ const Competition = () => {
                     >
                       {isAnalyzing ? (
                         <>
-                          <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                          <Loader2 className="h-5 w-5 mr-3 animate-spin text-blue-600" />
                           Analyse...
                         </>
                       ) : (
@@ -614,8 +614,8 @@ const Competition = () => {
               <Card className="border-gray-200 bg-gray-50 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                      <Loader2 className="h-5 w-5 text-gray-700 animate-spin" />
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">Veuillez patienter</h3>
@@ -855,6 +855,7 @@ const Competition = () => {
                       </Card>
                     );
                   })()}
+                </div>
 
                 {/* Analyses détaillées LLM */}
 
@@ -908,7 +909,7 @@ const Competition = () => {
                 ) : null}
 
 
-                  {/* Données Benchmark */}
+                  {/* Données Benchmark - Mode Paysage - Pleine Largeur */}
                   {(currentAnalysis as any).benchmark_results?.benchmark && (() => {
                   const benchmarkData = (currentAnalysis as any).benchmark_results.benchmark;
                   const classement = benchmarkData.classement || [];
@@ -916,80 +917,99 @@ const Competition = () => {
                   const yourSiteRank = yourSiteIndex >= 0 ? yourSiteIndex + 1 : null;
                   
                   return (
-                    <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-6">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                            Analyse Benchmark
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {benchmarkData.comparaison || 'Comparaison de votre positionnement avec vos concurrents'}
-                          </p>
-                        </div>
-                        {yourSiteRank && (
-                          <div className="text-right">
-                            <div className="text-3xl font-bold text-gray-900">{yourSiteRank}{getOrdinalSuffix(yourSiteRank)}</div>
-                            <div className="text-sm font-medium text-orange-500">+0</div>
+                    <Card className="w-full bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                        {/* Header */}
+                        <div className="flex items-start justify-between mb-6">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                              Analyse Benchmark
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {benchmarkData.comparaison || 'Comparaison de votre positionnement avec vos concurrents'}
+                            </p>
                           </div>
-                        )}
-                      </div>
-                      
-                      {/* Dropdown et liste */}
-                      <div>
-                        <div className="flex justify-end mb-4">
-                          <Select defaultValue="score">
-                            <SelectTrigger className="w-[160px] h-9 text-sm border-gray-300 bg-white">
-                              <SelectValue placeholder="Score Benchmark" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="score">Score Benchmark</SelectItem>
-                              <SelectItem value="mention">Taux de Mention</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          {yourSiteRank && (
+                            <div className="text-right">
+                              <div className="text-3xl font-bold text-gray-900">{yourSiteRank}{getOrdinalSuffix(yourSiteRank)}</div>
+                              <div className="text-sm font-medium text-orange-500">+0</div>
+                            </div>
+                          )}
                         </div>
                         
-                        {/* Table Header */}
-                        <div className="grid grid-cols-[40px_1fr_120px] gap-4 pb-2 border-b border-gray-200 mb-2">
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide"></div>
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque</div>
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Score</div>
-                        </div>
-                        
-                        {/* Liste scrollable */}
-                        <div className="max-h-[500px] overflow-y-auto pr-2">
-                          {classement.map((entry: any, idx: number) => {
-                            const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
-                            const isYourSite = entry.url === currentAnalysis.url;
-                            const brandName = isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url));
-                            const domain = extractDomain(entry.url);
-                            const rank = idx + 1;
-                            
-                            return (
-                              <div 
-                                key={idx}
-                                className="grid grid-cols-[40px_1fr_120px] gap-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors items-center"
-                              >
-                                <div className="text-xs text-gray-400 flex-shrink-0">
-                                  {rank}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-semibold text-gray-900 text-sm truncate">{brandName}</div>
-                                  <div className="text-xs text-gray-500 truncate">{domain}</div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-sm font-semibold text-gray-900">{entry.score || 0}%</div>
-                                  <div className="text-xs font-medium text-orange-500">+0.0%</div>
-                                </div>
+                        {/* Dropdown et tableau en mode paysage */}
+                        <div className="w-full">
+                          <div className="flex justify-end mb-4">
+                            <Select defaultValue="score">
+                              <SelectTrigger className="w-[160px] h-9 text-sm border-gray-300 bg-white">
+                                <SelectValue placeholder="Score Benchmark" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="score">Score Benchmark</SelectItem>
+                                <SelectItem value="mention">Taux de Mention</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          {/* Table Header - Mode Paysage avec plus de colonnes - Pleine Largeur */}
+                          <div className="w-full overflow-x-auto">
+                            <div className="w-full">
+                              <div className="grid grid-cols-[60px_2fr_1fr_1fr_120px] gap-6 pb-3 border-b-2 border-gray-200 mb-3">
+                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rang</div>
+                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
+                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Score</div>
+                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Évolution</div>
+                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Position</div>
                               </div>
-                            );
-                          })}
+                              
+                              {/* Liste scrollable en mode paysage */}
+                              <div className="max-h-[600px] overflow-y-auto">
+                                {classement.map((entry: any, idx: number) => {
+                                  const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
+                                  const isYourSite = entry.url === currentAnalysis.url;
+                                  const brandName = isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url));
+                                  const domain = extractDomain(entry.url);
+                                  const rank = idx + 1;
+                                  
+                                  return (
+                                    <div 
+                                      key={idx}
+                                      className={`grid grid-cols-[60px_2fr_1fr_1fr_120px] gap-6 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors items-center ${isYourSite ? 'bg-blue-50/50' : ''}`}
+                                    >
+                                      <div className="flex items-center">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${isYourSite ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                          {rank}
+                                        </div>
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className={`font-semibold text-sm ${isYourSite ? 'text-blue-600' : 'text-gray-900'}`}>
+                                          {brandName}
+                                        </div>
+                                        <div className="text-xs text-gray-500 truncate">{domain}</div>
+                                      </div>
+                                      <div>
+                                        <div className="text-base font-bold text-gray-900">{entry.score || 0}%</div>
+                                      </div>
+                                      <div>
+                                        <div className="text-sm font-medium text-orange-500">+0.0%</div>
+                                      </div>
+                                      <div className="text-right">
+                                        <Badge 
+                                          variant="outline" 
+                                          className={`${isYourSite ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-gray-100 border-gray-300 text-gray-700'}`}
+                                        >
+                                          {rank}{getOrdinalSuffix(rank)}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </Card>
+                      </Card>
                   );
                 })()}
-                </div>
 
               </div>
             )}

@@ -1,8 +1,24 @@
 import { LoginRequest, RegisterRequest, AuthResponse, User } from '@/types/auth';
 
 // Configuration dynamique de l'URL de base selon l'environnement
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : 'https://api.viraill.com');
-const isDevelopment = import.meta.env.DEV;
+// En production, utilise toujours VITE_API_BASE_URL ou l'URL de production par défaut
+// Ne jamais utiliser localhost en production
+const getApiBaseUrl = () => {
+  // Si VITE_API_BASE_URL est défini, l'utiliser en priorité
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  // Sinon, utiliser le mode pour déterminer l'URL par défaut
+  const mode = import.meta.env.MODE || import.meta.env.NODE_ENV || 'development';
+  if (mode === 'production' || import.meta.env.PROD) {
+    return 'https://api.viraill.com';
+  }
+  // Mode développement par défaut
+  return 'http://localhost:8000';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+const isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development';
 
 
 const DEV_MODE = process.env.NODE_ENV === 'development';

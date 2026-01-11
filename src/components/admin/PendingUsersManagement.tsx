@@ -150,7 +150,7 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
               <span className="ml-2 text-muted-foreground">Chargement...</span>
             </div>
           ) : filteredUsers.length === 0 ? (
@@ -237,7 +237,7 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
                                 >
                                   {actionLoading === user.id ? (
                                     <>
-                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
                                       Traitement...
                                     </>
                                   ) : (
@@ -300,7 +300,7 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
                                 >
                                   {actionLoading === user.id ? (
                                     <>
-                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
                                       Traitement...
                                     </>
                                   ) : (

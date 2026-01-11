@@ -192,7 +192,7 @@ const Analyses = () => {
                         <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
                           <Loader2 className="h-8 w-8 animate-spin text-white" />
                         </div>
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-400 rounded-full animate-pulse"></div>
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-400 rounded-full animate-pulse"></div>
                       </div>
                       <div className="text-center">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Chargement des rapports</h3>
@@ -354,7 +354,7 @@ const Analyses = () => {
               >
                 {isAnalyzing ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
                     Analyse en cours...
                   </>
                 ) : (
@@ -389,7 +389,7 @@ const Analyses = () => {
               >
                 {isOptimizedAnalyzing ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
                     Optimisation en cours...
                   </>
                 ) : (

@@ -112,7 +112,7 @@ const AdminMessages: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               <Button onClick={() => { setPage(1); loadMessages(); }} disabled={loading} className="bg-primary text-primary-foreground">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2 text-blue-600" /> : null}
                 Appliquer
               </Button>
               <Button variant="outline" onClick={resetFilters} className="border-border">Réinitialiser</Button>

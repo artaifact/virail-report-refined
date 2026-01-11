@@ -217,10 +217,18 @@ export interface CompetitorAnalysisSummary {
 
 // Configuration de l'API
 const getApiBaseUrl = (): string => {
-  // En développement, utiliser un chemin relatif pour profiter du proxy Vite et des cookies httpOnly
-  if (import.meta.env.DEV || window.location.hostname === 'localhost') {
+  // Si VITE_API_BASE_URL est défini explicitement, toujours l'utiliser
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // En développement sans URL explicite, utiliser un chemin relatif pour profiter du proxy Vite
+  const mode = import.meta.env.MODE || import.meta.env.NODE_ENV || 'development';
+  if (mode === 'development' || import.meta.env.DEV || (typeof window !== 'undefined' && window.location.hostname === 'localhost')) {
     return '';
   }
+  
+  // En production sans URL explicite, utiliser l'URL par défaut
   return 'https://api.viraill.com';
 };
 

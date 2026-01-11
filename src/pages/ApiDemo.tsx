@@ -367,7 +367,7 @@ const ApiDemo = () => {
             >
               {loading === 'parallel' ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   En cours...
                 </>
               ) : (
@@ -387,7 +387,7 @@ const ApiDemo = () => {
             >
               {loading === 'sequential' ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   En cours...
                 </>
               ) : (
@@ -407,7 +407,7 @@ const ApiDemo = () => {
             >
               {loading === 'optimized' ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   En cours...
                 </>
               ) : (

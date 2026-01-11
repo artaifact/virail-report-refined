@@ -1617,7 +1617,33 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
               <h4 className="section-subtitle" style={{ color: '#2563EB', fontSize: '16px', fontWeight: 600, marginBottom: '14px' }}>KPI à Suivre</h4>
               <ul className="kpi-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {['Score de visibilité dans les moteurs génératifs', 'Taux d\'indexation par les crawlers IA', 'Qualité des données structurées', 'Performance d\'accessibilité', 'Score de conformité GEO'].map((item, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '16px', color: '#334155', lineHeight: '1.6' }}>
+                  <li 
+                    key={i} 
+                    onClick={() => {
+                      // Handler pour le clic - peut être étendu plus tard
+                      console.log(`KPI cliqué: ${item}`);
+                    }}
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      fontSize: '16px', 
+                      color: '#334155', 
+                      lineHeight: '1.6',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#F1F5F9';
+                      e.currentTarget.style.color = '#2563EB';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = '#334155';
+                    }}
+                  >
                     <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#2563EB' }}></div>
                     {item}
                   </li>
@@ -1629,7 +1655,33 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
               <h4 className="section-subtitle" style={{ color: '#2563EB', fontSize: '16px', fontWeight: 600, marginBottom: '14px' }}>Outils Monitoring</h4>
               <ul className="tools-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {['Google Search Console', 'Bing Webmaster Tools', 'Schema.org Validator', 'Lighthouse Performance'].map((item, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '16px', color: '#334155', lineHeight: '1.6' }}>
+                  <li 
+                    key={i} 
+                    onClick={() => {
+                      // Handler pour le clic - peut être étendu plus tard
+                      console.log(`Outil cliqué: ${item}`);
+                    }}
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      fontSize: '16px', 
+                      color: '#334155', 
+                      lineHeight: '1.6',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#F1F5F9';
+                      e.currentTarget.style.color = '#2563EB';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = '#334155';
+                    }}
+                  >
                     <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#2563EB' }}></div>
                     {item}
                   </li>
