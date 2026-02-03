@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { onboardingService } from '@/services/onboardingService';
 import { useToast } from '@/hooks/use-toast';
+import { SECTORS } from '@/config/onboardingSectors';
 
 interface OnboardingContext {
   status: any;
@@ -40,10 +41,12 @@ export function ProjectStep() {
   const { toast } = useToast();
   const [brandName, setBrandName] = useState('');
   const [brandUrl, setBrandUrl] = useState('');
+  const [sector, setSector] = useState('saas');
   const [location, setLocation] = useState('fr');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedCountry = COUNTRIES.find((c) => c.value === location) || COUNTRIES[1];
+  const selectedSector = SECTORS.find((s) => s.id === sector) || SECTORS[0];
 
   const getTimeSpent = () => {
     const startTime = startTimes[2] || Date.now();
@@ -51,7 +54,7 @@ export function ProjectStep() {
   };
 
   const canProceed = () => {
-    return brandName.trim() !== '' && brandUrl.trim() !== '';
+    return brandName.trim() !== '' && brandUrl.trim() !== '' && sector !== '';
   };
 
   const handleNext = async () => {
@@ -62,18 +65,20 @@ export function ProjectStep() {
       // Sauvegarder l'étape
       await completeStep('project', 2, getTimeSpent());
 
-      // Sauvegarder les données de compte
+      // Sauvegarder les données de compte avec le secteur
       await onboardingService.saveAccountData({
         account_type: 'agency', // Sera récupéré depuis l'étape précédente côté backend
         brand_name: brandName.trim(),
         brand_url: brandUrl.trim(),
+        sector: sector,
         location_country: selectedCountry.label,
         location_country_code: selectedCountry.code,
         onboarding_step: 'topics',
       });
 
       await refreshStatus();
-      navigate('/onboarding/topics');
+      // Passer le secteur à l'étape suivante via les paramètres URL
+      navigate(`/onboarding/topics?sector=${sector}`);
     } catch (error: any) {
       if (error?.message?.includes('403')) {
         navigate('/', { replace: true });
@@ -122,6 +127,30 @@ export function ProjectStep() {
             onChange={(e) => setBrandUrl(e.target.value)}
           />
           <p className="text-xs text-slate-500">L'URL du site web que nous analyserons pour optimiser sa visibilité dans les LLM</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="sector">Secteur d'activité</Label>
+          <Select value={sector} onValueChange={setSector}>
+            <SelectTrigger id="sector" className="w-full h-12">
+              <SelectValue>
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{selectedSector.icon}</span>
+                  <span className="font-medium">{selectedSector.label}</span>
+                </div>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {SECTORS.map((s) => (
+                <SelectItem key={s.id} value={s.id} className="py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{s.icon}</span>
+                    <span className="font-medium">{s.label}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-slate-500">Les thématiques proposées seront adaptées à votre secteur</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="location">Zone géographique cible</Label>

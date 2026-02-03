@@ -19,6 +19,7 @@ import { LLMOReportDisplay } from "@/components/llmo-report";
 import { useReports, useReport } from "@/hooks/useReports";
 import type { ReportResponse } from "@/lib/api";
 import { mapLLMOReportData } from '@/lib/llmo-mapper';
+import { ModelLogosCarousel } from "@/components/ModelLogosCarousel";
 
 const Analyses = () => {
   const navigate = useNavigate();
@@ -160,25 +161,17 @@ const Analyses = () => {
       console.error("Erreur lors de l'analyse:", error);
       setIsAnalyzing(false);
       setProgress(0);
-      
-      // Ne pas afficher d'erreur si l'analyse a été lancée (peut être en cours même si reportId est null)
-      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
-      
-      // Ne pas afficher d'erreur si c'est juste une limite atteinte ou une erreur non bloquante
-      if (errorMessage.includes('Limite') || errorMessage.includes('limit')) {
-        toast({
-          title: "Limite atteinte",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      } else {
-        // Pour les autres erreurs, afficher un message moins alarmant
-        toast({
-          title: "Analyse en cours",
-          description: "L'analyse a été lancée. Elle est en cours de traitement côté serveur. Actualisez la page dans quelques minutes pour voir les résultats.",
-          duration: 8000,
-        });
-      }
+
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue lors du lancement de l\'analyse.';
+
+      toast({
+        title: errorMessage.includes('Limite') || errorMessage.includes('limit') || errorMessage.includes('gratuite') || errorMessage.includes('Abonnez')
+          ? 'Limite atteinte'
+          : 'Erreur',
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 8000,
+      });
     }
   };
 
@@ -251,11 +244,14 @@ const Analyses = () => {
       console.error("Erreur lors de l'analyse optimisée:", error);
       setIsOptimizedAnalyzing(false);
       setOptimizedProgress(0);
-      
+
+      const errorMessage = error instanceof Error ? error.message : "Une erreur est survenue lors de l'optimisation. Veuillez réessayer.";
+
       toast({
-        title: "Erreur d'analyse optimisée",
-        description: "Une erreur est survenue lors de l'optimisation. Veuillez réessayer.",
-        variant: "destructive",
+        title: errorMessage.includes('gratuite') || errorMessage.includes('Abonnez') ? 'Limite atteinte' : "Erreur d'analyse optimisée",
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 8000,
       });
     }
   };
@@ -534,16 +530,19 @@ const Analyses = () => {
               </div>
               
               {isAnalyzing && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Progression de l'analyse</span>
-                    <span>{Math.round(progress)}%</span>
+                <>
+                  <ModelLogosCarousel className="rounded-md bg-muted/50 border border-border/50" />
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Progression de l'analyse</span>
+                      <span>{Math.round(progress)}%</span>
+                    </div>
+                    <Progress value={progress} className="h-3" />
+                    <p className="text-xs text-muted-foreground">
+                      Analyse en cours... Cela prend généralement entre 5 et 15 minutes. Actualisez la page après ce délai pour voir les résultats.
+                    </p>
                   </div>
-                  <Progress value={progress} className="h-3" />
-                  <p className="text-xs text-muted-foreground">
-                    Analyse en cours... Cela prend généralement entre 5 et 15 minutes. Actualisez la page après ce délai pour voir les résultats.
-                  </p>
-                </div>
+                </>
               )}
               
               <div className="flex justify-end gap-3">

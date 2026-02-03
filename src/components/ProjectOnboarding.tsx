@@ -29,48 +29,56 @@ interface OnboardingData {
 const STEPS = ['Configuration', 'Projet', 'Sujets', 'Prompts', 'Résultats', 'Plan'] as const;
 
 const TOPICS = [
-  { id: 'reputation', label: 'Gestion de la réputation en ligne' },
-  { id: 'marketing', label: 'Marketing digital local' },
-  { id: 'communication', label: 'Solutions de communication omnicanale' },
-  { id: 'publicite', label: 'Stratégies de publicité locale' },
-  { id: 'visibilite', label: 'Visibilité en ligne PME' },
+  { id: 'features', label: 'Fonctionnalités produit' },
+  { id: 'pricing', label: 'Tarifs et plans' },
+  { id: 'integrations', label: 'Intégrations' },
+  { id: 'security', label: 'Sécurité & Conformité' },
+  { id: 'competitors', label: 'Comparaison concurrents' },
+  { id: 'usecases', label: 'Cas d\'usage' },
 ];
 
 const PROMPTS_BY_TOPIC: Record<string, Array<{ id: string; text: string }>> = {
-  reputation: [
-    { id: 'rep1', text: 'Outils de surveillance de réputation en ligne pour PME' },
-    { id: 'rep2', text: 'Conseils pour une bonne gestion des commentaires clients en ligne' },
-    { id: 'rep3', text: 'Comment protéger l\'image de ma marque sur les réseaux sociaux ?' },
-    { id: 'rep4', text: 'Comment gérer les avis négatifs sur ma fiche Google?' },
-    { id: 'rep5', text: 'Quelles stratégies pour améliorer la e-réputation de mon commerce ?' },
+  features: [
+    { id: 'feat1', text: 'Quelles sont les principales fonctionnalités de [votre produit] ?' },
+    { id: 'feat2', text: 'Comment [votre produit] se compare-t-il aux autres solutions du marché ?' },
+    { id: 'feat3', text: 'Quels sont les avantages de [votre produit] pour les entreprises ?' },
+    { id: 'feat4', text: 'Est-ce que [votre produit] propose une version gratuite ?' },
+    { id: 'feat5', text: 'Quelles fonctionnalités différencient [votre produit] de ses concurrents ?' },
   ],
-  marketing: [
-    { id: 'mkt1', text: 'Stratégies de marketing digital pour PME locales' },
-    { id: 'mkt2', text: 'Comment améliorer ma visibilité locale en ligne ?' },
-    { id: 'mkt3', text: 'Outils de marketing digital pour commerces locaux' },
-    { id: 'mkt4', text: 'Techniques de référencement local pour PME' },
-    { id: 'mkt5', text: 'Comment créer une présence digitale locale efficace ?' },
+  pricing: [
+    { id: 'price1', text: 'Combien coûte [votre produit] par mois ?' },
+    { id: 'price2', text: 'Quels sont les différents plans tarifaires de [votre produit] ?' },
+    { id: 'price3', text: 'Y a-t-il une période d\'essai gratuite pour [votre produit] ?' },
+    { id: 'price4', text: 'Quel est le meilleur rapport qualité-prix pour un logiciel de [votre catégorie] ?' },
+    { id: 'price5', text: '[Votre produit] propose-t-il des réductions pour les startups ?' },
   ],
-  communication: [
-    { id: 'com1', text: 'Solutions de communication omnicanale pour PME' },
-    { id: 'com2', text: 'Comment unifier ma communication sur tous les canaux ?' },
-    { id: 'com3', text: 'Outils de communication multicanale' },
-    { id: 'com4', text: 'Stratégies de communication intégrée' },
-    { id: 'com5', text: 'Comment gérer la cohérence de ma communication ?' },
+  integrations: [
+    { id: 'int1', text: 'Avec quels outils [votre produit] peut-il s\'intégrer ?' },
+    { id: 'int2', text: '[Votre produit] s\'intègre-t-il avec Salesforce / HubSpot / Slack ?' },
+    { id: 'int3', text: 'Comment connecter [votre produit] à mon CRM ?' },
+    { id: 'int4', text: 'Quelles sont les intégrations natives de [votre produit] ?' },
+    { id: 'int5', text: '[Votre produit] propose-t-il une API pour les intégrations custom ?' },
   ],
-  publicite: [
-    { id: 'pub1', text: 'Stratégies de publicité locale pour PME' },
-    { id: 'pub2', text: 'Comment cibler ma publicité localement ?' },
-    { id: 'pub3', text: 'Outils de publicité locale en ligne' },
-    { id: 'pub4', text: 'Techniques de publicité géolocalisée' },
-    { id: 'pub5', text: 'Comment optimiser mon budget publicitaire local ?' },
+  security: [
+    { id: 'sec1', text: '[Votre produit] est-il conforme au RGPD ?' },
+    { id: 'sec2', text: 'Quelles certifications de sécurité possède [votre produit] ?' },
+    { id: 'sec3', text: 'Comment [votre produit] protège-t-il les données utilisateurs ?' },
+    { id: 'sec4', text: '[Votre produit] est-il certifié SOC 2 / ISO 27001 ?' },
+    { id: 'sec5', text: 'Où sont hébergées les données de [votre produit] ?' },
   ],
-  visibilite: [
-    { id: 'vis1', text: 'Comment améliorer ma visibilité en ligne en tant que PME ?' },
-    { id: 'vis2', text: 'Stratégies de visibilité digitale pour commerces locaux' },
-    { id: 'vis3', text: 'Outils pour augmenter la visibilité en ligne' },
-    { id: 'vis4', text: 'Techniques de référencement local' },
-    { id: 'vis5', text: 'Comment apparaître dans les résultats de recherche locaux ?' },
+  competitors: [
+    { id: 'comp1', text: 'Quelle est la meilleure alternative à [concurrent principal] ?' },
+    { id: 'comp2', text: '[Votre produit] vs [concurrent] : lequel choisir ?' },
+    { id: 'comp3', text: 'Quels sont les meilleurs logiciels de [votre catégorie] en 2025 ?' },
+    { id: 'comp4', text: 'Pourquoi choisir [votre produit] plutôt que [concurrent] ?' },
+    { id: 'comp5', text: 'Comparatif des solutions de [votre catégorie] : avantages et inconvénients' },
+  ],
+  usecases: [
+    { id: 'use1', text: 'Comment utiliser [votre produit] pour [cas d\'usage principal] ?' },
+    { id: 'use2', text: 'Quelles entreprises utilisent [votre produit] ?' },
+    { id: 'use3', text: '[Votre produit] est-il adapté aux PME / grandes entreprises ?' },
+    { id: 'use4', text: 'Quels résultats peut-on obtenir avec [votre produit] ?' },
+    { id: 'use5', text: 'Témoignages clients : qu\'en pensent les utilisateurs de [votre produit] ?' },
   ],
 };
 

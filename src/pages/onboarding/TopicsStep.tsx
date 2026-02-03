@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronRight, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useToast } from '@/hooks/use-toast';
+import { getTopicsBySector, getSectorById } from '@/config/onboardingSectors';
 
 interface OnboardingContext {
   status: any;
@@ -12,21 +13,19 @@ interface OnboardingContext {
   startTimes: Record<number, number>;
 }
 
-const TOPICS = [
-  { id: 'reputation', label: 'Gestion de la réputation en ligne' },
-  { id: 'marketing', label: 'Marketing digital local' },
-  { id: 'communication', label: 'Solutions de communication omnicanale' },
-  { id: 'publicite', label: 'Stratégies de publicité locale' },
-  { id: 'visibilite', label: 'Visibilité en ligne PME' },
-];
-
 export function TopicsStep() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { status, refreshStatus, startTimes } = useOutletContext<OnboardingContext>();
   const { completeStep } = useOnboarding();
   const { toast } = useToast();
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Récupérer le secteur depuis les paramètres URL (par défaut: saas)
+  const sectorId = searchParams.get('sector') || 'saas';
+  const sector = getSectorById(sectorId);
+  const topics = useMemo(() => getTopicsBySector(sectorId), [sectorId]);
 
   const getTimeSpent = () => {
     const startTime = startTimes[3] || Date.now();
@@ -41,6 +40,14 @@ export function TopicsStep() {
     );
   };
 
+  const selectAll = () => {
+    setSelectedTopics(topics.map((t) => t.id));
+  };
+
+  const deselectAll = () => {
+    setSelectedTopics([]);
+  };
+
   const canProceed = () => {
     return selectedTopics.length > 0;
   };
@@ -50,14 +57,13 @@ export function TopicsStep() {
 
     setIsSubmitting(true);
     try {
-      // Sauvegarder l'étape avec les topics sélectionnés dans onboarding_data
+      // Sauvegarder l'étape avec les topics sélectionnés
       await completeStep('topics', 3, getTimeSpent());
 
-      // TODO: Sauvegarder les topics sélectionnés dans onboarding_data via un endpoint dédié
-      // Pour l'instant, ils seront sauvegardés lors de la complétion de l'onboarding
-
       await refreshStatus();
-      navigate('/onboarding/prompts');
+      // Passer les topics sélectionnés à l'étape suivante
+      const topicsParam = selectedTopics.join(',');
+      navigate(`/onboarding/prompts?sector=${sectorId}&topics=${topicsParam}`);
     } catch (error: any) {
       if (error?.message?.includes('403')) {
         navigate('/', { replace: true });
@@ -82,16 +88,41 @@ export function TopicsStep() {
       <div className="text-center space-y-3">
         <h1 className="text-4xl font-bold text-slate-900">Choisissez vos thématiques</h1>
         <p className="text-slate-600 max-w-xl mx-auto text-lg">
-          Sélectionnez les domaines d'expertise sur lesquels vous voulez apparaître dans les réponses des LLM. Nous testerons la visibilité de votre marque sur ces sujets dans ChatGPT, Perplexity, Gemini et autres assistants IA.
+          Sélectionnez les sujets sur lesquels vous voulez être visible dans les réponses des LLM.
+          {sector && (
+            <span className="block mt-2 text-sm">
+              Thématiques adaptées au secteur <strong>{sector.icon} {sector.label}</strong>
+            </span>
+          )}
         </p>
       </div>
 
-      <div className="text-sm font-medium mb-6 px-4 py-2 rounded-lg inline-block" style={{ color: '#3B82F6', backgroundColor: '#EFF6FF' }}>
-        {selectedTopics.length}/{TOPICS.length} sujets sélectionnés
+      <div className="flex items-center justify-between">
+        <div
+          className="text-sm font-medium px-4 py-2 rounded-lg inline-block"
+          style={{ color: '#3B82F6', backgroundColor: '#EFF6FF' }}
+        >
+          {selectedTopics.length}/{topics.length} sujets sélectionnés
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={selectAll}
+            className="text-xs text-slate-500 hover:text-slate-700 underline"
+          >
+            Tout sélectionner
+          </button>
+          <span className="text-slate-300">|</span>
+          <button
+            onClick={deselectAll}
+            className="text-xs text-slate-500 hover:text-slate-700 underline"
+          >
+            Tout désélectionner
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
-        {TOPICS.map((topic) => {
+        {topics.map((topic) => {
           const isSelected = selectedTopics.includes(topic.id);
           return (
             <div
@@ -102,33 +133,37 @@ export function TopicsStep() {
                   ? 'shadow-md'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               )}
-              style={isSelected ? {
-                borderColor: '#3B82F6',
-                background: 'linear-gradient(90deg, #EFF6FF 0%, #E0E7FF 100%)'
-              } : undefined}
+              style={
+                isSelected
+                  ? {
+                      borderColor: '#3B82F6',
+                      background: 'linear-gradient(90deg, #EFF6FF 0%, #E0E7FF 100%)',
+                    }
+                  : undefined
+              }
               onClick={() => toggleTopic(topic.id)}
             >
               <div className="flex-shrink-0">
                 {isSelected ? (
-                  <div className="h-6 w-6 rounded-lg flex items-center justify-center shadow-md" style={{ backgroundColor: '#3B82F6' }}>
+                  <div
+                    className="h-6 w-6 rounded-lg flex items-center justify-center shadow-md"
+                    style={{ backgroundColor: '#3B82F6' }}
+                  >
                     <Check className="h-4 w-4 text-white" />
                   </div>
                 ) : (
                   <div className="h-6 w-6 rounded-lg border-2 border-slate-300 bg-slate-50" />
                 )}
               </div>
-              <span className={cn(
-                "flex-1 font-medium",
-                isSelected ? 'text-slate-900' : 'text-slate-700'
-              )}>{topic.label}</span>
+              <span
+                className={cn('flex-1 font-medium', isSelected ? 'text-slate-900' : 'text-slate-700')}
+              >
+                {topic.label}
+              </span>
             </div>
           );
         })}
       </div>
-
-      <button className="text-sm font-medium flex items-center gap-2 transition-colors" style={{ color: '#3B82F6' }} onMouseEnter={(e) => e.currentTarget.style.color = '#2563EB'} onMouseLeave={(e) => e.currentTarget.style.color = '#3B82F6'}>
-        <span className="text-lg">+</span> Ajouter un sujet personnalisé
-      </button>
 
       <div className="flex items-center justify-between pt-6">
         <Button
@@ -143,14 +178,18 @@ export function TopicsStep() {
           onClick={handleNext}
           disabled={!canProceed() || isSubmitting}
           className={cn(
-            "px-8 py-6 text-base font-semibold transition-all",
+            'px-8 py-6 text-base font-semibold transition-all',
             canProceed() && !isSubmitting
-              ? "text-white shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3),0_2px_4px_-1px_rgba(59,130,246,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(59,130,246,0.4),0_4px_6px_-2px_rgba(59,130,246,0.2)]"
-              : "bg-slate-300 text-slate-500 cursor-not-allowed"
+              ? 'text-white shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3),0_2px_4px_-1px_rgba(59,130,246,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(59,130,246,0.4),0_4px_6px_-2px_rgba(59,130,246,0.2)]'
+              : 'bg-slate-300 text-slate-500 cursor-not-allowed'
           )}
-          style={canProceed() && !isSubmitting ? {
-            background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)'
-          } : undefined}
+          style={
+            canProceed() && !isSubmitting
+              ? {
+                  background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)',
+                }
+              : undefined
+          }
         >
           Suivant
           <ChevronRight className="ml-2 h-5 w-5" />
@@ -159,4 +198,3 @@ export function TopicsStep() {
     </div>
   );
 }
-

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchReport, listReports, startAnalysis, startAnalysisSequential, checkAnalysisStatus, type FullReportData, type ReportResponse } from '../lib/api';
+import { fetchReport, listReports, startAnalysisStream, checkAnalysisStatus, type FullReportData, type ReportResponse } from '../lib/api';
 import { usePayment } from '@/contexts/PaymentContext';
 
 /**
@@ -41,10 +41,8 @@ export function useReports() {
         throw new Error(canUse.reason || 'Limite d\'analyses atteinte');
       }
       
-      // Utiliser startAnalysisSequential par défaut pour inclure l'optimisation
-      const result = useSequential 
-        ? await startAnalysisSequential(url, { model })
-        : await startAnalysis(url);
+      // Utiliser l'endpoint streaming POST /llmo/reports/stream pour lancer l'analyse LLMO
+      const result = await startAnalysisStream(url);
       
       if (result) {
         // Ajouter un rapport en cours à la liste pour un retour visuel immédiat
@@ -85,7 +83,8 @@ export function useReports() {
       }
       return null;
     } catch (err) {
-      setError('Erreur lors du lancement de l\'analyse');
+      const message = err instanceof Error ? err.message : 'Erreur lors du lancement de l\'analyse';
+      setError(message);
       console.error('Erreur createAnalysis:', err);
       throw err;
     }

@@ -1,4 +1,51 @@
 import { AuthService } from '@/services/authService';
+import { ApiErrorResponse } from '@/types/api';
+
+/**
+ * Extrait le message d'erreur depuis une erreur API ou une exception
+ */
+export function getErrorMessage(error: unknown): string {
+  // Gestion des erreurs fetch/Response
+  if (error instanceof Response) {
+    return `Erreur HTTP: ${error.status} ${error.statusText}`;
+  }
+
+  // Gestion des erreurs avec une réponse API
+  if (error && typeof error === 'object') {
+    const err = error as Record<string, unknown>;
+
+    // Si c'est une erreur avec data de réponse API
+    if (err.response && typeof err.response === 'object') {
+      const response = err.response as Record<string, unknown>;
+      const data = response.data as ApiErrorResponse | undefined;
+
+      if (data) {
+        if (typeof data.detail === 'string') {
+          return data.detail;
+        }
+
+        if (Array.isArray(data.detail)) {
+          return data.detail.map((e) => e.msg).join(', ');
+        }
+
+        if (data.message) {
+          return data.message;
+        }
+      }
+    }
+
+    // Si l'erreur a un message direct
+    if (err.message && typeof err.message === 'string') {
+      return err.message;
+    }
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return 'Une erreur inattendue est survenue';
+}
 
 /**
  * API mock pour simuler la réception des rapports LLMO
@@ -24,6 +71,20 @@ const isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'developme
 const API_BASE_URL = getApiBaseUrl();
 
 
+
+/**
+ * Extrait le message d'erreur depuis une réponse API (ex: 403 USAGE_LIMIT_EXCEEDED)
+ */
+async function getAnalysisErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const data = await response.json();
+    const message = data?.detail?.message ?? data?.message;
+    if (typeof message === 'string' && message) return message;
+  } catch {
+    /* ignore */
+  }
+  return fallback;
+}
 
 /**
  * Intercepteur pour ajouter automatiquement l'authentification aux requêtes
@@ -151,6 +212,232 @@ export async function fetchReport(reportId: string): Promise<FullReportData | nu
   }
 }
 
+export interface StreamAnalysisProgress {
+  event: string;
+  data: Record<string, unknown>;
+}
+
+export interface StreamingContextInterface {
+  startSession: (url: string) => string;
+  addEvent: (sessionId: string, event: { type: string; message: string; data?: Record<string, unknown> }) => void;
+  updateSession: (sessionId: string, updates: Record<string, unknown>) => void;
+  completeSession: (sessionId: string, reportId?: string) => void;
+  failSession: (sessionId: string, error: string) => void;
+}
+
+/**
+ * Lance une analyse LLMO via l'endpoint streaming POST /llmo/reports/stream.
+ * Consomme les événements SSE (module_completed, llm_completed, analysis_completed, error).
+ */
+export async function startAnalysisStream(
+  url: string,
+  options: { onProgress?: (progress: StreamAnalysisProgress) => void } = {}
+): Promise<{ reportId: string; status: string; metadata?: Record<string, unknown> } | null> {
+  const { onProgress } = options;
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/llmo/reports/stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ url }),
+    });
+
+    if (!response.ok) {
+      const message = await getAnalysisErrorMessage(response, `Erreur HTTP: ${response.status}`);
+      throw new Error(message);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Réponse sans corps (stream)');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result: { reportId: string; status: string; metadata?: Record<string, unknown> } | null = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() ?? '';
+
+      for (const chunk of lines) {
+        const eventMatch = chunk.match(/^event:\s*(.+)/m);
+        const dataMatch = chunk.match(/^data:\s*(.+)/ms);
+        const event = eventMatch ? eventMatch[1].trim() : 'message';
+        let data: Record<string, unknown> = {};
+        try {
+          if (dataMatch) data = JSON.parse(dataMatch[1].trim()) as Record<string, unknown>;
+        } catch {
+          /* ignorer lignes data invalides */
+        }
+
+        onProgress?.({ event, data });
+
+        if (event === 'error') {
+          const msg = (data.message as string) ?? 'Erreur lors de l\'analyse';
+          throw new Error(msg);
+        }
+        if (event === 'analysis_completed') {
+          const reportId =
+            (data.report_id as string) ??
+            (data.report_filename as string) ??
+            (data.id as string) ??
+            `stream-${Date.now()}`;
+          result = {
+            reportId: String(reportId),
+            status: 'completed',
+            metadata: data as Record<string, unknown>,
+          };
+        }
+      }
+    }
+
+    if (result) return result;
+    throw new Error('Analyse terminée sans événement analysis_completed');
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    console.error('❌ Erreur lors du stream d\'analyse:', error);
+    return null;
+  }
+}
+
+/**
+ * Lance une analyse LLMO via streaming avec intégration au contexte de streaming global.
+ * Affiche les événements en temps réel dans le mini modal de notification.
+ */
+export async function startAnalysisStreamWithContext(
+  url: string,
+  streamingContext: StreamingContextInterface
+): Promise<{ reportId: string; status: string; metadata?: Record<string, unknown> } | null> {
+  const sessionId = streamingContext.startSession(url);
+
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/llmo/reports/stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ url }),
+    });
+
+    if (!response.ok) {
+      const message = await getAnalysisErrorMessage(response, `Erreur HTTP: ${response.status}`);
+      streamingContext.failSession(sessionId, message);
+      throw new Error(message);
+    }
+
+    // Mettre à jour le statut vers "streaming"
+    streamingContext.updateSession(sessionId, { status: 'streaming' });
+    streamingContext.addEvent(sessionId, {
+      type: 'started',
+      message: 'Analyse démarrée',
+    });
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      const error = 'Réponse sans corps (stream)';
+      streamingContext.failSession(sessionId, error);
+      throw new Error(error);
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result: { reportId: string; status: string; metadata?: Record<string, unknown> } | null = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() ?? '';
+
+      for (const chunk of lines) {
+        const eventMatch = chunk.match(/^event:\s*(.+)/m);
+        const dataMatch = chunk.match(/^data:\s*(.+)/ms);
+        const event = eventMatch ? eventMatch[1].trim() : 'message';
+        let data: Record<string, unknown> = {};
+        try {
+          if (dataMatch) data = JSON.parse(dataMatch[1].trim()) as Record<string, unknown>;
+        } catch {
+          /* ignorer lignes data invalides */
+        }
+
+        // Traiter les événements et mettre à jour le contexte de streaming
+        if (event === 'module_completed') {
+          const moduleIndex = (data.module_index as number) ?? 0;
+          const totalModules = (data.total_modules as number) ?? 0;
+          const llmName = (data.llm_name as string) || 'LLM';
+
+          streamingContext.updateSession(sessionId, {
+            completedModules: moduleIndex + 1,
+            totalModules,
+            currentLLM: llmName,
+            progress: totalModules > 0 ? ((moduleIndex + 1) / totalModules) * 100 : 0,
+          });
+
+          streamingContext.addEvent(sessionId, {
+            type: 'module_completed',
+            message: `Module ${moduleIndex + 1}/${totalModules} terminé (${llmName})`,
+            data,
+          });
+        }
+
+        if (event === 'llm_completed') {
+          const llmName = (data.llm_name as string) || 'LLM';
+          const durationSec = data.duration_sec as number | undefined;
+
+          streamingContext.addEvent(sessionId, {
+            type: 'llm_completed',
+            message: durationSec
+              ? `${llmName} terminé en ${durationSec.toFixed(1)}s`
+              : `${llmName} terminé`,
+            data,
+          });
+        }
+
+        if (event === 'error') {
+          const msg = (data.message as string) ?? 'Erreur lors de l\'analyse';
+          streamingContext.failSession(sessionId, msg);
+          throw new Error(msg);
+        }
+
+        if (event === 'analysis_completed') {
+          const reportId =
+            (data.report_id as string) ??
+            (data.report_filename as string) ??
+            (data.id as string) ??
+            `stream-${Date.now()}`;
+
+          result = {
+            reportId: String(reportId),
+            status: 'completed',
+            metadata: data as Record<string, unknown>,
+          };
+
+          streamingContext.completeSession(sessionId, String(reportId));
+        }
+      }
+    }
+
+    if (result) return result;
+
+    const error = 'Analyse terminée sans événement analysis_completed';
+    streamingContext.failSession(sessionId, error);
+    throw new Error(error);
+  } catch (error) {
+    if (error instanceof Error) {
+      // Assurez-vous que la session est marquée comme échouée si ce n'est pas déjà fait
+      streamingContext.failSession(sessionId, error.message);
+      throw error;
+    }
+    console.error('❌ Erreur lors du stream d\'analyse:', error);
+    streamingContext.failSession(sessionId, 'Erreur inconnue');
+    return null;
+  }
+}
+
 /**
  * Lance une nouvelle analyse LLMO avec deux appels API en parallèle pour optimiser les performances
  */
@@ -185,8 +472,8 @@ export async function startAnalysis(url: string): Promise<{ reportId: string; st
 
     // Vérifier que les deux réponses sont OK
     if (!analysisResponse.ok) {
-      const errorData = await analysisResponse.json().catch(() => ({ message: 'Erreur lors de l\'analyse principale' }));
-      throw new Error(errorData.message || `Erreur HTTP analyse: ${analysisResponse.status}`);
+      const message = await getAnalysisErrorMessage(analysisResponse, `Erreur HTTP analyse: ${analysisResponse.status}`);
+      throw new Error(message);
     }
 
     if (!metadataResponse.ok) {
@@ -239,8 +526,8 @@ export async function startAnalysisSequential(
     });
 
     if (!analysisResponse.ok) {
-      const errorData = await analysisResponse.json().catch(() => ({ message: 'Erreur lors de l\'analyse principale' }));
-      throw new Error(errorData.message || `Erreur HTTP analyse: ${analysisResponse.status}`);
+      const message = await getAnalysisErrorMessage(analysisResponse, `Erreur HTTP analyse: ${analysisResponse.status}`);
+      throw new Error(message);
     }
 
     const analysisData = await analysisResponse.json();
@@ -341,8 +628,8 @@ export async function startAnalysisExtended(
     });
 
     if (!analysisResponse.ok) {
-      const errorData = await analysisResponse.json().catch(() => ({ message: 'Erreur lors de l\'analyse étendue' }));
-      throw new Error(errorData.message || `Erreur HTTP analyse étendue: ${analysisResponse.status}`);
+      const message = await getAnalysisErrorMessage(analysisResponse, `Erreur HTTP analyse étendue: ${analysisResponse.status}`);
+      throw new Error(message);
     }
 
     const analysisData = await analysisResponse.json();
@@ -389,8 +676,8 @@ export async function startAnalysisSimple(
     });
 
     if (!analysisResponse.ok) {
-      const errorData = await analysisResponse.json().catch(() => ({ message: 'Erreur lors de l\'analyse' }));
-      throw new Error(errorData.message || `Erreur HTTP analyse: ${analysisResponse.status}`);
+      const message = await getAnalysisErrorMessage(analysisResponse, `Erreur HTTP analyse: ${analysisResponse.status}`);
+      throw new Error(message);
     }
 
     const analysisData = await analysisResponse.json();
@@ -626,8 +913,8 @@ export async function startCustomAnalysis(params: {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Erreur lors de l\'analyse' }));
-      throw new Error(errorData.message || `Erreur HTTP: ${response.status}`);
+      const message = await getAnalysisErrorMessage(response, `Erreur HTTP: ${response.status}`);
+      throw new Error(message);
     }
 
     const data = await response.json();

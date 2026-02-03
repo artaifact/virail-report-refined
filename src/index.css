@@ -190,3 +190,26 @@
   background-color: rgb(17 24 39);
   border-color: rgb(34 197 94);
 }
+
+/* Carrousel animé des logos des modèles LLM (partagé Index + Analyses) */
+.model-logos-carousel-wrapper {
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+.model-logos-carousel .model-logo-item img {
+  transition: transform 0.2s ease;
+}
+
+.model-logos-carousel .model-logo-item:hover img {
+  transform: scale(1.15);
+}
+
+@keyframes model-logos-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

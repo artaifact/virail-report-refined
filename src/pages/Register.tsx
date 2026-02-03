@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,11 +8,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { RegisterRequest } from '@/types/auth';
+import { PasswordInput } from '@/components/PasswordInput';
+import { RateLimitBanner } from '@/components/RateLimitBanner';
+import { useRateLimit } from '@/hooks/useRateLimit';
+import { PasswordValidationResult } from '@/utils/passwordValidation';
 
 const registerSchema = z.object({
   email: z.string().email('Email non valide'),
   username: z.string().min(2, 'Le nom d\'utilisateur doit contenir au moins 2 caractères'),
-  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
+  password: z.string().min(12, 'Le mot de passe doit contenir au moins 12 caractères'),
   confirmPassword: z.string().min(1, 'Veuillez confirmer votre mot de passe'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
@@ -22,11 +26,12 @@ const registerSchema = z.object({
 type RegisterFormData = RegisterRequest & { confirmPassword: string };
 
 export default function Register() {
-  const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult | null>(null);
   const { register: registerUser, isLoading } = useAuthContext();
+  const { rateLimitState, handleRateLimitError, isRateLimited } = useRateLimit();
   const navigate = useNavigate();
 
   const form = useForm<RegisterFormData>({
@@ -38,6 +43,10 @@ export default function Register() {
       confirmPassword: '',
     },
   });
+
+  const handlePasswordValidationChange = useCallback((result: PasswordValidationResult) => {
+    setPasswordValidation(result);
+  }, []);
 
   // Compte à rebours pour redirection automatique
   useEffect(() => {
@@ -52,29 +61,44 @@ export default function Register() {
   }, [countdown, showSuccessMessage, navigate]);
 
   const onSubmit = async (data: RegisterFormData) => {
+    // Vérifier la validation du mot de passe
+    if (passwordValidation && !passwordValidation.isValid) {
+      return;
+    }
+
     try {
       const { confirmPassword, ...registerData } = data;
       await registerUser(registerData);
-      
+
       // Afficher le message de succès
       setShowSuccessMessage(true);
       setCountdown(5);
-      
+
       // Réinitialiser le formulaire
       form.reset();
     } catch (error) {
-      // L'erreur est déjà gérée dans le hook useAuth
+      // Gérer le rate limiting
+      if (!handleRateLimitError(error)) {
+        // L'erreur est déjà gérée dans le hook useAuth
+      }
       setShowSuccessMessage(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center py-16 px-4">
-        <div className="w-full max-w-md mx-auto">
-          <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
-            {showSuccessMessage ? (
+    <>
+      <RateLimitBanner
+        isVisible={isRateLimited}
+        retryAfter={rateLimitState.retryAfter}
+        message={rateLimitState.message}
+      />
+
+      <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
+        {/* Main Content */}
+        <main className="flex-1 flex items-center justify-center py-16 px-4">
+          <div className="w-full max-w-md mx-auto">
+            <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
+              {showSuccessMessage ? (
               <div className="space-y-6">
                 <div className="text-center">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
@@ -165,25 +189,16 @@ export default function Register() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block text-[11px] uppercase tracking-wide font-bold text-[#1b1b1f] mb-2 ml-1">
-                            Mot de passe
-                          </FormLabel>
                           <FormControl>
-                            <div className="relative">
-                              <input
-                                type={showPassword ? 'text' : 'password'}
-                                placeholder="••••••••"
-                                className="w-full bg-[#f7f8fc] rounded-xl px-4 py-3.5 pr-12 text-sm md:text-[15px] text-[#1b1b1f] placeholder:text-slate-300 border border-transparent focus:bg-white focus:border-[#9cb5ff] focus:ring-0 outline-none transition-all"
-                                {...field}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute inset-y-0 right-3 flex items-center text-[11px] text-[#6e6e73] hover:text-[#1b1b1f] transition-colors"
-                              >
-                                {showPassword ? 'Masquer' : 'Afficher'}
-                              </button>
-                            </div>
+                            <PasswordInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              username={form.watch('username')}
+                              email={form.watch('email')}
+                              onValidationChange={handlePasswordValidationChange}
+                              disabled={isLoading || isRateLimited}
+                              simpleMode={true}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -246,7 +261,7 @@ export default function Register() {
 
                     <button
                       type="submit"
-                      disabled={isLoading}
+                      disabled={isLoading || isRateLimited || (passwordValidation && !passwordValidation.isValid)}
                       className="w-full bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoading ? (
@@ -254,6 +269,8 @@ export default function Register() {
                           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           Création du compte...
                         </div>
+                      ) : isRateLimited ? (
+                        `Attendez ${rateLimitState.retryAfter}s`
                       ) : (
                         'Créer mon compte'
                       )}
@@ -279,10 +296,11 @@ export default function Register() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full px-6 py-4 text-center">
-        <p className="text-sm text-[#6e6e73]">© 2025 Virail. Tous droits réservés.</p>
-      </footer>
-    </div>
+        {/* Footer */}
+        <footer className="w-full px-6 py-4 text-center">
+          <p className="text-sm text-[#6e6e73]">© 2025 Virail. Tous droits réservés.</p>
+        </footer>
+      </div>
+    </>
   );
 }

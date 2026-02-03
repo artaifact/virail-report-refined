@@ -649,10 +649,314 @@ export const getScoreBackgroundColor = (score: number): string => {
  */
 export const formatMarketPosition = (rank: number, total: number): string => {
   const percentage = (rank / total) * 100;
-  
+
   if (percentage <= 20) return '🥇 Leader';
   if (percentage <= 40) return '📈 Acteur solide';
   if (percentage <= 60) return '⚡ En développement';
   if (percentage <= 80) return '🔄 À améliorer';
   return '🚀 Potentiel inexploité';
+};
+
+// ============================================
+// NOUVELLES FONCTIONS POUR /llmo/reports/{id}
+// ============================================
+
+/**
+ * Interface pour les données analyse_concurrentielle_v1 depuis /llmo/reports/{id}
+ */
+export interface AnalyseConcurrentielleV1 {
+  version: string;
+  session_id: string | null;
+  url: string;
+  title: string;
+  description: string;
+  competitors: Array<{
+    name: string;
+    url: string;
+    urls: string[];
+    average_score: number;
+    mentions: number;
+    sources: string[];
+    score_details: Record<string, number>;
+  }>;
+  stats: {
+    total_mentions?: number;
+    unique_competitors?: number;
+    total_competitors?: number;
+    total_models_executed?: number;
+    total_competitors_found?: number;
+    min_score?: number;
+    min_mentions?: number;
+    models_used?: string[];
+  };
+  benchmark_results?: {
+    benchmark?: {
+      classement: Array<{
+        url: string;
+        score: number;
+      }>;
+      position_cible?: number;
+      ecarts_vs_cible?: Array<{
+        url: string;
+        score: number;
+        ecart_vs_cible: number;
+      }>;
+      comparaison?: string;
+    };
+    error?: string;
+  };
+  created_at: string;
+  completed_at?: string;
+}
+
+/**
+ * Interface pour la réponse complète de /llmo/reports/{id}
+ */
+export interface LLMOReportResponse {
+  report: {
+    id: number;
+    url: string;
+    status: string;
+    report_path: string;
+    report_filename: string;
+    report_size: number;
+    position_produit_analyse: number;
+    score_produit_analyse: number | null;
+    created_at: string;
+    updated_at: string;
+  };
+  analyses: any[];
+  analyse_citation?: any;
+  analyse_concurrentielle_v1?: AnalyseConcurrentielleV1;
+}
+
+/**
+ * Récupérer les données d'analyse concurrentielle depuis /llmo/reports/{id}
+ */
+export const getCompetitorAnalysisFromReport = async (reportId: string | number): Promise<CompetitorAnalysisResponse | null> => {
+  const API_BASE_URL = getApiBaseUrl();
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/llmo/reports/${reportId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.detail || `Erreur API: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('📊 Données du rapport reçues:', data);
+
+    // Vérifier si analyse_concurrentielle_v1 existe (peut être à la racine ou dans le report)
+    const analyseConcurrentielle = data.analyse_concurrentielle_v1 || data.competitor_analysis;
+
+    if (!analyseConcurrentielle) {
+      console.warn('⚠️ Aucune donnée analyse_concurrentielle_v1 trouvée dans le rapport');
+      return null;
+    }
+
+    // Récupérer l'ID du rapport (peut être à différents endroits)
+    const id = data.report?.id || data.id || Number(reportId);
+
+    // Mapper vers le format CompetitorAnalysisResponse
+    return mapAnalyseConcurrentielleV1ToResponse(id, analyseConcurrentielle);
+  } catch (error) {
+    console.error('❌ Erreur lors de la récupération du rapport:', error);
+    throw error;
+  }
+};
+
+/**
+ * Mapper les données analyse_concurrentielle_v1 vers CompetitorAnalysisResponse
+ */
+export const mapAnalyseConcurrentielleV1ToResponse = (
+  reportId: number,
+  data: AnalyseConcurrentielleV1 | any
+): CompetitorAnalysisResponse => {
+  // Gérer les cas où data pourrait avoir une structure différente
+  const analysisData = data as any;
+  const competitors = analysisData.competitors || [];
+  const stats = analysisData.stats || {};
+  const modelsUsed = stats.models_used || [];
+
+  console.log('🔄 Mapping analyse_concurrentielle_v1:', { competitors: competitors.length, stats });
+
+  // Créer consolidated_competitors depuis competitors
+  const consolidatedCompetitors: ConsolidatedCompetitor[] = competitors.map((comp: any, index: number) => ({
+    name: comp.name || extractDomain(comp.url || ''),
+    primary_url: comp.url || '',
+    all_urls: comp.urls || [comp.url || ''],
+    average_score: comp.average_score || 0,
+    weighted_score: comp.average_score || 0,
+    models_count: comp.sources?.length || 1,
+    consensus_level: comp.mentions || 1,
+    global_rank: index + 1,
+    model_scores: comp.score_details || {},
+    model_ranks: {},
+    source_models: comp.sources || [],
+    llmo_analysis: null,
+    benchmark: null,
+    common_features: [],
+    competitive_themes: []
+  }));
+
+  // Trier par score décroissant
+  const sortedCompetitors = [...consolidatedCompetitors].sort((a, b) => b.average_score - a.average_score);
+  sortedCompetitors.forEach((comp, idx) => {
+    comp.global_rank = idx + 1;
+  });
+
+  // Calculer le positionnement
+  const totalCompetitors = sortedCompetitors.length;
+  const avgScore = totalCompetitors > 0
+    ? sortedCompetitors.reduce((sum, c) => sum + c.average_score, 0) / totalCompetitors
+    : 0;
+
+  // Créer models_analysis
+  const uniqueModels = [...new Set(competitors.flatMap((c: any) => c.sources || []))];
+  const modelsAnalysis: ModelAnalysis[] = uniqueModels.map((model: string) => {
+    const modelCompetitors = competitors.filter((c: any) => c.sources?.includes(model));
+    return {
+      model_info: {
+        provider: model.split('-')[0] || model,
+        model_name: model,
+        display_name: model.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()),
+        execution_time_ms: 0,
+        status: 'completed',
+        competitors_found: modelCompetitors.length,
+        average_score: modelCompetitors.length > 0
+          ? modelCompetitors.reduce((sum: number, c: any) => sum + (c.average_score || 0), 0) / modelCompetitors.length
+          : 0,
+        min_score: modelCompetitors.length > 0
+          ? Math.min(...modelCompetitors.map((c: any) => c.average_score || 0))
+          : 0,
+        max_score: modelCompetitors.length > 0
+          ? Math.max(...modelCompetitors.map((c: any) => c.average_score || 0))
+          : 0,
+        error_message: null
+      },
+      competitors: modelCompetitors.map((comp: any, idx: number) => ({
+        name: comp.name || extractDomain(comp.url || ''),
+        url: comp.url || '',
+        alternative_urls: comp.urls?.filter((u: string) => u !== comp.url) || [],
+        similarity_score: comp.average_score || 0,
+        confidence_level: 1,
+        model_rank: idx + 1,
+        reasoning: '',
+        context_snippet: null,
+        mentioned_features: [],
+        competitive_advantages: []
+      }))
+    };
+  });
+
+  // Créer target_positioning
+  const targetPositioning: TargetPositioning = {
+    overall_rank: Math.ceil(totalCompetitors / 2) || 1,
+    total_competitors: totalCompetitors,
+    market_position: totalCompetitors <= 5 ? 'Leader' :
+                     totalCompetitors <= 10 ? 'Acteur solide' :
+                     totalCompetitors <= 15 ? 'En développement' : 'À améliorer',
+    target_llmo_score: avgScore,
+    target_geo_score: avgScore,
+    target_benchmark_score: avgScore,
+    target_global_score: avgScore,
+    model_rankings: {},
+    competitive_advantages: [],
+    improvement_areas: [],
+    top_competitors: sortedCompetitors.slice(0, 5).map((comp, idx) => ({
+      rank: idx + 1,
+      name: comp.name,
+      score: comp.average_score,
+      gap_vs_you: avgScore - comp.average_score,
+      status: 'active'
+    }))
+  };
+
+  return {
+    analysis_id: reportId,
+    url: analysisData.url || '',
+    title: analysisData.title || '',
+    description: analysisData.description || '',
+    models_analysis: modelsAnalysis,
+    consolidated_competitors: sortedCompetitors,
+    mini_llm_results: [],
+    target_positioning: targetPositioning,
+    global_stats: {
+      total_models_executed: uniqueModels.length,
+      total_competitors_found: stats.unique_competitors || stats.total_competitors_found || competitors.length,
+      analysis_duration_ms: 0,
+      average_competitors_per_model: uniqueModels.length > 0
+        ? (stats.total_mentions || competitors.length) / uniqueModels.length
+        : 0
+    },
+    analysis_metadata: {
+      min_score: stats.min_score || 0.3,
+      min_mentions: stats.min_mentions || 1,
+      models_requested: modelsUsed.length > 0 ? modelsUsed : uniqueModels,
+      include_raw: false,
+      include_benchmark: !!analysisData.benchmark_results?.benchmark,
+      include_llmo_analysis: false,
+      benchmark_competitors_count: analysisData.benchmark_results?.benchmark?.classement?.length || 0,
+      llmo_analysis_count: 0
+    },
+    created_at: analysisData.created_at || new Date().toISOString(),
+    competitors: competitors.map((c: any) => ({
+      name: c.name,
+      url: c.url,
+      urls: c.urls,
+      average_score: c.average_score,
+      mentions: c.mentions,
+      sources: c.sources,
+      score_details: c.score_details
+    })),
+    benchmark_results: analysisData.benchmark_results
+  };
+};
+
+/**
+ * Lister les rapports LLMO qui contiennent analyse_concurrentielle_v1
+ */
+export const listCompetitorAnalysesFromReports = async (): Promise<CompetitorAnalysisSummary[]> => {
+  const API_BASE_URL = getApiBaseUrl();
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/llmo/reports`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.detail || `Erreur API: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const reports = data.reports || data || [];
+
+    // Filtrer et mapper les rapports
+    return reports.map((report: any) => ({
+      analysis_id: report.id,
+      url: report.url,
+      title: report.title || extractDomain(report.url),
+      description: report.description || '',
+      status: report.status === 'success' ? 'completed' : report.status,
+      created_at: report.created_at,
+      completed_at: report.updated_at || report.created_at,
+      total_models_executed: 0,
+      total_competitors_found: 0
+    }));
+  } catch (error) {
+    console.error('❌ Erreur lors de la liste des rapports:', error);
+    throw error;
+  }
 };

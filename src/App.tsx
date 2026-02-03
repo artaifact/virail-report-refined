@@ -10,6 +10,8 @@ import { useState } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PaymentProvider } from "@/contexts/PaymentContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { StreamingProvider } from "@/contexts/StreamingContext";
+import { StreamingNotification } from "@/components/StreamingNotification";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
 import { OnboardingProvider } from "@/components/OnboardingProvider";
 import Index from "./pages/Index";
@@ -156,6 +158,7 @@ function MainLayout() {
           </Routes>
         </SidebarInset>
         <GlobalSearch />
+        <StreamingNotification />
       </div>
     </SidebarProvider>
   );
@@ -170,6 +173,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <PaymentProvider>
+            <StreamingProvider>
             <Routes>
               {/* Routes publiques */}
               <Route path="/login" element={<Login />} />
@@ -204,6 +208,7 @@ const App = () => (
                 </ProtectedRoute>
               } />
             </Routes>
+            </StreamingProvider>
             </PaymentProvider>
           </AuthProvider>
         </BrowserRouter>

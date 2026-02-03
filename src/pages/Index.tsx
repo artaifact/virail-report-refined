@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './Index.css';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, Bookmark, MessageSquare, MoreVertical, X, Check } from 'lucide-react';
@@ -8,23 +8,9 @@ import { useSearchParams, useLocation } from 'react-router-dom';
 import { useReport, useReports } from '@/hooks/useReports';
 import type { FullReportData } from '@/lib/api';
 import { listCompetitorAnalyses, getCompetitorAnalysisById, extractDomain, CompetitorAnalysisResponse, mapApiResponseToCompetitorAnalysisResponse } from '@/services/competitorAnalysisService';
+import { modelLogos } from '@/components/ModelLogosCarousel';
 
 // === CONSTANTES ===
-const modelLogos: Record<string, string> = {
-  'openai': '/prompt-model-openai-for-light.svg',
-  'chatgpt': '/prompt-model-openai-for-light.svg',
-  'gpt': '/prompt-model-openai-for-light.svg',
-  'perplexity': '/prompt-model-perplexity.svg',
-  'gemini': '/prompt-model-gemini.svg',
-  'google': '/prompt-model-gemini.svg',
-  'ai overview': '/prompt-model-gemini.svg',
-  'claude': '/prompt-model-claude.svg',
-  'anthropic': '/prompt-model-claude.svg',
-  'mistral': '/Mistral.png',
-  'mixtral': '/Mistral.png',
-  'sonar': '/prompt-model-perplexity.svg',
-};
-
 /**
  * Récupère le logo d'un modèle avec une recherche par mot-clé
  */
@@ -151,7 +137,7 @@ function NavigationButtons({ activeView, onViewChange }: { activeView: string, o
 
 /**
  * Section haute du dashboard - Fixe
- * Contient le graphique de citations et les boutons de navigation
+ * Contient le graphique de citations, le carrousel de logos et les boutons de navigation
  */
 function TopSection({ activeView, onViewChange, reportData }: { activeView: string, onViewChange: (view: string) => void, reportData: FullReportData | null }) {
   return (
@@ -336,6 +322,81 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
     }
   };
 
+  // Données du Guide d'implémentation - Package d'Optimisation GEO (même source que ImplementationGuide)
+  const getGuideData = () => {
+    if (!reportData?.analyses || reportData.analyses.length === 0) {
+      return { scoreActuel: 58, scoreCible: 83, guide: null as any };
+    }
+    const auditGeoData = reportData.analyses.find((analysis: any) =>
+      analysis.modules?.audit_geo?.package_optimisation_geo?.implementation_guide
+    )?.modules?.audit_geo;
+    if (!auditGeoData?.package_optimisation_geo?.implementation_guide) {
+      return {
+        scoreActuel: auditGeoData?.score_global_geo ?? 58,
+        scoreCible: auditGeoData?.package_optimisation_geo?.package_metadata?.estimated_improvement?.score_estime ?? 83,
+        guide: null as any
+      };
+    }
+    const guide = auditGeoData.package_optimisation_geo.implementation_guide;
+    return {
+      scoreActuel: guide.score_geo_actuel ?? auditGeoData.score_global_geo ?? 58,
+      scoreCible: guide.score_geo_cible ?? 83,
+      guide
+    };
+  };
+  const guideData = getGuideData();
+
+  // Progression du Guide (même clé localStorage que ImplementationGuide)
+  const guideStorageKey = reportData?.report?.id != null ? `implementation-guide-progress-${reportData.report.id}` : 'implementation-guide-progress-default';
+  const [guideStepProgress, setGuideStepProgress] = useState<Record<string, { status: string; progress: number; checkedActions?: Record<number, boolean> }>>(() => {
+    try {
+      const saved = localStorage.getItem(guideStorageKey);
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+
+  useEffect(() => {
+    if (isDialogOpen) {
+      try {
+        const saved = localStorage.getItem(guideStorageKey);
+        if (saved) setGuideStepProgress(JSON.parse(saved));
+      } catch { /* ignore */ }
+    }
+  }, [isDialogOpen, guideStorageKey]);
+
+  const getGuideStepStatus = (stepId: string) => guideStepProgress[stepId] || { status: 'Non commencé', progress: 0 };
+  const updateGuideStepStatus = (stepId: string, status: string) => {
+    const progressMap: Record<string, number> = { 'Non commencé': 0, 'En cours': 50, 'Terminé': 100 };
+    const next = { ...guideStepProgress, [stepId]: { ...getGuideStepStatus(stepId), status, progress: progressMap[status] ?? 0 } };
+    setGuideStepProgress(next);
+    try { localStorage.setItem(guideStorageKey, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+  const toggleGuideAction = (stepId: string, actionIndex: number) => {
+    const current = getGuideStepStatus(stepId);
+    const checked = { ...(current.checkedActions || {}), [actionIndex]: !(current.checkedActions || {})[actionIndex] };
+    const total = Object.keys(checked).length;
+    const done = Object.values(checked).filter(Boolean).length;
+    let status = current.status;
+    if (done === total && total > 0) status = 'Terminé';
+    else if (done > 0 && current.status === 'Non commencé') status = 'En cours';
+    const progress = total > 0 ? Math.round((done / total) * 100) : (status === 'Terminé' ? 100 : status === 'En cours' ? 50 : 0);
+    const next = { ...guideStepProgress, [stepId]: { ...current, checkedActions: checked, status, progress } };
+    setGuideStepProgress(next);
+    try { localStorage.setItem(guideStorageKey, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+  const guideEtapes: any[] = guideData.guide?.etapes_implementation ? Object.values(guideData.guide.etapes_implementation) : [];
+  const guideTotalSteps = guideEtapes.length;
+  const guideGlobalProgress = (() => {
+    if (guideTotalSteps === 0) return 0;
+    const sum = guideEtapes.reduce((acc: number, etape: any, idx: number) => {
+      const stepId = `etape-${idx}-${etape.titre || `step-${idx}`}`;
+      return acc + getGuideStepStatus(stepId).progress;
+    }, 0);
+    return Math.round(sum / guideTotalSteps);
+  })();
+  const guideCompletedSteps = Object.values(guideStepProgress).filter(s => s.status === 'Terminé').length;
+  const guideInProgressSteps = Object.values(guideStepProgress).filter(s => s.status === 'En cours').length;
+
   return (
     <>
       <div className="recommendations-table" style={{ boxShadow: 'none', border: '1px solid #F1F5F9', padding: '24px', borderRadius: '16px' }}>
@@ -447,157 +508,206 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
         )}
       </div>
 
-      {/* Modal de détails */}
+      {/* Modal de détails - paysage, Guide GEO mis en valeur */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[1600px] w-[98vw] max-h-[90vh] overflow-y-auto p-0 gap-0">
           {selectedRec && (
-            <>
-              <DialogHeader>
-                <DialogTitle style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>
-                  {selectedRec.element} - Détails de l'optimisation
-                </DialogTitle>
-                <DialogDescription style={{ fontSize: '14px', color: '#64748B', marginTop: '8px' }}>
-                  {selectedRec.action}
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '20px' }}>
-                {/* Métriques clés */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                  <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '8px' }}>Priorité</div>
-                    <div style={{ 
-                      fontSize: '16px', 
-                      fontWeight: 700, 
-                      color: selectedRec.progress <= 90 ? '#EF4444' : getPriorityColor(selectedRec.priority) 
-                    }}>
-                      {selectedRec.priority}
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(520px, 1.6fr)', minHeight: '70vh' }}>
+              {/* Colonne gauche : détail de l'action recommandée */}
+              <div style={{ padding: '24px', overflowY: 'auto', borderRight: '1px solid #E2E8F0' }}>
+                <DialogHeader>
+                  <DialogTitle style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>
+                    {selectedRec.element} - Détails de l'optimisation
+                  </DialogTitle>
+                  <DialogDescription style={{ fontSize: '14px', color: '#64748B', marginTop: '8px' }}>
+                    {selectedRec.action}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                    <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
+                      <div style={{ fontSize: '11px', color: '#64748B', marginBottom: '6px' }}>Priorité</div>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: selectedRec.progress <= 90 ? '#EF4444' : getPriorityColor(selectedRec.priority) }}>
+                        {selectedRec.priority}
+                      </div>
+                    </div>
+                    <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
+                      <div style={{ fontSize: '11px', color: '#64748B', marginBottom: '6px' }}>Temps estimé</div>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Clock size={14} />
+                        {selectedRec.estimatedTime}
+                      </div>
+                    </div>
+                    <div style={{ padding: '14px', background: '#F8FAFC', borderRadius: '10px' }}>
+                      <div style={{ fontSize: '11px', color: '#64748B', marginBottom: '6px' }}>Difficulté</div>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A' }}>{selectedRec.difficulty}</div>
                     </div>
                   </div>
-                  <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '8px' }}>Temps estimé</div>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Clock size={16} />
-                      {selectedRec.estimatedTime}
-                    </div>
-                  </div>
-                  <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '8px' }}>Difficulté</div>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>
-                      {selectedRec.difficulty}
-                    </div>
-                  </div>
-                </div>
 
-                {/* Impact */}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <TrendingUp size={18} style={{ color: '#3B82F6' }} />
-                    <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0F172A' }}>Impact attendu</h3>
-                  </div>
-                  <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6' }}>
-                    {selectedRec.impact}
-                  </p>
-                </div>
-
-                {/* Description détaillée */}
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0F172A', marginBottom: '12px' }}>Description</h3>
-                  <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6' }}>
-                    {selectedRec.details}
-                  </p>
-                </div>
-
-                {/* Étapes d'implémentation */}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <Target size={18} style={{ color: '#3B82F6' }} />
-                    <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0F172A' }}>Étapes d'implémentation</h3>
-                  </div>
-                  <ol style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {selectedRec.steps.map((step: string, idx: number) => (
-                      <li key={idx} style={{ display: 'flex', gap: '12px', fontSize: '14px', color: '#475569' }}>
-                        <div style={{ 
-                          width: '24px', 
-                          height: '24px', 
-                          borderRadius: '50%', 
-                          background: '#3B82F6', 
-                          color: 'white', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          flexShrink: 0
-                        }}>
-                          {idx + 1}
-                        </div>
-                        <span style={{ lineHeight: '1.6' }}>{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-
-                {/* Ressources */}
-                {selectedRec.resources && selectedRec.resources.length > 0 && (
                   <div>
-                    <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0F172A', marginBottom: '12px' }}>Ressources utiles</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {selectedRec.resources.map((resource: any, idx: number) => (
-                        <a 
-                          key={idx}
-                          href={resource.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px',
-                            padding: '12px',
-                            background: '#F8FAFC',
-                            borderRadius: '8px',
-                            textDecoration: 'none',
-                            color: '#3B82F6',
-                            fontSize: '14px',
-                            transition: 'background 0.2s ease'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = '#EFF6FF'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                        >
-                          <ExternalLink size={16} />
-                          {resource.name}
-                        </a>
-                      ))}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <TrendingUp size={16} style={{ color: '#3B82F6' }} />
+                      <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Impact attendu</h3>
                     </div>
+                    <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.6' }}>{selectedRec.impact}</p>
                   </div>
-                )}
 
-                {/* Barre de progression */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>Progression actuelle</span>
-                    <span style={{ 
-                      fontSize: '14px', 
-                      fontWeight: 600, 
-                      color: selectedRec.progress <= 90 ? '#EF4444' : '#334155' 
-                    }}>
-                      {selectedRec.progress}%
-                    </span>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A', marginBottom: '8px' }}>Description</h3>
+                    <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.6' }}>{selectedRec.details}</p>
                   </div>
-                  <div className="progress-bar" style={{ height: '8px', background: '#F8FAFC', borderRadius: '999px', width: '100%' }}>
-                    <div 
-                      className={`progress-fill progress-${selectedRec.status}`}
-                      style={{ 
-                        width: `${selectedRec.progress}%`, 
-                        borderRadius: '999px', 
-                        height: '100%',
-                        background: selectedRec.progress <= 90 ? '#EF4444' : undefined
-                      }}
-                    />
+
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <Target size={16} style={{ color: '#3B82F6' }} />
+                      <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Étapes d'implémentation</h3>
+                    </div>
+                    <ol style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {selectedRec.steps.map((step: string, idx: number) => (
+                        <li key={idx} style={{ display: 'flex', gap: '10px', fontSize: '13px', color: '#475569' }}>
+                          <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: '#3B82F6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 600, flexShrink: 0 }}>{idx + 1}</div>
+                          <span style={{ lineHeight: '1.5' }}>{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+
+                  {selectedRec.resources && selectedRec.resources.length > 0 && (
+                    <div>
+                      <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A', marginBottom: '8px' }}>Ressources utiles</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {selectedRec.resources.map((resource: any, idx: number) => (
+                          <a key={idx} href={resource.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', background: '#F8FAFC', borderRadius: '8px', textDecoration: 'none', color: '#3B82F6', fontSize: '13px' }} onMouseEnter={(e) => { e.currentTarget.style.background = '#EFF6FF'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}>
+                            <ExternalLink size={14} /> {resource.name}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Progression actuelle</span>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: selectedRec.progress <= 90 ? '#EF4444' : '#334155' }}>{selectedRec.progress}%</span>
+                    </div>
+                    <div style={{ height: '6px', background: '#F8FAFC', borderRadius: '999px', width: '100%', overflow: 'hidden' }}>
+                      <div style={{ width: `${selectedRec.progress}%`, height: '100%', borderRadius: '999px', background: selectedRec.progress <= 90 ? '#EF4444' : '#10B981', transition: 'width 0.3s ease' }} />
+                    </div>
                   </div>
                 </div>
               </div>
-            </>
+
+              {/* Colonne droite : Guide d'implémentation GEO - très mise en valeur */}
+              <div
+                style={{
+                  padding: '28px 32px',
+                  background: 'linear-gradient(180deg, #EFF6FF 0%, #DBEAFE 100%)',
+                  borderLeft: '1px solid #E2E8F0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: '100%',
+                  overflowY: 'auto'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '3px solid #93C5FD' }}>
+                  <div style={{ width: '52px', height: '52px', borderRadius: '12px', background: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Bookmark size={28} style={{ color: 'white' }} />
+                  </div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#1E3A8A', margin: 0, lineHeight: 1.3, letterSpacing: '-0.02em' }}>
+                    {guideData.guide?.titre || 'Guide d\'Implémentation - Package d\'Optimisation GEO'}
+                  </h3>
+                </div>
+
+                <div style={{ padding: '20px', background: 'rgba(255,255,255,0.9)', borderRadius: 0, border: 'none', marginBottom: '20px', boxShadow: '0 2px 8px rgba(37, 99, 235, 0.1)' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#1E40AF', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Objectif score GEO</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '17px', color: '#475569' }}>Actuel : <strong style={{ color: '#0F172A', fontSize: '22px' }}>{guideData.scoreActuel}</strong></span>
+                    <span style={{ fontSize: '22px', color: '#3B82F6', fontWeight: 700 }}>→</span>
+                    <span style={{ fontSize: '17px', color: '#047857' }}>Cible : <strong style={{ color: '#059669', fontSize: '22px' }}>{guideData.scoreCible}</strong></span>
+                  </div>
+                </div>
+
+                {/* Progression du guide (synchronisée avec la section Informations détaillées) */}
+                <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B' }}>Progression</span>
+                    <span style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>{guideGlobalProgress}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: '#E2E8F0', borderRadius: '10px', overflow: 'hidden', marginBottom: '12px' }}>
+                    <div style={{ width: `${guideGlobalProgress}%`, height: '100%', background: 'linear-gradient(90deg, #3B82F6 0%, #60A5FA 100%)', borderRadius: '10px', transition: 'width 0.4s ease' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: '#64748B', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle size={14} style={{ color: '#10B981' }} /><strong style={{ color: '#1E293B' }}>{guideCompletedSteps}</strong> terminée{guideCompletedSteps !== 1 ? 's' : ''}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><PlayCircle size={14} style={{ color: '#F97316' }} /><strong style={{ color: '#1E293B' }}>{guideInProgressSteps}</strong> en cours</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Circle size={14} style={{ color: '#CBD5E1' }} /><strong style={{ color: '#1E293B' }}>{Math.max(0, guideTotalSteps - guideCompletedSteps - guideInProgressSteps)}</strong> à faire</span>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1E40AF', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Étapes d'implémentation</div>
+                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', minHeight: 0 }}>
+                  {guideData.guide?.etapes_implementation && Object.keys(guideData.guide.etapes_implementation).length > 0 ? (
+                    Object.values(guideData.guide.etapes_implementation).map((etape: any, idx: number) => {
+                      const stepId = `etape-${idx}-${etape.titre || `step-${idx}`}`;
+                      const stepStatus = getGuideStepStatus(stepId);
+                      const statusColor = stepStatus.status === 'Terminé' ? '#10B981' : stepStatus.status === 'En cours' ? '#F97316' : '#94A3B8';
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            padding: '16px 18px',
+                            background: '#FFFFFF',
+                            borderRadius: '12px',
+                            border: '2px solid #BFDBFE',
+                            boxShadow: '0 2px 6px rgba(59, 130, 246, 0.12)',
+                            fontSize: '14px',
+                            color: '#334155',
+                            lineHeight: 1.55
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
+                            <div style={{ fontWeight: 800, color: '#1E40AF', fontSize: '16px' }}>{etape.titre ?? `Étape ${idx + 1}`}</div>
+                            <select
+                              value={stepStatus.status}
+                              onChange={(e) => updateGuideStepStatus(stepId, e.target.value)}
+                              style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '12px', fontWeight: 600, color: statusColor, background: '#FFF', cursor: 'pointer', minWidth: '130px' }}
+                            >
+                              <option value="Non commencé">Non commencé</option>
+                              <option value="En cours">En cours</option>
+                              <option value="Terminé">Terminé</option>
+                            </select>
+                          </div>
+                          <div style={{ width: '100%', height: '4px', backgroundColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden', marginBottom: '10px' }}>
+                            <div style={{ width: `${stepStatus.progress}%`, height: '100%', backgroundColor: statusColor, borderRadius: '4px', transition: 'width 0.3s ease' }} />
+                          </div>
+                          {etape.description && <div style={{ fontSize: '14px', color: '#475569', marginBottom: '8px', lineHeight: 1.5 }}>{etape.description}</div>}
+                          {etape.actions && Array.isArray(etape.actions) && etape.actions.length > 0 && (
+                            <ul style={{ margin: 0, paddingLeft: '0', listStyle: 'none', fontSize: '13px', color: '#64748B', lineHeight: 1.6 }}>
+                              {etape.actions.slice(0, 8).map((a: string, i: number) => (
+                                <li key={i} style={{ marginBottom: '6px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={!!(stepStatus.checkedActions || {})[i]}
+                                    onChange={() => toggleGuideAction(stepId, i)}
+                                    style={{ marginTop: '4px', cursor: 'pointer', accentColor: '#3B82F6' }}
+                                  />
+                                  <span style={{ textDecoration: (stepStatus.checkedActions || {})[i] ? 'line-through' : 'none', color: (stepStatus.checkedActions || {})[i] ? '#94A3B8' : '#64748B' }}>{a}</span>
+                                </li>
+                              ))}
+                              {etape.actions.length > 8 && <li style={{ fontStyle: 'italic', marginTop: '4px' }}>… +{etape.actions.length - 8} autre(s)</li>}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div style={{ padding: '20px', background: '#FFFFFF', borderRadius: '12px', border: '2px solid #BFDBFE', fontSize: '14px', color: '#64748B', lineHeight: 1.5 }}>
+                      Consultez la section « Informations détaillées » pour le guide complet avec étapes et fichiers.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
@@ -1748,16 +1858,13 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
 
 /**
  * Vue "Infos détaillées"
- * Affiche le tableau de recommandations et le guide d'implémentation
+ * Affiche le tableau de recommandations
  */
 function InfosDetailleesView({ reportData }: { reportData: FullReportData | null }) {
   return (
     <div className="view-content">
       {/* Tableau des recommandations SEO */}
       <RecommendationsTable reportData={reportData} />
-      
-      {/* Guide d'implémentation avec accordéons */}
-      <ImplementationGuide reportData={reportData} />
     </div>
   );
 }
@@ -1989,7 +2096,22 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
                   <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
                     <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '8px' }}>Dernière mise à jour</div>
                     <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
-                      {data.find(d => d.model === selectedModel)?.lastUpdate || 'N/A'}
+                      {(() => {
+                        const dateStr = data.find(d => d.model === selectedModel)?.lastUpdate;
+                        if (!dateStr) return 'N/A';
+                        try {
+                          const date = new Date(dateStr);
+                          return date.toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          });
+                        } catch {
+                          return dateStr;
+                        }
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -2022,14 +2144,16 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
       if (!reportData) return;
       
       // SOURCE 1: Données déjà présentes dans le rapport (chemin le plus rapide)
-      if (reportData.competitor_analysis) {
-        console.log('📊 Source: competitor_analysis du rapport /llmo/reports/:id');
-        const mappedAnalysis = mapApiResponseToCompetitorAnalysisResponse(reportData.competitor_analysis);
+      // Vérifier competitor_analysis OU competitors (selon le format de l'API)
+      const competitorData = reportData.competitor_analysis || (reportData as any).competitors;
+      if (competitorData) {
+        console.log('📊 Source: competitor_analysis/competitors du rapport /llmo/reports/:id');
+        const mappedAnalysis = mapApiResponseToCompetitorAnalysisResponse(competitorData);
         setCompetitorAnalysis(mappedAnalysis);
-        
+
         // Sélectionner le premier modèle par défaut s'il n'y en a pas encore
         if (!selectedModel) {
-          const firstModel = mappedAnalysis.models_analysis?.[0]?.model_info?.display_name || 
+          const firstModel = mappedAnalysis.models_analysis?.[0]?.model_info?.display_name ||
                             mappedAnalysis.models_analysis?.[0]?.model_info?.model_name || '';
           if (firstModel) {
             console.log('🎯 Définition du modèle par défaut (Source 1):', firstModel);
@@ -2040,15 +2164,16 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
       }
 
       // SOURCE 2: Recherche par URL si non présent dans le rapport (fallback)
-      if (!reportData.report?.url) return;
-      
+      const reportUrlValue = reportData.report?.url || (reportData as any)?.llmo_report?.url;
+      if (!reportUrlValue) return;
+
       try {
         setLoadingCompetitors(true);
         console.log('🔍 Source: Recherche manuelle par URL (fallback)');
         const analyses = await listCompetitorAnalyses();
-        
-        const reportUrl = reportData.report.url.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^www\./, '');
-        const reportDomain = extractDomain(reportData.report.url).toLowerCase();
+
+        const reportUrl = reportUrlValue.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^www\./, '');
+        const reportDomain = extractDomain(reportUrlValue).toLowerCase();
 
         const matchingAnalysis = analyses.find(analysis => {
           const analysisUrl = (analysis.url || '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^www\./, '');
@@ -2263,7 +2388,8 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
  */
 function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
-  
+  const [domainModalOpen, setDomainModalOpen] = useState(false);
+
   // Calculer le total des citations depuis l'API
   const getTotalCitationsFromAPI = () => {
     // Utiliser les données de citation explicites si disponibles (6 dans votre JSON)
@@ -2287,56 +2413,133 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
   
   // Extraire les domaines cités depuis l'analyse de citation (sources réelles)
   const getDomainsFromAPI = () => {
-    if (!reportData?.analyse_citation?.detailed_results) return [];
-    
-    const sourcesMap: Record<string, any> = {};
-    const totalCalls = reportData.analyse_citation.total_llm_calls || 1;
-    
-    // Parcourir tous les résultats détaillés pour extraire les sources
-    reportData.analyse_citation.detailed_results.forEach((result: any) => {
-      if (result.sources && Array.isArray(result.sources)) {
-        result.sources.forEach((source: any) => {
-          try {
-            const domain = extractDomain(source.url);
-            if (!sourcesMap[domain]) {
-              sourcesMap[domain] = {
-                domain: domain,
-                title: source.title || domain,
-                mentions: 0,
-                urls: new Set(),
-                isClient: domain.includes('amundi') || domain.includes(extractDomain(reportData.report.url))
-              };
+    // Récupérer l'URL du client depuis report ou llmo_report
+    const clientUrl = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || '';
+    const clientSiteName = reportData?.analyse_citation?.client_site_name || '';
+
+    // Si on a des detailed_results, les utiliser
+    if (reportData?.analyse_citation?.detailed_results && Array.isArray(reportData.analyse_citation.detailed_results)) {
+      const sourcesMap: Record<string, any> = {};
+      const totalCalls = reportData.analyse_citation.total_llm_calls || 1;
+
+      // Parcourir tous les résultats détaillés pour extraire les sources
+      reportData.analyse_citation.detailed_results.forEach((result: any) => {
+        if (result.sources && Array.isArray(result.sources)) {
+          result.sources.forEach((source: any) => {
+            // Ignorer les sources sans URL valide
+            if (!source.url || source.url === null) return;
+
+            try {
+              const domain = extractDomain(source.url);
+              if (!domain) return;
+
+              // Vérifier si c'est le site client
+              const isClientSite = clientUrl ? domain.includes(extractDomain(clientUrl)) :
+                                   clientSiteName ? domain.toLowerCase().includes(clientSiteName.toLowerCase()) : false;
+
+              if (!sourcesMap[domain]) {
+                sourcesMap[domain] = {
+                  domain: domain,
+                  title: source.title || domain,
+                  mentions: 0,
+                  urls: new Set(),
+                  isClient: isClientSite
+                };
+              }
+              sourcesMap[domain].mentions += 1;
+              sourcesMap[domain].urls.add(source.url);
+            } catch (e) {
+              // Ignorer les URLs invalides
             }
-            sourcesMap[domain].mentions += 1;
-            sourcesMap[domain].urls.add(source.url);
-          } catch (e) {
-            // Ignorer les URLs invalides
-          }
+          });
+        }
+      });
+
+      // Si aucune source avec URL n'a été trouvée, retourner un tableau vide pour passer au fallback
+      if (Object.keys(sourcesMap).length === 0) {
+        return [];
+      }
+
+      return Object.values(sourcesMap).map((s: any) => ({
+        icon: s.isClient ? '✓' : '🔗',
+        domain: s.domain,
+        used: `${Math.round((s.mentions / totalCalls) * 100)} %`,
+        citations: s.mentions.toString(),
+        type: s.isClient ? 'you' : 'corporate',
+        label: s.isClient ? 'Votre Site' : 'Source',
+        pages: s.urls.size,
+        lastSeen: new Date().toLocaleDateString('fr-FR'),
+        description: s.isClient
+          ? `Votre site a été cité ${s.mentions} fois dans les réponses des modèles d'IA.`
+          : `Source externe citée ${s.mentions} fois.`,
+        highlight: s.isClient,
+        sourceDetails: Array.from(s.urls).map(url => {
+          // Retrouver le titre pour cette URL
+          let title = s.title;
+          reportData.analyse_citation.detailed_results.forEach((res: any) => {
+            const match = res.sources?.find((src: any) => src.url === url);
+            if (match && match.title) title = match.title;
+          });
+          return { url, title };
+        })
+      })).sort((a: any, b: any) => parseFloat(b.citations) - parseFloat(a.citations));
+    }
+
+    // Fallback: utiliser citations_by_model pour générer les domaines par modèle
+    if (reportData?.analyse_citation?.citations_by_model) {
+      const citationsByModel = reportData.analyse_citation.citations_by_model as Record<string, number>;
+      const totalCitations = reportData.analyse_citation.total_citations || 0;
+      const clientUrlFallback = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || reportData.analyse_citation?.client_site_url || '';
+      const clientDomain = clientUrlFallback ? extractDomain(clientUrlFallback) : (reportData.analyse_citation?.client_site_name || '');
+
+      // Créer une entrée pour le domaine client s'il y a des citations
+      const domains: any[] = [];
+
+      // Calculer le nombre de modèles qui ont cité le contenu
+      const modelsThatCited = Object.values(citationsByModel).filter(count => count > 0).length;
+      const totalModels = Object.keys(citationsByModel).length;
+      const usedPercentage = totalModels > 0 ? Math.round((modelsThatCited / totalModels) * 100) : 0;
+
+      if (totalCitations > 0 && clientDomain) {
+        domains.push({
+          icon: '✓',
+          domain: clientDomain,
+          used: `${usedPercentage}%`,
+          citations: totalCitations.toString(),
+          type: 'you',
+          label: 'Votre Site',
+          pages: 1,
+          lastSeen: new Date().toLocaleDateString('fr-FR'),
+          description: `Votre site a été cité ${totalCitations} fois par ${modelsThatCited} modèle(s) d'IA sur ${totalModels}.`,
+          highlight: true,
+          sourceDetails: [{ url: clientUrlFallback, title: clientDomain }]
         });
       }
-    });
-    
-    return Object.values(sourcesMap).map((s: any) => ({
-      icon: s.isClient ? '✓' : '🔗',
-      domain: s.domain,
-      used: `${Math.round((s.mentions / totalCalls) * 100)} %`,
-      citations: s.mentions.toString(),
-      type: s.isClient ? 'you' : 'corporate',
-      label: s.isClient ? 'Votre Site' : 'Source',
-      pages: s.urls.size,
-      lastSeen: new Date().toLocaleDateString('fr-FR'),
-      description: `Source identifiée. Apparaît dans les réponses générées par les modèles d'IA.`,
-      highlight: s.isClient,
-      sourceDetails: Array.from(s.urls).map(url => {
-        // Retrouver le titre pour cette URL
-        let title = s.title;
-        reportData.analyse_citation.detailed_results.forEach((res: any) => {
-          const match = res.sources?.find((src: any) => src.url === url);
-          if (match && match.title) title = match.title;
-        });
-        return { url, title };
-      })
-    })).sort((a: any, b: any) => parseFloat(b.citations) - parseFloat(a.citations));
+
+      // Ajouter les modèles qui ont cité comme sources
+      Object.entries(citationsByModel).forEach(([model, count]) => {
+        if (count > 0) {
+          const modelUsedPct = totalCitations > 0 ? Math.round((count / totalCitations) * 100) : 0;
+          domains.push({
+            icon: '🤖',
+            domain: model,
+            used: `${modelUsedPct}%`,
+            citations: count.toString(),
+            type: 'model',
+            label: 'Modèle IA',
+            pages: 1,
+            lastSeen: new Date().toLocaleDateString('fr-FR'),
+            description: `${model} a cité votre contenu ${count} fois.`,
+            highlight: false,
+            sourceDetails: []
+          });
+        }
+      });
+
+      return domains.sort((a: any, b: any) => parseFloat(b.citations) - parseFloat(a.citations));
+    }
+
+    return [];
   };
 
   const domains = getDomainsFromAPI();
@@ -2409,7 +2612,10 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
                 <tr 
                   key={index} 
                   className={domain.highlight ? 'table-row-highlight' : ''} 
-                  onClick={() => setSelectedDomain(selectedDomain === domain.domain ? null : domain.domain)}
+                  onClick={() => {
+                    setSelectedDomain(domain.domain);
+                    setDomainModalOpen(true);
+                  }}
                   style={{ 
                     background: domain.highlight ? '#E8F4FF' : '#FFFFFF',
                     borderBottom: index === domains.length - 1 ? 'none' : '1px solid #F1F5F9',
@@ -2436,7 +2642,7 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
                   <td style={{ padding: '18px 26px', fontSize: '14px', color: '#475569' }}>{domain.pages}</td>
                   <td style={{ padding: '18px 26px', fontSize: '14px', color: '#475569', fontWeight: 600 }}>{domain.citations}</td>
                   <td style={{ padding: '18px 26px', textAlign: 'right' }}>
-                    <span className={`badge badge-${domain.type}`} style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', padding: '4px 12px', background: domain.type === 'you' ? 'rgba(74, 222, 128, 0.15)' : undefined }}>
+                    <span className={`badge badge-${domain.type}`} style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', padding: '4px 12px', background: domain.type === 'you' ? 'rgba(74, 222, 128, 0.15)' : domain.type === 'model' ? 'rgba(99, 102, 241, 0.15)' : undefined }}>
                       {domain.label}
                     </span>
                   </td>
@@ -2444,102 +2650,79 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
               ))}
             </tbody>
           </table>
-          
-          {selectedDomain && (
-            <div style={{ 
-              padding: '20px 26px', 
-              background: '#F0F7FF', 
-              borderTop: '1px solid #BFDBFE',
-              borderBottom: selectedDomain === domains[domains.length - 1].domain ? 'none' : '1px solid #BFDBFE'
-            }}>
-              {(() => {
+
+          {/* Modal Informations détaillées - ouvert au clic sur une source (domaine) */}
+          <Dialog open={domainModalOpen} onOpenChange={(open) => {
+            setDomainModalOpen(open);
+            if (!open) setSelectedDomain(null);
+          }}>
+            <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0" hideCloseButton>
+              {selectedDomain && (() => {
                 const dom = domains.find(d => d.domain === selectedDomain);
                 if (!dom) return null;
                 return (
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#1E40AF', marginBottom: '8px' }}>
-                      Informations détaillées - {dom.domain}
+                  <>
+                    <div className="flex-shrink-0 flex items-start justify-between gap-4 p-6 pb-0">
+                      <DialogHeader className="flex-1 space-y-1.5 pr-8">
+                        <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
+                          Informations détaillées - {dom.domain}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-slate-500">
+                          Source citée dans les réponses des modèles d'IA
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogClose asChild>
+                        <button
+                          type="button"
+                          className="absolute right-4 top-4 rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+                          aria-label="Fermer"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </DialogClose>
                     </div>
-                    <div style={{ fontSize: '13px', color: '#1E3A8A', lineHeight: '1.6', marginBottom: '12px' }}>
-                      {dom.description}
-                    </div>
-                    <div style={{ display: 'flex', gap: '20px', fontSize: '12px', color: '#475569', marginBottom: '16px' }}>
-                      <span>Pages citées : <strong style={{ color: '#0F172A' }}>{dom.pages}</strong></span>
-                      <span>Dernière vue : <strong style={{ color: '#0F172A' }}>{dom.lastSeen}</strong></span>
-                    </div>
-                    
-                    {dom.sourceDetails && dom.sourceDetails.length > 0 && (
-                      <div style={{ marginTop: '12px' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '8px' }}>URLs sources identifiées :</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {dom.sourceDetails.map((src: any, idx: number) => {
-                            // Détecter si c'est une URL "main" (principale du domaine)
-                            const isMainUrl = (() => {
-                              // Vérifier si le titre ou l'URL contient "main"
-                              const titleLower = (src.title || '').toLowerCase();
-                              const urlLower = src.url.toLowerCase();
-                              
-                              if (titleLower.includes('main') || urlLower.includes('main')) {
-                                return true;
-                              }
-                              
-                              try {
-                                const urlObj = new URL(src.url);
-                                const path = urlObj.pathname;
-                                // Considérer comme "main" si c'est la page d'accueil ou très proche
-                                return path === '/' || path === '' || path === '/index.html' || path === '/index.php';
-                              } catch {
-                                return false;
-                              }
-                            })();
-
-                            return (
-                              <div key={idx} style={{ padding: '8px 12px', background: '#FFFFFF', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-                                <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '2px' }}>{src.title}</div>
-                                <a 
-                                  href={src.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer" 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Si c'est une URL "main", scroller vers la section Domaines les plus cités
-                                    if (isMainUrl) {
-                                      e.preventDefault();
-                                      
-                                      // S'assurer que le domaine est sélectionné pour le mettre en évidence
-                                      if (selectedDomain !== dom.domain) {
-                                        setSelectedDomain(dom.domain);
-                                      }
-                                      
-                                      // Scroller vers la section après un court délai pour que le DOM soit mis à jour
-                                      setTimeout(() => {
-                                        const section = document.getElementById('domaines-les-plus-cites');
-                                        if (section) {
-                                          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                        }
-                                      }, 100);
-                                      
-                                      // Ouvrir l'URL dans un nouvel onglet après le scroll
-                                      setTimeout(() => {
-                                        window.open(src.url, '_blank', 'noopener,noreferrer');
-                                      }, 500);
-                                    }
-                                  }}
-                                  style={{ fontSize: '11px', color: '#3B82F6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
-                                >
-                                  {src.url} <ExternalLink size={10} />
-                                </a>
-                              </div>
-                            );
-                          })}
+                    <div
+                      className="flex-1 overflow-y-auto min-h-0 px-6 py-4"
+                      style={{ maxHeight: 'calc(90vh - 120px)' }}
+                    >
+                      <div className="flex flex-col gap-4">
+                        <div className="text-sm text-slate-600 leading-relaxed">
+                          {dom.description}
                         </div>
+                        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500">
+                          <span>Pages citées : <strong className="text-slate-900">{dom.pages}</strong></span>
+                          <span>Citations moy. : <strong className="text-slate-900">{dom.citations}</strong></span>
+                          <span>Dernière vue : <strong className="text-slate-900">{dom.lastSeen}</strong></span>
+                          <span>Utilisé : <strong className="text-slate-900">{dom.used}</strong></span>
+                        </div>
+                        {dom.sourceDetails && dom.sourceDetails.length > 0 && (
+                          <div className="mt-2">
+                            <div className="text-xs font-semibold text-slate-500 mb-2">URLs sources identifiées</div>
+                            <div className="flex flex-col gap-2">
+                              {dom.sourceDetails.map((src: any, idx: number) => (
+                                <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                  <div className="text-sm font-semibold text-slate-900 mb-1">{src.title}</div>
+                                  <a
+                                    href={src.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-xs text-blue-600 no-underline inline-flex items-center gap-1.5 hover:underline"
+                                  >
+                                    {src.url} <ExternalLink size={12} />
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  </>
                 );
               })()}
-            </div>
-          )}
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </div>

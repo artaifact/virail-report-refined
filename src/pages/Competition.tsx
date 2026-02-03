@@ -4,7 +4,7 @@ import { usePayment } from '@/hooks/usePayment';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -54,6 +54,10 @@ const modelLogos: Record<string, string> = {
   'mistral': '/Mistral.png',
   'mixtral': '/Mistral.png',
   'sonar': '/prompt-model-perplexity.svg',
+  'deepseek': '/prompt-model-deepseek.svg',
+  'qwen': '/prompt-model-qwen.svg',
+  'llama': '/prompt-model-llama.svg',
+  'grok': '/prompt-model-grok.svg',
 };
 
 /**
@@ -81,7 +85,18 @@ const getOrdinalSuffix = (n: number): string => {
 import CompetitiveAnalysisDisplay from "@/components/competitive-analysis/CompetitiveAnalysisDisplay";
 import DetailedCompetitiveAnalysis from "@/components/competitive-analysis/DetailedCompetitiveAnalysis";
 import MiniLLMAnalysis from "@/components/competitive-analysis/MiniLLMAnalysis";
-import { listCompetitorAnalyses, getCompetitorAnalysisById, startCompetitorAnalysis, extractDomain, CompetitorAnalysisResponse, CompetitorAnalysisSummary, MiniLLMResult } from '@/services/competitorAnalysisService';
+import {
+  listCompetitorAnalyses,
+  getCompetitorAnalysisById,
+  startCompetitorAnalysis,
+  extractDomain,
+  CompetitorAnalysisResponse,
+  CompetitorAnalysisSummary,
+  MiniLLMResult,
+  // Nouvelles fonctions pour /llmo/reports/{id}
+  getCompetitorAnalysisFromReport,
+  listCompetitorAnalysesFromReports
+} from '@/services/competitorAnalysisService';
 
 const Competition = () => {
   const [userUrl, setUserUrl] = useState("");
@@ -116,12 +131,26 @@ const Competition = () => {
     }
   }, []);
 
-  // Charger les analyses sauvegardées
+  // Charger les analyses sauvegardées (depuis /llmo/reports ou /api/v1/competitors/analyses)
   useEffect(() => {
     const loadAnalyses = async () => {
       try {
         setLoadingSavedAnalyses(true);
-        const analyses = await listCompetitorAnalyses();
+
+        // Essayer d'abord de charger depuis /llmo/reports
+        let analyses: CompetitorAnalysisSummary[] = [];
+
+        try {
+          analyses = await listCompetitorAnalysesFromReports();
+        } catch (reportsError) {
+          console.log('📋 Fallback vers l\'ancien endpoint /api/v1/competitors/analyses');
+        }
+
+        // Si pas de résultats depuis /llmo/reports, utiliser l'ancien endpoint
+        if (analyses.length === 0) {
+          analyses = await listCompetitorAnalyses();
+        }
+
         setCompetitorAnalyses(analyses);
       } catch (error) {
         console.error('Erreur lors du chargement des analyses:', error);
@@ -197,16 +226,28 @@ const Competition = () => {
     try {
       // Passer à l'onglet résultats immédiatement pour un feedback visuel
       setSelectedTab("results");
-      
-      // Charger l'analyse depuis l'API
-      const analysis = await getCompetitorAnalysisById(analysisId);
+
+      // Essayer d'abord de charger depuis /llmo/reports/{id} (analyse_concurrentielle_v1)
+      let analysis: CompetitorAnalysisResponse | null = null;
+
+      try {
+        analysis = await getCompetitorAnalysisFromReport(analysisId);
+      } catch (reportError) {
+        console.log('📋 Fallback vers l\'ancien endpoint /api/v1/competitors/analyses');
+      }
+
+      // Si pas de données depuis /llmo/reports, utiliser l'ancien endpoint
+      if (!analysis) {
+        analysis = await getCompetitorAnalysisById(analysisId);
+      }
+
       setCurrentAnalysis(analysis);
-      
+
       // Charger les données mini_llm_results si disponibles
       if (analysis.mini_llm_results && analysis.mini_llm_results.length > 0) {
         setMiniLLMResults(analysis.mini_llm_results);
       }
-      
+
       toast({
         title: "Analyse chargée",
         description: `Analyse de ${extractDomain(analysis.url)} chargée avec succès`
@@ -252,34 +293,7 @@ const Competition = () => {
         {/* Header avec titre et filtres */}
         
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-50 p-1 h-auto rounded-lg">
-              <TabsTrigger 
-                value="saved" 
-                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm rounded-md h-12 font-semibold transition-all duration-300 text-gray-600"
-              >
-                <History className="h-4 w-4 mr-2" />
-                Analyses sauvegardées
-              </TabsTrigger>
-              <TabsTrigger 
-                value="setup" 
-                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm rounded-md h-12 font-semibold transition-all duration-300 text-gray-600"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nouvelle analyse
-              </TabsTrigger>
-              <TabsTrigger 
-                value="results" 
-                disabled={!currentAnalysis && !isAnalyzing} 
-                className="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm rounded-md h-12 font-semibold transition-all duration-300 disabled:opacity-50 text-gray-600"
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Résultats
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="saved" className="space-y-6 mt-6">
+          <TabsContent value="saved" className="space-y-6">
             <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
               <CardHeader className="bg-white border-b border-gray-200">
                 <div className="flex items-center justify-between">
@@ -380,7 +394,7 @@ const Competition = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="setup" className="space-y-6 mt-6">
+          <TabsContent value="setup" className="space-y-6">
             <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
               <CardHeader className="bg-white border-b border-gray-200">
                 <div className="flex items-center justify-between">
@@ -487,7 +501,7 @@ const Competition = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="results" className="space-y-6 mt-6">
+          <TabsContent value="results" className="space-y-6">
             {/* Enhanced Header avec informations sur l'analyse chargée */}
             {currentAnalysis && (
               <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">

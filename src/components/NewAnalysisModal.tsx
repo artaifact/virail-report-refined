@@ -10,11 +10,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { startCustomAnalysis } from "@/lib/api";
+import { startAnalysisStreamWithContext } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Globe, Search, ShieldCheck, Zap, BarChart3 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Loader2, Globe, Search, BarChart3 } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { ModelLogosCarousel } from "@/components/ModelLogosCarousel";
+import { useStreaming } from "@/contexts/StreamingContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface NewAnalysisModalProps {
   open: boolean;
@@ -26,6 +29,9 @@ export function NewAnalysisModal({ open, onOpenChange }: NewAnalysisModalProps) 
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const streaming = useStreaming();
+  const queryClient = useQueryClient();
 
   const handleStartAnalysis = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,31 +44,36 @@ export function NewAnalysisModal({ open, onOpenChange }: NewAnalysisModalProps) 
 
     try {
       setIsLoading(true);
-      const result = await startCustomAnalysis({
-        url: formattedUrl,
-        min_score: 0.3,
-        min_mentions: 1,
-        include_raw: false,
-        include_competitor_analysis: true
-      });
 
-      if (result) {
+      // Fermer le modal immédiatement pour montrer la notification de streaming
+      onOpenChange(false);
+
+      // Lancer l'analyse avec le contexte de streaming
+      const result = await startAnalysisStreamWithContext(formattedUrl, streaming);
+
+      if (result?.reportId) {
         toast({
-          title: "Analyse lancée",
-          description: `L'analyse de ${formattedUrl} a été démarrée avec succès.`,
+          title: "Analyse terminée",
+          description: `L'analyse de ${formattedUrl} est prête.`,
         });
-        onOpenChange(false);
         setUrl('');
-        if (result.reportId) {
-          navigate(`/?reportId=${result.reportId}`);
+
+        // Invalider le cache des rapports pour rafraîchir la liste
+        queryClient.invalidateQueries({ queryKey: ['reports'] });
+        queryClient.invalidateQueries({ queryKey: ['llmo-reports'] });
+
+        // Naviguer vers la page d'accueil si on n'y est pas déjà
+        if (location.pathname !== '/') {
+          navigate('/');
         }
       } else {
         throw new Error("Erreur lors du lancement de l'analyse");
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de lancer l'analyse. Veuillez réessayer.";
       toast({
         title: "Erreur",
-        description: "Impossible de lancer l'analyse. Veuillez réessayer.",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -107,27 +118,32 @@ export function NewAnalysisModal({ open, onOpenChange }: NewAnalysisModalProps) 
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 pt-2">
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 transition-colors hover:bg-slate-100/50">
-                <div className="mt-0.5 p-1.5 bg-blue-100 rounded-md">
-                  <Search className="h-4 w-4 text-blue-600" />
+            {isLoading && (
+              <ModelLogosCarousel className="rounded-xl bg-slate-50 border border-slate-200 overflow-hidden" />
+            )}
+
+            {!isLoading && (
+              <div className="grid grid-cols-1 gap-3 pt-2">
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 transition-colors hover:bg-slate-100/50">
+                  <div className="mt-0.5 p-1.5 bg-blue-100 rounded-md">
+                    <Search className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">Analyse GEO</h4>
+                    <p className="text-xs text-slate-600 mt-0.5">Vérification sur GPT-5, et Gemini.</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900">Analyse GEO</h4>
-                  <p className="text-xs text-slate-600 mt-0.5">Vérification sur GPT-5, et Gemini.</p>
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 transition-colors hover:bg-slate-100/50">
+                  <div className="mt-0.5 p-1.5 bg-indigo-100 rounded-md">
+                    <BarChart3 className="h-4 w-4 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">Veille Concurrentielle</h4>
+                    <p className="text-xs text-slate-600 mt-0.5">Identification automatique du Top 5 concurrents.</p>
+                  </div>
                 </div>
               </div>
-              
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 transition-colors hover:bg-slate-100/50">
-                <div className="mt-0.5 p-1.5 bg-indigo-100 rounded-md">
-                  <BarChart3 className="h-4 w-4 text-indigo-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900">Veille Concurrentielle</h4>
-                  <p className="text-xs text-slate-600 mt-0.5">Identification automatique du Top 5 concurrents.</p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           <DialogFooter className="pt-2">

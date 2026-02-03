@@ -3,10 +3,57 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { AuthService } from "@/services/authService";
-import { Settings as SettingsIcon, Sparkles, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { SessionList } from "@/components/SessionList";
+import {
+  Settings as SettingsIcon,
+  Sparkles,
+  ChevronRight,
+  RotateCcw,
+  CreditCard,
+  Download,
+  ExternalLink,
+  FileText,
+  Loader2,
+  Crown,
+  TrendingUp,
+  Receipt,
+  Calendar,
+  Eye,
+  Shield,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/services/apiService";
 import { useNavigate } from "react-router-dom";
+import { Progress } from "@/components/ui/progress";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import {
+  useAccountDashboard,
+  useStripeInvoices,
+  useStripeInvoicePdf,
+  useStripeBillingPortal,
+  useStripePaymentMethods,
+  useUpcomingInvoice,
+  StripeInvoice,
+  formatCurrency,
+  formatDate,
+} from "@/hooks/useAccount";
 
 interface UserProfile {
   email: string;
@@ -18,108 +65,312 @@ interface UserProfile {
   created_at: string;
 }
 
+// Composant pour afficher le statut de l'abonnement
+function SubscriptionStatusBadge({ status }: { status: string }) {
+  const statusConfig: Record<string, { label: string; className: string }> = {
+    active: { label: "Actif", className: "bg-green-100 text-green-700" },
+    trialing: { label: "Essai", className: "bg-amber-100 text-amber-700" },
+    cancelled: { label: "Annulé", className: "bg-red-100 text-red-700" },
+    inactive: { label: "Inactif", className: "bg-gray-100 text-gray-700" },
+    pending: { label: "En attente", className: "bg-blue-100 text-blue-700" },
+  };
+
+  const config = statusConfig[status] || statusConfig.inactive;
+
+  return (
+    <Badge variant="secondary" className={config.className}>
+      {config.label}
+    </Badge>
+  );
+}
+
+// Composant pour afficher le statut d'une facture Stripe
+function InvoiceStatusBadge({ status }: { status: string }) {
+  const statusConfig: Record<string, { label: string; className: string }> = {
+    paid: { label: "Payée", className: "bg-green-100 text-green-700" },
+    open: { label: "En attente", className: "bg-amber-100 text-amber-700" },
+    void: { label: "Annulée", className: "bg-gray-100 text-gray-700" },
+    uncollectible: { label: "Impayée", className: "bg-red-100 text-red-700" },
+    draft: { label: "Brouillon", className: "bg-blue-100 text-blue-700" },
+  };
+
+  const config = statusConfig[status] || { label: status, className: "bg-gray-100 text-gray-700" };
+
+  return (
+    <Badge variant="secondary" className={config.className}>
+      {config.label}
+    </Badge>
+  );
+}
+
+// Modal de détail d'une facture
+function InvoiceDetailModal({
+  invoice,
+  open,
+  onClose,
+}: {
+  invoice: StripeInvoice | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  if (!invoice) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Receipt className="h-5 w-5" />
+            Facture {invoice.number}
+          </DialogTitle>
+          <DialogDescription>
+            Créée le {formatDate(invoice.created)}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Statut et montants */}
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="text-sm text-gray-500">Statut</p>
+              <InvoiceStatusBadge status={invoice.status} />
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-500">Total</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {formatCurrency(invoice.total, invoice.currency)}
+              </p>
+            </div>
+          </div>
+
+          {/* Détail des lignes */}
+          <div className="space-y-2">
+            <h4 className="font-medium text-gray-900">Détail</h4>
+            {invoice.line_items.map((item, idx) => (
+              <div key={idx} className="flex justify-between text-sm py-2 border-b border-gray-100 last:border-0">
+                <div>
+                  <p className="text-gray-900">{item.description}</p>
+                  {item.period && (
+                    <p className="text-xs text-gray-500">
+                      {formatDate(item.period.start)} - {formatDate(item.period.end)}
+                    </p>
+                  )}
+                </div>
+                <p className="font-medium">{formatCurrency(item.amount, invoice.currency)}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Sous-total, TVA, Total */}
+          <div className="space-y-1 pt-2 border-t border-gray-200">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Sous-total</span>
+              <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
+            </div>
+            {invoice.tax !== null && invoice.tax > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">TVA</span>
+                <span>{formatCurrency(invoice.tax, invoice.currency)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-semibold pt-1">
+              <span>Total</span>
+              <span>{formatCurrency(invoice.total, invoice.currency)}</span>
+            </div>
+          </div>
+
+          {/* Info paiement */}
+          {invoice.payment_info && (
+            <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg text-sm">
+              <CreditCard className="h-4 w-4 text-green-600" />
+              <span className="text-green-700">
+                Payé avec {invoice.payment_info.brand} •••• {invoice.payment_info.last4}
+              </span>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-2">
+            {invoice.pdf_url && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => window.open(invoice.pdf_url!, '_blank')}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Télécharger PDF
+              </Button>
+            )}
+            {invoice.hosted_invoice_url && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => window.open(invoice.hosted_invoice_url!, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Voir sur Stripe
+              </Button>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Skeleton pour le chargement
+function DashboardSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+          <Skeleton className="h-6 w-40 mb-4" />
+          <Skeleton className="h-4 w-full mb-2" />
+          <Skeleton className="h-4 w-3/4 mb-2" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [firstName, setFirstName] = useState('Herby');
-  const [lastName, setLastName] = useState('Nerilus');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [isResettingOnboarding, setIsResettingOnboarding] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<StripeInvoice | null>(null);
+  const [lastInvoiceId, setLastInvoiceId] = useState<string | undefined>();
+
+  // API Hooks
+  const { data: dashboard, isLoading: isDashboardLoading } = useAccountDashboard();
+  const { data: invoicesData, isLoading: isInvoicesLoading } = useStripeInvoices(10, lastInvoiceId);
+  const { data: paymentMethods } = useStripePaymentMethods();
+  const { data: upcomingInvoice } = useUpcomingInvoice();
+  const billingPortal = useStripeBillingPortal();
+  const downloadPdf = useStripeInvoicePdf();
 
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
         const profile = await AuthService.getUserProfile();
         setUserProfile(profile);
-        // Extraire le prénom et nom depuis le username si disponible
         if (profile.username) {
-          const nameParts = profile.username.split(' ');
+          const nameParts = profile.username.split(" ");
           if (nameParts.length >= 2) {
             setFirstName(nameParts[0]);
-            setLastName(nameParts.slice(1).join(' '));
+            setLastName(nameParts.slice(1).join(" "));
+          } else {
+            setFirstName(profile.username);
           }
         }
       } catch (err) {
-        console.error('Erreur lors du chargement du profil:', err);
+        console.error("Erreur lors du chargement du profil:", err);
       }
     };
 
     loadUserProfile();
   }, []);
 
-  // Obtenir l'initiale pour l'avatar
   const getInitial = () => {
-    if (firstName && lastName) {
-      return firstName[0].toUpperCase();
-    }
-    if (userProfile?.username) {
-      return userProfile.username[0].toUpperCase();
-    }
-    return 'U';
+    if (firstName) return firstName[0].toUpperCase();
+    if (userProfile?.username) return userProfile.username[0].toUpperCase();
+    return "U";
   };
 
   const handleResetOnboarding = async () => {
-    if (!window.confirm('Êtes-vous sûr de vouloir réinitialiser l\'onboarding ? Cela vous permettra de recommencer le processus d\'intégration.')) {
+    if (
+      !window.confirm(
+        "Êtes-vous sûr de vouloir réinitialiser l'onboarding ? Cela vous permettra de recommencer le processus d'intégration."
+      )
+    ) {
       return;
     }
 
     setIsResettingOnboarding(true);
     try {
-      // Appeler l'endpoint de réinitialisation
-      const response = await fetch(`${import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com')}/auth/user/onboarding/reset`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.DEV ? "" : import.meta.env.VITE_API_BASE_URL || "https://api.viraill.com"}/auth/user/onboarding/reset`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de la réinitialisation');
-      }
+      if (!response.ok) throw new Error("Erreur lors de la réinitialisation");
 
       toast({
-        title: 'Onboarding réinitialisé',
-        description: 'Vous allez être redirigé vers l\'onboarding.',
+        title: "Onboarding réinitialisé",
+        description: "Vous allez être redirigé vers l'onboarding.",
       });
 
-      // Recharger les données utilisateur
       await apiService.getMeBearer();
-
-      // Rediriger vers l'onboarding
-      setTimeout(() => {
-        navigate('/onboarding/setup');
-      }, 1000);
+      setTimeout(() => navigate("/onboarding/setup"), 1000);
     } catch (error) {
-      console.error('Erreur lors de la réinitialisation:', error);
+      console.error("Erreur lors de la réinitialisation:", error);
       toast({
-        title: 'Erreur',
-        description: 'Impossible de réinitialiser l\'onboarding',
-        variant: 'destructive',
+        title: "Erreur",
+        description: "Impossible de réinitialiser l'onboarding",
+        variant: "destructive",
       });
     } finally {
       setIsResettingOnboarding(false);
     }
   };
 
+  const handleOpenBillingPortal = () => {
+    billingPortal.mutate();
+  };
+
+  const handleDownloadPdf = (invoiceId: string) => {
+    downloadPdf.mutate(invoiceId);
+  };
+
+  const handleLoadMoreInvoices = () => {
+    if (invoicesData?.invoices.length) {
+      const lastId = invoicesData.invoices[invoicesData.invoices.length - 1].id;
+      setLastInvoiceId(lastId);
+    }
+  };
+
+  // Carte de paiement par défaut
+  const defaultPaymentMethod = paymentMethods?.find(pm => pm.is_default) || paymentMethods?.[0];
+
+  if (isDashboardLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <DashboardSkeleton />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Personal Information Section */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Paramètres du compte</h1>
+          <p className="text-gray-600 mt-1">
+            Gérez votre abonnement, vos informations de facturation et vos préférences.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Informations personnelles */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Informations personnelles</h2>
-            
-            {/* Avatar */}
-            <div className="mb-8">
-              <div className="w-20 h-20 rounded-full bg-amber-800 flex items-center justify-center shadow-md">
+
+            <div className="mb-6">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
                 <span className="text-3xl font-semibold text-white">{getInitial()}</span>
               </div>
             </div>
 
-            {/* Form Fields */}
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
                   Prénom
@@ -129,7 +380,7 @@ const Settings = () => {
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="border-gray-300"
                 />
               </div>
 
@@ -142,123 +393,420 @@ const Settings = () => {
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  className="border-gray-300"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Email</Label>
+                <Input
+                  type="email"
+                  value={userProfile?.email || ""}
+                  disabled
+                  className="bg-gray-50 border-gray-200"
+                />
+              </div>
+
+              {dashboard?.member_since && (
+                <p className="text-sm text-gray-500">
+                  Membre depuis {formatDate(dashboard.member_since)}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Current Usage Section */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+          {/* Abonnement */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Utilisation actuelle</h2>
-              <Button variant="outline" size="sm" className="flex items-center gap-2 text-sm">
-                <SettingsIcon size={14} />
-                Définir des limites
-              </Button>
+              <h2 className="text-lg font-semibold text-gray-900">Mon Abonnement</h2>
+              {dashboard?.subscription && (
+                <SubscriptionStatusBadge status={dashboard.subscription.status} />
+              )}
             </div>
-            
-            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-              <div className="mb-3">
-                <span className="text-sm font-medium text-gray-700">Inclus dans le forfait</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: '0%' }}></div>
-                </div>
-                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">0/75 000 tâches utilisées</span>
-              </div>
-            </div>
-            
-            <p className="mt-4 text-sm text-gray-600">
-              Les <span className="underline cursor-pointer hover:text-gray-900">tâches</span> seront réinitialisées dans 6 jours (01 déc. 01:00 hs).
-            </p>
-          </div>
 
-          {/* Plan Details Section */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Détails du forfait</h2>
-            
-            <div className="space-y-3 mb-6">
-              <div className="flex items-center">
-                <span className="text-sm text-gray-600 w-32">Forfait :</span>
-                <span className="text-sm font-medium text-gray-900">Pro</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-sm text-gray-600 w-32">Statut :</span>
-                <span className="text-sm font-medium text-amber-600">Essai en cours</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-sm text-gray-600 w-32">L'essai se termine le :</span>
-                <span className="text-sm font-medium text-gray-900">5 déc. 2025</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
-              <Button 
-                onClick={() => navigate('/pricing')}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm"
-              >
-                <Sparkles size={14} />
-                Améliorer le forfait
-              </Button>
-              <Button 
-                onClick={() => navigate('/pricing')}
-                variant="outline" 
-                className="flex items-center gap-2 text-sm"
-              >
-                <SettingsIcon size={14} />
-                Gérer le forfait
-              </Button>
-            </div>
-          </div>
-
-          {/* Onboarding Section */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Onboarding</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Réinitialisez l'onboarding pour recommencer le processus d'intégration et configurer à nouveau votre compte.
-            </p>
-            <Button
-              onClick={handleResetOnboarding}
-              disabled={isResettingOnboarding}
-              variant="outline"
-              className="w-full"
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              {isResettingOnboarding ? 'Réinitialisation...' : 'Réinitialiser l\'onboarding'}
-            </Button>
-          </div>
-
-          {/* Invoices Section */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Factures</h2>
-            
-            <div className="flex items-center gap-4">
-              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                <ChevronLeft size={18} />
-              </button>
-              
-              <div className="flex-1 border border-gray-200 rounded-lg p-5 bg-gray-50">
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-600">21 nov. 2025</div>
-                  <div className="text-base font-semibold text-gray-900">0,00 $</div>
+            {dashboard?.has_subscription && dashboard.subscription ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                  <Crown className="h-8 w-8 text-blue-600" />
                   <div>
-                    <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">
-                      payée
+                    <p className="font-semibold text-gray-900">{dashboard.subscription.plan_name}</p>
+                    <p className="text-sm text-gray-600">
+                      {formatCurrency(dashboard.subscription.plan_price, dashboard.subscription.currency)}
+                      /{dashboard.subscription.interval === "month" ? "mois" : "an"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Date de début</span>
+                    <span className="font-medium">{formatDate(dashboard.subscription.start_date)}</span>
+                  </div>
+                  {dashboard.subscription.next_billing_date && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Prochaine facturation</span>
+                      <span className="font-medium">{formatDate(dashboard.subscription.next_billing_date)}</span>
+                    </div>
+                  )}
+                  {dashboard.subscription.trial_end && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Fin de l'essai</span>
+                      <span className="font-medium text-amber-600">{formatDate(dashboard.subscription.trial_end)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Renouvellement auto</span>
+                    <span className="font-medium">
+                      {dashboard.subscription.auto_renew ? "Activé" : "Désactivé"}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-600 mt-3">Période d'essai pour Virail Pro</div>
+                </div>
+
+                <div className="flex gap-2 pt-4 border-t border-gray-100">
+                  <Button onClick={handleOpenBillingPortal} variant="outline" size="sm" disabled={billingPortal.isPending}>
+                    {billingPortal.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <SettingsIcon className="h-4 w-4 mr-2" />
+                    )}
+                    Gérer sur Stripe
+                  </Button>
+                  <Button onClick={() => navigate("/pricing")} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Améliorer
+                  </Button>
                 </div>
               </div>
-              
-              <button className="p-2 text-gray-300 hover:text-gray-400 hover:bg-gray-100 rounded-lg transition-colors opacity-50 pointer-events-none">
-                <ChevronRight size={18} />
-              </button>
+            ) : (
+              <div className="text-center py-6">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <Crown className="h-8 w-8 text-gray-400" />
+                </div>
+                <p className="text-gray-600 mb-4">Aucun abonnement actif</p>
+                <Button onClick={() => navigate("/pricing")} className="bg-blue-600 hover:bg-blue-700">
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Découvrir nos offres
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Utilisation */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Utilisation du mois</h2>
+              <TrendingUp className="h-5 w-5 text-gray-400" />
+            </div>
+
+            {dashboard?.usage && dashboard.usage.length > 0 ? (
+              <div className="space-y-5">
+                {dashboard.usage.map((item) => (
+                  <div key={item.feature} className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium text-gray-700">{item.feature_label}</span>
+                      <span className="text-gray-600">
+                        {item.used}/{item.limit === -1 ? "∞" : item.limit}
+                      </span>
+                    </div>
+                    <Progress
+                      value={item.limit === -1 ? 0 : item.percentage}
+                      className={cn(
+                        "h-2",
+                        item.percentage >= 90 && "bg-red-100 [&>div]:bg-red-500",
+                        item.percentage >= 70 && item.percentage < 90 && "bg-amber-100 [&>div]:bg-amber-500"
+                      )}
+                    />
+                    {item.reset_date && (
+                      <p className="text-xs text-gray-500">
+                        Réinitialisation le {formatDate(item.reset_date)}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <p>Aucune donnée d'utilisation disponible</p>
+              </div>
+            )}
+          </div>
+
+          {/* Moyen de paiement */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Moyen de paiement</h2>
+              <CreditCard className="h-5 w-5 text-gray-400" />
+            </div>
+
+            {defaultPaymentMethod ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="w-14 h-9 bg-gradient-to-r from-slate-700 to-slate-900 rounded-md flex items-center justify-center shadow">
+                    <span className="text-white text-xs font-bold uppercase">
+                      {defaultPaymentMethod.brand || "Card"}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">
+                      •••• •••• •••• {defaultPaymentMethod.last4}
+                    </p>
+                    {defaultPaymentMethod.exp_month && defaultPaymentMethod.exp_year && (
+                      <p className="text-sm text-gray-500">
+                        Expire {String(defaultPaymentMethod.exp_month).padStart(2, '0')}/{defaultPaymentMethod.exp_year}
+                      </p>
+                    )}
+                  </div>
+                  {defaultPaymentMethod.is_default && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-700">
+                      Par défaut
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Prochaine facture */}
+                {upcomingInvoice && (
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <Calendar className="h-4 w-4" />
+                      <span>Prochaine facture :</span>
+                      <span className="font-semibold">
+                        {formatCurrency(upcomingInvoice.total, upcomingInvoice.currency)}
+                      </span>
+                      {upcomingInvoice.next_payment_attempt && (
+                        <span className="text-blue-600">
+                          le {formatDate(upcomingInvoice.next_payment_attempt)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleOpenBillingPortal}
+                  variant="outline"
+                  className="w-full"
+                  disabled={billingPortal.isPending}
+                >
+                  {billingPortal.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                  )}
+                  Gérer sur Stripe
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <CreditCard className="h-8 w-8 text-gray-400" />
+                </div>
+                <p className="text-gray-600 mb-4">Aucun moyen de paiement enregistré</p>
+                <Button
+                  onClick={handleOpenBillingPortal}
+                  variant="outline"
+                  disabled={billingPortal.isPending}
+                >
+                  {billingPortal.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <CreditCard className="h-4 w-4 mr-2" />
+                  )}
+                  Ajouter sur Stripe
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Onboarding */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Onboarding</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Réinitialisez l'onboarding pour recommencer le processus d'intégration.
+                </p>
+              </div>
+              <Button
+                onClick={handleResetOnboarding}
+                disabled={isResettingOnboarding}
+                variant="outline"
+              >
+                <RotateCcw className={cn("mr-2 h-4 w-4", isResettingOnboarding && "animate-spin")} />
+                {isResettingOnboarding ? "Réinitialisation..." : "Réinitialiser"}
+              </Button>
             </div>
           </div>
+
+          {/* Sessions actives */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm lg:col-span-2">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="h-5 w-5 text-gray-400" />
+              <h2 className="text-lg font-semibold text-gray-900">Sécurité & Sessions</h2>
+            </div>
+            <p className="text-sm text-gray-600 mb-6">
+              Gérez les appareils connectés à votre compte et déconnectez les sessions suspectes.
+            </p>
+            <SessionList />
+          </div>
+
+          {/* Factures Stripe */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm lg:col-span-2">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Mes Factures</h2>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleOpenBillingPortal}
+                  variant="outline"
+                  size="sm"
+                  disabled={billingPortal.isPending}
+                >
+                  {billingPortal.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                  )}
+                  Portail Stripe
+                </Button>
+              </div>
+            </div>
+
+            {isInvoicesLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : invoicesData?.invoices && invoicesData.invoices.length > 0 ? (
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>N° Facture</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Montant</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {invoicesData.invoices.map((invoice) => (
+                        <TableRow key={invoice.id} className="group">
+                          <TableCell className="font-medium">{invoice.number}</TableCell>
+                          <TableCell>{formatDate(invoice.created)}</TableCell>
+                          <TableCell className="font-semibold">
+                            {formatCurrency(invoice.total, invoice.currency)}
+                          </TableCell>
+                          <TableCell>
+                            <InvoiceStatusBadge status={invoice.status} />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedInvoice(invoice)}
+                                title="Voir le détail"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {invoice.pdf_url && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDownloadPdf(invoice.id)}
+                                  disabled={downloadPdf.isPending}
+                                  title="Télécharger le PDF"
+                                >
+                                  {downloadPdf.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Download className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                              {invoice.hosted_invoice_url && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => window.open(invoice.hosted_invoice_url!, '_blank')}
+                                  title="Voir sur Stripe"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {invoicesData.has_more && (
+                  <div className="flex justify-center mt-4 pt-4 border-t border-gray-100">
+                    <Button
+                      variant="outline"
+                      onClick={handleLoadMoreInvoices}
+                    >
+                      Charger plus
+                      <ChevronRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <FileText className="h-8 w-8 text-gray-400" />
+                </div>
+                <p className="text-gray-600">Aucune facture pour le moment</p>
+              </div>
+            )}
+          </div>
+
+          {/* Stats globales */}
+          {dashboard?.total_spent !== undefined && dashboard.total_spent > 0 && (
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 shadow-sm lg:col-span-2 text-white">
+              <h2 className="text-lg font-semibold mb-4">Récapitulatif</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                  <p className="text-blue-200 text-sm">Total dépensé</p>
+                  <p className="text-2xl font-bold">{formatCurrency(dashboard.total_spent)}</p>
+                </div>
+                <div>
+                  <p className="text-blue-200 text-sm">Factures</p>
+                  <p className="text-2xl font-bold">{invoicesData?.invoices?.length || 0}</p>
+                </div>
+                <div>
+                  <p className="text-blue-200 text-sm">Membre depuis</p>
+                  <p className="text-2xl font-bold">
+                    {dashboard.member_since
+                      ? new Date(dashboard.member_since).toLocaleDateString("fr-FR", {
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-blue-200 text-sm">Statut</p>
+                  <p className="text-2xl font-bold">
+                    {dashboard.has_subscription ? "Premium" : "Gratuit"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Modal détail facture */}
+      <InvoiceDetailModal
+        invoice={selectedInvoice}
+        open={!!selectedInvoice}
+        onClose={() => setSelectedInvoice(null)}
+      />
     </div>
   );
 };
