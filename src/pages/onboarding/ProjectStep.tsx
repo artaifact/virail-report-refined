@@ -41,7 +41,7 @@ export function ProjectStep() {
   const { toast } = useToast();
   const [brandName, setBrandName] = useState('');
   const [brandUrl, setBrandUrl] = useState('');
-  const [sector, setSector] = useState('saas');
+  const [sector, setSector] = useState('ecommerce');
   const [location, setLocation] = useState('fr');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -101,9 +101,9 @@ export function ProjectStep() {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold text-slate-900">Configurez votre premier projet</h1>
-        <p className="text-slate-600 text-lg">
-          Définissez la marque que vous souhaitez analyser et optimiser pour les moteurs génératifs
+        <h1 className="text-4xl font-bold text-foreground">Configurez votre premier projet</h1>
+        <p className="text-muted-foreground text-lg">
+          Définissez la marque que vous souhaitez analyser et optimiser pour les <span className="font-semibold text-meetmind-primary">moteurs génératifs IA</span>
         </p>
       </div>
 
@@ -116,7 +116,7 @@ export function ProjectStep() {
             value={brandName}
             onChange={(e) => setBrandName(e.target.value)}
           />
-          <p className="text-xs text-slate-500">Le nom exact de la marque que vous souhaitez analyser dans les LLM</p>
+          <p className="text-xs text-muted-foreground">Le nom exact de la marque que vous souhaitez analyser dans les LLM</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="brand-url">Site web de la marque</Label>
@@ -126,7 +126,7 @@ export function ProjectStep() {
             value={brandUrl}
             onChange={(e) => setBrandUrl(e.target.value)}
           />
-          <p className="text-xs text-slate-500">L'URL du site web que nous analyserons pour optimiser sa visibilité dans les LLM</p>
+          <p className="text-xs text-muted-foreground">L'URL du site web que nous analyserons pour optimiser sa visibilité dans les LLM</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="sector">Secteur d'activité</Label>
@@ -150,7 +150,7 @@ export function ProjectStep() {
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-slate-500">Les thématiques proposées seront adaptées à votre secteur</p>
+          <p className="text-xs text-muted-foreground">Les thématiques proposées seront adaptées à votre secteur</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="location">Zone géographique cible</Label>
@@ -158,10 +158,10 @@ export function ProjectStep() {
             <SelectTrigger id="location" className="w-full h-12">
               <SelectValue>
                 <div className="flex items-center gap-3">
-                  <img 
-                    src={getFlagUrl(selectedCountry.code, 'w40')} 
+                  <img
+                    src={getFlagUrl(selectedCountry.code, 'w40')}
                     alt={`Drapeau ${selectedCountry.label}`}
-                    className="w-6 h-4 object-cover rounded-sm border border-slate-200"
+                    className="w-6 h-4 object-cover rounded-sm border border-border"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
@@ -174,10 +174,10 @@ export function ProjectStep() {
               {COUNTRIES.map((country) => (
                 <SelectItem key={country.value} value={country.value} className="py-3 pl-8">
                   <div className="flex items-center gap-3">
-                    <img 
-                      src={getFlagUrl(country.code, 'w40')} 
+                    <img
+                      src={getFlagUrl(country.code, 'w40')}
                       alt={`Drapeau ${country.label}`}
-                      className="w-6 h-4 object-cover rounded-sm border border-slate-200"
+                      className="w-6 h-4 object-cover rounded-sm border border-border"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
@@ -195,7 +195,7 @@ export function ProjectStep() {
         <Button
           onClick={handleBack}
           variant="outline"
-          className="px-6 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400"
+          className="px-6 border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Précédent
@@ -204,17 +204,23 @@ export function ProjectStep() {
           onClick={handleNext}
           disabled={!canProceed() || isSubmitting}
           className={cn(
-            "px-8 py-6 text-base font-semibold transition-all",
+            "px-8 py-6 text-base font-semibold transition-all rounded-meetmind-button",
             canProceed() && !isSubmitting
-              ? "text-white shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3),0_2px_4px_-1px_rgba(59,130,246,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(59,130,246,0.4),0_4px_6px_-2px_rgba(59,130,246,0.2)]"
-              : "bg-slate-300 text-slate-500 cursor-not-allowed"
+              ? "text-white bg-meetmind-primary hover:bg-meetmind-soft-blue shadow-[0_4px_6px_-1px_rgba(26,58,255,0.3),0_2px_4px_-1px_rgba(26,58,255,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(26,58,255,0.4),0_4px_6px_-2px_rgba(26,58,255,0.2)]"
+              : "bg-muted text-muted-foreground cursor-not-allowed"
           )}
-          style={canProceed() && !isSubmitting ? {
-            background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)'
-          } : undefined}
         >
-          Suivant
-          <ChevronRight className="ml-2 h-5 w-5" />
+          {isSubmitting ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+              <span className="opacity-80">Continuer</span>
+            </>
+          ) : (
+            <>
+              Continuer
+              <ChevronRight className="ml-2 h-5 w-5" />
+            </>
+          )}
         </Button>
       </div>
     </div>

@@ -10,22 +10,19 @@ export function OnboardingProgress({ currentStep, totalSteps }: OnboardingProgre
   const progress = (currentStep / totalSteps) * 100;
 
   return (
-    <div className="px-6 py-3 bg-slate-50/50">
+    <div className="px-6 py-3 bg-muted/30">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-slate-700">
+        <span className="text-sm font-medium text-foreground">
           Étape {currentStep} sur {totalSteps}
         </span>
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-muted-foreground">
           {Math.round(progress)}%
         </span>
       </div>
-      <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-200">
+      <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full transition-all"
-          style={{
-            width: `${progress}%`,
-            background: 'linear-gradient(90deg, #3B82F6 0%, #6366F1 100%)'
-          }}
+          className="h-full bg-meetmind-primary transition-all"
+          style={{ width: `${progress}%` }}
         />
       </div>
     </div>

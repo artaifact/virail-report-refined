@@ -10,6 +10,17 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 import { onboardingService } from '@/services/onboardingService';
 import { useToast } from '@/hooks/use-toast';
 
+const LLM_MODELS = [
+  { name: 'ChatGPT', logo: '/prompt-model-openai-for-light.svg' },
+  { name: 'Perplexity', logo: '/prompt-model-perplexity.svg' },
+  { name: 'Gemini', logo: '/prompt-model-gemini.svg' },
+  { name: 'Claude', logo: '/prompt-model-claude.svg' },
+  { name: 'Mistral', logo: '/Mistral.png' },
+  { name: 'DeepSeek', logo: '/prompt-model-deepseek.svg' },
+  { name: 'Llama', logo: '/prompt-model-llama.svg' },
+  { name: 'Grok', logo: '/prompt-model-grok.svg' },
+];
+
 interface OnboardingContext {
   status: any;
   refreshStatus: () => Promise<void>;
@@ -95,10 +106,33 @@ export function SetupStep() {
 
   return (
     <div className="space-y-8">
-      <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold text-slate-900">Type de compte</h1>
-        <p className="text-slate-600 text-lg">
-          Optimisez votre présence dans les moteurs génératifs (ChatGPT, Perplexity, Gemini) et mesurez votre visibilité dans leurs réponses
+      {/* Header avec logos LLM */}
+      <div className="text-center space-y-4">
+        {/* Logos des modèles LLM */}
+        <div className="flex items-center justify-center flex-wrap gap-3 mb-2">
+          {LLM_MODELS.map((model) => (
+            <div
+              key={model.name}
+              className="flex flex-col items-center gap-1"
+            >
+              <div className="w-10 h-10 rounded-lg bg-card shadow-sm border border-border flex items-center justify-center p-1.5 hover:shadow-md hover:scale-105 transition-all">
+                <img
+                  src={model.logo}
+                  alt={model.name}
+                  className="w-6 h-6 object-contain"
+                />
+              </div>
+              <span className="text-[10px] text-muted-foreground font-medium">{model.name}</span>
+            </div>
+          ))}
+        </div>
+
+        <h1 className="text-4xl font-bold text-foreground">Bienvenue sur Virail</h1>
+        <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+          Mesurez et optimisez la visibilité de votre marque dans les réponses des <span className="font-semibold text-meetmind-primary">moteurs génératifs IA</span> : ChatGPT, Perplexity, Gemini, Claude et bien d'autres.
+        </p>
+        <p className="text-muted-foreground/70 text-sm">
+          Commençons par configurer votre type de compte
         </p>
       </div>
 
@@ -109,13 +143,9 @@ export function SetupStep() {
             className={cn(
               'relative flex cursor-pointer rounded-xl border-2 p-6 transition-all shadow-sm hover:shadow-md',
               accountType === 'agency'
-                ? 'shadow-lg'
-                : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+                ? 'shadow-lg border-meetmind-primary bg-meetmind-primary/5'
+                : 'border-border bg-card hover:border-muted-foreground/30 hover:shadow-md'
             )}
-            style={accountType === 'agency' ? {
-              borderColor: '#3B82F6',
-              background: 'linear-gradient(135deg, #EFF6FF 0%, #E0E7FF 100%)'
-            } : undefined}
           >
             <RadioGroupItem value="agency" id="agency" className="sr-only" />
             <div className="flex-1">
@@ -125,34 +155,34 @@ export function SetupStep() {
                     <Check className="h-4 w-4 text-white" />
                   </div>
                 ) : (
-                  <div className="h-6 w-6 rounded-full border-2 border-slate-300 flex-shrink-0 mt-0.5" />
+                  <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 flex-shrink-0 mt-0.5" />
                 )}
-                <h3 className="font-bold text-xl text-slate-900">Agence</h3>
+                <h3 className="font-bold text-xl text-foreground">Agence</h3>
               </div>
-              <p className="text-slate-600 mb-5 text-base">
-                Gérez l'optimisation SEO/LLM pour plusieurs marques clientes et suivez leur performance dans les réponses des assistants IA
+              <p className="text-muted-foreground mb-5 text-base">
+                Gérez la visibilité LLM de plusieurs marques clientes et suivez leurs mentions dans ChatGPT, Perplexity, Gemini et Claude.
               </p>
-              <div className="space-y-2.5 pt-2 border-t border-slate-200">
-                <div className="flex items-center gap-2.5 text-sm text-slate-700">
+              <div className="space-y-2.5 pt-2 border-t border-border">
+                <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'agency' ? 'text-meetmind-primary' : 'text-slate-400'
+                    accountType === 'agency' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
                   )} />
-                  <span>Gestion de plusieurs projets SEO/LLM</span>
+                  <span>Suivi multi-clients sur tous les modèles IA</span>
                 </div>
-                <div className="flex items-center gap-2.5 text-sm text-slate-700">
+                <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'agency' ? 'text-meetmind-primary' : 'text-slate-400'
+                    accountType === 'agency' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
                   )} />
-                  <span>Tableaux de bord par client</span>
+                  <span>Tableaux de bord par marque</span>
                 </div>
-                <div className="flex items-center gap-2.5 text-sm text-slate-700">
+                <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'agency' ? 'text-meetmind-primary' : 'text-slate-400'
+                    accountType === 'agency' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
                   )} />
-                  <span>Rapports de performance multi-marques</span>
+                  <span>Rapports de visibilité LLM exportables</span>
                 </div>
               </div>
             </div>
@@ -163,13 +193,9 @@ export function SetupStep() {
             className={cn(
               'relative flex cursor-pointer rounded-xl border-2 p-6 transition-all shadow-sm hover:shadow-md',
               accountType === 'in-house'
-                ? 'shadow-lg'
-                : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+                ? 'shadow-lg border-meetmind-primary bg-meetmind-primary/5'
+                : 'border-border bg-card hover:border-muted-foreground/30 hover:shadow-md'
             )}
-            style={accountType === 'in-house' ? {
-              borderColor: '#3B82F6',
-              background: 'linear-gradient(135deg, #EFF6FF 0%, #E0E7FF 100%)'
-            } : undefined}
           >
             <RadioGroupItem value="in-house" id="in-house" className="sr-only" />
             <div className="flex-1">
@@ -179,34 +205,34 @@ export function SetupStep() {
                     <Check className="h-4 w-4 text-white" />
                   </div>
                 ) : (
-                  <div className="h-6 w-6 rounded-full border-2 border-slate-300 flex-shrink-0 mt-0.5" />
+                  <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 flex-shrink-0 mt-0.5" />
                 )}
-                <h3 className="font-bold text-xl text-slate-900">Interne</h3>
+                <h3 className="font-bold text-xl text-foreground">Interne</h3>
               </div>
-              <p className="text-slate-600 mb-5 text-base">
-                Entreprises optimisant leur propre marque pour apparaître dans les réponses des LLM
+              <p className="text-muted-foreground mb-5 text-base">
+                Optimisez la présence de votre marque dans les réponses de ChatGPT, Perplexity, Gemini et Claude.
               </p>
-              <div className="space-y-2.5 pt-2 border-t border-slate-200">
-                <div className="flex items-center gap-2.5 text-sm text-slate-700">
+              <div className="space-y-2.5 pt-2 border-t border-border">
+                <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'in-house' ? 'text-meetmind-primary' : 'text-slate-400'
+                    accountType === 'in-house' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
                   )} />
-                  <span>Focus sur votre marque unique</span>
+                  <span>Suivi de votre marque sur tous les LLM</span>
                 </div>
-                <div className="flex items-center gap-2.5 text-sm text-slate-700">
+                <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'in-house' ? 'text-meetmind-primary' : 'text-slate-400'
+                    accountType === 'in-house' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
                   )} />
-                  <span>Analytics détaillées de visibilité LLM</span>
+                  <span>Analytics de citations et mentions IA</span>
                 </div>
-                <div className="flex items-center gap-2.5 text-sm text-slate-700">
+                <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'in-house' ? 'text-meetmind-primary' : 'text-slate-400'
+                    accountType === 'in-house' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
                   )} />
-                  <span>Recommandations d'optimisation personnalisées</span>
+                  <span>Recommandations GEO personnalisées</span>
                 </div>
               </div>
             </div>
@@ -224,7 +250,7 @@ export function SetupStep() {
               value={agencyName}
               onChange={(e) => setAgencyName(e.target.value)}
             />
-            <p className="text-xs text-slate-500">Le nom de votre agence qui gérera les projets SEO/LLM</p>
+            <p className="text-xs text-muted-foreground">Le nom de votre agence qui gérera les projets SEO/LLM</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="agency-url">Site web de l'agence</Label>
@@ -234,7 +260,7 @@ export function SetupStep() {
               value={agencyUrl}
               onChange={(e) => setAgencyUrl(e.target.value)}
             />
-            <p className="text-xs text-slate-500">L'URL de votre site web professionnel</p>
+            <p className="text-xs text-muted-foreground">L'URL de votre site web professionnel</p>
           </div>
         </div>
       )}
@@ -247,17 +273,23 @@ export function SetupStep() {
             }}
             disabled={!canProceed() || isSubmitting}
             className={cn(
-              "px-8 py-6 text-base font-semibold transition-all",
+              "px-8 py-6 text-base font-semibold transition-all rounded-meetmind-button",
               canProceed() && !isSubmitting
-                ? "text-white shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3),0_2px_4px_-1px_rgba(59,130,246,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(59,130,246,0.4),0_4px_6px_-2px_rgba(59,130,246,0.2)]"
+                ? "text-white bg-meetmind-primary hover:bg-meetmind-soft-blue shadow-[0_4px_6px_-1px_rgba(26,58,255,0.3),0_2px_4px_-1px_rgba(26,58,255,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(26,58,255,0.4),0_4px_6px_-2px_rgba(26,58,255,0.2)]"
                 : "bg-slate-300 text-slate-500 cursor-not-allowed"
             )}
-            style={canProceed() && !isSubmitting ? {
-              background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)'
-            } : undefined}
           >
-            {isSubmitting ? 'Chargement...' : 'Suivant'}
-            <ChevronRight className="ml-2 h-5 w-5" />
+            {isSubmitting ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                <span className="opacity-80">Continuer</span>
+              </>
+            ) : (
+              <>
+                Continuer
+                <ChevronRight className="ml-2 h-5 w-5" />
+              </>
+            )}
           </Button>
       </div>
     </div>

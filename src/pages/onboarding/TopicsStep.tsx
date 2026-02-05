@@ -1,11 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Check, ChevronRight, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useToast } from '@/hooks/use-toast';
-import { getTopicsBySector, getSectorById } from '@/config/onboardingSectors';
 
 interface OnboardingContext {
   status: any;
@@ -13,43 +12,70 @@ interface OnboardingContext {
   startTimes: Record<number, number>;
 }
 
+// Types de sites simplifiés par secteur
+const SITE_TYPES: Record<string, { id: string; label: string; icon: string; description: string }[]> = {
+  ecommerce: [
+    { id: 'boutique', label: 'Boutique en ligne', icon: '🛍️', description: 'Vente directe de produits' },
+    { id: 'marketplace', label: 'Marketplace', icon: '🏪', description: 'Plateforme multi-vendeurs' },
+    { id: 'dropshipping', label: 'Dropshipping', icon: '📦', description: 'Vente sans stock' },
+    { id: 'subscription', label: 'Box / Abonnement', icon: '📬', description: 'Produits récurrents' },
+    { id: 'b2b', label: 'E-commerce B2B', icon: '🏢', description: 'Vente aux professionnels' },
+    { id: 'luxury', label: 'Luxe / Premium', icon: '💎', description: 'Produits haut de gamme' },
+  ],
+  saas: [
+    { id: 'b2b_saas', label: 'SaaS B2B', icon: '🏢', description: 'Logiciel pour entreprises' },
+    { id: 'b2c_saas', label: 'SaaS B2C', icon: '👤', description: 'Logiciel grand public' },
+    { id: 'api_platform', label: 'Plateforme API', icon: '🔌', description: 'Services pour développeurs' },
+    { id: 'nocode', label: 'No-code / Low-code', icon: '🧩', description: 'Outils sans code' },
+    { id: 'ai_tool', label: 'Outil IA', icon: '🤖', description: 'Intelligence artificielle' },
+    { id: 'productivity', label: 'Productivité', icon: '⚡', description: 'Gestion et organisation' },
+  ],
+  travel: [
+    { id: 'ota', label: 'Agence en ligne', icon: '🌐', description: 'Réservation de voyages' },
+    { id: 'hotel', label: 'Hôtel / Hébergement', icon: '🏨', description: 'Réservation chambres' },
+    { id: 'airline', label: 'Compagnie aérienne', icon: '✈️', description: 'Vols et billets' },
+    { id: 'tour_operator', label: 'Tour opérateur', icon: '🗺️', description: 'Circuits organisés' },
+    { id: 'experience', label: 'Expériences', icon: '🎭', description: 'Activités et visites' },
+    { id: 'rental', label: 'Location', icon: '🚗', description: 'Véhicules et équipements' },
+  ],
+  finance: [
+    { id: 'bank', label: 'Banque', icon: '🏦', description: 'Services bancaires' },
+    { id: 'insurance', label: 'Assurance', icon: '🛡️', description: 'Couverture et protection' },
+    { id: 'fintech', label: 'Fintech', icon: '💳', description: 'Services financiers innovants' },
+    { id: 'crypto', label: 'Crypto / Web3', icon: '🪙', description: 'Actifs numériques' },
+    { id: 'investment', label: 'Investissement', icon: '📈', description: 'Gestion de patrimoine' },
+    { id: 'credit', label: 'Crédit', icon: '💰', description: 'Prêts et financement' },
+  ],
+  default: [
+    { id: 'corporate', label: 'Site corporate', icon: '🏢', description: 'Présentation entreprise' },
+    { id: 'service', label: 'Site de services', icon: '🛠️', description: 'Offre de prestations' },
+    { id: 'media', label: 'Média / Blog', icon: '📰', description: 'Contenu éditorial' },
+    { id: 'community', label: 'Communauté', icon: '👥', description: 'Plateforme sociale' },
+    { id: 'directory', label: 'Annuaire', icon: '📋', description: 'Listing et comparaison' },
+    { id: 'lead_gen', label: 'Génération de leads', icon: '🎯', description: 'Acquisition clients' },
+  ],
+};
+
 export function TopicsStep() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { status, refreshStatus, startTimes } = useOutletContext<OnboardingContext>();
   const { completeStep } = useOnboarding();
   const { toast } = useToast();
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [selectedType, setSelectedType] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Récupérer le secteur depuis les paramètres URL (par défaut: saas)
-  const sectorId = searchParams.get('sector') || 'saas';
-  const sector = getSectorById(sectorId);
-  const topics = useMemo(() => getTopicsBySector(sectorId), [sectorId]);
+  // Récupérer le secteur depuis les paramètres URL (par défaut: ecommerce)
+  const sectorId = searchParams.get('sector') || 'ecommerce';
+  const siteTypes = SITE_TYPES[sectorId] || SITE_TYPES.default;
 
   const getTimeSpent = () => {
     const startTime = startTimes[3] || Date.now();
     return Math.floor((Date.now() - startTime) / 1000);
   };
 
-  const toggleTopic = (topicId: string) => {
-    setSelectedTopics((prev) =>
-      prev.includes(topicId)
-        ? prev.filter((id) => id !== topicId)
-        : [...prev, topicId]
-    );
-  };
-
-  const selectAll = () => {
-    setSelectedTopics(topics.map((t) => t.id));
-  };
-
-  const deselectAll = () => {
-    setSelectedTopics([]);
-  };
-
   const canProceed = () => {
-    return selectedTopics.length > 0;
+    return selectedType !== '';
   };
 
   const handleNext = async () => {
@@ -57,13 +83,12 @@ export function TopicsStep() {
 
     setIsSubmitting(true);
     try {
-      // Sauvegarder l'étape avec les topics sélectionnés
+      // Sauvegarder l'étape avec le type sélectionné
       await completeStep('topics', 3, getTimeSpent());
 
       await refreshStatus();
-      // Passer les topics sélectionnés à l'étape suivante
-      const topicsParam = selectedTopics.join(',');
-      navigate(`/onboarding/prompts?sector=${sectorId}&topics=${topicsParam}`);
+      // Passer le type sélectionné à l'étape suivante
+      navigate(`/onboarding/results?sector=${sectorId}&type=${selectedType}`);
     } catch (error: any) {
       if (error?.message?.includes('403')) {
         navigate('/', { replace: true });
@@ -86,80 +111,44 @@ export function TopicsStep() {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold text-slate-900">Choisissez vos thématiques</h1>
-        <p className="text-slate-600 max-w-xl mx-auto text-lg">
-          Sélectionnez les sujets sur lesquels vous voulez être visible dans les réponses des LLM.
-          {sector && (
-            <span className="block mt-2 text-sm">
-              Thématiques adaptées au secteur <strong>{sector.icon} {sector.label}</strong>
-            </span>
-          )}
+        <h1 className="text-4xl font-bold text-foreground">Quel est votre type de site ?</h1>
+        <p className="text-muted-foreground max-w-xl mx-auto text-lg">
+          Sélectionnez le type qui correspond le mieux à votre activité pour des <span className="font-semibold text-meetmind-primary">recommandations personnalisées</span>.
         </p>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div
-          className="text-sm font-medium px-4 py-2 rounded-lg inline-block"
-          style={{ color: '#3B82F6', backgroundColor: '#EFF6FF' }}
-        >
-          {selectedTopics.length}/{topics.length} sujets sélectionnés
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={selectAll}
-            className="text-xs text-slate-500 hover:text-slate-700 underline"
-          >
-            Tout sélectionner
-          </button>
-          <span className="text-slate-300">|</span>
-          <button
-            onClick={deselectAll}
-            className="text-xs text-slate-500 hover:text-slate-700 underline"
-          >
-            Tout désélectionner
-          </button>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {topics.map((topic) => {
-          const isSelected = selectedTopics.includes(topic.id);
+      <div className="grid grid-cols-2 gap-4">
+        {siteTypes.map((type) => {
+          const isSelected = selectedType === type.id;
           return (
             <div
-              key={topic.id}
+              key={type.id}
               className={cn(
-                'flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all shadow-sm hover:shadow-md',
+                'flex flex-col items-center gap-2 p-5 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md',
                 isSelected
-                  ? 'shadow-md'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
+                  ? 'shadow-lg border-meetmind-primary bg-meetmind-primary/5'
+                  : 'border-border bg-card hover:border-muted-foreground/30'
               )}
-              style={
-                isSelected
-                  ? {
-                      borderColor: '#3B82F6',
-                      background: 'linear-gradient(90deg, #EFF6FF 0%, #E0E7FF 100%)',
-                    }
-                  : undefined
-              }
-              onClick={() => toggleTopic(topic.id)}
+              onClick={() => setSelectedType(type.id)}
             >
-              <div className="flex-shrink-0">
-                {isSelected ? (
-                  <div
-                    className="h-6 w-6 rounded-lg flex items-center justify-center shadow-md"
-                    style={{ backgroundColor: '#3B82F6' }}
-                  >
-                    <Check className="h-4 w-4 text-white" />
-                  </div>
-                ) : (
-                  <div className="h-6 w-6 rounded-lg border-2 border-slate-300 bg-slate-50" />
-                )}
+              <div className="flex items-center gap-3 w-full">
+                <div className="flex-shrink-0">
+                  {isSelected ? (
+                    <div className="h-6 w-6 rounded-full bg-meetmind-primary flex items-center justify-center shadow-md">
+                      <Check className="h-4 w-4 text-white" />
+                    </div>
+                  ) : (
+                    <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30" />
+                  )}
+                </div>
+                <span className="text-2xl">{type.icon}</span>
+                <div className="flex-1">
+                  <span className={cn('font-semibold block', isSelected ? 'text-foreground' : 'text-foreground/80')}>
+                    {type.label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{type.description}</span>
+                </div>
               </div>
-              <span
-                className={cn('flex-1 font-medium', isSelected ? 'text-slate-900' : 'text-slate-700')}
-              >
-                {topic.label}
-              </span>
             </div>
           );
         })}
@@ -169,7 +158,7 @@ export function TopicsStep() {
         <Button
           onClick={handleBack}
           variant="outline"
-          className="px-6 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400"
+          className="px-6 border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Précédent
@@ -178,21 +167,23 @@ export function TopicsStep() {
           onClick={handleNext}
           disabled={!canProceed() || isSubmitting}
           className={cn(
-            'px-8 py-6 text-base font-semibold transition-all',
+            'px-8 py-6 text-base font-semibold transition-all rounded-meetmind-button',
             canProceed() && !isSubmitting
-              ? 'text-white shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3),0_2px_4px_-1px_rgba(59,130,246,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(59,130,246,0.4),0_4px_6px_-2px_rgba(59,130,246,0.2)]'
-              : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+              ? 'text-white bg-meetmind-primary hover:bg-meetmind-soft-blue shadow-[0_4px_6px_-1px_rgba(26,58,255,0.3),0_2px_4px_-1px_rgba(26,58,255,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(26,58,255,0.4),0_4px_6px_-2px_rgba(26,58,255,0.2)]'
+              : 'bg-muted text-muted-foreground cursor-not-allowed'
           )}
-          style={
-            canProceed() && !isSubmitting
-              ? {
-                  background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)',
-                }
-              : undefined
-          }
         >
-          Suivant
-          <ChevronRight className="ml-2 h-5 w-5" />
+          {isSubmitting ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+              <span className="opacity-80">Continuer</span>
+            </>
+          ) : (
+            <>
+              Continuer
+              <ChevronRight className="ml-2 h-5 w-5" />
+            </>
+          )}
         </Button>
       </div>
     </div>

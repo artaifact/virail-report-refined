@@ -129,7 +129,16 @@ export const SessionList: React.FC<SessionListProps> = ({ className }) => {
     );
   }
 
-  const otherSessions = sessions.filter((s) => !s.is_current);
+  // Filtrer pour afficher la session actuelle + les 3 dernières sessions
+  const currentSession = sessions.find((s) => s.is_current);
+  const otherSessions = sessions
+    .filter((s) => !s.is_current)
+    .sort((a, b) => new Date(b.last_seen_at).getTime() - new Date(a.last_seen_at).getTime())
+    .slice(0, 3);
+
+  const displayedSessions = currentSession
+    ? [currentSession, ...otherSessions]
+    : otherSessions;
 
   return (
     <div className={cn('space-y-6', className)}>
@@ -137,7 +146,10 @@ export const SessionList: React.FC<SessionListProps> = ({ className }) => {
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Sessions actives</h2>
           <p className="text-sm text-gray-500">
-            {sessions.length} session{sessions.length > 1 ? 's' : ''} active{sessions.length > 1 ? 's' : ''}
+            {displayedSessions.length} session{displayedSessions.length > 1 ? 's' : ''} affichée{displayedSessions.length > 1 ? 's' : ''}
+            {sessions.length > displayedSessions.length && (
+              <span className="text-muted-foreground"> (sur {sessions.length} au total)</span>
+            )}
           </p>
         </div>
 
@@ -186,7 +198,7 @@ export const SessionList: React.FC<SessionListProps> = ({ className }) => {
       </div>
 
       <div className="space-y-4">
-        {sessions.map((session) => (
+        {displayedSessions.map((session) => (
           <div
             key={session.session_id}
             className={cn(

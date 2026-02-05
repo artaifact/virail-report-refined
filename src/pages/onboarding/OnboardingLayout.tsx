@@ -9,18 +9,16 @@ const STEP_ROUTES: Record<number, string> = {
   1: '/onboarding/setup',
   2: '/onboarding/project',
   3: '/onboarding/topics',
-  4: '/onboarding/prompts',
-  5: '/onboarding/results',
-  6: '/onboarding/plan',
+  4: '/onboarding/results',
+  5: '/onboarding/plan',
 };
 
 const STEP_IDS: Record<number, string> = {
   1: 'setup',
   2: 'project',
   3: 'topics',
-  4: 'prompts',
-  5: 'results',
-  6: 'plan',
+  4: 'results',
+  5: 'plan',
 };
 
 export function OnboardingLayout() {
@@ -88,10 +86,10 @@ export function OnboardingLayout() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderColor: '#3B82F6', borderTopColor: 'transparent' }}></div>
-          <p className="text-gray-600">Chargement de l'onboarding...</p>
+          <div className="w-10 h-10 border-3 border-meetmind-primary/20 border-t-meetmind-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground text-sm">Chargement...</p>
         </div>
       </div>
     );
@@ -105,10 +103,10 @@ export function OnboardingLayout() {
   // Si l'onboarding est complété, ne rien afficher (la redirection est gérée par useEffect)
   if (!status || status.completed) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderColor: '#3B82F6', borderTopColor: 'transparent' }}></div>
-          <p className="text-gray-600">Redirection...</p>
+          <div className="w-10 h-10 border-3 border-meetmind-primary/20 border-t-meetmind-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground text-sm">Redirection...</p>
         </div>
       </div>
     );
@@ -126,14 +124,14 @@ export function OnboardingLayout() {
   const currentStepNumber = getCurrentStepFromUrl();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <OnboardingBreadcrumb
         currentStep={currentStepNumber}
         stepsCompleted={status.steps_completed}
         onNavigate={handleStepNavigation}
       />
-      <OnboardingProgress currentStep={currentStepNumber} totalSteps={6} />
-      
+      <OnboardingProgress currentStep={currentStepNumber} totalSteps={5} />
+
       <div className="flex-1 flex items-center justify-center p-8 overflow-y-auto">
         <div className="w-full max-w-2xl py-8">
           <Outlet context={{ status, refreshStatus, startTimes }} />

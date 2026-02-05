@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronRight, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, ChevronRight, ArrowLeft, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useToast } from '@/hooks/use-toast';
@@ -12,95 +12,101 @@ interface OnboardingContext {
   startTimes: Record<number, number>;
 }
 
-const TOPICS = [
-  { id: 'reputation', label: 'Gestion de la réputation en ligne' },
-  { id: 'marketing', label: 'Marketing digital local' },
-  { id: 'communication', label: 'Solutions de communication omnicanale' },
-  { id: 'publicite', label: 'Stratégies de publicité locale' },
-  { id: 'visibilite', label: 'Visibilité en ligne PME' },
-];
-
-const PROMPTS_BY_TOPIC: Record<string, Array<{ id: string; text: string }>> = {
-  reputation: [
-    { id: 'rep1', text: 'Outils de surveillance de réputation en ligne pour PME' },
-    { id: 'rep2', text: 'Conseils pour une bonne gestion des commentaires clients en ligne' },
-    { id: 'rep3', text: 'Comment protéger l\'image de ma marque sur les réseaux sociaux ?' },
-    { id: 'rep4', text: 'Comment gérer les avis négatifs sur ma fiche Google?' },
-    { id: 'rep5', text: 'Quelles stratégies pour améliorer la e-réputation de mon commerce ?' },
+// Questions simples par type de site
+const QUESTIONS_BY_TYPE: Record<string, { id: string; question: string; icon: string }[]> = {
+  // E-commerce
+  boutique: [
+    { id: 'best', question: 'Meilleure boutique pour acheter [produit]', icon: '🏆' },
+    { id: 'compare', question: 'Comparatif des sites de [produit]', icon: '⚖️' },
+    { id: 'review', question: 'Avis sur [votre marque]', icon: '⭐' },
+    { id: 'delivery', question: 'Livraison rapide [produit]', icon: '🚚' },
+    { id: 'price', question: 'Où acheter [produit] pas cher', icon: '💰' },
   ],
-  marketing: [
-    { id: 'mkt1', text: 'Stratégies de marketing digital pour PME locales' },
-    { id: 'mkt2', text: 'Comment améliorer ma visibilité locale en ligne ?' },
-    { id: 'mkt3', text: 'Outils de marketing digital pour commerces locaux' },
-    { id: 'mkt4', text: 'Techniques de référencement local pour PME' },
-    { id: 'mkt5', text: 'Comment créer une présence digitale locale efficace ?' },
+  marketplace: [
+    { id: 'best', question: 'Meilleure marketplace pour [catégorie]', icon: '🏆' },
+    { id: 'trust', question: 'Marketplace fiable pour acheter', icon: '✅' },
+    { id: 'compare', question: 'Comparatif marketplaces [secteur]', icon: '⚖️' },
+    { id: 'seller', question: 'Vendre sur quelle marketplace', icon: '🏪' },
+    { id: 'fees', question: 'Frais des marketplaces', icon: '💳' },
   ],
-  communication: [
-    { id: 'com1', text: 'Solutions de communication omnicanale pour PME' },
-    { id: 'com2', text: 'Comment unifier ma communication sur tous les canaux ?' },
-    { id: 'com3', text: 'Outils de communication multicanale' },
-    { id: 'com4', text: 'Stratégies de communication intégrée' },
-    { id: 'com5', text: 'Comment gérer la cohérence de ma communication ?' },
+  dropshipping: [
+    { id: 'supplier', question: 'Meilleurs fournisseurs dropshipping', icon: '📦' },
+    { id: 'niche', question: 'Produits tendance dropshipping', icon: '🔥' },
+    { id: 'platform', question: 'Plateforme dropshipping recommandée', icon: '🛒' },
+    { id: 'margin', question: 'Marges dropshipping rentables', icon: '💰' },
+    { id: 'start', question: 'Comment débuter en dropshipping', icon: '🚀' },
   ],
-  publicite: [
-    { id: 'pub1', text: 'Stratégies de publicité locale pour PME' },
-    { id: 'pub2', text: 'Comment cibler ma publicité localement ?' },
-    { id: 'pub3', text: 'Outils de publicité locale en ligne' },
-    { id: 'pub4', text: 'Techniques de publicité géolocalisée' },
-    { id: 'pub5', text: 'Comment optimiser mon budget publicitaire local ?' },
+  subscription: [
+    { id: 'best', question: 'Meilleure box [catégorie]', icon: '📬' },
+    { id: 'compare', question: 'Comparatif box par abonnement', icon: '⚖️' },
+    { id: 'review', question: 'Avis box [votre marque]', icon: '⭐' },
+    { id: 'cancel', question: 'Box sans engagement', icon: '🔓' },
+    { id: 'gift', question: 'Box cadeau à offrir', icon: '🎁' },
   ],
-  visibilite: [
-    { id: 'vis1', text: 'Comment améliorer ma visibilité en ligne en tant que PME ?' },
-    { id: 'vis2', text: 'Stratégies de visibilité digitale pour commerces locaux' },
-    { id: 'vis3', text: 'Outils pour augmenter la visibilité en ligne' },
-    { id: 'vis4', text: 'Techniques de référencement local' },
-    { id: 'vis5', text: 'Comment apparaître dans les résultats de recherche locaux ?' },
+  b2b: [
+    { id: 'supplier', question: 'Fournisseur B2B [secteur]', icon: '🏢' },
+    { id: 'wholesale', question: 'Grossiste [produit] professionnel', icon: '📦' },
+    { id: 'quote', question: 'Devis [produit] entreprise', icon: '📋' },
+    { id: 'bulk', question: 'Achat en gros [produit]', icon: '🛒' },
+    { id: 'partner', question: 'Partenaire B2B fiable', icon: '🤝' },
+  ],
+  luxury: [
+    { id: 'auth', question: 'Acheter [marque luxe] authentique', icon: '✨' },
+    { id: 'best', question: 'Meilleur site luxe en ligne', icon: '🏆' },
+    { id: 'review', question: 'Avis [marque luxe]', icon: '⭐' },
+    { id: 'new', question: 'Nouveautés [marque luxe]', icon: '🆕' },
+    { id: 'outlet', question: '[Marque luxe] outlet officiel', icon: '💎' },
+  ],
+  // SaaS
+  b2b_saas: [
+    { id: 'best', question: 'Meilleur logiciel [fonction]', icon: '🏆' },
+    { id: 'compare', question: 'Comparatif [type logiciel]', icon: '⚖️' },
+    { id: 'alternative', question: 'Alternative à [concurrent]', icon: '🔄' },
+    { id: 'pricing', question: 'Prix [type logiciel]', icon: '💰' },
+    { id: 'review', question: 'Avis [votre produit]', icon: '⭐' },
+  ],
+  // Default
+  default: [
+    { id: 'best', question: 'Meilleur [votre service]', icon: '🏆' },
+    { id: 'compare', question: 'Comparatif [votre secteur]', icon: '⚖️' },
+    { id: 'review', question: 'Avis sur [votre marque]', icon: '⭐' },
+    { id: 'price', question: 'Prix [votre service]', icon: '💰' },
+    { id: 'near', question: '[Votre service] près de chez moi', icon: '📍' },
   ],
 };
 
 export function PromptsStep() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { status, refreshStatus, startTimes } = useOutletContext<OnboardingContext>();
   const { completeStep } = useOnboarding();
   const { toast } = useToast();
-  const [selectedPrompts, setSelectedPrompts] = useState<string[]>([]);
-  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
+  const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Récupérer les topics sélectionnés depuis l'étape précédente
-  // Pour l'instant, on affiche tous les topics, mais idéalement on devrait les récupérer depuis le contexte ou le store
-  const selectedTopics = ['reputation', 'marketing', 'communication', 'publicite', 'visibilite']; // TODO: Récupérer depuis l'étape précédente
+  // Récupérer le type depuis l'étape précédente
+  const siteType = searchParams.get('type') || 'default';
+  const questions = QUESTIONS_BY_TYPE[siteType] || QUESTIONS_BY_TYPE.default;
 
   const getTimeSpent = () => {
     const startTime = startTimes[4] || Date.now();
     return Math.floor((Date.now() - startTime) / 1000);
   };
 
-  const togglePrompt = (promptId: string) => {
-    setSelectedPrompts((prev) =>
-      prev.includes(promptId)
-        ? prev.filter((id) => id !== promptId)
-        : [...prev, promptId]
+  const toggleQuestion = (questionId: string) => {
+    setSelectedQuestions((prev) =>
+      prev.includes(questionId)
+        ? prev.filter((id) => id !== questionId)
+        : [...prev, questionId]
     );
   };
 
-  const toggleTopicExpansion = (topicId: string) => {
-    setExpandedTopics((prev) => ({
-      ...prev,
-      [topicId]: !prev[topicId],
-    }));
-  };
-
-  const getSelectedPromptsCount = () => {
-    return selectedPrompts.length;
-  };
-
-  const getTotalPromptsCount = () => {
-    return Object.values(PROMPTS_BY_TOPIC).flat().length;
+  const selectAll = () => {
+    setSelectedQuestions(questions.map((q) => q.id));
   };
 
   const canProceed = () => {
-    return selectedPrompts.length > 0;
+    return selectedQuestions.length > 0;
   };
 
   const handleNext = async () => {
@@ -109,9 +115,6 @@ export function PromptsStep() {
     setIsSubmitting(true);
     try {
       await completeStep('prompts', 4, getTimeSpent());
-
-      // TODO: Sauvegarder les prompts sélectionnés dans onboarding_data
-
       await refreshStatus();
       navigate('/onboarding/results');
     } catch (error: any) {
@@ -136,88 +139,71 @@ export function PromptsStep() {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold text-slate-900">Sélectionnez vos prompts de test</h1>
-        <p className="text-slate-600 text-lg">
-          Choisissez les questions que nous utiliserons pour évaluer la visibilité de votre marque dans les LLM. Ces prompts représentent les requêtes réelles que vos prospects pourraient poser aux assistants IA pour trouver vos services.
+        <div className="w-14 h-14 rounded-2xl bg-meetmind-primary/10 flex items-center justify-center mx-auto mb-4">
+          <Search className="w-7 h-7 text-meetmind-primary" />
+        </div>
+        <h1 className="text-4xl font-bold text-foreground">Quelles questions tester ?</h1>
+        <p className="text-muted-foreground max-w-xl mx-auto text-lg">
+          Sélectionnez les recherches que vos clients font dans <span className="font-semibold text-meetmind-primary">ChatGPT, Perplexity, Gemini</span>...
         </p>
       </div>
 
-      <div className="text-sm font-medium mb-6 px-4 py-2 rounded-lg inline-block" style={{ color: '#3B82F6', backgroundColor: '#EFF6FF' }}>
-        {getSelectedPromptsCount()}/{getTotalPromptsCount()} prompts sélectionnés
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium px-4 py-2 rounded-lg bg-meetmind-primary/10 text-meetmind-primary">
+          {selectedQuestions.length}/{questions.length} sélectionnées
+        </div>
+        <button
+          onClick={selectAll}
+          className="text-sm text-meetmind-primary hover:text-meetmind-soft-blue font-medium"
+        >
+          Tout sélectionner
+        </button>
       </div>
 
       <div className="space-y-3">
-        {TOPICS.filter((topic) => selectedTopics.includes(topic.id)).map((topic) => {
-          const prompts = PROMPTS_BY_TOPIC[topic.id] || [];
-          const isExpanded = expandedTopics[topic.id];
-          const topicPromptsSelected = prompts.filter((p) => selectedPrompts.includes(p.id)).length;
-
+        {questions.map((q) => {
+          const isSelected = selectedQuestions.includes(q.id);
           return (
-            <div key={topic.id} className="border-2 border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden">
-              <button
-                onClick={() => toggleTopicExpansion(topic.id)}
-                className="w-full flex items-center justify-between p-5 hover:bg-slate-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  {isExpanded ? (
-                    <ChevronDown className="h-5 w-5" style={{ color: '#3B82F6' }} />
-                  ) : (
-                    <ChevronUp className="h-5 w-5 text-slate-400" />
-                  )}
-                  <span className="font-semibold text-slate-900">{topic.label}</span>
-                  <span className="text-sm font-medium px-2.5 py-1 rounded-full" style={{ color: '#3B82F6', backgroundColor: '#EFF6FF' }}>
-                    {topicPromptsSelected}/{prompts.length}
-                  </span>
-                </div>
-              </button>
-
-              {isExpanded && (
-                <div className="border-t border-slate-200 bg-slate-50/50 p-5 space-y-3">
-                  {prompts.map((prompt) => {
-                    const isSelected = selectedPrompts.includes(prompt.id);
-                    return (
-                      <div
-                        key={prompt.id}
-                        className={cn(
-                          'flex items-center gap-4 p-4 rounded-lg cursor-pointer transition-all',
-                          isSelected
-                            ? 'bg-white border-2 border-meetmind-primary shadow-md'
-                            : 'bg-white border-2 border-slate-200 hover:border-slate-300 hover:shadow-sm'
-                        )}
-                        onClick={() => togglePrompt(prompt.id)}
-                      >
-                        <div className="flex-shrink-0">
-                          {isSelected ? (
-                            <div className="h-5 w-5 rounded-lg bg-meetmind-primary flex items-center justify-center shadow-sm">
-                              <Check className="h-3.5 w-3.5 text-white" />
-                            </div>
-                          ) : (
-                            <div className="h-5 w-5 rounded-lg border-2 border-slate-300 bg-slate-50" />
-                          )}
-                        </div>
-                        <span className={cn(
-                          "flex-1 text-sm",
-                          isSelected ? 'text-slate-900 font-medium' : 'text-slate-700'
-                        )}>{prompt.text}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+            <div
+              key={q.id}
+              className={cn(
+                'flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all',
+                isSelected
+                  ? 'shadow-md border-meetmind-primary bg-meetmind-primary/5'
+                  : 'border-border bg-card hover:border-muted-foreground/30 hover:shadow-sm'
               )}
+              onClick={() => toggleQuestion(q.id)}
+            >
+              <div className="flex-shrink-0">
+                {isSelected ? (
+                  <div className="h-6 w-6 rounded-full bg-meetmind-primary flex items-center justify-center shadow-md">
+                    <Check className="h-4 w-4 text-white" />
+                  </div>
+                ) : (
+                  <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30" />
+                )}
+              </div>
+              <span className="text-xl">{q.icon}</span>
+              <span className={cn(
+                'flex-1 font-medium',
+                isSelected ? 'text-foreground' : 'text-foreground/70'
+              )}>
+                "{q.question}"
+              </span>
             </div>
           );
         })}
       </div>
 
-      <button className="text-sm font-medium flex items-center gap-2 transition-colors" style={{ color: '#3B82F6' }} onMouseEnter={(e) => e.currentTarget.style.color = '#2563EB'} onMouseLeave={(e) => e.currentTarget.style.color = '#3B82F6'}>
-        <span className="text-lg">+</span> Ajouter un prompt personnalisé
-      </button>
+      <p className="text-sm text-muted-foreground text-center">
+        Vous pourrez personnaliser ces questions avec votre marque après l'onboarding
+      </p>
 
       <div className="flex items-center justify-between pt-6">
         <Button
           onClick={handleBack}
           variant="outline"
-          className="px-6 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400"
+          className="px-6 border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Précédent
@@ -226,20 +212,25 @@ export function PromptsStep() {
           onClick={handleNext}
           disabled={!canProceed() || isSubmitting}
           className={cn(
-            "px-8 py-6 text-base font-semibold transition-all",
+            'px-8 py-6 text-base font-semibold transition-all rounded-meetmind-button',
             canProceed() && !isSubmitting
-              ? "text-white shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3),0_2px_4px_-1px_rgba(59,130,246,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(59,130,246,0.4),0_4px_6px_-2px_rgba(59,130,246,0.2)]"
-              : "bg-slate-300 text-slate-500 cursor-not-allowed"
+              ? 'text-white bg-meetmind-primary hover:bg-meetmind-soft-blue shadow-[0_4px_6px_-1px_rgba(26,58,255,0.3),0_2px_4px_-1px_rgba(26,58,255,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(26,58,255,0.4),0_4px_6px_-2px_rgba(26,58,255,0.2)]'
+              : 'bg-muted text-muted-foreground cursor-not-allowed'
           )}
-          style={canProceed() && !isSubmitting ? {
-            background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)'
-          } : undefined}
         >
-          Suivant
-          <ChevronRight className="ml-2 h-5 w-5" />
+          {isSubmitting ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+              <span className="opacity-80">Continuer</span>
+            </>
+          ) : (
+            <>
+              Continuer
+              <ChevronRight className="ml-2 h-5 w-5" />
+            </>
+          )}
         </Button>
       </div>
     </div>
   );
 }
-

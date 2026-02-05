@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { ChevronRight, ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, Crown, Zap, Sparkles, CreditCard } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useToast } from '@/hooks/use-toast';
 import { usePayment } from '@/hooks/usePayment';
+import { apiService } from '@/services/apiService';
 
 interface OnboardingContext {
   status: any;
@@ -20,11 +21,38 @@ export function PlanStep() {
   const { completeStep, completeOnboarding } = useOnboarding();
   const { toast } = useToast();
   const { plans, loadPaymentData } = usePayment();
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('free');
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   useEffect(() => {
     loadPaymentData();
+  }, []);
+
+  // Vérifier si on revient d'un paiement réussi
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+
+    if (success === 'true') {
+      // Nettoyer l'URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Compléter l'onboarding automatiquement
+      handleComplete();
+
+      toast({
+        title: 'Paiement réussi !',
+        description: 'Votre abonnement a été activé.',
+      });
+    } else if (urlParams.get('canceled') === 'true') {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      toast({
+        title: 'Paiement annulé',
+        description: 'Vous pouvez réessayer ou choisir un autre plan.',
+      });
+    }
   }, []);
 
   const getTimeSpent = () => {
@@ -37,14 +65,14 @@ export function PlanStep() {
   const handleComplete = async () => {
     setIsSubmitting(true);
     try {
-      await completeStep('plan', 6, getTimeSpent());
-      const allStepsCompleted = ['setup', 'project', 'topics', 'prompts', 'results', 'plan'];
+      await completeStep('plan', 5, getTimeSpent());
+      const allStepsCompleted = ['setup', 'project', 'topics', 'results', 'plan'];
       await completeOnboarding(allStepsCompleted, getTimeSpent());
       await refreshStatus();
-      
+
       toast({
-        title: 'Onboarding terminé !',
-        description: 'Bienvenue sur Viraill !',
+        title: 'Bienvenue sur Virail !',
+        description: 'Votre compte est prêt.',
       });
 
       navigate('/', { replace: true });
@@ -63,171 +91,285 @@ export function PlanStep() {
     }
   };
 
+  const handleSelectPlan = () => {
+    if (selectedPlanId === 'free') {
+      // Plan gratuit - terminer directement
+      handleComplete();
+    } else {
+      // Plan payant - ouvrir le dialog de paiement
+      setIsPaymentDialogOpen(true);
+    }
+  };
+
+  const handlePayment = async () => {
+    if (!selectedPlanId || selectedPlanId === 'free') return;
+
+    setIsProcessingPayment(true);
+    try {
+      const selectedPlan = plans.find(p => p.id === selectedPlanId);
+      if (!selectedPlan) {
+        throw new Error('Plan non trouvé');
+      }
+
+      // Créer la Checkout Session côté backend
+      const response = await apiService.createCheckoutSession(
+        selectedPlanId,
+        `${window.location.origin}/onboarding/plan?success=true&plan_id=${selectedPlanId}`,
+        `${window.location.origin}/onboarding/plan?canceled=true`
+      );
+
+      // Extraire l'URL de checkout de la réponse
+      const checkoutUrl = response.subscription?.checkout_url;
+      const subscriptionId = response.subscription?.subscription?.id;
+
+      if (checkoutUrl && checkoutUrl.startsWith('http')) {
+        // Sauvegarder l'ID d'abonnement pour l'activation
+        if (subscriptionId) {
+          try { localStorage.setItem('pending_subscription_id', subscriptionId); } catch {}
+        }
+
+        // Rediriger vers Stripe pour le paiement
+        window.location.href = checkoutUrl;
+      } else {
+        throw new Error('URL de paiement non disponible');
+      }
+
+    } catch (error) {
+      console.error('Erreur lors de la création de la session de paiement:', error);
+      toast({
+        title: 'Erreur de paiement',
+        description: error instanceof Error ? error.message : 'Erreur inattendue',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
   const handleBack = () => {
     navigate('/onboarding/results');
   };
 
-  const formatPriceClean = (price: number) => {
-    const currency = import.meta.env.VITE_CURRENCY_SYMBOL || '€';
+  const formatPrice = (price: number) => {
     if (price === 0) return 'Gratuit';
-    const cleanPrice = price % 1 === 0 ? Math.floor(price) : price;
-    return `${cleanPrice}${currency}`;
+    return `${price}€`;
+  };
+
+  const getPlanIcon = (planId: string) => {
+    switch (planId) {
+      case 'free':
+        return <Zap className="w-6 h-6" />;
+      case 'standard':
+        return <Sparkles className="w-6 h-6" />;
+      case 'premium':
+      case 'pro':
+        return <Crown className="w-6 h-6" />;
+      default:
+        return <Zap className="w-6 h-6" />;
+    }
   };
 
   if (plans.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderColor: '#3B82F6', borderTopColor: 'transparent' }}></div>
-          <p className="text-slate-600">Chargement des plans...</p>
+          <div className="w-10 h-10 border-3 border-meetmind-primary/20 border-t-meetmind-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground text-sm">Chargement des plans...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-8">
       <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold text-slate-900">
-          Choisissez votre plan
-        </h1>
-        <p className="text-slate-600 text-lg">
-          Commencez gratuitement ou choisissez un plan adapté à vos besoins
+        <h1 className="text-4xl font-bold text-foreground">Choisissez votre plan</h1>
+        <p className="text-muted-foreground text-lg">
+          Commencez gratuitement ou débloquez plus de fonctionnalités
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-        {plans.map((plan) => {
-          const isSelected = selectedPlan === plan.id;
+      <div className="grid gap-4">
+        {plans.slice(0, 3).map((plan) => {
+          const isSelected = selectedPlanId === plan.id;
           const isRecommended = plan.id === 'standard';
-          
+
           return (
-            <Card
+            <div
               key={plan.id}
               className={cn(
-                'relative cursor-pointer transition-all duration-200',
+                'relative flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all',
                 isSelected
-                  ? 'border-2 shadow-lg'
-                  : 'border border-slate-200 hover:border-slate-300 hover:shadow-md'
+                  ? 'shadow-lg border-meetmind-primary bg-meetmind-primary/5'
+                  : 'border-border bg-card hover:border-muted-foreground/30 hover:shadow-sm'
               )}
-              style={isSelected ? {
-                borderColor: '#3B82F6'
-              } : undefined}
-              onClick={() => setSelectedPlan(plan.id)}
+              onClick={() => setSelectedPlanId(plan.id)}
             >
+              {/* Badge recommandé */}
               {isRecommended && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  <div className="text-white px-4 py-1 rounded-full text-xs font-semibold" style={{
-                    background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)'
-                  }}>
+                <div className="absolute -top-3 left-6">
+                  <span className="text-xs font-semibold text-white bg-meetmind-primary px-3 py-1 rounded-full">
                     Recommandé
-                  </div>
+                  </span>
                 </div>
               )}
 
-              <CardHeader className="text-center pb-4 pt-8">
-                <h3 className="text-xl font-bold text-slate-900 mb-3">
-                  {plan.name}
-                </h3>
-                
-                <div className="flex items-baseline justify-center gap-1 mb-4">
-                  <span className="text-4xl font-bold text-slate-900">
-                    {formatPriceClean(plan.price)}
+              {/* Radio */}
+              <div className="flex-shrink-0">
+                {isSelected ? (
+                  <div className="h-6 w-6 rounded-full bg-meetmind-primary flex items-center justify-center shadow-md">
+                    <Check className="h-4 w-4 text-white" />
+                  </div>
+                ) : (
+                  <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30" />
+                )}
+              </div>
+
+              {/* Icône */}
+              <div className={cn(
+                'w-12 h-12 rounded-xl flex items-center justify-center',
+                isSelected ? 'bg-meetmind-primary/10 text-meetmind-primary' : 'bg-muted text-muted-foreground'
+              )}>
+                {getPlanIcon(plan.id)}
+              </div>
+
+              {/* Contenu */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-foreground">{plan.name}</span>
+                </div>
+                <div className="flex items-center gap-4 mt-1">
+                  <span className="text-sm text-muted-foreground">
+                    {(plan as any).maxAnalyses === -1 ? 'Analyses illimitées' : `${(plan as any).maxAnalyses || 0} analyses/mois`}
                   </span>
-                  {plan.price > 0 && (
-                    <span className="text-slate-500 text-sm">
-                      /{plan.interval === 'month' ? 'mois' : 'an'}
-                    </span>
-                  )}
+                  <span className="text-sm text-muted-foreground">•</span>
+                  <span className="text-sm text-muted-foreground">
+                    {(plan as any).maxReports === -1 ? 'Rapports illimités' : `${(plan as any).maxReports || 0} rapports/mois`}
+                  </span>
                 </div>
-              </CardHeader>
+              </div>
 
-              <CardContent className="space-y-4 pb-6">
-                {/* Quotas principaux */}
-                <div className="space-y-2 pb-3 border-b border-slate-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Analyses</span>
-                    <span className="font-semibold text-slate-900">
-                      {(plan as any).max_analyses === -1 ? 'Illimité' : `${(plan as any).max_analyses || 0}/mois`}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Rapports</span>
-                    <span className="font-semibold text-slate-900">
-                      {(plan as any).max_reports === -1 ? 'Illimité' : `${(plan as any).max_reports || 0}/mois`}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Fonctionnalités */}
-                <div className="space-y-2">
-                  {plan.features.slice(0, 4).map((feature, index) => (
-                    <div key={index} className="flex items-start gap-2 text-sm">
-                      <Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: '#3B82F6' }} />
-                      <span className="text-slate-700">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Bouton */}
-                <Button
-                  className={cn(
-                    "w-full font-semibold transition-all mt-4",
-                    isSelected
-                      ? "text-white shadow-lg"
-                      : "bg-slate-100 hover:bg-slate-200 text-slate-900"
-                  )}
-                  style={isSelected ? {
-                    background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)'
-                  } : undefined}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPlan(plan.id);
-                  }}
-                >
-                  {isSelected ? (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      Sélectionné
-                    </>
-                  ) : (
-                    'Sélectionner'
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
+              {/* Prix */}
+              <div className="text-right">
+                <span className={cn(
+                  'text-2xl font-bold',
+                  isSelected ? 'text-meetmind-primary' : 'text-foreground'
+                )}>
+                  {formatPrice(plan.price)}
+                </span>
+                {plan.price > 0 && (
+                  <span className="text-sm text-muted-foreground">/mois</span>
+                )}
+              </div>
+            </div>
           );
         })}
       </div>
 
-      <div className="flex items-center justify-between pt-8">
+      {/* Features du plan sélectionné */}
+      {selectedPlanId && (
+        <div className="p-5 rounded-xl bg-muted/50 border border-border">
+          <p className="text-sm font-medium text-foreground mb-3">
+            Inclus dans {plans.find(p => p.id === selectedPlanId)?.name} :
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {plans.find(p => p.id === selectedPlanId)?.features.slice(0, 6).map((feature, index) => (
+              <div key={index} className="flex items-center gap-2 text-sm">
+                <Check className="h-4 w-4 text-meetmind-green-accent flex-shrink-0" />
+                <span className="text-muted-foreground">{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between pt-6">
         <Button
           onClick={handleBack}
           variant="outline"
-          className="px-8 py-6 text-base font-semibold border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400"
+          className="px-6 border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
         >
-          <ArrowLeft className="mr-2 h-5 w-5" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Précédent
         </Button>
         <Button
-          onClick={handleComplete}
+          onClick={handleSelectPlan}
           disabled={isSubmitting}
           className={cn(
-            "px-10 py-6 text-base font-bold transition-all",
+            "px-8 py-6 text-base font-semibold transition-all rounded-meetmind-button",
             !isSubmitting
-              ? "text-white shadow-[0_8px_16px_-4px_rgba(59,130,246,0.4)] hover:shadow-[0_16px_24px_-8px_rgba(59,130,246,0.5)] hover:scale-105"
-              : "bg-slate-300 text-slate-500 cursor-not-allowed"
+              ? "text-white bg-meetmind-primary hover:bg-meetmind-soft-blue shadow-[0_4px_6px_-1px_rgba(26,58,255,0.3),0_2px_4px_-1px_rgba(26,58,255,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(26,58,255,0.4),0_4px_6px_-2px_rgba(26,58,255,0.2)]"
+              : "bg-muted text-muted-foreground cursor-not-allowed"
           )}
-          style={!isSubmitting ? {
-            background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)'
-          } : undefined}
         >
-          {isSubmitting ? 'Finalisation...' : 'Terminer l\'onboarding'}
-          {!isSubmitting && <ChevronRight className="ml-2 h-5 w-5" />}
+          {isSubmitting ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+              <span className="opacity-80">Finalisation</span>
+            </>
+          ) : (
+            <>
+              {selectedPlanId === 'free' ? 'Commencer gratuitement' : `Choisir ${plans.find(p => p.id === selectedPlanId)?.name}`}
+            </>
+          )}
         </Button>
       </div>
+
+      {/* Dialog de paiement Stripe */}
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-meetmind-primary" />
+              Finaliser le paiement
+            </DialogTitle>
+            <DialogDescription>
+              Abonnement au plan {plans.find(p => p.id === selectedPlanId)?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl bg-muted/50 border border-border">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-foreground">
+                  {plans.find(p => p.id === selectedPlanId)?.name}
+                </span>
+                <span className="font-bold text-meetmind-primary">
+                  {formatPrice(plans.find(p => p.id === selectedPlanId)?.price || 0)}/mois
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Vous allez être redirigé vers la page de paiement sécurisée Stripe
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsPaymentDialogOpen(false)}
+                className="flex-1 border-border"
+                disabled={isProcessingPayment}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handlePayment}
+                disabled={isProcessingPayment}
+                className="flex-1 bg-meetmind-primary hover:bg-meetmind-soft-blue text-white"
+              >
+                {isProcessingPayment ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    Redirection...
+                  </>
+                ) : (
+                  'Payer maintenant'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-

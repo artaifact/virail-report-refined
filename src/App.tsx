@@ -46,7 +46,6 @@ import { OnboardingLayout } from "./pages/onboarding/OnboardingLayout";
 import { SetupStep } from "./pages/onboarding/SetupStep";
 import { ProjectStep } from "./pages/onboarding/ProjectStep";
 import { TopicsStep } from "./pages/onboarding/TopicsStep";
-import { PromptsStep } from "./pages/onboarding/PromptsStep";
 import { ResultsStep } from "./pages/onboarding/ResultsStep";
 import { PlanStep } from "./pages/onboarding/PlanStep";
 
@@ -194,7 +193,6 @@ const App = () => (
                 <Route path="setup" element={<SetupStep />} />
                 <Route path="project" element={<ProjectStep />} />
                 <Route path="topics" element={<TopicsStep />} />
-                <Route path="prompts" element={<PromptsStep />} />
                 <Route path="results" element={<ResultsStep />} />
                 <Route path="plan" element={<PlanStep />} />
               </Route>
