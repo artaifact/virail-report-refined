@@ -104,7 +104,6 @@ const Pricing: React.FC = () => {
               await loadPaymentData();
               
             } catch (error) {
-              console.error('❌ Erreur lors du test d\'activation:', error);
               toast({
                 title: "❌ Erreur d'activation",
                 description: error instanceof Error ? error.message : "Erreur inattendue",

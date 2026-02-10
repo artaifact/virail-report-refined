@@ -6,7 +6,7 @@ export default function ProjectOnboardingDemo() {
   const [isOpen, setIsOpen] = useState(true);
 
   const handleComplete = (data: any) => {
-    console.log('Onboarding terminé:', data);
+    //console.log('Onboarding terminé:', data);
     setIsOpen(false);
     alert('Onboarding terminé! Vérifiez la console pour voir les données.');
   };

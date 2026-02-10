@@ -52,6 +52,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import * as React from "react"
+import { NotificationBell } from "./NotificationBell"
 
 export function AppSidebar() {
   const location = useLocation()
@@ -153,6 +154,7 @@ export function AppSidebar() {
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">{domainName || "Virail Studio"}</span>
                   </div>
+                  <NotificationBell />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent

@@ -156,7 +156,6 @@ export const runCompetitiveAnalysis = async (url: string): Promise<CompetitiveAn
         if (enriched) {
           result = enriched;
         } else {
-          console.warn('⚠️ Données enrichies non disponibles pour le moment, retour d\'un résultat minimal.');
           // Construire un résultat minimal pour éviter un faux message d'erreur côté UI
           result = {
             id: cleanId,
@@ -182,7 +181,6 @@ export const runCompetitiveAnalysis = async (url: string): Promise<CompetitiveAn
 
       return result;
     } catch (mappingError) {
-      console.warn('⚠️ Impossible de mapper les données API:', mappingError);
      //console.log('📊 Données API reçues:', JSON.stringify(apiData, null, 2));
     }
     
@@ -238,7 +236,6 @@ export const runCompetitiveAnalysis = async (url: string): Promise<CompetitiveAn
     return result;
     
   } catch (error) {
-    console.error('Erreur lors du chargement des données concurrentielles:', error);
     throw new Error('Impossible de charger les données d\'analyse concurrentielle');
   }
 };
@@ -380,7 +377,6 @@ export const getCompetitiveAnalyses = async (): Promise<CompetitiveAnalysisResul
    //console.log('📡 Réponse API competitors/summary:', response.status, response.statusText);
 
     if (!response.ok) {
-      console.warn('⚠️ Erreur lors de la récupération des analyses API, fallback vers localStorage');
       // Fallback vers localStorage en cas d'erreur API
       return getLocalStorageAnalyses();
     }
@@ -398,7 +394,6 @@ export const getCompetitiveAnalyses = async (): Promise<CompetitiveAnalysisResul
       // Compat: anciens formats
       analyses = apiData.analyses.map(mapApiAnalysisToResult);
     } else {
-      console.warn('⚠️ Format de réponse API non reconnu (summary)', typeof apiData);
       return getLocalStorageAnalyses();
     }
 
@@ -408,7 +403,6 @@ export const getCompetitiveAnalyses = async (): Promise<CompetitiveAnalysisResul
     return analyses;
 
   } catch (error) {
-    console.error('❌ Erreur lors de la récupération des analyses API:', error);
     // Fallback vers localStorage en cas d'erreur réseau
     return getLocalStorageAnalyses();
   }
@@ -462,7 +456,6 @@ export const getCompetitiveAnalysisById = async (id: string): Promise<Competitiv
    //console.log('📡 Réponse API competitors/' + cleanId + ':', response.status, response.statusText);
 
     if (!response.ok) {
-      console.warn(`⚠️ Erreur lors de la récupération de l'analyse ${id}, fallback vers cache local`);
       // Fallback vers la recherche dans le cache local
       const analyses = await getCompetitiveAnalyses();
       return analyses.find(analysis => analysis.id === id) || null;
@@ -511,7 +504,6 @@ export const getCompetitiveAnalysisById = async (id: string): Promise<Competitiv
     return analysisResult;
 
   } catch (error) {
-    console.error('❌ Erreur lors de la récupération de l\'analyse spécifique:', error);
     // Fallback vers la recherche dans le cache local
     const analyses = getLocalStorageAnalyses();
     return analyses.find(analysis => analysis.id === id) || null;
@@ -538,7 +530,6 @@ export const deleteCompetitiveAnalysis = async (id: string): Promise<void> => {
     
    //console.log('🗑️ Analyse supprimée du cache local:', id);
   } catch (error) {
-    console.error('❌ Erreur lors de la suppression de l\'analyse:', error);
     throw error;
   }
 };

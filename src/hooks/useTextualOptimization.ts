@@ -84,7 +84,6 @@ export const useTextualOptimization = (optimizationId?: string): UseTextualOptim
       });
       
     } catch (err) {
-      console.error('❌ Erreur lors du chargement de l\'optimisation:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement de l\'optimisation');
     } finally {
       setIsLoading(false);

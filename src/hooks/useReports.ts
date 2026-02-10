@@ -24,7 +24,6 @@ export function useReports() {
       setReports(reportsList);
     } catch (err) {
       setError('Erreur lors du chargement des rapports');
-      console.error('Erreur loadReports:', err);
     } finally {
       setLoading(false);
     }
@@ -85,7 +84,6 @@ export function useReports() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur lors du lancement de l\'analyse';
       setError(message);
-      console.error('Erreur createAnalysis:', err);
       throw err;
     }
   };
@@ -109,29 +107,24 @@ export function useReport(reportId: string | null) {
 
   const loadReport = async () => {
     if (!reportId) {
-      console.log('⚠️ useReport: Aucun reportId fourni');
       setReport(null);
       setLoading(false);
       return;
     }
 
     try {
-      console.log('🔄 useReport: Chargement du rapport avec ID:', reportId);
       setLoading(true);
       setError(null);
       const reportData = await fetchReport(reportId);
       
       if (reportData) {
-        console.log('✅ useReport: Rapport chargé avec succès:', reportData);
         setReport(reportData);
       } else {
-        console.warn('⚠️ useReport: Aucune donnée retournée par fetchReport');
         setError('Aucune donnée retournée par le serveur');
         setReport(null);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement du rapport';
-      console.error('❌ useReport: Erreur:', err);
       setError(errorMessage);
       setReport(null);
     } finally {
@@ -177,7 +170,6 @@ export function useAnalysisStatus(reportId: string, intervalMs: number = 2000) {
           }
         }
       } catch (err) {
-        console.error('Erreur lors de la vérification du statut:', err);
         setIsPolling(false);
       }
     }, intervalMs);

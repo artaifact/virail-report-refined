@@ -48,7 +48,6 @@ export function OnboardingLayout() {
       const targetStep = status.current_step || 1;
       const targetRoute = STEP_ROUTES[targetStep] || STEP_ROUTES[1];
       if (currentPath !== targetRoute) {
-        console.log('📍 Redirecting from /onboarding to step', targetStep);
         navigate(targetRoute, { replace: true });
       }
       return;

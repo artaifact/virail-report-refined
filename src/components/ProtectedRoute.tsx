@@ -34,7 +34,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         setOnboardingStatus(status);
       } catch (error) {
         // En cas d'erreur, on considère que l'onboarding n'est pas complété
-        console.error('Erreur lors de la vérification du statut d\'onboarding:', error);
         setOnboardingStatus(null);
       } finally {
         setIsCheckingOnboarding(false);

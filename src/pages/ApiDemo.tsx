@@ -60,7 +60,6 @@ const ApiDemo = () => {
       });
 
     } catch (error) {
-      console.error('Erreur test fetchReport:', error);
       setResult({
         type: 'fetchReport',
         success: false,
@@ -105,7 +104,6 @@ const ApiDemo = () => {
       });
 
     } catch (error) {
-      console.error('Erreur test startAnalysis:', error);
       setResult({
         type: 'startAnalysis',
         success: false,
@@ -150,7 +148,6 @@ const ApiDemo = () => {
       });
 
     } catch (error) {
-      console.error('Erreur test listReports:', error);
       setResult({
         type: 'listReports',
         success: false,
@@ -208,7 +205,6 @@ const ApiDemo = () => {
       });
 
     } catch (error) {
-      console.error('Erreur workflow complet:', error);
       setResult({
         type: 'fullWorkflow',
         success: false,
@@ -241,7 +237,6 @@ const ApiDemo = () => {
         description: 'Appel principal + métadonnées en parallèle'
       }]);
     } catch (error) {
-      console.error('Erreur appels parallèles:', error);
       setResults(prev => [...prev, {
         type: 'Parallèle (2 appels simultanés)',
         duration: 'Erreur',
@@ -271,7 +266,6 @@ const ApiDemo = () => {
         description: 'Analyse → puis optimisation basée sur résultats'
       }]);
     } catch (error) {
-      console.error('Erreur appels séquentiels:', error);
       setResults(prev => [...prev, {
         type: 'Séquentiel (2ème dépend du 1er)',
         duration: 'Erreur',
@@ -305,7 +299,6 @@ const ApiDemo = () => {
         description: 'Sélection automatique de la meilleure stratégie'
       }]);
     } catch (error) {
-      console.error('Erreur analyse optimisée:', error);
       setResults(prev => [...prev, {
         type: 'Auto-optimisé (sélection intelligente)',
         duration: 'Erreur',

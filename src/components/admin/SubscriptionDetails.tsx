@@ -45,7 +45,6 @@ export function SubscriptionDetails({ subscriptionId, onBack, className = '' }: 
       const data = await AdminService.getSubscriptionById(subscriptionId);
       setSubscription(data);
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'abonnement:', error);
     } finally {
       setLoading(false);
     }

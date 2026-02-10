@@ -161,7 +161,6 @@ export interface FullReportData {
 export async function fetchReport(reportId: string): Promise<FullReportData | null> {
   try {
     const url = `${API_BASE_URL}/llmo/reports/${reportId}`;
-    console.log('📡 Appel API pour récupérer le rapport:', url);
     
     // Utiliser AuthService.makeAuthenticatedRequest comme dans LLMODashboard
     const response = await AuthService.makeAuthenticatedRequest(url, {
@@ -198,16 +197,13 @@ export async function fetchReport(reportId: string): Promise<FullReportData | nu
           break;
       }
 
-      console.error('❌ Erreur API:', errorMessage);
       throw new Error(errorMessage);
     }
 
     const data: FullReportData = await response.json();
-    console.log('✅ Données du rapport récupérées avec succès:', data);
     return data;
 
   } catch (error) {
-    console.error('❌ Erreur lors de la récupération du rapport:', error);
     return null;
   }
 }
@@ -299,7 +295,6 @@ export async function startAnalysisStream(
     throw new Error('Analyse terminée sans événement analysis_completed');
   } catch (error) {
     if (error instanceof Error) throw error;
-    console.error('❌ Erreur lors du stream d\'analyse:', error);
     return null;
   }
 }
@@ -432,7 +427,6 @@ export async function startAnalysisStreamWithContext(
       streamingContext.failSession(sessionId, error.message);
       throw error;
     }
-    console.error('❌ Erreur lors du stream d\'analyse:', error);
     streamingContext.failSession(sessionId, 'Erreur inconnue');
     return null;
   }
@@ -477,7 +471,6 @@ export async function startAnalysis(url: string): Promise<{ reportId: string; st
     }
 
     if (!metadataResponse.ok) {
-      console.warn('⚠️ Métadonnées non disponibles, continuons avec l\'analyse principale');
     }
 
     // Traiter les réponses
@@ -498,7 +491,6 @@ export async function startAnalysis(url: string): Promise<{ reportId: string; st
     return result;
     
   } catch (error) {
-    console.error('❌ Erreur lors du lancement de l\'analyse optimisée:', error);
     return null;
   }
 }
@@ -572,7 +564,6 @@ export async function startAnalysisSequential(
     }
     
     if (!optimizationData) {
-      console.warn('⚠️ Aucune optimisation n\'a réussi, résultats de base conservés');
     }
     
     // Retourner les résultats combinés
@@ -586,7 +577,6 @@ export async function startAnalysisSequential(
     return result;
     
   } catch (error) {
-    console.error('❌ Erreur lors de l\'analyse séquentielle:', error);
     return null;
   }
 }
@@ -645,7 +635,6 @@ export async function startAnalysisExtended(
     return result;
     
   } catch (error) {
-    console.error('❌ Erreur lors de l\'analyse étendue:', error);
     return null;
   }
 }
@@ -692,7 +681,6 @@ export async function startAnalysisSimple(
     return result;
     
   } catch (error) {
-    console.error('❌ Erreur lors de l\'analyse simple:', error);
     return null;
   }
 }
@@ -714,7 +702,6 @@ export async function checkAnalysisStatus(reportId: string): Promise<{ status: s
       progress
     };
   } catch (error) {
-    console.error('Erreur lors de la vérification du statut:', error);
     return null;
   }
 }
@@ -833,7 +820,6 @@ export async function listReports(): Promise<ReportResponse[]> {
     }));
     
   } catch (error) {
-    console.error('❌ Erreur réseau ou autre, utilisation des données mock', error);
     // Fallback vers les données mock en cas d'erreur réseau
     return getMockReports();
   }
@@ -902,7 +888,6 @@ export async function startCustomAnalysis(params: {
       include_competitor_analysis: params.include_competitor_analysis ?? true
     };
 
-    console.log('🚀 Lancement de l\'analyse personnalisée:', payload);
 
     const response = await fetchWithAuth(`${API_BASE_URL}/analyze`, {
       method: 'POST',
@@ -924,7 +909,6 @@ export async function startCustomAnalysis(params: {
       data
     };
   } catch (error) {
-    console.error('❌ Erreur lors de l\'analyse personnalisée:', error);
     return null;
   }
 }
@@ -972,7 +956,6 @@ export async function startOptimizedAnalysis(
     
     return await startAnalysis(url);
   } catch (error) {
-    console.error('❌ Erreur dans startOptimizedAnalysis, fallback vers analyse simple:', error);
     return await startAnalysisSimple(url, { model });
   }
 } 

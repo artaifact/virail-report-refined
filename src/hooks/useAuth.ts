@@ -48,7 +48,6 @@ export function useAuth() {
           });
         }
       } catch (error) {
-        console.error('Erreur lors de l\'initialisation de l\'authentification:', error);
         if (!cancelled) {
           setAuthState({
             user: null,

@@ -116,7 +116,6 @@ export default function AdminWaitlist() {
           setSummary(stats);
         }
       } catch (e) {
-        console.error(e);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -135,7 +134,6 @@ export default function AdminWaitlist() {
         const isAdmin = await AdminService.checkAdminPrivileges();
         setHasAdminAccess(isAdmin);
       } catch (error) {
-        console.error('❌ Erreur lors de la vérification des privilèges admin:', error);
         setHasAdminAccess(false);
       } finally {
         setAdminLoading(false);

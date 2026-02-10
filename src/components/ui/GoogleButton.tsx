@@ -16,7 +16,6 @@ export function GoogleButton({ isLoading = false, className = "" }: GoogleButton
      //console.log('✅ Redirection Google initiée');
     } catch (error) {
       // L'erreur est déjà gérée dans le hook useAuth
-      console.error('❌ Erreur lors de la connexion Google:', error);
     }
   };
 

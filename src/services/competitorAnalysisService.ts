@@ -470,10 +470,6 @@ export const mapApiResponseToCompetitorAnalysisResponse = (apiData: any): Compet
     ? apiData.analysis_metadata.include_benchmark 
     : !!apiData.benchmark_results; // Si benchmark_results existe, c'est qu'il a été demandé
     
-  if (hasBenchmarkError) {
-    console.warn('⚠️ Erreur de benchmark détectée (non bloquant):', hasBenchmarkError);
-  }
-  
   const analysisMetadata = {
     min_score: 0.3,
     min_mentions: 1,
@@ -563,15 +559,9 @@ export const getCompetitorAnalysisById = async (analysisId: number): Promise<Com
     const data = await response.json();
     ////console.log('✅ Analyse récupérée:', data);
     
-    // Logger un avertissement si le benchmark a échoué mais ne pas bloquer l'analyse
-    if (data.benchmark_results?.error) {
-      console.warn('⚠️ Erreur de benchmark dans l\'analyse existante (non bloquant):', data.benchmark_results.error);
-    }
-    
     // Mapper les données de l'API vers le format attendu
     return mapApiResponseToCompetitorAnalysisResponse(data);
   } catch (error) {
-    console.error('❌ Erreur lors de la récupération:', error);
     throw error;
   }
 };
@@ -751,13 +741,11 @@ export const getCompetitorAnalysisFromReport = async (reportId: string | number)
     }
 
     const data = await response.json();
-    console.log('📊 Données du rapport reçues:', data);
 
     // Vérifier si analyse_concurrentielle_v1 existe (peut être à la racine ou dans le report)
     const analyseConcurrentielle = data.analyse_concurrentielle_v1 || data.competitor_analysis;
 
     if (!analyseConcurrentielle) {
-      console.warn('⚠️ Aucune donnée analyse_concurrentielle_v1 trouvée dans le rapport');
       return null;
     }
 
@@ -767,7 +755,6 @@ export const getCompetitorAnalysisFromReport = async (reportId: string | number)
     // Mapper vers le format CompetitorAnalysisResponse
     return mapAnalyseConcurrentielleV1ToResponse(id, analyseConcurrentielle);
   } catch (error) {
-    console.error('❌ Erreur lors de la récupération du rapport:', error);
     throw error;
   }
 };
@@ -784,8 +771,6 @@ export const mapAnalyseConcurrentielleV1ToResponse = (
   const competitors = analysisData.competitors || [];
   const stats = analysisData.stats || {};
   const modelsUsed = stats.models_used || [];
-
-  console.log('🔄 Mapping analyse_concurrentielle_v1:', { competitors: competitors.length, stats });
 
   // Créer consolidated_competitors depuis competitors
   const consolidatedCompetitors: ConsolidatedCompetitor[] = competitors.map((comp: any, index: number) => ({
@@ -956,7 +941,6 @@ export const listCompetitorAnalysesFromReports = async (): Promise<CompetitorAna
       total_competitors_found: 0
     }));
   } catch (error) {
-    console.error('❌ Erreur lors de la liste des rapports:', error);
     throw error;
   }
 };

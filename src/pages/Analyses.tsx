@@ -158,7 +158,6 @@ const Analyses = () => {
 
     } catch (error) {
       if (progressInterval) clearInterval(progressInterval);
-      console.error("Erreur lors de l'analyse:", error);
       setIsAnalyzing(false);
       setProgress(0);
 
@@ -241,7 +240,6 @@ const Analyses = () => {
       }, 1000);
 
     } catch (error) {
-      console.error("Erreur lors de l'analyse optimisée:", error);
       setIsOptimizedAnalyzing(false);
       setOptimizedProgress(0);
 

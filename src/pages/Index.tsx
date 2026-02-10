@@ -1217,7 +1217,6 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
     try {
       localStorage.setItem(storageKey, JSON.stringify(newProgress));
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde dans localStorage:', error);
     }
   };
 
@@ -1276,7 +1275,6 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
     try {
       localStorage.setItem(storageKey, JSON.stringify(newProgress));
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
     }
   };
 
@@ -1296,7 +1294,6 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
     try {
       localStorage.setItem(storageKey, JSON.stringify(newProgress));
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
     }
   };
 
@@ -1727,11 +1724,10 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
               <h4 className="section-subtitle" style={{ color: '#2563EB', fontSize: '16px', fontWeight: 600, marginBottom: '14px' }}>KPI à Suivre</h4>
               <ul className="kpi-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {['Score de visibilité dans les moteurs génératifs', 'Taux d\'indexation par les crawlers IA', 'Qualité des données structurées', 'Performance d\'accessibilité', 'Score de conformité GEO'].map((item, i) => (
-                  <li 
-                    key={i} 
+                  <li
+                    key={i}
                     onClick={() => {
                       // Handler pour le clic - peut être étendu plus tard
-                      console.log(`KPI cliqué: ${item}`);
                     }}
                     style={{ 
                       display: 'flex', 
@@ -1765,11 +1761,10 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
               <h4 className="section-subtitle" style={{ color: '#2563EB', fontSize: '16px', fontWeight: 600, marginBottom: '14px' }}>Outils Monitoring</h4>
               <ul className="tools-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {['Google Search Console', 'Bing Webmaster Tools', 'Schema.org Validator', 'Lighthouse Performance'].map((item, i) => (
-                  <li 
-                    key={i} 
+                  <li
+                    key={i}
                     onClick={() => {
                       // Handler pour le clic - peut être étendu plus tard
-                      console.log(`Outil cliqué: ${item}`);
                     }}
                     style={{ 
                       display: 'flex', 
@@ -2147,7 +2142,6 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
       // Vérifier competitor_analysis OU competitors (selon le format de l'API)
       const competitorData = reportData.competitor_analysis || (reportData as any).competitors;
       if (competitorData) {
-        console.log('📊 Source: competitor_analysis/competitors du rapport /llmo/reports/:id');
         const mappedAnalysis = mapApiResponseToCompetitorAnalysisResponse(competitorData);
         setCompetitorAnalysis(mappedAnalysis);
 
@@ -2156,7 +2150,6 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
           const firstModel = mappedAnalysis.models_analysis?.[0]?.model_info?.display_name ||
                             mappedAnalysis.models_analysis?.[0]?.model_info?.model_name || '';
           if (firstModel) {
-            console.log('🎯 Définition du modèle par défaut (Source 1):', firstModel);
             setSelectedModel(firstModel);
           }
         }
@@ -2169,7 +2162,6 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
 
       try {
         setLoadingCompetitors(true);
-        console.log('🔍 Source: Recherche manuelle par URL (fallback)');
         const analyses = await listCompetitorAnalyses();
 
         const reportUrl = reportUrlValue.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^www\./, '');
@@ -2192,16 +2184,14 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
           setCompetitorAnalysis(fullAnalysis);
           
           if (!selectedModel && fullAnalysis.models_analysis && fullAnalysis.models_analysis.length > 0) {
-            const firstModel = fullAnalysis.models_analysis[0].model_info?.display_name || 
+            const firstModel = fullAnalysis.models_analysis[0].model_info?.display_name ||
                               fullAnalysis.models_analysis[0].model_info?.model_name || '';
             if (firstModel) {
-              console.log('🎯 Définition du modèle par défaut (Source 2):', firstModel);
               setSelectedModel(firstModel);
             }
           }
         }
       } catch (error) {
-        console.error('Erreur lors du chargement de l\'analyse concurrentielle:', error);
       } finally {
         setLoadingCompetitors(false);
       }
@@ -2224,12 +2214,10 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
     if (modelNames.length > 0) {
       // Si rien n'est sélectionné, on prend le premier
       if (!selectedModel) {
-        console.log('🎯 Init: Sélection du premier modèle disponible:', modelNames[0]);
         setSelectedModel(modelNames[0]);
-      } 
+      }
       // Si ce qui est sélectionné n'existe plus dans la liste actuelle, on reset au premier
       else if (!modelNames.includes(selectedModel)) {
-        console.log('⚠️ Modèle actuel non trouvé, reset vers:', modelNames[0]);
         setSelectedModel(modelNames[0]);
       }
     }
@@ -2302,10 +2290,9 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
         <h3 className="text-xl font-bold text-slate-900">Analyse concurrentielle</h3>
         <div className="model-selector">
           <span className="selector-label">Modèle:</span>
-          <Select 
-            value={selectedModel} 
+          <Select
+            value={selectedModel}
             onValueChange={(val) => {
-              console.log('🔄 Manuel: Changement de modèle vers:', val);
               setSelectedModel(val);
             }}
             disabled={loadingCompetitors || competitorModels.length === 0}
@@ -2770,16 +2757,6 @@ const Index = () => {
   // On prend le dernier rapport de la liste (le plus récemment créé selon l'ordre de l'API)
   const reportId = explicitReportId || (reports.length > 0 ? reports[reports.length - 1].id : null);
   
-  // Debug: afficher le reportId dans la console
-  useEffect(() => {
-    if (explicitReportId) {
-      console.log('📋 ReportId trouvé (explicite):', explicitReportId);
-    } else if (reportId) {
-      console.log('📋 ReportId trouvé (fallback):', reportId);
-    } else {
-      console.log('⚠️ Aucun reportId disponible (ni URL/State, ni liste)');
-    }
-  }, [explicitReportId, reportId]);
   
   // Charger les données du rapport depuis l'API
   const { report: reportData, loading: reportLoading, error } = useReport(reportId);

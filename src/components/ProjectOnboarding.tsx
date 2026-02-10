@@ -177,7 +177,6 @@ export function ProjectOnboarding({ open, onComplete, onClose }: ProjectOnboardi
 
       await onboardingService.saveAccountData(apiData);
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde des données d\'onboarding:', error);
       // Ne pas bloquer l'utilisateur en cas d'erreur
     }
   };

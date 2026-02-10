@@ -14,6 +14,7 @@ import { StreamingProvider } from "@/contexts/StreamingContext";
 import { StreamingNotification } from "@/components/StreamingNotification";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
 import { OnboardingProvider } from "@/components/OnboardingProvider";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import Index from "./pages/Index";
 import Analyses from "./pages/Analyses";
 import Audience from "./pages/Audience";
@@ -200,9 +201,11 @@ const App = () => (
               {/* Routes protégées */}
               <Route path="/*" element={
                 <ProtectedRoute>
-                  <OnboardingProvider>
-                    <MainLayout />
-                  </OnboardingProvider>
+                  <NotificationProvider>
+                    <OnboardingProvider>
+                      <MainLayout />
+                    </OnboardingProvider>
+                  </NotificationProvider>
                 </ProtectedRoute>
               } />
             </Routes>

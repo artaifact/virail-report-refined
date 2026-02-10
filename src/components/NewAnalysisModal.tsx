@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { startAnalysisStreamWithContext } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Globe, Search, BarChart3 } from "lucide-react";
+import { Globe, Search, BarChart3 } from "lucide-react";
+import { modelLogos } from "@/components/ModelLogosCarousel";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ModelLogosCarousel } from "@/components/ModelLogosCarousel";
@@ -130,7 +131,15 @@ export function NewAnalysisModal({ open, onOpenChange }: NewAnalysisModalProps) 
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-slate-900">Analyse GEO</h4>
-                    <p className="text-xs text-slate-600 mt-0.5">Vérification sur GPT-5, et Gemini.</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-slate-600">Vérification sur</span>
+                      <div className="flex items-center gap-1.5">
+                        <img src={modelLogos['openai']} alt="OpenAI" className="h-4 w-4 object-contain" />
+                        <img src={modelLogos['gemini']} alt="Gemini" className="h-4 w-4 object-contain" />
+                        <img src={modelLogos['claude']} alt="Claude" className="h-4 w-4 object-contain" />
+                        <img src={modelLogos['perplexity']} alt="Perplexity" className="h-4 w-4 object-contain" />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 transition-colors hover:bg-slate-100/50">
@@ -156,10 +165,16 @@ export function NewAnalysisModal({ open, onOpenChange }: NewAnalysisModalProps) 
               )}
             >
               {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin text-blue-600" />
-                  Analyse en cours...
-                </>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 overflow-hidden w-24">
+                    <div className="flex gap-2 animate-[slide_2s_linear_infinite]">
+                      {Object.entries(modelLogos).slice(0, 6).map(([key, src]) => (
+                        <img key={key} src={src} alt={key} className="h-5 w-5 object-contain flex-shrink-0" />
+                      ))}
+                    </div>
+                  </div>
+                  <span>Analyse en cours...</span>
+                </div>
               ) : (
                 "Lancer l'analyse complète"
               )}

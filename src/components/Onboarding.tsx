@@ -204,10 +204,6 @@ export function Onboarding({ open, onClose }: OnboardingProps) {
         stepIndex = Math.max(0, Math.min((status.current_step || 1) - 1, ONBOARDING_STEPS.length - 1));
       }
       
-      console.log('Initial step index:', stepIndex, 'from status:', {
-        current_step: status.current_step,
-        steps_completed: status.steps_completed
-      });
       setCurrentStepIndex(stepIndex);
     }
     
@@ -265,17 +261,16 @@ export function Onboarding({ open, onClose }: OnboardingProps) {
         
         // Passer à l'étape suivante (même si l'API a échoué, on continue pour ne pas bloquer)
         const nextIndex = Math.min(currentStepIndex + 1, ONBOARDING_STEPS.length - 1);
-        console.log('Moving to next step:', nextIndex, 'from current:', currentStepIndex);
+        //console.log('Moving to next step:', nextIndex, 'from current:', currentStepIndex);
         setCurrentStepIndex(nextIndex);
       }
     } catch (error) {
-      console.error('Erreur lors du passage à l\'étape suivante:', error);
       // En cas d'erreur, continuer quand même pour ne pas bloquer l'utilisateur
       if (isLastStep) {
         onClose();
       } else {
         const nextIndex = Math.min(currentStepIndex + 1, ONBOARDING_STEPS.length - 1);
-        console.log('Error occurred, moving to next step anyway:', nextIndex);
+        //console.log('Error occurred, moving to next step anyway:', nextIndex);
         setCurrentStepIndex(nextIndex);
       }
     }
@@ -297,15 +292,14 @@ export function Onboarding({ open, onClose }: OnboardingProps) {
     if (isClosing) return; // Empêcher les clics multiples
     
     setIsClosing(true);
-    console.log('handleSkip called');
+    //console.log('handleSkip called');
     try {
       await skipOnboarding('user_choice');
-      console.log('skipOnboarding completed, calling onClose');
+      //console.log('skipOnboarding completed, calling onClose');
       onClose();
     } catch (error) {
-      console.error('Erreur lors de l\'ignorance de l\'onboarding:', error);
       // Fermer quand même le dialog même en cas d'erreur
-      console.log('Closing dialog despite error');
+      //console.log('Closing dialog despite error');
       onClose();
     } finally {
       setIsClosing(false);

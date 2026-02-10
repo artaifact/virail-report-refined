@@ -143,7 +143,6 @@ const Competition = () => {
         try {
           analyses = await listCompetitorAnalysesFromReports();
         } catch (reportsError) {
-          console.log('📋 Fallback vers l\'ancien endpoint /api/v1/competitors/analyses');
         }
 
         // Si pas de résultats depuis /llmo/reports, utiliser l'ancien endpoint
@@ -153,7 +152,6 @@ const Competition = () => {
 
         setCompetitorAnalyses(analyses);
       } catch (error) {
-        console.error('Erreur lors du chargement des analyses:', error);
       } finally {
         setLoadingSavedAnalyses(false);
       }
@@ -205,7 +203,6 @@ const Competition = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Une erreur inconnue est survenue';
 
-      console.error('❌ Erreur dans handleStartAnalysis:', error);
  
       setError(errorMessage);
 
@@ -233,7 +230,6 @@ const Competition = () => {
       try {
         analysis = await getCompetitorAnalysisFromReport(analysisId);
       } catch (reportError) {
-        console.log('📋 Fallback vers l\'ancien endpoint /api/v1/competitors/analyses');
       }
 
       // Si pas de données depuis /llmo/reports, utiliser l'ancien endpoint
@@ -253,7 +249,6 @@ const Competition = () => {
         description: `Analyse de ${extractDomain(analysis.url)} chargée avec succès`
       });
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'analyse:', error);
       toast({
         title: "Erreur de chargement",
         description: "Une erreur est survenue lors du chargement",
@@ -565,11 +560,6 @@ const Competition = () => {
                     const testResult = canUseFeature('competitor_analysis');
                     const featureLimits = usageLimits?.can_use_competitor_analysis;
                    //console.log('📊 Résultat test:', testResult);
-                   //console.log('📋 Détails complets:', {
-                      canUseFeature: testResult,
-                      featureLimits,
-                      usageLimits: usageLimits
-                    });
                     alert(`canUseFeature: ${testResult}\nLimits: ${JSON.stringify(featureLimits, null, 2)}`);
                   }}
                   size="sm"
@@ -612,7 +602,6 @@ const Competition = () => {
                       }
                     } catch (error) {
                       alert('❌ Erreur de réseau - Vérifiez votre connexion');
-                      console.error('❌ Erreur de test de session:', error);
                     }
                   }}
                   size="sm"

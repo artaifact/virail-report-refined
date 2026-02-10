@@ -66,7 +66,7 @@ export function OnboardingTour({ enabled, onComplete, onSkip }: OnboardingTourPr
         });
         
         if (missingElements.length > 0) {
-          console.warn('OnboardingTour: Éléments manquants:', missingElements);
+          //console.warn('OnboardingTour: Éléments manquants:', missingElements);
         }
         
         return missingElements.length === 0;
@@ -145,7 +145,7 @@ export function OnboardingTour({ enabled, onComplete, onSkip }: OnboardingTourPr
             // Vérifier que l'élément existe et est visible
             const element = document.querySelector('[data-onboarding="menu-item-analyses-geo"]');
             if (!element) {
-              console.warn('OnboardingTour: Élément menu-item-analyses-geo non trouvé');
+              //console.warn('OnboardingTour: Élément menu-item-analyses-geo non trouvé');
             }
             // S'assurer qu'on est sur la page d'accueil
             if (location.pathname !== '/') {
@@ -341,7 +341,7 @@ export function OnboardingTour({ enabled, onComplete, onSkip }: OnboardingTourPr
         // Les callbacks sont définis dans chaque étape individuellement
         onDestroyStarted: (element, step, options) => {
           // Quand l'utilisateur ferme le tour explicitement (bouton fermer)
-          console.log('OnboardingTour: Tour fermé par l\'utilisateur', { element, step, options });
+          //console.log('OnboardingTour: Tour fermé par l\'utilisateur', { element, step, options });
           // S'assurer que c'est bien une action utilisateur et pas une fermeture automatique
           if (onSkip) {
             onSkip();
@@ -349,7 +349,7 @@ export function OnboardingTour({ enabled, onComplete, onSkip }: OnboardingTourPr
         },
         onDestroyed: (element, step, options) => {
           // Tour terminé (seulement si l'utilisateur a cliqué sur "Suivant" jusqu'à la fin)
-          console.log('OnboardingTour: Tour terminé', { element, step, options });
+          //console.log('OnboardingTour: Tour terminé', { element, step, options });
           // Vérifier que le tour s'est bien terminé naturellement (dernière étape)
           if (onComplete) {
             onComplete();
@@ -358,7 +358,7 @@ export function OnboardingTour({ enabled, onComplete, onSkip }: OnboardingTourPr
         // Callback pour empêcher la fermeture automatique lors d'un clic en dehors
         onDeselected: (element, step, options) => {
           // Ne rien faire - empêcher toute action automatique lors de la désélection
-          console.log('OnboardingTour: Élément désélectionné', { element, step, options });
+          //console.log('OnboardingTour: Élément désélectionné', { element, step, options });
         },
       });
 
@@ -366,33 +366,33 @@ export function OnboardingTour({ enabled, onComplete, onSkip }: OnboardingTourPr
 
       // Vérifier les éléments avant de démarrer
       if (!verifySteps()) {
-        console.warn('OnboardingTour: Certains éléments sont manquants, le tour peut avoir des problèmes');
+        //console.warn('OnboardingTour: Certains éléments sont manquants, le tour peut avoir des problèmes');
         // Attendre un peu plus pour que les éléments se chargent
         setTimeout(() => {
           // Vérifier à nouveau que l'onboarding est toujours activé
           if (!enabled) {
-            console.log('OnboardingTour: Tour désactivé avant le démarrage après vérification');
+            //console.log('OnboardingTour: Tour désactivé avant le démarrage après vérification');
             return;
           }
           if (verifySteps()) {
-            console.log('OnboardingTour: Démarrage du tour après vérification des éléments');
+            //console.log('OnboardingTour: Démarrage du tour après vérification des éléments');
             driverObj.drive();
           } else {
-            console.error('OnboardingTour: Impossible de démarrer le tour, éléments manquants');
+            //console.error('OnboardingTour: Impossible de démarrer le tour, éléments manquants');
             // Démarrer quand même - Driver.js gérera les éléments manquants
             driverObj.drive();
           }
         }, 500);
       } else {
         // Démarrer le tour - l'utilisateur devra cliquer sur "Suivant" pour passer à l'étape suivante
-        console.log('OnboardingTour: Démarrage du tour - le tour attendra un clic utilisateur à chaque étape');
+        //console.log('OnboardingTour: Démarrage du tour - le tour attendra un clic utilisateur à chaque étape');
         driverObj.drive();
         
         // Protection supplémentaire : vérifier que le tour est toujours actif après le démarrage
         setTimeout(() => {
           if (driverObjRef.current && enabled) {
             // Le tour est actif et attend un clic utilisateur
-            console.log('OnboardingTour: Tour actif et en attente d\'interaction utilisateur');
+            //console.log('OnboardingTour: Tour actif et en attente d\'interaction utilisateur');
           }
         }, 1000);
       }
@@ -414,7 +414,7 @@ export function OnboardingTour({ enabled, onComplete, onSkip }: OnboardingTourPr
     const timer = setTimeout(() => {
       // Vérifier que l'onboarding est toujours activé avant de démarrer
       if (!enabled) {
-        console.log('OnboardingTour: Tour désactivé avant le démarrage');
+        //console.log('OnboardingTour: Tour désactivé avant le démarrage');
         return;
       }
 
@@ -423,11 +423,11 @@ export function OnboardingTour({ enabled, onComplete, onSkip }: OnboardingTourPr
         // Réessayer après 2 secondes supplémentaires
         retryTimerRef.current = setTimeout(() => {
           if (!enabled) {
-            console.log('OnboardingTour: Tour désactivé pendant la vérification');
+            //console.log('OnboardingTour: Tour désactivé pendant la vérification');
             return;
           }
           if (!checkElements()) {
-            console.warn('OnboardingTour: Some elements not found, starting anyway');
+            //console.warn('OnboardingTour: Some elements not found, starting anyway');
           }
           startTour();
           retryTimerRef.current = null;

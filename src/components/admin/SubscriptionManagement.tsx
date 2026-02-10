@@ -65,7 +65,6 @@ export function SubscriptionManagement({ onSubscriptionSelect, className = '' }:
       setSubscriptions(response.subscriptions);
       setTotalPages(response.total_pages);
     } catch (error) {
-      console.error('Erreur lors du chargement des abonnements:', error);
     } finally {
       setLoading(false);
     }
@@ -77,7 +76,6 @@ export function SubscriptionManagement({ onSubscriptionSelect, className = '' }:
       const statsData = await AdminService.getSubscriptionsStats();
       setStats(statsData);
     } catch (error) {
-      console.error('Erreur lors du chargement des statistiques:', error);
     }
   };
 

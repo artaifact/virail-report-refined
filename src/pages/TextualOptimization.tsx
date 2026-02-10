@@ -128,7 +128,6 @@ const TextualOptimization: React.FC = () => {
         description: "Optimisation créée avec succès",
       });
     } catch (error) {
-      console.error('Erreur lors de la création de l\'optimisation:', error);
       toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la création de l'optimisation",

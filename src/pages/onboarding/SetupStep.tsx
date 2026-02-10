@@ -46,29 +46,22 @@ export function SetupStep() {
   const canProceed = () => {
     if (accountType === 'agency') {
       const result = agencyName.trim() !== '' && agencyUrl.trim() !== '';
-      console.log('✅ canProceed (agency):', result, { agencyName, agencyUrl });
       return result;
     }
-    console.log('✅ canProceed (in-house): true');
     return true;
   };
 
   const handleNext = async () => {
-    console.log('🚀 handleNext called', { accountType, agencyName, agencyUrl, canProceed: canProceed() });
     
     if (!canProceed()) {
-      console.warn('⚠️ Cannot proceed - validation failed');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      console.log('📝 Saving step...');
       // Sauvegarder l'étape
       await completeStep('setup', 1, getTimeSpent());
-      console.log('✅ Step completed');
 
-      console.log('💾 Saving account data...');
       // Sauvegarder les données de compte
       await onboardingService.saveAccountData({
         account_type: accountType === 'agency' ? 'agency' : 'in_house',
@@ -78,19 +71,13 @@ export function SetupStep() {
         location_country_code: 'FR',
         onboarding_step: 'project',
       });
-      console.log('✅ Account data saved');
 
-      console.log('🔄 Refreshing status...');
       await refreshStatus();
-      console.log('✅ Status refreshed');
       
-      console.log('🧭 Navigating to /onboarding/project');
       navigate('/onboarding/project');
     } catch (error: any) {
-      console.error('❌ Error in handleNext:', error);
       if (error?.message?.includes('403')) {
         // Onboarding déjà complété
-        console.log('⚠️ Onboarding already completed, redirecting to /');
         navigate('/', { replace: true });
       } else {
         toast({
@@ -268,7 +255,6 @@ export function SetupStep() {
       <div className="flex justify-end pt-6">
           <Button
             onClick={() => {
-              console.log('🖱️ Button clicked');
               handleNext();
             }}
             disabled={!canProceed() || isSubmitting}

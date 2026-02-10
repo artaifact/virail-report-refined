@@ -61,7 +61,6 @@ export function MessageManagement({ onMessageSelect, className = '' }: MessageMa
       setMessages(response.messages);
       setTotalPages(response.total_pages);
     } catch (error) {
-      console.error('Erreur lors du chargement des messages:', error);
     } finally {
       setLoading(false);
     }
@@ -73,7 +72,6 @@ export function MessageManagement({ onMessageSelect, className = '' }: MessageMa
       const statsData = await AdminService.getMessagesStats();
       setStats(statsData);
     } catch (error) {
-      console.error('Erreur lors du chargement des statistiques:', error);
     }
   };
 
@@ -96,7 +94,6 @@ export function MessageManagement({ onMessageSelect, className = '' }: MessageMa
       setMessages(response.messages);
       setTotalPages(response.total_pages);
     } catch (error) {
-      console.error('Erreur lors de la recherche:', error);
     } finally {
       setLoading(false);
     }

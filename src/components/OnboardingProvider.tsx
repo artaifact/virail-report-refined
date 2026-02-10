@@ -34,14 +34,14 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
 
     // PRIORITÉ 1: Si l'utilisateur a skip l'onboarding, NE JAMAIS l'afficher
     if (user?.onboarding_skipped) {
-      console.log('OnboardingProvider: User has skipped onboarding, not showing');
+      //console.log('OnboardingProvider: User has skipped onboarding, not showing');
       setShowOnboarding(false);
       return;
     }
 
     // PRIORITÉ 2: Si l'utilisateur a complété l'onboarding, NE PAS l'afficher
     if (user?.onboarding_completed) {
-      console.log('OnboardingProvider: User has completed onboarding, not showing');
+      //console.log('OnboardingProvider: User has completed onboarding, not showing');
       setShowOnboarding(false);
       return;
     }
@@ -56,12 +56,6 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
         status.completed === false && 
         status.current_step > 0 &&
         !user?.onboarding_skipped; // Vérifier aussi ici au cas où user n'est pas encore mis à jour
-      console.log('OnboardingProvider: shouldShow from status:', shouldShow, { 
-        status, 
-        user_skipped: user?.onboarding_skipped,
-        status_completed: status.completed,
-        current_step: status.current_step
-      });
       setShowOnboarding(shouldShow);
       return;
     }
@@ -72,7 +66,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
         !user.onboarding_completed &&
         !user.onboarding_skipped &&
         (user.onboarding_data === null || user.onboarding_data.current_step > 0);
-      console.log('OnboardingProvider: shouldShow from user data:', shouldShow, { user });
+      //console.log('OnboardingProvider: shouldShow from user data:', shouldShow, { user });
       setShowOnboarding(shouldShow);
       return;
     }
@@ -85,7 +79,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
    * Gérer la fermeture de l'onboarding
    */
   const handleClose = async () => {
-    console.log('OnboardingProvider: handleClose called');
+    //console.log('OnboardingProvider: handleClose called');
     // Fermer immédiatement - ne pas attendre
     setShowOnboarding(false);
     setUseTourMode(false);
@@ -95,13 +89,13 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     try {
       const userData = await apiService.getMeBearer();
       if (userData) {
-        console.log('OnboardingProvider: User data refreshed after close:', userData);
+        //console.log('OnboardingProvider: User data refreshed after close:', userData);
         // Mettre à jour l'utilisateur dans le contexte
         // Cela déclenchera le useEffect qui vérifie user.onboarding_skipped
         updateUser(userData as any);
       }
     } catch (error) {
-      console.warn('OnboardingProvider: Error refreshing user data:', error);
+      //console.warn('OnboardingProvider: Error refreshing user data:', error);
       // Même en cas d'erreur, on ne recharge pas le statut pour éviter
       // que l'onboarding se réaffiche
     }
@@ -116,7 +110,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
    * Gérer la complétion du tour guidé
    */
   const handleTourComplete = async () => {
-    console.log('OnboardingProvider: Tour completed');
+    //console.log('OnboardingProvider: Tour completed');
     setUseTourMode(false);
     setShowOnboarding(false);
     
@@ -130,7 +124,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
         updateUser(userData as any);
       }
     } catch (error) {
-      console.warn('OnboardingProvider: Error completing tour:', error);
+      //console.warn('OnboardingProvider: Error completing tour:', error);
     }
   };
 
@@ -138,7 +132,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
    * Gérer le skip du tour guidé
    */
   const handleTourSkip = async () => {
-    console.log('OnboardingProvider: Tour skipped');
+    //console.log('OnboardingProvider: Tour skipped');
     setUseTourMode(false);
     setShowOnboarding(false);
     
@@ -151,7 +145,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
         updateUser(userData as any);
       }
     } catch (error) {
-      console.warn('OnboardingProvider: Error skipping tour:', error);
+      //console.warn('OnboardingProvider: Error skipping tour:', error);
     }
   };
 

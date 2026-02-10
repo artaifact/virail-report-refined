@@ -16,7 +16,6 @@ import { FullReportData, Analysis } from './api';
  */
 export function mapLLMOReportData(data: FullReportData | null): MappedReportData {
   if (!data || !data.report || !data.analyses) {
-    console.error('Erreur: Données d\'entrée invalides pour mapLLMOReportData');
     return createEmptyMappedData();
   }
 
@@ -45,7 +44,6 @@ export function mapLLMOReportData(data: FullReportData | null): MappedReportData
       analyseCitation
     };
   } catch (error) {
-    console.error('Erreur lors du mapping des données LLMO:', error);
     return createEmptyMappedData();
   }
 }

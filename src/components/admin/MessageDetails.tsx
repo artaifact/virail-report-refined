@@ -57,7 +57,6 @@ export function MessageDetails({ messageId, onBack, className = '' }: MessageDet
       setAdminResponse(data.admin_response || '');
       setTags(data.tags?.join(', ') || '');
     } catch (error) {
-      console.error('Erreur lors du chargement du message:', error);
     } finally {
       setLoading(false);
     }

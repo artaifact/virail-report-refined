@@ -46,7 +46,6 @@ import { cn } from "@/lib/utils";
 import {
   useAccountDashboard,
   useStripeInvoices,
-  useStripeInvoicePdf,
   useStripeBillingPortal,
   useStripePaymentMethods,
   useUpcomingInvoice,
@@ -250,7 +249,6 @@ const Settings = () => {
   const { data: paymentMethods } = useStripePaymentMethods();
   const { data: upcomingInvoice } = useUpcomingInvoice();
   const billingPortal = useStripeBillingPortal();
-  const downloadPdf = useStripeInvoicePdf();
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -267,7 +265,6 @@ const Settings = () => {
           }
         }
       } catch (err) {
-        console.error("Erreur lors du chargement du profil:", err);
       }
     };
 
@@ -310,7 +307,6 @@ const Settings = () => {
       await apiService.getMeBearer();
       setTimeout(() => navigate("/onboarding/setup"), 1000);
     } catch (error) {
-      console.error("Erreur lors de la réinitialisation:", error);
       toast({
         title: "Erreur",
         description: "Impossible de réinitialiser l'onboarding",
@@ -323,10 +319,6 @@ const Settings = () => {
 
   const handleOpenBillingPortal = () => {
     billingPortal.mutate();
-  };
-
-  const handleDownloadPdf = (invoiceId: string) => {
-    downloadPdf.mutate(invoiceId);
   };
 
   const handleLoadMoreInvoices = () => {
@@ -714,15 +706,10 @@ const Settings = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleDownloadPdf(invoice.id)}
-                                  disabled={downloadPdf.isPending}
+                                  onClick={() => window.open(invoice.pdf_url!, '_blank')}
                                   title="Télécharger le PDF"
                                 >
-                                  {downloadPdf.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Download className="h-4 w-4" />
-                                  )}
+                                  <Download className="h-4 w-4" />
                                 </Button>
                               )}
                               {invoice.hosted_invoice_url && (

@@ -23,7 +23,6 @@ export function testComponentImports() {
    //console.log('🎉 Tous les composants se chargent correctement !');
     return true;
   } catch (error) {
-    console.error('❌ Erreur lors du chargement des composants:', error);
     return false;
   }
 }
@@ -44,7 +43,6 @@ export function testServiceImports() {
    //console.log('🎉 Tous les services se chargent correctement !');
     return true;
   } catch (error) {
-    console.error('❌ Erreur lors du chargement des services:', error);
     return false;
   }
 }
@@ -65,7 +63,6 @@ export function testHookImports() {
    //console.log('🎉 Tous les hooks se chargent correctement !');
     return true;
   } catch (error) {
-    console.error('❌ Erreur lors du chargement des hooks:', error);
     return false;
   }
 }

@@ -37,7 +37,6 @@ export class AdminService {
       }
 
     } catch (error) {
-      console.error('❌ Vérification admin échouée:', error);
       throw new Error('Authentification admin requise');
     }
   }
@@ -70,7 +69,6 @@ export class AdminService {
         // Récupérer les détails de l'erreur 422
         try {
           const errorData = await response.json();
-          console.error('❌ Détails erreur 422:', errorData);
           throw new Error(`Erreur de validation: ${errorData.detail || 'Paramètres invalides'}`);
         } catch (parseError) {
           throw new Error('Erreur de validation: paramètres invalides');
@@ -141,7 +139,6 @@ export class AdminService {
       
       return adaptedData;
     } catch (error) {
-      console.error('❌ Erreur lors de la récupération des utilisateurs:', error);
       throw error;
     }
   }
@@ -211,7 +208,6 @@ export class AdminService {
       
       return adaptedData;
     } catch (error) {
-      console.error('❌ Erreur lors de la récupération des utilisateurs en attente:', error);
       throw error;
     }
   }
@@ -249,7 +245,6 @@ export class AdminService {
       
       return data;
     } catch (error) {
-      console.error(`❌ Erreur lors de l'${approved ? 'approbation' : 'rejet'} de l'utilisateur:`, error);
       throw error;
     }
   }
@@ -288,7 +283,6 @@ export class AdminService {
         user: data.user
       };
     } catch (error) {
-      console.error('❌ Erreur lors de la création du compte admin:', error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors de la création du compte admin'
@@ -321,7 +315,6 @@ export class AdminService {
       };
       return adapted;
     } catch (error) {
-      console.error('❌ Erreur lors de la récupération des messages:', error);
       throw error;
     }
   }
@@ -334,7 +327,6 @@ export class AdminService {
       const data = await this.makeAdminRequest<AdminMessage>(`/admin/messages/${messageId}`);
       return data;
     } catch (error) {
-      console.error(`❌ Erreur lors de la récupération du message ${messageId}:`, error);
       throw error;
     }
   }
@@ -350,7 +342,6 @@ export class AdminService {
       });
       return data;
     } catch (error) {
-      console.error(`❌ Erreur lors de la mise à jour du message ${messageId}:`, error);
       throw error;
     }
   }
@@ -373,7 +364,6 @@ export class AdminService {
         message: 'Message supprimé avec succès'
       };
     } catch (error) {
-      console.error(`❌ Erreur lors de la suppression du message ${messageId}:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors de la suppression du message'
@@ -394,7 +384,6 @@ export class AdminService {
         high_priority_messages: (data as any).high_priority_messages || 0,
       };
     } catch (error) {
-      console.error('❌ Erreur lors de la récupération des stats messages:', error);
       throw error;
     }
   }
@@ -424,7 +413,6 @@ export class AdminService {
       };
       return adapted;
     } catch (error) {
-      console.error('❌ Erreur lors de la recherche de messages:', error);
       throw error;
     }
   }
@@ -441,7 +429,6 @@ export class AdminService {
      //console.log('✅ Utilisateur récupéré:', data);
       return data;
     } catch (error) {
-      console.error(`❌ Erreur lors de la récupération de l'utilisateur ${userId}:`, error);
       throw error;
     }
   }
@@ -470,7 +457,6 @@ export class AdminService {
       
       return adaptedData;
     } catch (error) {
-      console.error('❌ Erreur lors de la récupération des statistiques:', error);
       throw error;
     }
   }
@@ -520,7 +506,6 @@ export class AdminService {
       
       return adaptedData;
     } catch (error) {
-      console.error('❌ Erreur lors de la recherche d\'utilisateurs:', error);
       throw error;
     }
   }
@@ -539,7 +524,6 @@ export class AdminService {
      //console.log('✅ Utilisateur désactivé:', data);
       return data;
     } catch (error) {
-      console.error(`❌ Erreur lors de la désactivation de l'utilisateur ${userId}:`, error);
       throw error;
     }
   }
@@ -558,7 +542,6 @@ export class AdminService {
      //console.log('✅ Utilisateur réactivé:', data);
       return data;
     } catch (error) {
-      console.error(`❌ Erreur lors de la réactivation de l'utilisateur ${userId}:`, error);
       throw error;
     }
   }
@@ -577,7 +560,6 @@ export class AdminService {
      //console.log('✅ Utilisateur supprimé:', data);
       return data;
     } catch (error) {
-      console.error(`❌ Erreur lors de la suppression de l'utilisateur ${userId}:`, error);
       throw error;
     }
   }
@@ -607,7 +589,6 @@ export class AdminService {
         return false; // Autre erreur
       }
     } catch (error) {
-      console.warn('⚠️ Vérification des privilèges admin échouée:', error);
       return false;
     }
   }
@@ -662,7 +643,6 @@ export class AdminService {
       };
       return adapted;
     } catch (error) {
-      console.error('❌ Erreur lors de la récupération des abonnements:', error);
       throw error;
     }
   }
@@ -700,7 +680,6 @@ export class AdminService {
       
       return adapted;
     } catch (error) {
-      console.error(`❌ Erreur lors de la récupération de l'abonnement ${subscriptionId}:`, error);
       throw error;
     }
   }
@@ -720,7 +699,6 @@ export class AdminService {
         total_revenue: data.total_revenue || 0,
       };
     } catch (error) {
-      console.error('❌ Erreur lors de la récupération des stats abonnements:', error);
       throw error;
     }
   }
@@ -743,7 +721,6 @@ export class AdminService {
         message: 'Abonnement activé avec succès'
       };
     } catch (error) {
-      console.error(`❌ Erreur lors de l'activation de l'abonnement ${subscriptionId}:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors de l\'activation'
@@ -769,7 +746,6 @@ export class AdminService {
         message: 'Abonnement annulé avec succès'
       };
     } catch (error) {
-      console.error(`❌ Erreur lors de l'annulation de l'abonnement ${subscriptionId}:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors de l\'annulation'
@@ -796,7 +772,6 @@ export class AdminService {
         message: `Abonnement étendu de ${days} jours`
       };
     } catch (error) {
-      console.error(`❌ Erreur lors de l'extension de l'abonnement ${subscriptionId}:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors de l\'extension'
@@ -827,7 +802,6 @@ export class AdminService {
         subscription: response
       };
     } catch (error) {
-      console.error(`❌ Erreur lors de la création de l'abonnement pour ${userId}:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors de la création'
@@ -860,7 +834,6 @@ export class AdminService {
         user: response
       };
     } catch (error) {
-      console.error(`❌ Erreur lors de la modification de l'utilisateur ${userId}:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors de la modification'
@@ -888,7 +861,6 @@ export class AdminService {
         message: `Utilisateur ${isActive ? 'activé' : 'désactivé'} avec succès`
       };
     } catch (error) {
-      console.error(`❌ Erreur lors de la modification du statut de l'utilisateur ${userId}:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors de la modification'
@@ -915,7 +887,6 @@ export class AdminService {
         message: 'Mot de passe réinitialisé avec succès'
       };
     } catch (error) {
-      console.error(`❌ Erreur lors de la réinitialisation du mot de passe de l'utilisateur ${userId}:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors de la réinitialisation'
@@ -941,7 +912,6 @@ export class AdminService {
         message: 'Droits administrateur retirés avec succès'
       };
     } catch (error) {
-      console.error(`❌ Erreur lors du retrait des droits admin de l'utilisateur ${userId}:`, error);
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors du retrait des droits'

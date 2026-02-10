@@ -64,7 +64,6 @@ export function usePayment() {
       }
 
     } catch (err) {
-      console.error('Erreur lors du chargement des données de paiement:', err);
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
       setLoading(false);

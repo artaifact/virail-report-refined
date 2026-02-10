@@ -135,7 +135,6 @@ export function PlanStep() {
       }
 
     } catch (error) {
-      console.error('Erreur lors de la création de la session de paiement:', error);
       toast({
         title: 'Erreur de paiement',
         description: error instanceof Error ? error.message : 'Erreur inattendue',

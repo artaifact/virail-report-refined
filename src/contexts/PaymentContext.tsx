@@ -190,10 +190,8 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({ children }) =>
       // Si l'erreur est 401 (session expirée), ne pas afficher d'erreur
       // C'est normal et l'utilisateur sera redirigé vers la page de login si nécessaire
       if (e?.message?.includes('401') || e?.message?.includes('UNAUTHORIZED')) {
-        console.warn('Session expirée lors du chargement de l\'abonnement - utilisation du plan par défaut');
         // Utiliser un plan gratuit par défaut silencieusement
       } else {
-        console.error('Erreur lors du chargement de l\'abonnement:', e);
       }
       // En cas d'erreur, afficher un plan gratuit par défaut
       const free = plans.find(p => p.id === 'free') || {
@@ -245,7 +243,6 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({ children }) =>
         // Charger l'abonnement utilisateur
         await refreshUserPlan();
       } catch (e) {
-        console.error('Erreur lors du chargement initial:', e);
         setError('Erreur lors du chargement des données');
       } finally {
         setIsLoading(false);

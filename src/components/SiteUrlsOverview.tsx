@@ -90,8 +90,7 @@ const SiteUrlsOverview: React.FC = () => {
         } else if (optimizeData.data) {
           sitesData = optimizeData.data;
         } else {
-          console.warn('Structure de données inattendue:', optimizeData);
-          sitesData = [];
+            sitesData = [];
         }
 
         const optimizeSites = sitesData.map((site: any, index: number) => ({
@@ -111,7 +110,6 @@ const SiteUrlsOverview: React.FC = () => {
         setSites(optimizeSites);
         setFilteredSites(optimizeSites);
       } else {
-        console.warn('⚠️ Erreur API /optimize, utilisation des données mock. Status:', optimizeResponse.status);
         
         // Fallback vers des données d'exemple
         const mockSites: AnalyzedSite[] = [
@@ -169,7 +167,6 @@ const SiteUrlsOverview: React.FC = () => {
         setFilteredSites(mockSites);
       }
     } catch (err) {
-      console.error('❌ Erreur lors du chargement des sites:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des sites');
       
       // En cas d'erreur, utiliser les données mock

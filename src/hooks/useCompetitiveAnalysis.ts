@@ -46,7 +46,6 @@ export const useCompetitiveAnalysis = () => {
         savedAnalyses: analyses
       }));
     } catch (error) {
-      console.error('Erreur lors du chargement des analyses sauvegardées:', error);
     }
   }, []);
 
@@ -113,10 +112,8 @@ export const useCompetitiveAnalysis = () => {
            //console.log('✅ Données quotas récupérées directement:', directData);
             // Ne pas continuer car on ne peut pas modifier l'état ici
           } else {
-            console.error('❌ Échec de récupération directe des quotas:', directResponse.status);
           }
         } catch (directError) {
-          console.error('❌ Erreur lors de récupération directe:', directError);
         }
       }
 
@@ -200,8 +197,6 @@ export const useCompetitiveAnalysis = () => {
 
       return result;
     } catch (error) {
-      console.error('❌ Erreur lors de l\'analyse:', error);
-
       // Nettoyer l'intervalle de progression
       if (progressInterval) {
         clearInterval(progressInterval);
@@ -215,13 +210,6 @@ export const useCompetitiveAnalysis = () => {
         error: errorMessage,
         progress: 0
       }));
-
-      // Afficher plus d'informations sur l'erreur
-      console.error('📋 Détails de l\'erreur:', {
-        message: errorMessage,
-        type: error instanceof Error ? error.constructor.name : 'Unknown',
-        stack: error instanceof Error ? error.stack : undefined
-      });
 
       throw error;
     }
@@ -256,7 +244,6 @@ export const useCompetitiveAnalysis = () => {
       }
       return analysis;
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'analyse:', error);
       return null;
     }
   }, []);
@@ -272,7 +259,6 @@ export const useCompetitiveAnalysis = () => {
       // Recharger les analyses après suppression
       await loadSavedAnalyses();
     } catch (error) {
-      console.error('Erreur lors de la suppression de l\'analyse:', error);
     }
   }, [loadSavedAnalyses]);
 

@@ -35,7 +35,6 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ userId, onBack, classN
           setUser(userData);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement de l\'utilisateur:', error);
         toast({
           title: "Erreur de chargement",
           description: "Impossible de charger les détails de l'utilisateur",

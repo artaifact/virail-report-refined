@@ -110,7 +110,6 @@ export const useAnalysisError = () => {
       });
     }
 
-    console.error('Erreur d\'analyse:', parsedError);
     return parsedError;
   }, [parseError, toast]);
 

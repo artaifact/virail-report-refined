@@ -156,7 +156,6 @@ class ApiService {
           if (isSilentEndpoint) {
             // Pour les endpoints silencieux, retourner null ou une valeur par défaut
             // plutôt que de lancer une erreur
-            console.warn(`Endpoint ${endpoint} retourne 401 - session probablement expirée`);
             throw new Error('UNAUTHORIZED_SILENT');
           }
           

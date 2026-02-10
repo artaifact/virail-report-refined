@@ -92,8 +92,6 @@ const SiteOptimization: React.FC = () => {
         setStats(finalStats);
 
       } else {
-        console.warn('⚠️ Erreur API /optimize, tentative avec l\'endpoint textual-optimizations...');
-        
         // Tentative avec l'endpoint des optimisations textuelles
         try {
           const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
@@ -131,13 +129,11 @@ const SiteOptimization: React.FC = () => {
             throw new Error('Échec de récupération des optimisations textuelles');
           }
         } catch (fallbackError) {
-          console.error('❌ Erreur fallback:', fallbackError);
           setStatsError('Impossible de récupérer les données des optimisations');
         }
       }
 
     } catch (error) {
-      console.error('❌ Erreur lors du chargement des statistiques:', error);
       setStatsError(error instanceof Error ? error.message : 'Erreur lors du chargement');
     } finally {
       setIsLoadingStats(false);
@@ -213,7 +209,6 @@ const SiteOptimization: React.FC = () => {
       }, 1000);
 
     } catch (error) {
-      console.error("Erreur lors de l'optimisation:", error);
       setIsAnalyzing(false);
       setAnalysisProgress(0);
       

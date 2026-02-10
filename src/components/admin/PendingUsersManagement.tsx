@@ -44,7 +44,6 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
       setTotalPages(response.total_pages);
      //console.log(`✅ ${response.users.length} utilisateur(s) en attente chargé(s) sur ${response.total} total`);
     } catch (error) {
-      console.error('❌ Erreur lors du chargement des utilisateurs en attente:', error);
       toast({
         title: "Erreur de chargement",
         description: error instanceof Error ? error.message : "Impossible de charger les utilisateurs en attente",
@@ -67,7 +66,6 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
       setNotes('');
       await loadUsers(); // Recharger la liste
     } catch (error) {
-      console.error('Erreur lors de l\'approbation:', error);
       toast({
         title: "Erreur",
         description: error instanceof Error ? error.message : "Impossible d'approuver l'utilisateur",
@@ -90,7 +88,6 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
       setNotes('');
       await loadUsers(); // Recharger la liste
     } catch (error) {
-      console.error('Erreur lors du rejet:', error);
       toast({
         title: "Erreur",
         description: error instanceof Error ? error.message : "Impossible de rejeter l'utilisateur",
