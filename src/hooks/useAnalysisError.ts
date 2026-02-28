@@ -27,10 +27,10 @@ export const useAnalysisError = () => {
       };
     }
 
-    if (errorMessage.includes('timeout') || errorMessage.includes('TimeoutError')) {
+    if (errorMessage.toLowerCase().includes('timeout') || errorMessage.includes('TimeoutError') || errorMessage.includes('Page.goto')) {
       return {
         type: 'network',
-        message: `Le site ${url || 'demandé'} met trop de temps à répondre. Essayez plus tard.`,
+        message: `Le site ${url || 'demandé'} est inaccessible ou met trop de temps à répondre. Le site bloque peut-être l'accès automatisé (protection anti-bot, Cloudflare, etc.).`,
         originalError: errorMessage,
         url,
         retryable: true

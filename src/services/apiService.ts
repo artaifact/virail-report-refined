@@ -463,8 +463,8 @@ class ApiService {
         if (error.message.includes('Page crashed') || error.message.includes('crashed')) {
           throw new Error(`Le site ${url} est incompatible avec notre analyseur. Essayez un autre site ou contactez le support.`);
         }
-        if (error.message.includes('timeout') || error.message.includes('TimeoutError')) {
-          throw new Error(`Le site ${url} met trop de temps à répondre. Essayez plus tard.`);
+        if (error.message.toLowerCase().includes('timeout') || error.message.includes('TimeoutError') || error.message.includes('Page.goto')) {
+          throw new Error(`Le site ${url} est inaccessible ou met trop de temps à répondre. Le site bloque peut-être l'accès automatisé (protection anti-bot, Cloudflare, etc.).`);
         }
         if (error.message.includes('net::ERR_BLOCKED_BY_CLIENT') || error.message.includes('blocked')) {
           throw new Error(`Le site ${url} bloque notre analyseur. Le site utilise probablement des protections anti-bot.`);
@@ -513,8 +513,8 @@ class ApiService {
         if (error.message.includes('Page crashed') || error.message.includes('crashed')) {
           throw new Error(`Le site ${url} est incompatible avec notre analyseur. Essayez un autre site ou contactez le support.`);
         }
-        if (error.message.includes('timeout') || error.message.includes('TimeoutError')) {
-          throw new Error(`Le site ${url} met trop de temps à répondre. Essayez plus tard.`);
+        if (error.message.toLowerCase().includes('timeout') || error.message.includes('TimeoutError') || error.message.includes('Page.goto')) {
+          throw new Error(`Le site ${url} est inaccessible ou met trop de temps à répondre. Le site bloque peut-être l'accès automatisé (protection anti-bot, Cloudflare, etc.).`);
         }
         if (error.message.includes('net::ERR_BLOCKED_BY_CLIENT') || error.message.includes('blocked')) {
           throw new Error(`Le site ${url} bloque notre analyseur. Le site utilise probablement des protections anti-bot.`);
@@ -556,8 +556,8 @@ class ApiService {
         if (error.message.includes('Page crashed') || error.message.includes('crashed')) {
           throw new Error(`Le site ${url} est incompatible avec notre analyseur. Essayez un autre site ou contactez le support.`);
         }
-        if (error.message.includes('timeout') || error.message.includes('TimeoutError')) {
-          throw new Error(`Le site ${url} met trop de temps à répondre. Essayez plus tard.`);
+        if (error.message.toLowerCase().includes('timeout') || error.message.includes('TimeoutError') || error.message.includes('Page.goto')) {
+          throw new Error(`Le site ${url} est inaccessible ou met trop de temps à répondre. Le site bloque peut-être l'accès automatisé (protection anti-bot, Cloudflare, etc.).`);
         }
         if (error.message.includes('net::ERR_BLOCKED_BY_CLIENT') || error.message.includes('blocked')) {
           throw new Error(`Le site ${url} bloque notre analyseur. Le site utilise probablement des protections anti-bot.`);

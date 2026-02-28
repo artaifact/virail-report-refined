@@ -1142,23 +1142,6 @@ const Competition = () => {
                             })}
                           </div>
 
-                          {/* Recommandations */}
-                          {d.primary_recommendations && d.primary_recommendations.length > 0 && (
-                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                              <div className="flex items-center gap-2 mb-3">
-                                <Lightbulb className="w-4 h-4 text-gray-500" />
-                                <span className="text-sm font-semibold text-gray-800">Recommandations</span>
-                              </div>
-                              <ul className="space-y-2">
-                                {d.primary_recommendations.map((rec: string, rIdx: number) => (
-                                  <li key={rIdx} className="flex items-start gap-2 text-sm text-gray-600">
-                                    <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                                    <span>{rec}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
                         </div>
                       );
                     })()}
