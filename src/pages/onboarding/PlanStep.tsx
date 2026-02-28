@@ -89,7 +89,6 @@ export function PlanStep() {
         );
 
         if (!res.ok) {
-          console.warn(`checkout-session returned ${res.status}`);
           // Si 404 ou autre erreur serveur, on réessaie
         } else {
           const data = await res.json();
@@ -117,7 +116,6 @@ export function PlanStep() {
           }
         }
       } catch (e) {
-        console.warn('checkout-session check failed:', e);
       }
 
       if (cancelledRef.current) return;
@@ -330,8 +328,8 @@ export function PlanStep() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        {plans.slice(0, 3).map((plan) => {
+      <div className={cn("grid grid-cols-1 gap-6", plans.length <= 3 ? "sm:grid-cols-3" : plans.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3 lg:grid-cols-5")}>
+        {plans.map((plan) => {
           const isSelected = selectedPlanId === plan.id;
           const isRecommended = plan.id === 'standard';
           const planIndex = plans.indexOf(plan);

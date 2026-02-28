@@ -25,7 +25,6 @@ const CompetitiveAnalysisDisplay: React.FC<CompetitiveAnalysisDisplayProps> = ({
 }) => {
   // Normaliser si on reçoit un tableau de concurrents directement
   const normalizedData = Array.isArray(analysisData) ? { competitors: analysisData } : analysisData;
- //console.log('🔍 CompetitiveAnalysisDisplay - Données reçues (normalisées si besoin):', normalizedData);
   // Si on charge
   if (isLoading) {
     return (
@@ -56,7 +55,6 @@ const CompetitiveAnalysisDisplay: React.FC<CompetitiveAnalysisDisplayProps> = ({
   const isApiFormat = normalizedData.analysis_id && normalizedData.competitors && normalizedData.stats;
   const isLegacyFormat = normalizedData.userSite && normalizedData.competitors;
   
- //console.log('🔍 Format des données détecté:', {
     isApiFormat,
     isLegacyFormat,
     hasAnalysisId: !!normalizedData.analysis_id,
@@ -99,7 +97,6 @@ const CompetitiveAnalysisDisplay: React.FC<CompetitiveAnalysisDisplayProps> = ({
     miniLLMResults = Array.isArray(rawMini) ? rawMini : (rawMini ? Object.values(rawMini) : []);
     benchmarkError = normalizedData.benchmark_results?.error;
     
-   //console.log('🎯 Données API extraites:', {
       title,
       description: `"${description}"`,
       descriptionLength: description?.length,

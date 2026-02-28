@@ -174,15 +174,12 @@ const ApiDemo = () => {
 
       // 1. Lister les rapports
       const reportsList = await listReports();
-     //console.log('📋 Rapports disponibles:', reportsList.length);
 
       // 2. Récupérer le rapport Booking.com
       const bookingReport = await fetchReport('504606b0bc67caad');
-     //console.log('📄 Rapport booking récupéré:', !!bookingReport);
 
       // 3. Lancer une nouvelle analyse
       const newAnalysis = await startAnalysis('https://exemple.com');
-     //console.log('🚀 Nouvelle analyse:', newAnalysis?.reportId);
 
       setResult({
         type: 'fullWorkflow',

@@ -101,9 +101,6 @@ export class AuthService {
             payload.is_admin || payload.isAdmin || (Array.isArray(payload.roles) && payload.roles.includes('admin'))
           );
           (user as any).is_admin = isAdminFromJwt;
-          try {
-           //console.log('[AuthService] JWT payload is_admin:', isAdminFromJwt, payload)
-          } catch {}
         }
       }
 
@@ -412,7 +409,6 @@ export class AuthService {
 
   static async refreshAccessToken(): Promise<string | null> {
     try {
-      //  ////console.log(`🔄 Tentative de rafraîchissement en mode: ${AUTH_MODE}...`);
       
       const requestOptions: RequestInit = {
         method: 'POST',
@@ -426,7 +422,6 @@ export class AuthService {
       } else if (AUTH_MODE === 'bearer') {
         const refreshToken = this.getRefreshToken();
         if (!refreshToken || refreshToken === 'httponly-cookie') {
-          //  ////console.log('❌ Pas de refresh token disponible pour mode Bearer');
           this.logout();
           return null;
         }
@@ -435,22 +430,16 @@ export class AuthService {
 
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, requestOptions);
 
-      //  ////console.log('🔍 Réponse refresh status:', response.status);
 
       if (!response.ok) {
         if (response.status === 404) {
-          //  ////console.log('❌ Endpoint /auth/refresh non trouvé (404)');
         } else if (response.status === 401) {
-          //  ////console.log('❌ Refresh token invalide ou expiré (401)');
         } else {
-          //  ////console.log('❌ Échec du rafraîchissement du token:', response.status, response.statusText);
         }
         
         try {
           const errorData = await response.text();
-          //  ////console.log('🔍 Détails erreur refresh:', errorData);
         } catch (e) {
-          //  ////console.log('🔍 Impossible de lire les détails de l\'erreur');
         }
         
         this.logout();
@@ -458,19 +447,15 @@ export class AuthService {
       }
 
       const data = await response.json();
-      //  ////console.log('🔄 Réponse rafraîchissement:', data);
       
       if (data.access_token) {
         this.saveTokens(data.access_token, data.refresh_token || 'httponly-cookie');
-        //  ////console.log(`✅ Token rafraîchi avec succès en mode: ${AUTH_MODE}`);
         return data.access_token;
       } else {
-        //  ////console.log('❌ Pas de nouveau access_token dans la réponse');
         this.logout();
         return null;
       }
     } catch (error) {
-      // console.error('🔄 Erreur lors du rafraîchissement:', error);
       this.logout();
       return null;
     }
@@ -478,7 +463,6 @@ export class AuthService {
 
   static async makeAuthenticatedRequest(url: string, options: RequestInit = {}): Promise<Response> {
     if (!this.isAuthenticated()) {
-      //  ////console.log('❌ Utilisateur non authentifié');
       throw new Error('Utilisateur non authentifié');
     }
 
@@ -486,7 +470,6 @@ export class AuthService {
       await this.detectCorsSupport();
     }
 
-    //  ////console.log(`🔄 Requête API en mode: ${AUTH_MODE}`);
 
     const requestOptions: RequestInit = {
       ...options,
@@ -497,7 +480,6 @@ export class AuthService {
 
     if (AUTH_MODE === 'cookies') {
       requestOptions.credentials = 'include';
-      //  ////console.log('🍪 Mode cookies : credentials include activé');
     } else if (AUTH_MODE === 'bearer') {
       const accessToken = this.getAccessToken();
       if (accessToken && accessToken !== 'httponly-cookie') {
@@ -505,9 +487,7 @@ export class AuthService {
           ...requestOptions.headers,
           'Authorization': `Bearer ${accessToken}`,
         };
-        //  ////console.log('🔑 Token Bearer ajouté à la requête');
       } else {
-        // console.warn('⚠️ Pas de token Bearer disponible');
       }
     }
 
@@ -515,7 +495,6 @@ export class AuthService {
       const response = await fetch(url, requestOptions);
 
       if (response.status === 401) {
-        //  ////console.log('🔄 Session expirée, tentative de rafraîchissement...');
         const refreshed = await this.refreshAccessToken();
         if (refreshed) {
           if (AUTH_MODE === 'bearer' && refreshed !== 'httponly-cookie') {
@@ -527,7 +506,6 @@ export class AuthService {
           return fetch(url, requestOptions);
         }
         
-        //  ////console.log('❌ Impossible de rafraîchir le token, déconnexion...');
         this.logout();
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
@@ -538,7 +516,6 @@ export class AuthService {
       return response;
     } catch (error) {
       if (error.message.includes('Credential is not supported') && AUTH_MODE === 'cookies') {
-        //  ////console.log('🔄 Erreur CORS sur requête API, basculement en mode Bearer...');
         AUTH_MODE = 'bearer';
         CORS_CREDENTIALS_SUPPORTED = false;
         
@@ -550,45 +527,36 @@ export class AuthService {
 
   static async testBackendAuth(): Promise<boolean> {
     try {
-      //  ////console.log(`🔍 Test de l\'authentification en mode: ${AUTH_MODE}`);
       
       if (AUTH_MODE === 'auto') {
         await this.detectCorsSupport();
       }
       
       if (AUTH_MODE === 'cookies') {
-        //  ////console.log('🍪 Test: Authentification avec cookies HttpOnly...');
         try {
           const cookieResponse = await fetch(`${API_BASE_URL}/auth/me`, {
             method: 'GET',
             credentials: 'include',
           });
 
-           ////console.log('🔍 Test cookies - Status:', cookieResponse.status);
           if (cookieResponse.ok) {
             const userData = await cookieResponse.json();
-            //  ////console.log('✅ Authentification par cookies HttpOnly réussie:', userData);
             return true;
           } else {
             const errorText = await cookieResponse.text();
-            //  ////console.log('❌ Erreur authentification cookies:', errorText);
           }
         } catch (error) {
           if (error.message.includes('Credential is not supported')) {
-            //  ////console.log('🔄 CORS avec credentials non supporté, basculement Bearer...');
             AUTH_MODE = 'bearer';
             CORS_CREDENTIALS_SUPPORTED = false;
             return this.testBackendAuth();
           }
-          //  ////console.log('❌ Test cookies HttpOnly échoué:', error.message);
         }
       }
 
       if (AUTH_MODE === 'bearer') {
-        //  ////console.log('🔑 Test: Authentification avec Bearer token...');
         const accessToken = this.getAccessToken();
         if (!accessToken || accessToken === 'httponly-cookie') {
-          //  ////console.log('❌ Pas de token d\'accès disponible pour mode Bearer');
           return false;
         }
 
@@ -600,29 +568,19 @@ export class AuthService {
             },
           });
 
-          //  ////console.log('🔍 Test Bearer - Status:', bearerResponse.status);
           if (bearerResponse.ok) {
             const userData = await bearerResponse.json();
-            //  ////console.log('✅ Authentification par Bearer token réussie:', userData);
             return true;
           } else {
             const errorText = await bearerResponse.text();
-            //  ////console.log('❌ Erreur authentification Bearer:', errorText);
           }
         } catch (error) {
-          //  ////console.log('❌ Test Bearer token échoué:', error.message);
         }
       }
 
-      //  ////console.log('❌ Échec du test d\'authentification');
-       ////console.log('💡 BACKEND CONFIG: Pour les cookies HttpOnly, configurez CORS avec:');
-       ////console.log('   - allow_origins=["http://localhost:5173"]');
-       ////console.log('   - allow_credentials=True');
-       ////console.log('💡 OU supportez les Bearer tokens dans votre backend');
       
       return false;
     } catch (error) {
-      // console.error('❌ Erreur lors du test d\'authentification:', error);
       return false;
     }
   }
@@ -630,7 +588,6 @@ export class AuthService {
   static forceAuthMode(mode: 'cookies' | 'bearer'): void {
     AUTH_MODE = mode;
     CORS_CREDENTIALS_SUPPORTED = mode === 'cookies';
-    //  ////console.log(`🔧 Mode d'authentification forcé: ${mode}`);
   }
 
   static getAuthMode(): string {
@@ -639,7 +596,6 @@ export class AuthService {
 
   static async testAnalyzeEndpoint(testUrl: string = 'https://example.com'): Promise<boolean> {
     try {
-      //  ////console.log('🧪 Test de l\'endpoint /analyze...');
       
       const response = await this.makeAuthenticatedRequest(`${API_BASE_URL}/analyze`, {
         method: 'POST',
@@ -649,47 +605,36 @@ export class AuthService {
         body: JSON.stringify({ url: testUrl }),
       });
 
-      //  ////console.log('🔍 Test /analyze - Status:', response.status);
       
       if (response.ok) {
-         ////console.log('✅ Endpoint /analyze accessible');
         return true;
       } else {
         const errorText = await response.text();
-        //  ////console.log('❌ Erreur /analyze:', errorText);
         return false;
       }
     } catch (error) {
-      // console.error('❌ Erreur lors du test /analyze:', error.message);
       return false;
     }
   }
 
   static async testLLMOReportsEndpoint(): Promise<boolean> {
     try {
-      //  ////console.log('🧪 Test de l\'endpoint /llmo/reports...');
       
       const response = await this.makeAuthenticatedRequest(`${API_BASE_URL}/llmo/reports`, {
         method: 'GET',
       });
 
-      //  ////console.log('🔍 Test /llmo/reports - Status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        //  ////console.log('✅ Endpoint /llmo/reports accessible:', data);
-         ////console.log(`👤 Nombre de rapports trouvés: ${data.total}`);
         if (data.reports && data.reports.length > 0) {
-          //  ////console.log('📄 Premier rapport:', data.reports[0]);
         }
         return true;
       } else {
         const errorText = await response.text();
-        //  ////console.log('❌ Erreur /llmo/reports:', errorText);
         return false;
       }
     } catch (error) {
-      // console.error('❌ Erreur lors du test /llmo/reports:', error.message);
       return false;
     }
   }
@@ -734,14 +679,12 @@ export class AuthService {
       }));
       return sessions;
     } catch (error) {
-      // console.error('❌ Erreur lors de la récupération des sessions:', error);
       return [];
     }
   }
 
   static async testLogoutEndpoint(): Promise<boolean> {
     try {
-      //  ////console.log('🧪 Test de l\'endpoint /auth/logout...');
       
       const response = await fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
@@ -751,19 +694,15 @@ export class AuthService {
         },
       });
 
-      //  ////console.log('🔍 Test /auth/logout - Status:', response.status);
       
       if (response.ok) {
         const data = await response.json().catch(() => null);
-        //  ////console.log('✅ Endpoint /auth/logout accessible:', data || 'Pas de contenu');
         return true;
       } else {
         const errorText = await response.text();
-        //  ////console.log('❌ Erreur /auth/logout:', errorText);
         return false;
       }
     } catch (error) {
-      // console.error('❌ Erreur lors du test /auth/logout:', error.message);
       return false;
     }
   }
@@ -774,7 +713,6 @@ export class AuthService {
     }
 
     try {
-       ////console.log('🔍 Détection du support CORS avec credentials...');
       
       const response = await fetch(`${API_BASE_URL}/docs`, {
         method: 'GET',
@@ -782,18 +720,15 @@ export class AuthService {
       });
       
       CORS_CREDENTIALS_SUPPORTED = true;
-       ////console.log('✅ CORS avec credentials supporté');
       AUTH_MODE = 'cookies';
       return true;
     } catch (error) {
       if (error.message.includes('Credential is not supported')) {
-        //  ////console.log('❌ CORS avec credentials NON supporté - utilisation Bearer token');
         CORS_CREDENTIALS_SUPPORTED = false;
         AUTH_MODE = 'bearer';
         return false;
       }
       
-      //  ////console.log('⚠️ Erreur lors de la détection CORS, mode cookies par défaut');
       CORS_CREDENTIALS_SUPPORTED = true;
       AUTH_MODE = 'cookies';
       return true;
@@ -806,25 +741,20 @@ export class AuthService {
   private static getAccessTokenFromCookies(): string | null {
     try {
       const cookies = document.cookie.split(';');
-      //  ////console.log('🍪 Tous les cookies disponibles:', cookies);
       
       // Essayer différents noms possibles pour le token
       const possibleTokenNames = ['access_token', 'token', 'jwt', 'auth_token', 'bearer_token'];
       
       for (const cookie of cookies) {
         const [name, value] = cookie.trim().split('=');
-        //  ////console.log(`🍪 Cookie trouvé: ${name} = ${value ? 'PRÉSENT' : 'VIDE'}`);
         
         if (possibleTokenNames.includes(name)) {
-          //  ////console.log(`🍪 Token trouvé dans les cookies (${name}):`, value ? 'PRÉSENT' : 'ABSENT');
           return value || null;
         }
       }
       
-      //  ////console.log('🍪 Aucun token trouvé dans les cookies avec les noms:', possibleTokenNames);
       return null;
     } catch (error) {
-      // console.error('❌ Erreur lors de la lecture des cookies:', error);
       return null;
     }
   }
@@ -842,14 +772,12 @@ export class AuthService {
     created_at: string;
   }> {
     try {
-      //  ////console.log('🔍 Récupération du profil utilisateur depuis localStorage...');
       
       const userData = this.getUser();
       if (!userData) {
         throw new Error('Données utilisateur non trouvées dans localStorage');
       }
 
-      //  ////console.log('✅ Données utilisateur récupérées depuis localStorage:', userData);
 
       // Mapper les données du localStorage vers le format attendu
       const userProfile = {
@@ -862,11 +790,9 @@ export class AuthService {
         created_at: (userData as any).created_at || new Date().toISOString()
       };
 
-      //  ////console.log('✅ Profil utilisateur formaté:', userProfile);
       
       return userProfile;
     } catch (error) {
-      // console.error('❌ Erreur lors de la récupération du profil:', error);
       throw error;
     }
   }
@@ -876,7 +802,6 @@ export class AuthService {
    */
   static async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
     try {
-      //  ////console.log('🔄 Demande de réinitialisation du mot de passe pour:', email);
       
       const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: 'POST',
@@ -910,14 +835,11 @@ export class AuthService {
    */
   static async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
     try {
-      //  ////console.log('🔄 Réinitialisation du mot de passe avec token:', token);
-      //  ////console.log('🔄 Nouveau mot de passe:', newPassword);
       
       const requestBody = { 
         token, 
         new_password: newPassword 
       };
-      //  ////console.log('🔄 Corps de la requête:', requestBody);
       
       const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
@@ -943,7 +865,6 @@ export class AuthService {
         return { success: false, message: errorMsg };
       }
     } catch (error) {
-      // console.error('❌ Erreur lors de la réinitialisation du mot de passe:', error);
       return { success: false, message: 'Erreur de connexion' };
     }
   }
@@ -964,51 +885,40 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
     testLogoutEndpoint: () => AuthService.testLogoutEndpoint(),
     getUserProfile: () => AuthService.getUserProfile(),
     testAuthEndpoint: async () => {
-       ////console.log('🧪 Test de l\'endpoint /auth/me...');
       
       try {
         const response = await fetch('http://localhost:8000/auth/me', {
           method: 'GET',
           credentials: 'include',
         });
-        //  ////console.log('📡 /auth/me:', response.status, response.statusText);
         if (response.ok) {
           const data = await response.json();
-           ////console.log('✅ /auth/me data:', data);
         } else {
           const errorData = await response.json().catch(() => null);
-          //  ////console.log('❌ Erreur:', errorData);
         }
       } catch (error) {
-        //  ////console.log('❌ /auth/me error:', error);
       }
     },
     getAccessTokenFromCookies: () => {
       const cookies = document.cookie.split(';');
-      //  ////console.log('🍪 Tous les cookies disponibles:', cookies);
       const possibleTokenNames = ['access_token', 'token', 'jwt', 'auth_token', 'bearer_token'];
       
       for (const cookie of cookies) {
         const [name, value] = cookie.trim().split('=');
-        //  ////console.log(`🍪 Cookie: ${name} = ${value ? 'PRÉSENT' : 'VIDE'}`);
         
         if (possibleTokenNames.includes(name)) {
-           ////console.log(`🍪 Token trouvé (${name}):`, value);
           return value;
         }
       }
-      //  ////console.log('🍪 Aucun token trouvé avec les noms:', possibleTokenNames);
       return null;
     },
     getAllCookies: () => {
       const cookies = document.cookie.split(';');
-       ////console.log('🍪 Tous les cookies:', cookies);
       const cookieObj = {};
       for (const cookie of cookies) {
         const [name, value] = cookie.trim().split('=');
         cookieObj[name] = value;
       }
-       ////console.log('🍪 Objet cookies:', cookieObj);
       return cookieObj;
     },
   };

@@ -185,7 +185,6 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('Erreur téléchargement PDF:', err);
     } finally {
       setPdfLoading(false);
     }
@@ -515,6 +514,18 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
               {/* Guide d'Implémentation intégré */}
               {guideEtapes.length > 0 && (
                 <div>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)',
+                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    marginBottom: '12px',
+                    border: '1px solid #C7D2FE',
+                    textAlign: 'center',
+                  }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#4338CA' }}>
+                      Implémentation automatique bientôt disponible
+                    </span>
+                  </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', paddingTop: '16px', borderTop: '1px solid #F1F5F9' }}>
                     <span style={{ fontSize: '13px', fontWeight: 400, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Guide d'Implémentation</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1899,6 +1910,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     <div className="view-content">
       {/* Tableau des recommandations SEO */}
       <RecommendationsTable reportData={reportData} />
+
     </div>
   );
 }
@@ -2228,13 +2240,6 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
       // Vérifier analyse_concurrentielle_v1 OU competitor_analysis OU competitors (selon le format de l'API)
       const competitorData = reportData.analyse_concurrentielle_v1 || reportData.competitor_analysis || (reportData as any).competitors;
 
-      console.log('🔍 CompetitorAnalysis - reportData:', {
-        has_analyse_concurrentielle_v1: !!reportData.analyse_concurrentielle_v1,
-        has_competitor_analysis: !!reportData.competitor_analysis,
-        has_competitors: !!(reportData as any).competitors,
-        competitorData: competitorData
-      });
-
       if (competitorData) {
         // Utiliser le bon mapper selon la source des données
         let mappedAnalysis: CompetitorAnalysisResponse;
@@ -2243,11 +2248,9 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
           // Données venant de analyse_concurrentielle_v1 - utiliser le mapper spécifique
           const reportId = reportData.report?.id || (reportData as any).llmo_report?.id || 0;
           mappedAnalysis = mapAnalyseConcurrentielleV1ToResponse(reportId, reportData.analyse_concurrentielle_v1);
-          console.log('✅ CompetitorAnalysis - mappedAnalysis (v1):', mappedAnalysis);
         } else {
           // Autres sources - utiliser le mapper générique
           mappedAnalysis = mapApiResponseToCompetitorAnalysisResponse(competitorData);
-          console.log('✅ CompetitorAnalysis - mappedAnalysis (generic):', mappedAnalysis);
         }
 
         setCompetitorAnalysis(mappedAnalysis);

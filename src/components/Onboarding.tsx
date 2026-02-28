@@ -261,7 +261,6 @@ export function Onboarding({ open, onClose }: OnboardingProps) {
         
         // Passer à l'étape suivante (même si l'API a échoué, on continue pour ne pas bloquer)
         const nextIndex = Math.min(currentStepIndex + 1, ONBOARDING_STEPS.length - 1);
-        //console.log('Moving to next step:', nextIndex, 'from current:', currentStepIndex);
         setCurrentStepIndex(nextIndex);
       }
     } catch (error) {
@@ -270,7 +269,6 @@ export function Onboarding({ open, onClose }: OnboardingProps) {
         onClose();
       } else {
         const nextIndex = Math.min(currentStepIndex + 1, ONBOARDING_STEPS.length - 1);
-        //console.log('Error occurred, moving to next step anyway:', nextIndex);
         setCurrentStepIndex(nextIndex);
       }
     }
@@ -292,14 +290,11 @@ export function Onboarding({ open, onClose }: OnboardingProps) {
     if (isClosing) return; // Empêcher les clics multiples
     
     setIsClosing(true);
-    //console.log('handleSkip called');
     try {
       await skipOnboarding('user_choice');
-      //console.log('skipOnboarding completed, calling onClose');
       onClose();
     } catch (error) {
       // Fermer quand même le dialog même en cas d'erreur
-      //console.log('Closing dialog despite error');
       onClose();
     } finally {
       setIsClosing(false);

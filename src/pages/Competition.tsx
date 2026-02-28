@@ -147,7 +147,6 @@ const Competition = () => {
       try {
         analysis = await getCompetitorAnalysisFromReport(analysisId);
       } catch (reportError) {
-        console.warn('Erreur chargement /llmo/reports:', reportError);
       }
 
       if (!analysis) {
@@ -161,7 +160,6 @@ const Competition = () => {
         }
       }
     } catch (error) {
-      console.error('Erreur chargement analyse:', error);
     }
   };
 
@@ -209,10 +207,8 @@ const Competition = () => {
               <div className="flex gap-2 mt-2">
                 <Button
                   onClick={async () => {
-                   //console.log('🔄 Test manuel des quotas...');
                     const testResult = canUseFeature('competitor_analysis');
                     const featureLimits = usageLimits?.can_use_competitor_analysis;
-                   //console.log('📊 Résultat test:', testResult);
                     alert(`canUseFeature: ${testResult}\nLimits: ${JSON.stringify(featureLimits, null, 2)}`);
                   }}
                   size="sm"
@@ -222,7 +218,6 @@ const Competition = () => {
                 </Button>
                 <Button
                   onClick={async () => {
-                   //console.log('🔄 Rechargement manuel des quotas...');
                     // Forcer le rechargement
                     window.location.reload();
                   }}
@@ -233,8 +228,6 @@ const Competition = () => {
                 </Button>
                 <Button
                   onClick={async () => {
-                   //console.log('🔐 Test de session...');
-
                     // Tester via une requête API pour voir si la session est valide
                     try {
                       const response = await fetch('/api/v1/usage/limits', {
@@ -244,14 +237,11 @@ const Competition = () => {
 
                       if (response.ok) {
                         alert('✅ Session valide - Authentification réussie');
-                       //console.log('✅ Session valide');
                       } else if (response.status === 401) {
                         alert('❌ Session expirée - Reconnexion nécessaire\nRedirection vers la page de connexion...');
-                       //console.log('❌ Session expirée');
                         window.location.href = '/login';
                       } else {
                         alert(`❓ Erreur inconnue: ${response.status}`);
-                       //console.log('❓ Erreur inconnue:', response.status);
                       }
                     } catch (error) {
                       alert('❌ Erreur de réseau - Vérifiez votre connexion');

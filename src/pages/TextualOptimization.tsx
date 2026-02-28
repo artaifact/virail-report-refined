@@ -51,12 +51,6 @@ const TextualOptimization: React.FC = () => {
 
   // Debug: afficher les données chargées
   useEffect(() => {
-   //console.log('🔍 TextualOptimization - État actuel:');
-   //console.log('📊 Optimizations:', optimizations);
-   //console.log('📊 Current Optimization:', currentOptimization);
-   //console.log('📊 Loading:', isLoading);
-   //console.log('📊 Processing:', isProcessing);
-   //console.log('📊 Error:', error);
   }, [optimizations, currentOptimization, isLoading, isProcessing, error]);
 
   // États pour le formulaire de création

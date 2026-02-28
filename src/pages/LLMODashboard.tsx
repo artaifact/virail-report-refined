@@ -44,7 +44,6 @@ const LLMODashboard = () => {
             return savedItem ? { ...item, completed: savedItem.completed } : item;
           });
         } catch (e) {
-         //console.log('Erreur lors du chargement de la checklist:', e);
         }
       }
     }
@@ -57,8 +56,6 @@ const LLMODashboard = () => {
   // Initialiser la checklist avec les données du plan d'action GEO
   useEffect(() => {
     if (report && report.analyses && report.analyses.length > 0) {
-     //console.log('🔍 Rapport chargé:', report);
-     //console.log('🔍 Nombre d\'analyses:', report.analyses.length);
 
       // Chercher toutes les analyses avec un plan d'action GEO valide
       const analysesWithGeoPlan = report.analyses.filter(analysis =>
@@ -67,7 +64,6 @@ const LLMODashboard = () => {
         analysis.modules.audit_geo.plan_action_geo.length > 0
       );
 
-     //console.log('🔍 Analyses avec plan GEO trouvées:', analysesWithGeoPlan.length);
 
       // Prendre la première analyse avec le plan le plus complet
       const analysisWithGeoPlan = analysesWithGeoPlan.reduce((best, current) => {
@@ -76,11 +72,8 @@ const LLMODashboard = () => {
         return currentLength > bestLength ? current : best;
       }, analysesWithGeoPlan[0]);
 
-     //console.log('🔍 Analyse avec plan GEO trouvée:', analysisWithGeoPlan);
 
       if (analysisWithGeoPlan?.modules?.audit_geo?.plan_action_geo) {
-       //console.log('🔍 Plan d\'action GEO:', analysisWithGeoPlan.modules.audit_geo.plan_action_geo);
-       //console.log('🔍 Nombre d\'actions:', analysisWithGeoPlan.modules.audit_geo.plan_action_geo.length);
 
         const geoPlanItems = analysisWithGeoPlan.modules.audit_geo.plan_action_geo.map((item: string, index: number) => ({
           id: index + 1,
@@ -88,12 +81,10 @@ const LLMODashboard = () => {
           completed: false // Les actions sont par défaut non complétées - l'utilisateur peut les marquer
         }));
 
-       //console.log('🔍 Items de checklist générés:', geoPlanItems);
         // Charger l'état sauvegardé si disponible
         const itemsWithSavedState = loadChecklistState(geoPlanItems);
         setChecklistItems(itemsWithSavedState);
       } else {
-       //console.log('⚠️ Aucun plan GEO trouvé, utilisation du fallback');
         // Fallback vers la checklist par défaut si pas de plan GEO
         const fallbackItems = [
           { id: 1, text: "Ajouter JSON-LD 'SoftwareApplication' sur /, /features, /pricing", completed: false },
@@ -120,9 +111,6 @@ const LLMODashboard = () => {
 
   // Debug pour voir l'état de la checklist
   useEffect(() => {
-   //console.log('🔍 Checklist items actuels:', checklistItems);
-   //console.log('🔍 Nombre d\'items dans la checklist:', checklistItems.length);
-   //console.log('🔍 Items complétés:', checklistItems.filter(item => item.completed).length);
   }, [checklistItems]);
 
 
@@ -131,7 +119,6 @@ const LLMODashboard = () => {
     if (report && report.analyses) {
       const recommendations = mapApiDataToMatrix(report.analyses);
       setMatrixRecommendations(recommendations);
-     //console.log('📊 Matrice recommandations mappées:', recommendations);
     }
   }, [report]);
 
@@ -139,24 +126,14 @@ const LLMODashboard = () => {
   useEffect(() => {
     if (!report) return;
     try {
-     //console.log('🛰️ [API] FullReportData brut:', report);
-     //console.log('🛰️ [API] Métadonnées rapport:', report.report);
-     //console.log('🛰️ [API] Nombre d\'analyses:', report.analyses?.length || 0);
       (report.analyses || []).forEach((a: any, idx: number) => {
         const llm = a?.llm_name || a?.['llm_utilisé'] || `llm#${idx}`;
         const moduleKeys = a?.modules ? Object.keys(a.modules) : [];
         const geoKeys = a?.modules?.audit_geo ? Object.keys(a.modules.audit_geo) : [];
         const detailed = a?.['rapport_détaillé'] || a?.rapport_detaille || a?.rapport;
         const detailedKeys = detailed && typeof detailed === 'object' ? Object.keys(detailed) : [];
-       //console.log(`🛰️ [API] Analyse #${idx + 1} (${llm}) → modules:`, moduleKeys);
-        if (geoKeys.length)//console.log(`🛰️ [API]  └─ audit_geo:`, geoKeys);
-        if (detailedKeys.length)//console.log(`🛰️ [API]  └─ rapport_détaillé keys:`, detailedKeys);
-        if (a?.modules?.audit_geo?.score_global_geo != null) {
-         //console.log(`🛰️ [API]  └─ score_global_geo:`, a.modules.audit_geo.score_global_geo);
-        }
       });
     } catch (e) {
-     //console.log('[API][DEBUG] erreur lors du logging avancé', e);
     }
   }, [report]);
 
@@ -218,7 +195,6 @@ const LLMODashboard = () => {
             if (!container) return null;
             // 1) priorité à la clé exacte 7_package_optimisation_geo
             if ((container as any)['7_package_optimisation_geo']) {
-             //console.log('[LLMO] GEO package trouvé (exact) dans', contextLabel, '→ 7_package_optimisation_geo');
               return (container as any)['7_package_optimisation_geo'];
             }
             // 2) alias courants
@@ -230,7 +206,6 @@ const LLMODashboard = () => {
             ];
             for (const candidate of aliasCandidates) {
               if ((container as any)[candidate]) {
-               //console.log('[LLMO] GEO module trouvé via alias dans', contextLabel + ':', candidate);
                 return (container as any)[candidate];
               }
             }
@@ -238,10 +213,8 @@ const LLMODashboard = () => {
             const keys = Object.keys(container);
             const regexMatch = keys.find(k => /7\s*[_-]?\s*package.*optimisation.*geo/i.test(k) || /package.*optimisation.*geo/i.test(k) || /geo.*optim/i.test(k));
             if (regexMatch) {
-             //console.log('[LLMO] GEO module trouvé via regex key dans', contextLabel + ':', regexMatch);
               return (container as any)[regexMatch];
             }
-           //console.log('[LLMO] Aucun module GEO trouvé dans', contextLabel, '→ clés:', keys);
             return null;
           }
 
@@ -342,20 +315,16 @@ const LLMODashboard = () => {
             if (!analysis) return null;
             const geoPackage = findGeoFromAnalysis(analysis);
             if (!geoPackage) {
-             //console.log('[LLMO] Pas de GEO package pour analyse:', (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé']);
               return null;
             }
             let guide: any = null;
             if ((geoPackage as any).implementation_guide) {
-             //console.log('[LLMO] implementation_guide trouvé direct dans GEO package');
               guide = (geoPackage as any).implementation_guide;
             }
             if (!guide) {
-             //console.log('[LLMO] Recherche profonde du implementation_guide...');
               guide = deepFindImplementationGuide(geoPackage);
             }
             if (!guide) {
-             //console.log('[LLMO] Aucun implementation_guide trouvé pour analyse:', (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé']);
               return null;
             }
             const source = (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé'] || 'inconnu';
@@ -1760,20 +1729,17 @@ const LLMODashboard = () => {
                   const analyses = report?.analyses || [];
 
                   try {
-                   //console.log('[LLMO][Action] Modèles présents:', analyses.map(a => (a as any)?.llm_name || (a as any)?.['llm_utilisé']));
                   } catch { }
 
                   // essaie d'abord les modèles préférés
                   let extracted: { guide: any, source: string } | null = null;
                   for (const model of preferredModels) {
-                   //console.log('[LLMO][Action] Essai modèle préféré:', model);
                     const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
                     extracted = (LLMODashboard as any)._extractGuideFromAnalysis?.(a);
                     if (extracted) break;
                   }
                   // sinon, essaie n'importe quelle analyse
                   if (!extracted) {
-                   //console.log('[LLMO][Action] Aucun guide via préférés, test de toutes les analyses');
                     for (const a of analyses) {
                       const tmp = (LLMODashboard as any)._extractGuideFromAnalysis?.(a);
                       if (tmp) { extracted = tmp; break; }
@@ -1781,7 +1747,6 @@ const LLMODashboard = () => {
                   }
 
                   if (!extracted) {
-                   //console.log('[LLMO][Action] Aucun guide trouvé après exploration complète.');
                     return (
                       <div className="text-sm text-muted-foreground">
                         Aucun guide d'implémentation trouvé dans le paquet GEO.
@@ -1810,7 +1775,6 @@ const LLMODashboard = () => {
                         out.push('');
                         out.push('## Étapes d\'Implémentation');
                         const stepKeys = Object.keys(steps);
-                       //console.log('[LLMO][Action] etapes_implementation keys:', stepKeys);
                         for (const key of stepKeys) {
                           const step = steps[key] || {};
                           const stitre = step.titre || step.title || key;
@@ -1840,7 +1804,6 @@ const LLMODashboard = () => {
                       if (files && typeof files === 'object') {
                         out.push('## Fichiers Fournis');
                         const fileKeys = Object.keys(files);
-                       //console.log('[LLMO][Action] fichiers_fournis keys:', fileKeys);
                         for (const fkey of fileKeys) {
                           const f = files[fkey] || {};
                           out.push(`### ${fkey.replace(/_/g, ' ').toUpperCase()}`);
@@ -1879,7 +1842,6 @@ const LLMODashboard = () => {
 
                       return out.join('\n').trim();
                     } catch (e) {
-                     //console.log('[LLMO][Action] Erreur formatage implementation_guide, fallback JSON', e);
                       return JSON.stringify(obj, null, 2);
                     }
                   };
@@ -1894,7 +1856,6 @@ const LLMODashboard = () => {
                   try {
                     const t = typeof guide;
                     const len = t === 'string' ? (guide as string).length : Array.isArray(guide) ? guide.length : Object.keys(guide || {}).length;
-                   //console.log('[LLMO][Action] Guide extrait depuis', source, '| type:', t, '| taille:', len);
                   } catch { }
 
                   // Si guide est un objet, on rend une UI structurée type "Détails des priorités"

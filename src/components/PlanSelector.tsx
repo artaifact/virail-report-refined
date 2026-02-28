@@ -106,7 +106,6 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         throw new Error('Plan non trouvé');
       }
 
-     //console.log('💳 Création de la session de paiement Stripe pour le plan:', selectedPlanId);
 
       // Créer la Checkout Session côté backend
       const response = await apiService.createCheckoutSession(
@@ -115,7 +114,6 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         `${window.location.origin}/pricing?canceled=true`
       );
 
-     //console.log('📡 Réponse de l\'API:', response);
 
       // Extraire l'URL de checkout de la réponse
       const checkoutUrl = response.subscription?.checkout_url;
@@ -140,7 +138,6 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         // Rediriger vers Stripe pour le paiement
         window.location.href = checkoutUrl;
       } else {
-       //console.log('⚠️ Pas d\'URL de redirection, tentative de création directe');
 
         // Fallback: créer l'abonnement directement si pas d'URL Stripe
         const subscriptionResponse = await apiService.createSubscription({
@@ -159,7 +156,6 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         const subId = (subscriptionResponse as any)?.subscription?.id || (subscriptionResponse as any)?.subscription?.subscription?.id;
 
         if (subId) {
-         //console.log('🔧 Abonnement créé en fallback:', subId);
           try { localStorage.setItem('pending_subscription_id', subId); } catch {}
 
           // Activer immédiatement en fallback
