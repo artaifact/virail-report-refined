@@ -73,7 +73,7 @@ export function validatePassword(
   }
 
   // Règle 5: Au moins un caractère spécial
-  if (!/[!@#$%^&*(),.?":{}|<>\-_=+\[\]\\;'`~]/.test(password)) {
+  if (!/[^a-zA-Z0-9]/.test(password)) {
     errors.push('Doit contenir au moins un caractère spécial (!@#$%^&*...)');
   } else {
     score += 20;

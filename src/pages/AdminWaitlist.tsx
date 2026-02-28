@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ type WaitlistEntry = {
 };
 
 export default function AdminWaitlist() {
+  usePageTitle('Admin - Waitlist');
   // États pour la waitlist
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);

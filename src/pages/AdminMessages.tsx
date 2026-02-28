@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { AdminService } from '@/services/adminService';
 import { AdminMessage } from '@/types/admin';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { AlertCircle, Mail, Search, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 const AdminMessages: React.FC = () => {
+  usePageTitle('Admin - Messages');
   const [messages, setMessages] = useState<AdminMessage[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);

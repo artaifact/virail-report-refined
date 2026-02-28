@@ -1,9 +1,10 @@
-
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { HelpCircle, Book, MessageCircle, Mail, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 const Help = () => {
+  usePageTitle('Aide');
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">

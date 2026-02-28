@@ -47,11 +47,6 @@ export function getErrorMessage(error: unknown): string {
   return 'Une erreur inattendue est survenue';
 }
 
-/**
- * API mock pour simuler la réception des rapports LLMO
- * En attendant l'implémentation de l'API réelle
- */
-
 // Configuration pour le développement
 const getApiBaseUrl = () => {
   // Si VITE_API_BASE_URL est défini, l'utiliser en priorité
@@ -67,7 +62,6 @@ const getApiBaseUrl = () => {
   return 'http://localhost:8000';
 };
 
-const isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development';
 const API_BASE_URL = getApiBaseUrl();
 
 
@@ -148,11 +142,111 @@ export interface Analysis {
   }
 }
 
+// Structure d'un concurrent identifié
+export interface Competitor {
+  name: string;
+  url: string;
+  urls: string[];
+  average_score: number;
+  mentions: number;
+  sources: string[];
+  score_details: Record<string, number>;
+  favicon_url?: string;
+}
+
+// Résultat d'analyse mini-LLM pour un concurrent
+export interface MiniLLMResult {
+  competitor_name: string;
+  competitor_url: string;
+  llm_analysis: {
+    analyse_resume: string;
+    score_menace: number;
+    status: string;
+  };
+  status: string;
+}
+
+// Scores détaillés pour une URL
+export interface UrlScoreDetails {
+  credibility_authority: {
+    score: number;
+    details: {
+      sources_verifiables: number;
+      certifications: number;
+      avis_clients: number;
+      historique_marque: number;
+    };
+  };
+  structure_readability: {
+    score: number;
+    details: {
+      hierarchie: number;
+      formatage: number;
+      lisibilite: number;
+      longueur_optimale: number;
+      multimedia: number;
+    };
+  };
+  contextual_relevance: {
+    score: number;
+    details: {
+      reponse_intention: number;
+      personnalisation: number;
+      actualite: number;
+      langue_naturelle: number;
+      localisation: number;
+    };
+  };
+  technical_compatibility: {
+    score: number;
+    details: {
+      donnees_structurees: number;
+      meta_donnees: number;
+      performances: number;
+      compatibilite_mobile: number;
+      securite: number;
+    };
+  };
+  total_score: number;
+  grade: string;
+  primary_recommendations: string[];
+}
+
+// Résultats du benchmark
+export interface BenchmarkResults {
+  benchmark: {
+    classement: Array<{ url: string; score: number }>;
+    position_cible: number;
+    ecarts_vs_cible: Array<{ url: string; score: number; ecart_vs_cible: number }>;
+    comparaison?: string;
+  };
+  url_scores: Record<string, UrlScoreDetails | { url: string; error: string }>;
+  raw_data?: Record<string, UrlScoreDetails | { url: string; error: string }>;
+  summary?: string;
+}
+
+// Structure principale de l'analyse concurrentielle v1
+export interface AnalyseConcurrentielleV1 {
+  version: string;
+  session_id: string | null;
+  url: string;
+  competitors: Competitor[];
+  mini_llm_results: MiniLLMResult[];
+  benchmark_results: BenchmarkResults;
+  stats: {
+    total_mentions: number;
+    unique_competitors: number;
+    models_used: string[];
+  };
+  created_at: string;
+}
+
 export interface FullReportData {
   report: Report;
   analyses: Analysis[];
   analyse_citation?: any;
   competitor_analysis?: any;
+  analyse_concurrentielle_v1?: AnalyseConcurrentielleV1 | null;
 }
 
 /**
@@ -161,7 +255,7 @@ export interface FullReportData {
 export async function fetchReport(reportId: string): Promise<FullReportData | null> {
   try {
     const url = `${API_BASE_URL}/llmo/reports/${reportId}`;
-    
+
     // Utiliser AuthService.makeAuthenticatedRequest comme dans LLMODashboard
     const response = await AuthService.makeAuthenticatedRequest(url, {
       method: 'GET',
@@ -200,7 +294,19 @@ export async function fetchReport(reportId: string): Promise<FullReportData | nu
       throw new Error(errorMessage);
     }
 
-    const data: FullReportData = await response.json();
+    const rawData = await response.json();
+
+    // Mapper la réponse API vers le format attendu par le frontend
+    // L'API retourne { llmo_report: {...}, analyses: [...], analyse_concurrentielle_v1: {...} }
+    // Le frontend attend { report: {...}, analyses: [...], analyse_concurrentielle_v1: {...} }
+    const data: FullReportData = {
+      report: rawData.llmo_report || rawData.report,
+      analyses: rawData.analyses || [],
+      analyse_citation: rawData.analyse_citation,
+      competitor_analysis: rawData.competitor_analysis,
+      analyse_concurrentielle_v1: rawData.analyse_concurrentielle_v1 || null,
+    };
+
     return data;
 
   } catch (error) {
@@ -235,7 +341,7 @@ export async function startAnalysisStream(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, include_competitor_v1: true, include_citation: true }),
     });
 
     if (!response.ok) {
@@ -314,7 +420,7 @@ export async function startAnalysisStreamWithContext(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, include_competitor_v1: true, include_citation: true }),
     });
 
     if (!response.ok) {
@@ -374,7 +480,7 @@ export async function startAnalysisStreamWithContext(
 
           streamingContext.addEvent(sessionId, {
             type: 'module_completed',
-            message: `Module ${moduleIndex + 1}/${totalModules} terminé (${llmName})`,
+            message: `${llmName} — ${Math.round(((moduleIndex + 1) / totalModules) * 100)}%`,
             data,
           });
         }
@@ -447,19 +553,19 @@ export async function startAnalysis(url: string): Promise<{ reportId: string; st
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, include_competitor_v1: true, include_citation: true }),
       }),
-      
+
       // Deuxième appel : Récupérer les métadonnées ou configurations
       fetchWithAuth(`${API_BASE_URL}/analyze/config`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           url,
           get_metadata: true,
-          optimization_level: 'high' 
+          optimization_level: 'high'
         }),
       })
     ]);
@@ -514,7 +620,7 @@ export async function startAnalysisSequential(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, include_competitor_v1: true, include_citation: true }),
     });
 
     if (!analysisResponse.ok) {
@@ -613,7 +719,9 @@ export async function startAnalysisExtended(
         min_score,
         min_mentions,
         models,
-        include_raw
+        include_raw,
+        include_competitor_v1: true,
+        include_citation: true
       }),
     });
 
@@ -657,10 +765,12 @@ export async function startAnalysisSimple(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         url,
         model,
-        optimization_level: 'basic' // Indiquer que c'est une analyse simple
+        optimization_level: 'basic',
+        include_competitor_v1: true,
+        include_citation: true
       }),
     });
 
@@ -686,20 +796,25 @@ export async function startAnalysisSimple(
 }
 
 /**
- * Simule la vérification du statut d'une analyse en cours
+ * Vérifie le statut d'une analyse en cours
  */
 export async function checkAnalysisStatus(reportId: string): Promise<{ status: string; progress: number } | null> {
   try {
-    // Simuler un délai
-    await new Promise(resolve => setTimeout(resolve, 200));
+    const response = await fetchWithAuth(`${API_BASE_URL}/llmo/reports/${reportId}/status`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    // Simuler une progression
-    const progress = Math.min(100, Math.random() * 100);
-    const status = progress >= 100 ? 'completed' : 'processing';
+    if (!response.ok) {
+      return null;
+    }
 
+    const data = await response.json();
     return {
-      status,
-      progress
+      status: data.status || 'unknown',
+      progress: data.progress || 0
     };
   } catch (error) {
     return null;
@@ -707,83 +822,10 @@ export async function checkAnalysisStatus(reportId: string): Promise<{ status: s
 }
 
 /**
- * Génère des données de rapport mock pour d'autres sites
- */
-function generateMockReportData(domain: string): string {
-  return `# RAPPORT D'ANALYSE LLMO POUR : https://www.${domain}
-==========================================================
-
-## ANALYSES DÉTAILLÉES PAR LLM
-========================================
-
-### Analyse par : gpt-4o
-**Statut :** Terminée avec succès (Durée: 98.45s)
-
-#### 1. Perception de la Marque/Produit
-{
-  "Perception_Generale_par_IA": {
-    "Sujet_Principal": "Plateforme de comparaison et réservation de transports ${domain}",
-    "Ton_General": "Informatif et commercial, orienté service",
-    "Style_d_Ecriture": "Direct et accessible, adapté aux voyageurs",
-    "Biais": "Orienté commercial pour la conversion"
-  },
-  "Synthese_de_la_Perception": "Contenu bien structuré avec proposition de valeur claire pour ${domain}"
-}
-
-#### 2. Audience Cible & Segments
-Audience principale: Voyageurs planificateurs âgés de 25-55 ans recherchant des solutions de transport optimisées.
-
-#### 3. Probabilité de Recommandation
-score=72 justification="Contenu fiable avec bonne autorité dans le domaine du transport. Interface claire et informations utiles."
-
-#### 4. Proposition de Valeur, Pertinence, Fiabilité & Fraîcheur
-Proposition de valeur: Simplification de la recherche et comparaison de transports avec garantie du meilleur prix.
-
-#### 5. Analyse sémantique
-coherence_semantique={'score': 78, 'analyse': 'Bonne cohérence thématique autour du transport'} 
-densite_informationnelle={'score': 75, 'analyse': 'Contenu riche en informations pratiques'}
-score_global=76.5
-
-**Synthèse Stratégique & Recommandations LLMO :**
----------------------------------------------
-**Quick Wins:**
-1. Optimiser les méta-descriptions pour les IA
-2. Structurer davantage les données de transport
-
-**Actions Stratégiques:**
-1. Développer des contenus éditoriaux sur les voyages
-2. Intégrer des données structurées schema.org
-
-### Analyse par : claude-3-sonnet
-**Statut :** Terminée avec succès (Durée: 105.31s)
-
-#### 1. Perception de la Marque/Produit
-Perception positive d'une plateforme de transport fiable et innovante.
-
-#### 2. Audience Cible & Segments  
-Voyageurs soucieux du budget et de l'efficacité, recherchant des options de transport optimales.
-
-#### 3. Probabilité de Recommandation
-score=68 justification="Interface utilisateur intuitive mais pourrait bénéficier de plus de contenu éditorial."
-
-#### 4. Proposition de Valeur, Pertinence, Fiabilité & Fraîcheur
-Forte proposition de valeur dans la comparaison de transports avec mise à jour régulière des données.
-
-#### 5. Analyse sémantique  
-coherence_semantique={'score': 74, 'analyse': 'Structure cohérente mais pourrait être plus fluide'}
-score_global=71.0
-
-**Synthèse Stratégique & Recommandations LLMO :**
-Optimisation possible de la structure sémantique et enrichissement du contenu éditorial.
-`;
-}
-
-/**
  * Liste tous les rapports disponibles depuis votre backend
  */
 export async function listReports(): Promise<ReportResponse[]> {
   try {
-    // Appel authentifié vers votre backend
     const response = await fetchWithAuth(`${API_BASE_URL}/llmo/reports`, {
       method: 'GET',
       headers: {
@@ -792,14 +834,13 @@ export async function listReports(): Promise<ReportResponse[]> {
     });
 
     if (!response.ok) {
-      // Fallback vers les données mock
-      return getMockReports();
+      throw new Error(`Erreur lors du chargement des rapports: ${response.status}`);
     }
 
     const data = await response.json();
 
     if (!data.reports || !Array.isArray(data.reports)) {
-      return getMockReports();
+      return [];
     }
 
     // Mapper la réponse du backend au format ReportResponse
@@ -809,64 +850,18 @@ export async function listReports(): Promise<ReportResponse[]> {
       status: report.status === 'success' ? 'completed' : 'failed',
       createdAt: report.created_at,
       duration: report.duration ?? 0,
-      rawData: '', // Sera chargé lors de la sélection du rapport
+      rawData: '',
       metadata: {
-        // Ces valeurs ne sont pas dans l'API de liste, on met des placeholders
         llmsUsed: report.metadata?.llmsUsed ?? [],
         totalAnalyses: report.metadata?.totalAnalyses ?? 0,
         completionRate: report.metadata?.completionRate ?? (report.status === 'success' ? 100 : 0),
         score: report.score_produit_analyse
       }
     }));
-    
-  } catch (error) {
-    // Fallback vers les données mock en cas d'erreur réseau
-    return getMockReports();
-  }
-}
 
-/**
- * Données mock en cas d'erreur avec le backend
- */
-function getMockReports(): ReportResponse[] {
-  return [
-    {
-      id: '504606b0bc67caad',
-      url: 'https://www.booking.com',
-      status: 'completed',
-      createdAt: new Date().toISOString(),
-      duration: 225.22,
-      rawData: '',
-      metadata: {
-        llmsUsed: ['gpt-4o', 'claude-3-sonnet', 'gemini-pro', 'mixtral-8x7b', 'sonar'],
-        totalAnalyses: 5,
-        completionRate: 100
-      },
-      analyse_citation: {
-        total_citations: 6,
-        citations_by_model: {
-          "gpt-5": 0,
-          "claude-4-sonnet": 2,
-          "gemini-2.5-pro": 2,
-          "mixtral-3.1": 2,
-          "sonar": 0
-        }
-      }
-    },
-    {
-      id: 'virail-001',
-      url: 'https://www.virail.com',
-      status: 'completed',
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      duration: 203.76,
-      rawData: '',
-      metadata: {
-        llmsUsed: ['gpt-4o', 'claude-3-sonnet'],
-        totalAnalyses: 2,
-        completionRate: 100
-      }
-    }
-  ];
+  } catch (error) {
+    throw error;
+  }
 }
 
 /**
@@ -885,7 +880,9 @@ export async function startCustomAnalysis(params: {
       min_score: params.min_score ?? 0.3,
       min_mentions: params.min_mentions ?? 1,
       include_raw: params.include_raw ?? false,
-      include_competitor_analysis: params.include_competitor_analysis ?? true
+      include_competitor_analysis: params.include_competitor_analysis ?? true,
+      include_competitor_v1: true,
+      include_citation: true
     };
 
 

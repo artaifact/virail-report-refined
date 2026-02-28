@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc:*)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(cd:*)"
     ]
   }
 }

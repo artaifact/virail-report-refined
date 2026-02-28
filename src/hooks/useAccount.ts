@@ -242,12 +242,22 @@ export function useStripeInvoiceDetail(invoiceId: string) {
   });
 }
 
+// Validation des URLs de redirection Stripe
+function isValidStripeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.endsWith('stripe.com');
+  } catch {
+    return false;
+  }
+}
+
 // Télécharger PDF
 export function useStripeInvoicePdf() {
   return useMutation({
     mutationFn: fetchStripeInvoicePdf,
     onSuccess: (data) => {
-      if (data.pdf_url) {
+      if (data.pdf_url && isValidStripeUrl(data.pdf_url)) {
         window.open(data.pdf_url, '_blank');
       }
     },
@@ -277,7 +287,7 @@ export function useStripeBillingPortal() {
   return useMutation({
     mutationFn: openStripeBillingPortal,
     onSuccess: (data) => {
-      if (data.portal_url) {
+      if (data.portal_url && isValidStripeUrl(data.portal_url)) {
         window.location.href = data.portal_url;
       }
     },

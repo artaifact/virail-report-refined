@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,7 +15,7 @@ import { useRateLimit } from '@/hooks/useRateLimit';
 import { PasswordValidationResult } from '@/utils/passwordValidation';
 
 const registerSchema = z.object({
-  email: z.string().email('Email non valide'),
+  email: z.string().email('Veuillez entrer une adresse email valide (ex: nom@domaine.com)'),
   username: z.string().min(2, 'Le nom d\'utilisateur doit contenir au moins 2 caractères'),
   password: z.string().min(12, 'Le mot de passe doit contenir au moins 12 caractères'),
   confirmPassword: z.string().min(1, 'Veuillez confirmer votre mot de passe'),
@@ -26,6 +27,7 @@ const registerSchema = z.object({
 type RegisterFormData = RegisterRequest & { confirmPassword: string };
 
 export default function Register() {
+  usePageTitle('Inscription');
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [countdown, setCountdown] = useState(5);

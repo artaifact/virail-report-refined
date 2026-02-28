@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ import { startAnalysisSequential, startOptimizedAnalysis } from '@/lib/api';
  * Cette page permet de tester tous les endpoints de l'API simulée
  */
 const ApiDemo = () => {
+  usePageTitle('API Demo');
   const [testUrl, setTestUrl] = useState('');
   const [reportId, setReportId] = useState('504606b0bc67caad');
   const [loading, setLoading] = useState<string | null>(null);

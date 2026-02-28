@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Responsi
 import { ChartTooltip } from '@/components/ui/chart';
 
 const LLMODashboard = () => {
+  usePageTitle('Dashboard LLMO');
   const location = useLocation();
   const selectedReportId = location.state?.selectedReportId;
   const [activeTab, setActiveTab] = useState('Résumé');

@@ -33,6 +33,10 @@ let AUTH_MODE: 'cookies' | 'bearer' | 'auto' = ENV_AUTH_MODE && ['cookies','bear
 
 let CORS_CREDENTIALS_SUPPORTED: boolean | null = null;
 
+// In-memory token storage (not accessible via XSS unlike localStorage)
+let _inMemoryAccessToken: string | null = null;
+let _inMemoryRefreshToken: string | null = null;
+
 export class AuthService {
   private static readonly ACCESS_TOKEN_KEY = 'access_token';
   private static readonly REFRESH_TOKEN_KEY = 'refresh_token';
@@ -41,6 +45,20 @@ export class AuthService {
   static init(): void {
     try {
       const user = this.getUser();
+      // Migration : nettoyer les anciens tokens du localStorage (vulnérables au XSS)
+      // et les transférer en mémoire si présents
+      try {
+        const oldAccessToken = localStorage.getItem(this.ACCESS_TOKEN_KEY);
+        const oldRefreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+        if (oldAccessToken) {
+          _inMemoryAccessToken = oldAccessToken;
+          localStorage.removeItem(this.ACCESS_TOKEN_KEY);
+        }
+        if (oldRefreshToken) {
+          _inMemoryRefreshToken = oldRefreshToken;
+          localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+        }
+      } catch {}
     } catch (error) {
       this.clearAll();
     }
@@ -179,8 +197,13 @@ export class AuthService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Erreur lors de l\'inscription');
+      const error = await response.json().catch(() => ({}));
+      const msg = error.detail || error.message || error.error || 'Erreur lors de l\'inscription';
+      // Si detail est un tableau (FastAPI validation), formater
+      const message = Array.isArray(msg)
+        ? msg.map((e: any) => e.msg || e).join(', ')
+        : typeof msg === 'object' ? JSON.stringify(msg) : msg;
+      throw new Error(message);
     }
 
     const data = await response.json();
@@ -220,12 +243,18 @@ export class AuthService {
       
       const redirectUrl = data.redirect_url || data.auth_url;
       if (redirectUrl) {
-        // Redirection vers Google OAuth
+        // Valider que l'URL de redirection pointe bien vers Google OAuth
         try {
+          const url = new URL(redirectUrl);
+          if (!url.hostname.endsWith('google.com') && !url.hostname.endsWith('googleapis.com')) {
+            throw new Error('URL de redirection OAuth non autorisée');
+          }
           window.location.href = redirectUrl;
         } catch (redirectError) {
-          // Alternative: ouvrir dans une nouvelle fenêtre
-          window.open(redirectUrl, '_self');
+          if (redirectError instanceof TypeError) {
+            throw new Error('URL de redirection OAuth invalide');
+          }
+          throw redirectError;
         }
       } else {
         throw new Error('URL d\'authentification Google non reçue');
@@ -296,13 +325,13 @@ export class AuthService {
   static saveTokens(accessToken: string, refreshToken: string): void {
     try {
       if (AUTH_MODE === 'bearer') {
-        // Mode Bearer : sauvegarder dans localStorage
+        // Mode Bearer : stocker en mémoire (pas dans localStorage, vulnérable au XSS)
         if (accessToken && accessToken !== 'httponly-cookie') {
-          localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
+          _inMemoryAccessToken = accessToken;
         }
-        
+
         if (refreshToken && refreshToken !== 'httponly-cookie') {
-          localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+          _inMemoryRefreshToken = refreshToken;
         }
       }
     } catch (error) {
@@ -312,9 +341,8 @@ export class AuthService {
 
   static getAccessToken(): string | null {
     try {
-      // En mode Bearer, lire depuis localStorage
-      const token = localStorage.getItem(this.ACCESS_TOKEN_KEY);
-      return token;
+      // En mode Bearer, lire depuis la mémoire
+      return _inMemoryAccessToken;
     } catch (error) {
       return null;
     }
@@ -322,9 +350,8 @@ export class AuthService {
 
   static getRefreshToken(): string | null {
     try {
-      // En mode Bearer, lire depuis localStorage
-      const token = localStorage.getItem(this.REFRESH_TOKEN_KEY);
-      return token;
+      // En mode Bearer, lire depuis la mémoire
+      return _inMemoryRefreshToken;
     } catch (error) {
       return null;
     }
@@ -332,7 +359,10 @@ export class AuthService {
 
   static clearTokens(): void {
     try {
-      // Nettoyer localStorage
+      // Nettoyer les tokens en mémoire
+      _inMemoryAccessToken = null;
+      _inMemoryRefreshToken = null;
+      // Nettoyer aussi localStorage au cas où d'anciens tokens y seraient stockés
       localStorage.removeItem(this.ACCESS_TOKEN_KEY);
       localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     } catch (error) {
@@ -860,14 +890,17 @@ export class AuthService {
       const data = await response.json();
       
       if (response.ok) {
-        //  ////console.log('✅ Email de réinitialisation envoyé');
         return { success: true, message: data.message || 'Email envoyé avec succès' };
       } else {
-        // console.error('❌ Erreur lors de l\'envoi de l\'email:', data.message);
-        return { success: false, message: data.message || 'Erreur lors de l\'envoi de l\'email' };
+        const errorMsg =
+          (typeof data.detail === 'string' ? data.detail : null) ||
+          data.detail?.message ||
+          data.message ||
+          (Array.isArray(data.detail) ? data.detail.map((d: any) => d.msg || d.message).join(', ') : null) ||
+          `Erreur lors de l'envoi de l'email (${response.status})`;
+        return { success: false, message: errorMsg };
       }
     } catch (error) {
-      // console.error('❌ Erreur lors de la demande de réinitialisation:', error);
       return { success: false, message: 'Erreur de connexion' };
     }
   }
@@ -898,11 +931,16 @@ export class AuthService {
       const data = await response.json();
       
       if (response.ok) {
-        //  ////console.log('✅ Mot de passe réinitialisé avec succès');
         return { success: true, message: data.message || 'Mot de passe réinitialisé avec succès' };
       } else {
-        // console.error('❌ Erreur lors de la réinitialisation:', data.message);
-        return { success: false, message: data.message || 'Erreur lors de la réinitialisation' };
+        // Extraire le message d'erreur du backend (FastAPI: detail peut être string ou objet)
+        const errorMsg =
+          (typeof data.detail === 'string' ? data.detail : null) ||
+          data.detail?.message ||
+          data.message ||
+          (Array.isArray(data.detail) ? data.detail.map((d: any) => d.msg || d.message).join(', ') : null) ||
+          `Erreur lors de la réinitialisation (${response.status})`;
+        return { success: false, message: errorMsg };
       }
     } catch (error) {
       // console.error('❌ Erreur lors de la réinitialisation du mot de passe:', error);
@@ -911,7 +949,7 @@ export class AuthService {
   }
 }
 
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).debugAuth = {
     clearAll: () => AuthService.clearAll(),
     getAccessToken: () => AuthService.getAccessToken(),

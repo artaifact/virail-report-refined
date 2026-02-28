@@ -10,6 +10,42 @@ import { usePayment } from '@/hooks/usePayment';
 import { Crown, Star, Zap, Check, CreditCard, Users, BarChart3, Shield, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
+import { modelLogos } from '@/components/ModelLogosCarousel';
+
+// Configuration des modèles AI par plan (niveau : starter → intermédiaire → avancé)
+const AI_MODELS_CONFIG = [
+  {
+    level: 0, // Free / Gratuit
+    ids: ['free'],
+    web: ['openai', 'perplexity', 'gemini'],
+    api: [],
+  },
+  {
+    level: 1, // Starter
+    ids: ['starter', 'standard'],
+    web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'],
+    api: [],
+  },
+  {
+    level: 2, // Intermédiaire / Pro
+    ids: ['intermediaire', 'pro', 'premium'],
+    web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'],
+    api: ['openai', 'perplexity'],
+  },
+  {
+    level: 3, // Avancé / Enterprise
+    ids: ['advanced', 'enterprise'],
+    web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'],
+    api: ['openai', 'perplexity', 'claude'],
+  },
+];
+
+function getAiModelsForPlan(planId: string): { web: string[]; api: string[] } | null {
+  const config = AI_MODELS_CONFIG.find(c => c.ids.includes(planId.toLowerCase()));
+  if (config) return { web: config.web, api: config.api };
+  // Fallback par index de plan (1er = starter, 2e = intermédiaire, etc.)
+  return null;
+};
 
 interface PlanSelectorProps {
   className?: string;
@@ -75,7 +111,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
       // Créer la Checkout Session côté backend
       const response = await apiService.createCheckoutSession(
         selectedPlanId,
-        `${window.location.origin}/success?success=true&plan_id=${selectedPlanId}&subscription_id={subscription_id}`,
+        `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
         `${window.location.origin}/pricing?canceled=true`
       );
 
@@ -85,12 +121,19 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
       const checkoutUrl = response.subscription?.checkout_url;
       const subscriptionId = response.subscription?.subscription?.id;
 
-      if (checkoutUrl && checkoutUrl.startsWith('http')) {
-       //console.log('🔗 Redirection vers Stripe:', checkoutUrl);
+      // Valider que l'URL de checkout pointe bien vers Stripe
+      const isValidStripeUrl = (url: string): boolean => {
+        try {
+          const parsed = new URL(url);
+          return parsed.hostname.endsWith('stripe.com');
+        } catch {
+          return false;
+        }
+      };
 
+      if (checkoutUrl && isValidStripeUrl(checkoutUrl)) {
         // Sauvegarder l'ID d'abonnement pour l'activation
         if (subscriptionId) {
-         //console.log('🔧 ID d\'abonnement sauvegardé:', subscriptionId);
           try { localStorage.setItem('pending_subscription_id', subscriptionId); } catch {}
         }
 
@@ -296,6 +339,58 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                   </div>
                   
                 </div>
+
+                {/* AI Models */}
+                {(() => {
+                  const planIndex = plans.indexOf(plan);
+                  const aiModels = getAiModelsForPlan(plan.id) || (AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)] ? { web: AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)].web, api: AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)].api } : null);
+                  if (!aiModels) return null;
+                  return (
+                    <div className="pt-4 border-t border-primary space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">AI Models</span>
+                      </div>
+
+                      {/* Web UI scraping */}
+                      {aiModels.web.length > 0 && (
+                        <div className="space-y-1.5">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium">Web UI</Badge>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {aiModels.web.map((model) => (
+                              <img
+                                key={model}
+                                src={modelLogos[model]}
+                                alt={model}
+                                className="h-6 w-6 object-contain"
+                                title={model.charAt(0).toUpperCase() + model.slice(1)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* API */}
+                      <div className="space-y-1.5">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium">+ API</Badge>
+                        {aiModels.api.length > 0 ? (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {aiModels.api.map((model) => (
+                              <img
+                                key={model}
+                                src={modelLogos[model]}
+                                alt={model}
+                                className="h-6 w-6 object-contain"
+                                title={model.charAt(0).toUpperCase() + model.slice(1)}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-neutral-400 italic">Plan supérieur</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Liste des fonctionnalités */}
                 <div className="space-y-2 pt-4 border-t border-primary">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import PlanSelector from '@/components/PlanSelector';
 import UsageQuota from '@/components/UsageQuota';
 import ErrorHandler, { createPaymentError } from '@/components/ErrorHandler';
@@ -9,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
 
 const Pricing: React.FC = () => {
+  usePageTitle('Tarifs');
   const { error: paymentCtxError, loadPaymentData } = usePayment() as any;
   const [paymentError, setPaymentError] = useState<any>(null);
   const { toast } = useToast();

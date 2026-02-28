@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +11,8 @@ import { apiService } from '@/services/apiService';
 import { CheckCircle, XCircle, AlertCircle, Loader2, Crown, Star, Zap } from 'lucide-react';
 
 const PaymentTest: React.FC = () => {
-  const { 
+  usePageTitle('Test de paiement');
+  const {
     plans, 
     currentSubscription, 
     usageLimits, 

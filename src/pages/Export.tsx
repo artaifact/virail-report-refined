@@ -1,5 +1,5 @@
-
 import { useState } from "react";
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Download, Share2, FileText, Mail, Copy, ExternalLink, Calendar } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 
 const Export = () => {
+  usePageTitle('Export');
   const [shareableLink, setShareableLink] = useState("");
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState("");

@@ -1,8 +1,9 @@
-
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Users, UserPlus, Target, Globe } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Audience = () => {
+  usePageTitle('Audience');
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">

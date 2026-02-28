@@ -13,7 +13,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { StreamingProvider } from "@/contexts/StreamingContext";
 import { StreamingNotification } from "@/components/StreamingNotification";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
-import { OnboardingProvider } from "@/components/OnboardingProvider";
+
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import Index from "./pages/Index";
 import Analyses from "./pages/Analyses";
@@ -42,7 +42,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import LLMODashboard from "./pages/LLMODashboard";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import AdminMessages from "./pages/AdminMessages";
-import ProjectOnboardingDemo from "./pages/ProjectOnboardingDemo";
+
 import { OnboardingLayout } from "./pages/onboarding/OnboardingLayout";
 import { SetupStep } from "./pages/onboarding/SetupStep";
 import { ProjectStep } from "./pages/onboarding/ProjectStep";
@@ -182,7 +182,7 @@ const App = () => (
               <Route path="/reset-password" element={<ResetPassword />} />
               {/* <Route path="/auth/google/callback" element={<GoogleCallback />} /> */}
               <Route path="/diagnostic" element={<Diagnostic />} />
-              <Route path="/project-onboarding-demo" element={<ProjectOnboardingDemo />} />
+              {/* <Route path="/project-onboarding-demo" element={<ProjectOnboardingDemo />} /> */}
               
               {/* Routes d'onboarding (protégées) */}
               <Route path="/onboarding" element={
@@ -202,9 +202,7 @@ const App = () => (
               <Route path="/*" element={
                 <ProtectedRoute>
                   <NotificationProvider>
-                    <OnboardingProvider>
                       <MainLayout />
-                    </OnboardingProvider>
                   </NotificationProvider>
                 </ProtectedRoute>
               } />

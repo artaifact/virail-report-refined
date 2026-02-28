@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Globe, Zap, Target, Loader2, BarChart3, Sparkles, Rocket, Settings, TrendingUp, Star, Brain, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ interface OptimizationStats {
 }
 
 const SiteOptimization: React.FC = () => {
+  usePageTitle('Optimisation des sites');
   const navigate = useNavigate();
   const { toast } = useToast();
   

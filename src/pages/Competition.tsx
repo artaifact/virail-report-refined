@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePayment } from '@/hooks/usePayment';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Search,
-  Plus,
   Target,
   Eye,
   ExternalLink,
@@ -23,17 +21,15 @@ import {
   AlertCircle,
   CheckCircle,
   Loader2,
-  Info,
   ChevronRight,
   Award,
   Users,
   Clock,
   Lightbulb,
-  History,
-  Trash2,
   Calendar,
   Trophy,
-  Star
+  Star,
+  Lock
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCompetitiveAnalysis } from "@/hooks/useCompetitiveAnalysis";
@@ -66,11 +62,26 @@ const modelLogos: Record<string, string> = {
 const getModelLogo = (modelName: string): string | null => {
   if (!modelName) return null;
   const name = modelName.toLowerCase();
-  
+
   for (const [key, path] of Object.entries(modelLogos)) {
     if (name.includes(key)) return path;
   }
   return null;
+};
+
+// Mapper les noms techniques API vers des noms commerciaux (marque uniquement)
+const getCommercialModelName = (apiName: string): string => {
+  const n = apiName.toLowerCase().trim();
+  if (n.includes('sonar')) return 'Perplexity';
+  if (n.includes('claude')) return 'Claude';
+  if (n.startsWith('gpt') || n === 'chatgpt') return 'ChatGPT';
+  if (n.includes('gemini') || n === 'ai overview' || n === 'ai-overview') return 'Gemini';
+  if (n.includes('mistral') || n.includes('mixtral')) return 'Mistral';
+  if (n.includes('deepseek')) return 'DeepSeek';
+  if (n.includes('llama')) return 'Meta AI';
+  if (n.includes('qwen')) return 'Qwen';
+  if (n.includes('grok')) return 'Grok';
+  return apiName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 // Fonction pour obtenir le suffixe ordinal (1st, 2nd, 3rd, etc.)
@@ -86,187 +97,82 @@ import CompetitiveAnalysisDisplay from "@/components/competitive-analysis/Compet
 import DetailedCompetitiveAnalysis from "@/components/competitive-analysis/DetailedCompetitiveAnalysis";
 import MiniLLMAnalysis from "@/components/competitive-analysis/MiniLLMAnalysis";
 import {
-  listCompetitorAnalyses,
   getCompetitorAnalysisById,
-  startCompetitorAnalysis,
   extractDomain,
   CompetitorAnalysisResponse,
-  CompetitorAnalysisSummary,
   MiniLLMResult,
-  // Nouvelles fonctions pour /llmo/reports/{id}
   getCompetitorAnalysisFromReport,
-  listCompetitorAnalysesFromReports
 } from '@/services/competitorAnalysisService';
+import { useReports } from '@/hooks/useReports';
 
 const Competition = () => {
-  const [userUrl, setUserUrl] = useState("");
-  const [selectedTab, setSelectedTab] = useState("saved");
-  const [dateFilter, setDateFilter] = useState('15 nov - 21 nov');
-  const [regionFilter, setRegionFilter] = useState('France');
+  usePageTitle('Veille concurrentielle');
   const [selectedModel, setSelectedModel] = useState<string>('');
   const { toast } = useToast();
-  
+
   // États pour la nouvelle API
-  const [competitorAnalyses, setCompetitorAnalyses] = useState<CompetitorAnalysisSummary[]>([]);
   const [currentAnalysis, setCurrentAnalysis] = useState<CompetitorAnalysisResponse | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [loadingSavedAnalyses, setLoadingSavedAnalyses] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // État pour les analyses LLM détaillées
   const [miniLLMResults, setMiniLLMResults] = useState<MiniLLMResult[]>([]);
   const [loadingMiniLLM, setLoadingMiniLLM] = useState(false);
 
-  const { usageLimits, canUseFeature } = usePayment() as any;
+  // État pour le mode d'affichage benchmark
+  const [benchmarkView, setBenchmarkView] = useState<'score' | 'raw_data'>('score');
 
-  // Charger l'URL depuis sessionStorage si elle provient de l'onboarding
-  useEffect(() => {
-    const onboardingUrl = sessionStorage.getItem('onboarding-site-url');
-    if (onboardingUrl && !userUrl) {
-      setUserUrl(onboardingUrl);
-      // Passer automatiquement à l'onglet "Nouvelle analyse" si l'URL provient de l'onboarding
-      setSelectedTab("new");
-      // Nettoyer sessionStorage après utilisation (c'est la dernière étape qui l'utilise)
-      sessionStorage.removeItem('onboarding-site-url');
-    }
-  }, []);
+  // État pour le modal de détails GEO
+  const [geoModalOpen, setGeoModalOpen] = useState(false);
+  const [selectedGeoEntry, setSelectedGeoEntry] = useState<{ url: string; domain: string; data: any } | null>(null);
 
-  // Charger les analyses sauvegardées (depuis /llmo/reports ou /api/v1/competitors/analyses)
-  useEffect(() => {
-    const loadAnalyses = async () => {
-      try {
-        setLoadingSavedAnalyses(true);
+  // État pour le tooltip hover de la matrice
+  const [hoveredMatricePoint, setHoveredMatricePoint] = useState<string | null>(null);
 
-        // Essayer d'abord de charger depuis /llmo/reports
-        let analyses: CompetitorAnalysisSummary[] = [];
+  const { usageLimits, canUseFeature, subscription } = usePayment() as any;
+  const isStarter = subscription?.plan?.id === 'solo';
 
-        try {
-          analyses = await listCompetitorAnalysesFromReports();
-        } catch (reportsError) {
-        }
+  // Récupérer la liste des rapports comme dans la home page (useReports -> /llmo/reports)
+  const { reports, loading: reportsLoading } = useReports();
+  // Le dernier rapport de la liste = le plus récent (même logique que Index.tsx)
+  const latestReportId = reports.length > 0 ? reports[reports.length - 1].id : null;
 
-        // Si pas de résultats depuis /llmo/reports, utiliser l'ancien endpoint
-        if (analyses.length === 0) {
-          analyses = await listCompetitorAnalyses();
-        }
 
-        setCompetitorAnalyses(analyses);
-      } catch (error) {
-      } finally {
-        setLoadingSavedAnalyses(false);
-      }
-    };
-
-    loadAnalyses();
-  }, []);
-
-  const handleStartAnalysis = async () => {
-    if (!userUrl.trim()) return;
-
+  // Fonction pour charger une analyse par ID
+  const loadAnalysisById = async (analysisId: number) => {
     try {
-      setIsAnalyzing(true);
-      setError(null);
-      
-      // Normaliser l'URL (préfixe https:// si absent)
-      const normalizedUrl = userUrl.startsWith('http://') || userUrl.startsWith('https://')
-        ? userUrl
-        : `https://${userUrl}`;
-      setUserUrl(normalizedUrl);
+      setMiniLLMResults([]);
 
-      // Toast d'information immédiat
-      toast({
-        title: "Analyse lancée",
-        description: "Veuillez patienter, votre analyse sera prête dans quelques instants.",
-      });
-
-      const analysis = await startCompetitorAnalysis({
-        url: normalizedUrl
-      });
-
-      setCurrentAnalysis(analysis);
-      
-      // Charger les données mini_llm_results si disponibles
-      if (analysis.mini_llm_results && analysis.mini_llm_results.length > 0) {
-        setMiniLLMResults(analysis.mini_llm_results);
-      }
-      
-      // Recharger la liste des analyses
-      const updatedAnalyses = await listCompetitorAnalyses();
-      setCompetitorAnalyses(updatedAnalyses);
-
-      // Passer à l'onglet résultats seulement en cas de succès
-      setSelectedTab("results");
-      toast({
-        title: "Analyse terminée",
-        description: "Votre analyse concurrentielle est prête !"
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Une erreur inconnue est survenue';
-
- 
-      setError(errorMessage);
-
-      toast({
-        title: "Erreur d'analyse",
-        description: errorMessage,
-        variant: "destructive"
-      });
-
-      // En cas d'erreur, rester/retourner sur Analyses sauvegardées
-      setSelectedTab("saved");
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const handleLoadSavedAnalysis = async (analysisId: number) => {
-    try {
-      // Passer à l'onglet résultats immédiatement pour un feedback visuel
-      setSelectedTab("results");
-
-      // Essayer d'abord de charger depuis /llmo/reports/{id} (analyse_concurrentielle_v1)
       let analysis: CompetitorAnalysisResponse | null = null;
 
       try {
         analysis = await getCompetitorAnalysisFromReport(analysisId);
       } catch (reportError) {
+        console.warn('Erreur chargement /llmo/reports:', reportError);
       }
 
-      // Si pas de données depuis /llmo/reports, utiliser l'ancien endpoint
       if (!analysis) {
         analysis = await getCompetitorAnalysisById(analysisId);
       }
 
-      setCurrentAnalysis(analysis);
-
-      // Charger les données mini_llm_results si disponibles
-      if (analysis.mini_llm_results && analysis.mini_llm_results.length > 0) {
-        setMiniLLMResults(analysis.mini_llm_results);
+      if (analysis) {
+        setCurrentAnalysis(analysis);
+        if (analysis.mini_llm_results && analysis.mini_llm_results.length > 0) {
+          setMiniLLMResults(analysis.mini_llm_results);
+        }
       }
-
-      toast({
-        title: "Analyse chargée",
-        description: `Analyse de ${extractDomain(analysis.url)} chargée avec succès`
-      });
     } catch (error) {
-      toast({
-        title: "Erreur de chargement",
-        description: "Une erreur est survenue lors du chargement",
-        variant: "destructive"
-      });
-      setSelectedTab("saved");
+      console.error('Erreur chargement analyse:', error);
     }
   };
 
-  const handleDeleteAnalysis = async (analysisId: number, event: React.MouseEvent) => {
-    event.stopPropagation();
-    // TODO: Implémenter la suppression via API quand disponible
-    toast({
-      title: "Fonction non disponible",
-      description: "La suppression d'analyses n'est pas encore implémentée",
-      variant: "destructive"
-    });
-  };
+  // Fonction pour charger la liste des analyses depuis l'API
+  // Charger automatiquement la dernière analyse via le dernier report ID
+  useEffect(() => {
+    if (latestReportId && !reportsLoading) {
+      loadAnalysisById(Number(latestReportId));
+    }
+  }, [latestReportId, reportsLoading]);
+
 
   // Fonction extractDomain déjà importée du service
 
@@ -287,260 +193,7 @@ const Competition = () => {
       <div className="w-full space-y-6">
         {/* Header avec titre et filtres */}
         
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <TabsContent value="saved" className="space-y-6">
-            <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
-              <CardHeader className="bg-white border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-3 text-lg font-semibold text-gray-900">
-                      <History className="h-5 w-5 text-gray-600" />
-                      Analyses Concurrentielles
-                    </CardTitle>
-                    <CardDescription className="mt-2 text-gray-600">
-                      Accédez à vos analyses et comparez l'évolution de votre positionnement
-                    </CardDescription>
-                  </div>
-                  <Badge className="bg-gray-100 text-gray-700 border-gray-300">
-                    {competitorAnalyses.length} analyse{competitorAnalyses.length > 1 ? 's' : ''}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0 bg-white">
-                {loadingSavedAnalyses ? (
-                  <div className="text-center py-16 bg-white">
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-                      <span className="text-gray-600">Chargement des analyses...</span>
-                    </div>
-                  </div>
-                ) : competitorAnalyses.length === 0 ? (
-                  <div className="text-center py-16 bg-white">
-                    <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-3">Aucune analyse sauvegardée</h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Commencez votre première analyse concurrentielle et découvrez comment vous vous positionnez face à vos concurrents.
-                    </p>
-                    <Button 
-                      onClick={() => setSelectedTab("setup")} 
-                      className="text-white shadow-sm font-semibold px-8 py-3 h-auto"
-                      style={{
-                        background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)'
-                      }}
-                    >
-                      Lancer ma première analyse
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-200">
-                    {competitorAnalyses.map((analysis, index) => (
-                      <div 
-                        key={analysis.analysis_id} 
-                        className="group p-6 hover:bg-gray-50 cursor-pointer transition-all duration-300 relative overflow-hidden bg-white"
-                        onClick={() => handleLoadSavedAnalysis(analysis.analysis_id)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-4 mb-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <h4 className="text-lg font-semibold text-gray-900 group-hover:text-gray-900 transition-colors">
-                                    {extractDomain(analysis.url)}
-                                  </h4>
-                                  <Badge className="bg-gray-100 text-gray-700 font-semibold border-gray-300">
-                                    #{index + 1}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  <Badge className="bg-gray-100 text-gray-700 font-medium border-gray-300">
-                                    {analysis.status === 'completed' ? 'Terminée' : 'En cours'}
-                                  </Badge>
-                                  <Badge variant="outline" className="bg-white text-gray-600 border-gray-300">
-                                    {analysis.total_competitors_found} concurrent{analysis.total_competitors_found > 1 ? 's' : ''}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="grid md:grid-cols-2 gap-4 mb-4">
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <Users className="h-4 w-4 text-gray-500" />
-                                <span>{analysis.total_competitors_found} concurrent{analysis.total_competitors_found > 1 ? 's' : ''} analysé{analysis.total_competitors_found > 1 ? 's' : ''}</span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-3 ml-6">
-                            <div className="flex items-center gap-2 text-gray-500 group-hover:text-gray-900 transition-colors">
-                              <span className="text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                                Voir l'analyse
-                              </span>
-                              <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="setup" className="space-y-6">
-            <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
-              <CardHeader className="bg-white border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-3 text-lg font-semibold text-gray-900">
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <Search className="h-5 w-5 text-gray-700" />
-                      </div>
-                      Nouvelle Analyse Concurrentielle
-                    </CardTitle>
-                    <CardDescription className="mt-2 text-gray-600">
-                      Entrez l'URL de votre site pour commencer l'analyse GEO
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-8 bg-white">
-                <div className="max-w-2xl mx-auto space-y-6">
-                  <div className="flex gap-4">
-                    <div className="flex-1">
-                      <Input
-                        placeholder="votre-site.com"
-                        value={userUrl}
-                        onChange={(e) => setUserUrl(e.target.value)}
-                        onBlur={() => {
-                          if (userUrl && !userUrl.startsWith('http://') && !userUrl.startsWith('https://')) {
-                            setUserUrl(`https://${userUrl}`)
-                          }
-                        }}
-                        className="h-14 text-lg border border-gray-300 focus:border-gray-400 rounded-lg shadow-sm bg-white"
-                      />
-                    </div>
-                    <Button 
-                      onClick={handleStartAnalysis}
-                      disabled={!userUrl.trim() || isAnalyzing}
-                      className="text-white shadow-sm h-14 px-8 font-semibold text-lg rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                      style={!userUrl.trim() || isAnalyzing ? undefined : {
-                        background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)'
-                      }}
-                    >
-                      {isAnalyzing ? (
-                        <>
-                          <Loader2 className="h-5 w-5 mr-3 animate-spin text-blue-600" />
-                          Analyse...
-                        </>
-                      ) : (
-                        'Lancer l\'analyse'
-                      )}
-                    </Button>
-                  </div>
-                  
-                  <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                    <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-3 text-lg">
-                      <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
-                        <Info className="h-4 w-4 text-gray-700" />
-                      </div>
-                      Comment ça fonctionne ?
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
-                            <span className="text-white text-xs font-bold">1</span>
-                          </div>
-                          <span className="text-sm text-gray-700">Analyse GEO complète de votre site</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
-                            <span className="text-white text-xs font-bold">2</span>
-                          </div>
-                          <span className="text-sm text-gray-700">Identification automatique des concurrents</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
-                            <span className="text-white text-xs font-bold">3</span>
-                          </div>
-                          <span className="text-sm text-gray-700">Analyse GEO de chaque concurrent</span>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
-                            <span className="text-white text-xs font-bold">4</span>
-                          </div>
-                          <span className="text-sm text-gray-700">Comparaison détaillée et insights</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
-                            <span className="text-white text-xs font-bold">5</span>
-                          </div>
-                          <span className="text-sm text-gray-700">Recommandations personnalisées</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3B82F6' }}>
-                            <span className="text-white text-xs font-bold">6</span>
-                          </div>
-                          <span className="text-sm text-gray-700">Sauvegarde pour suivi temporel</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="results" className="space-y-6">
-            {/* Enhanced Header avec informations sur l'analyse chargée */}
-            {currentAnalysis && (
-              <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
-                <CardContent className="p-6 bg-white">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: '#3B82F6' }}></div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900 tracking-tight">
-                          Analyse de {extractDomain(currentAnalysis.url)}
-                        </h3>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                          <span className="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-300 text-gray-600">
-                            {formatDistanceToNow(new Date(currentAnalysis.created_at), { addSuffix: true, locale: fr })}
-                          </span>
-                          {currentAnalysis.target_positioning ? (
-                            <span className="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-300 text-gray-600">
-                              Rang {currentAnalysis.target_positioning.overall_rank}/{currentAnalysis.target_positioning.total_competitors}
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-300 text-gray-600">
-                              {currentAnalysis.consolidated_competitors?.length || 0} concurrents
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge className="bg-gray-100 text-gray-700 font-semibold px-3 py-1.5 rounded-md border-gray-300">
-                        {currentAnalysis.target_positioning?.market_position || 'En cours d\'analyse'}
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedTab("saved")}
-                        className="text-gray-700 hover:text-gray-900 border-gray-300 bg-white hover:bg-gray-50 rounded-md"
-                      >
-                        Retour aux analyses
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+        <div className="space-y-6">
 
             {/* Bouton de débogage temporaire */}
             {/* <div className="mb-4 p-4 bg-muted rounded-lg">
@@ -613,7 +266,7 @@ const Competition = () => {
             </div> */}
 
             {/* Affichage des erreurs */}
-            {error && !isAnalyzing && (
+            {error && (
               <Card className="border-gray-200 bg-gray-50 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3">
@@ -629,34 +282,51 @@ const Competition = () => {
               </Card>
             )}
 
-            {/* Enhanced État de chargement */}
-            {isAnalyzing && (
-              <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
-                <CardContent className="p-12 text-center bg-white">
-                  <div className="flex flex-col items-center gap-6">
-                    <div className="relative">
-                      <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl" style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 100%)' }}>
-                        <Loader2 className="h-10 w-10 text-white animate-spin" />
+            {/* État vide - Squelette */}
+            {!currentAnalysis && !error && (
+              <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                <CardContent className="p-8">
+                  <div className="space-y-6">
+                    {/* Squelette header */}
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-gray-100 animate-pulse" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-5 w-48 bg-gray-100 rounded-lg animate-pulse" />
+                        <div className="h-3 w-32 bg-gray-50 rounded-lg animate-pulse" />
                       </div>
-                      <div className="absolute inset-0 rounded-full border-4 border-gray-200 animate-spin" style={{ borderTopColor: '#3B82F6' }}></div>
                     </div>
-                    <div className="max-w-md">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                        Analyse concurrentielle en cours...
-                      </h3>
-                      <p className="text-gray-600 mb-6 text-lg">
-                        Analyse de votre site et identification de vos concurrents avec 3 modèles
+
+                    {/* Squelette cards concurrents */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="p-5 rounded-xl border border-gray-100 bg-gray-50/50">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-gray-200 animate-pulse" />
+                            <div className="flex-1 space-y-2">
+                              <div className="h-4 w-36 bg-gray-200 rounded animate-pulse" />
+                              <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
+                            </div>
+                            <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse" />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="h-2 w-full bg-gray-100 rounded-full animate-pulse" />
+                            <div className="h-2 w-3/4 bg-gray-100 rounded-full animate-pulse" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Squelette graphique */}
+                    <div className="p-6 rounded-xl border border-gray-100 bg-gray-50/50">
+                      <div className="h-4 w-40 bg-gray-200 rounded animate-pulse mb-4 mx-auto" />
+                      <div className="h-48 w-full bg-gray-100 rounded-lg animate-pulse" />
+                    </div>
+
+                    {/* Message */}
+                    <div className="text-center py-4">
+                      <p className="text-gray-400 text-sm">
+                        Aucune analyse disponible
                       </p>
-                      <div className="w-80 bg-gray-200 rounded-full h-3 mx-auto shadow-inner">
-                        <div 
-                          className="h-3 rounded-full transition-all duration-1000 shadow-sm animate-pulse"
-                          style={{ 
-                            width: `75%`,
-                            background: 'linear-gradient(90deg, #3B82F6 0%, #6366F1 100%)'
-                          }}
-                        ></div>
-                      </div>
-                      <p className="text-gray-600 mt-3 font-semibold">Analyse en cours...</p>
                     </div>
                   </div>
                 </CardContent>
@@ -664,7 +334,7 @@ const Competition = () => {
             )}
 
             {/* Affichage complet de toutes les données */}
-            {!isAnalyzing && currentAnalysis && (
+            {currentAnalysis && (
               <div className="space-y-6 mb-6">
 
                 {/* Statistiques globales */}
@@ -732,18 +402,12 @@ const Competition = () => {
                   {/* Top concurrents */}
                   {currentAnalysis.target_positioning?.top_competitors && currentAnalysis.target_positioning.top_competitors.length > 0 && (
                     <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                      <div className="mb-5">
-                        <h3 className="text-sm font-semibold text-gray-900 mb-1">Top concurrents</h3>
-                        <p className="text-xs text-gray-600">
-                          Classement des meilleurs concurrents identifiés pour votre marché
-                        </p>
-                      </div>
                       <div className="divide-y divide-gray-200 rounded-lg overflow-hidden border border-gray-200">
                         {currentAnalysis.target_positioning.top_competitors.map((c, idx) => (
                           <div key={idx} className="flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors">
                             <div className="flex items-center gap-4 min-w-0">
                               <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-300 text-sm font-bold text-gray-900">
-                                #{c.rank}
+                                {c.rank}
                               </div>
                               <div className="min-w-0">
                                 <div className="font-semibold text-gray-900 truncate text-sm">
@@ -759,28 +423,36 @@ const Competition = () => {
 
                   {/* Détails par modèle */}
                   {(() => {
-                    const competitorsByModel: Record<string, any[]> = {};
-                    
-                    // Grouper les concurrents par modèle
+                    // Grouper les concurrents par nom commercial (fusionner sonar + sonar-pro → Perplexity)
+                    const competitorsByCommercial: Record<string, any[]> = {};
+
                     const competitors = (currentAnalysis as any)?.competitors;
                     if (competitors && Array.isArray(competitors)) {
                       competitors.forEach((competitor: any) => {
                         if (competitor.sources && Array.isArray(competitor.sources)) {
                           competitor.sources.forEach((source: string) => {
-                            if (!competitorsByModel[source]) {
-                              competitorsByModel[source] = [];
+                            const commercial = getCommercialModelName(source);
+                            if (!competitorsByCommercial[commercial]) {
+                              competitorsByCommercial[commercial] = [];
                             }
-                            competitorsByModel[source].push(competitor);
+                            // Dédupliquer par domaine au sein d'un même groupe commercial
+                            const domain = extractDomain(competitor.url || competitor.primary_url || '');
+                            const alreadyAdded = competitorsByCommercial[commercial].some(
+                              (c: any) => extractDomain(c.url || c.primary_url || '') === domain
+                            );
+                            if (!alreadyAdded) {
+                              competitorsByCommercial[commercial].push(competitor);
+                            }
                           });
                         }
                       });
                     }
 
-                    const modelNames = Object.keys(competitorsByModel);
+                    const modelNames = Object.keys(competitorsByCommercial);
                     const defaultModel = modelNames[0] || '';
                     const currentSelectedModel = selectedModel || defaultModel;
-                    const currentCompetitors = competitorsByModel[currentSelectedModel] || [];
-                    
+                    const currentCompetitors = competitorsByCommercial[currentSelectedModel] || [];
+
                     // Initialiser le modèle sélectionné si vide
                     if (!selectedModel && defaultModel) {
                       setSelectedModel(defaultModel);
@@ -802,42 +474,39 @@ const Competition = () => {
 
                     return (
                       <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                        <div className="flex justify-between items-center mb-5">
-                          <h3 className="text-sm font-semibold text-gray-900">Détails par Modèle</h3>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-600">Modèle:</span>
-                            <Select value={currentSelectedModel} onValueChange={setSelectedModel}>
-                              <SelectTrigger className="w-[180px] h-8 text-xs border-gray-300 bg-white rounded-md px-2.5 py-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {modelNames.map((model) => (
-                                  <SelectItem key={model} value={model}>
-                                    <div className="flex items-center gap-2">
-                                      {getModelLogo(model) ? (
-                                        <img src={getModelLogo(model)!} alt={model} className="w-4 h-4 object-contain" />
-                                      ) : null}
-                                      <span>{model.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                        <div className="flex justify-end items-center mb-4">
+                          <Select value={currentSelectedModel} onValueChange={setSelectedModel}>
+                            <SelectTrigger className="w-[180px] h-8 text-xs border-gray-300 bg-white rounded-md px-2.5 py-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {modelNames.map((commercialName) => (
+                                <SelectItem key={commercialName} value={commercialName}>
+                                  <div className="flex items-center gap-2">
+                                    {getModelLogo(commercialName) ? (
+                                      <img src={getModelLogo(commercialName)!} alt={commercialName} className="w-4 h-4 object-contain" />
+                                    ) : null}
+                                    <span>{commercialName}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         
                         <div>
                           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3" style={{ letterSpacing: '1.2px' }}>
-                            {currentCompetitors.length} Concurrent{currentCompetitors.length > 1 ? 's' : ''} - {currentSelectedModel.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            {currentCompetitors.length} Concurrent{currentCompetitors.length > 1 ? 's' : ''} - {currentSelectedModel}
                           </div>
                           
                           <div className="max-h-[500px] overflow-y-auto pr-2">
                             {currentCompetitors.map((competitor: any, index: number) => {
-                              const rank = competitor.model_rank || `#${index + 1}`;
+                              const rank = competitor.model_rank || (index + 1);
                               const domain = extractDomain(competitor.url || competitor.primary_url || '');
                               return (
                                 <div key={index} className="flex items-center gap-3 py-3 border-b border-gray-200 last:border-b-0 hover:bg-blue-50/30 transition-colors" style={{ borderBottom: index < currentCompetitors.length - 1 ? '1px solid #edf2f7' : 'none' }}>
                                   <div className="text-base font-bold text-gray-400 min-w-[32px]" style={{ fontSize: '13px', fontWeight: 700 }}>{rank}</div>
+                                  <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt={domain} width={20} height={20} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                   <div className="flex-1">
                                     <div className="font-semibold text-gray-900 mb-0.5" style={{ fontSize: '15px', fontWeight: 600 }}>{competitor.name || domain}</div>
                                     <div className="text-gray-500" style={{ fontSize: '13px', color: '#94a3b8' }}>{domain}</div>
@@ -846,14 +515,6 @@ const Competition = () => {
                               );
                             })}
                           </div>
-                          
-                          <Button 
-                            variant="outline" 
-                            className="w-full mt-6 border-gray-300 bg-white hover:bg-gray-50 text-sm font-medium py-2.5"
-                            onClick={() => setSelectedTab("saved")}
-                          >
-                            → Voir l'analyse concurrentielle complète
-                          </Button>
                         </div>
                       </Card>
                     );
@@ -890,27 +551,277 @@ const Competition = () => {
                           )}
                         </div>
 
-                        {/* À améliorer */}
-                        <div className="p-4 rounded-lg bg-amber-50 border border-amber-200">
-                          <h4 className="text-sm font-semibold text-amber-700 mb-3 flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4" />
-                            À améliorer
-                          </h4>
-                          {(currentAnalysis.target_positioning?.improvement_areas || []).length > 0 ? (
-                            <ul className="space-y-2 list-disc list-inside">
-                              {currentAnalysis.target_positioning!.improvement_areas.map((item, idx) => (
-                                <li key={idx} className="text-sm text-gray-900">{item}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <div className="text-sm text-gray-600">Aucun axe d'amélioration listé</div>
-                          )}
-                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 ) : null}
 
+
+                  {/* Matrice de Matérialité */}
+                  {(() => {
+                    const competitors = (currentAnalysis as any)?.competitors;
+                    const benchmarkRaw = (currentAnalysis as any)?.benchmark_results?.raw_data;
+                    const analysisUrl = currentAnalysis?.url || '';
+                    const totalMentions = competitors?.reduce((sum: number, c: any) => sum + (c.mentions || 0), 0) || 1;
+
+                    if (!competitors || competitors.length === 0) return null;
+
+                    type MatricePoint = {
+                      name: string;
+                      url: string;
+                      favicon_url?: string;
+                      visibility: number;
+                      sentiment: number;
+                      totalScore: number;
+                      mentions: number;
+                      isTarget: boolean;
+                      scoreDetails?: any;
+                      grade?: string;
+                      recommendations?: string[];
+                    };
+
+                    const dataPoints: MatricePoint[] = [];
+
+                    // Deduplicate competitors by URL
+                    const competitorsByUrl = new Map<string, any>();
+                    for (const c of competitors) {
+                      const existing = competitorsByUrl.get(c.url);
+                      if (!existing || c.mentions > existing.mentions) {
+                        competitorsByUrl.set(c.url, c);
+                      }
+                    }
+
+                    for (const [url, comp] of competitorsByUrl) {
+                      const benchEntry = benchmarkRaw?.[url];
+                      const hasScore = benchEntry && typeof benchEntry.total_score === 'number';
+                      const totalScore = hasScore ? benchEntry.total_score : 0;
+
+                      dataPoints.push({
+                        name: comp.name,
+                        url,
+                        favicon_url: comp.favicon_url || `https://www.google.com/s2/favicons?domain=${url.replace(/^https?:\/\//, '').replace(/\/.*/, '')}&sz=32`,
+                        visibility: totalScore,
+                        sentiment: comp.average_score || 0,
+                        totalScore,
+                        mentions: comp.mentions || 0,
+                        isTarget: false,
+                        scoreDetails: hasScore ? benchEntry : undefined,
+                        grade: hasScore ? benchEntry.grade : undefined,
+                        recommendations: hasScore ? benchEntry.primary_recommendations : undefined,
+                      });
+                    }
+
+                    // Add user's site
+                    if (analysisUrl && benchmarkRaw?.[analysisUrl]) {
+                      const targetEntry = benchmarkRaw[analysisUrl];
+                      const targetScore = targetEntry.total_score || 0;
+                      const domain = analysisUrl.replace(/^https?:\/\//, '').replace(/\/.*/, '');
+                      dataPoints.push({
+                        name: domain,
+                        url: analysisUrl,
+                        favicon_url: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+                        visibility: targetScore,
+                        sentiment: Math.min(1, targetScore / 100 * 1.2),
+                        totalScore: targetScore,
+                        mentions: 0,
+                        isTarget: true,
+                        scoreDetails: targetEntry,
+                        grade: targetEntry.grade,
+                        recommendations: targetEntry.primary_recommendations,
+                      });
+                    }
+
+                    if (dataPoints.length === 0) return null;
+
+                    // Limiter à 12 concurrents max pour éviter le parasitage
+                    // Garder le target + top concurrents par score
+                    const MAX_DISPLAY = 12;
+                    let displayPoints = dataPoints;
+                    if (dataPoints.length > MAX_DISPLAY) {
+                      const target = dataPoints.filter(d => d.isTarget);
+                      const others = dataPoints.filter(d => !d.isTarget)
+                        .sort((a, b) => b.totalScore - a.totalScore)
+                        .slice(0, MAX_DISPLAY - target.length);
+                      displayPoints = [...target, ...others];
+                    }
+
+                    const chartW = 900;
+                    const chartH = 560;
+                    const pad = { top: 30, right: 30, bottom: 50, left: 60 };
+                    const plotW = chartW - pad.left - pad.right;
+                    const plotH = chartH - pad.top - pad.bottom;
+                    const xScale = (v: number) => pad.left + (v / 100) * plotW;
+                    const yScale = (s: number) => pad.top + plotH - s * plotH;
+
+                    return (
+                      <Card className="w-full bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2" style={{ textAlign: 'center' }}>
+                          Matrice de Matérialité
+                        </h3>
+                        {dataPoints.length > MAX_DISPLAY && (
+                          <p className="text-xs text-gray-400 mb-3" style={{ textAlign: 'center' }}>
+                            Top {MAX_DISPLAY} concurrents affichés sur {dataPoints.length}
+                          </p>
+                        )}
+
+                        {/* Legend */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16, alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 12, color: '#64748B' }}>Marques</span>
+                          {displayPoints.map(d => (
+                            <div
+                              key={d.url}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 4, cursor: isStarter ? 'default' : 'pointer',
+                                padding: '2px 8px', borderRadius: 6,
+                                background: d.isTarget ? '#EEF2FF' : 'transparent',
+                                border: d.isTarget ? '1px solid #C7D2FE' : '1px solid transparent',
+                              }}
+                              onClick={() => {
+                                if (isStarter) return;
+                                setSelectedGeoEntry({
+                                  url: d.url,
+                                  domain: d.url.replace(/^https?:\/\//, '').replace(/\/.*/, ''),
+                                  data: d.scoreDetails || {}
+                                });
+                                setGeoModalOpen(true);
+                              }}
+                            >
+                              <img
+                                src={d.favicon_url}
+                                alt={d.name}
+                                style={{ width: 16, height: 16, borderRadius: 3 }}
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                              <span style={{ fontSize: 11, color: d.isTarget ? '#4F46E5' : '#475569', fontWeight: d.isTarget ? 600 : 400 }}>
+                                {d.name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* SVG Scatter Chart */}
+                        <div style={{ overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+                          <svg viewBox={`0 0 ${chartW} ${chartH}`} style={{ width: '100%', maxWidth: chartW, height: 'auto' }}>
+                            {/* Quadrant backgrounds */}
+                            <rect x={pad.left} y={pad.top} width={plotW} height={plotH} fill="#FAFBFC" />
+
+                            {/* Quadrant labels */}
+                            <text x={pad.left + plotW * 0.25} y={pad.top + 16} textAnchor="middle" fontSize="11" fill="#6B7280" fontWeight="500">Niche Players</text>
+                            <text x={pad.left + plotW * 0.75} y={pad.top + 16} textAnchor="middle" fontSize="11" fill="#16A34A" fontWeight="500">Leaders</text>
+                            <text x={pad.left + plotW * 0.25} y={pad.top + plotH - 6} textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="500">Laggers</text>
+                            <text x={pad.left + plotW * 0.75} y={pad.top + plotH - 6} textAnchor="middle" fontSize="11" fill="#D97706" fontWeight="500">Controversial</text>
+
+                            {/* Grid lines */}
+                            {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(v => (
+                              <g key={`x-${v}`}>
+                                <line x1={xScale(v)} y1={pad.top} x2={xScale(v)} y2={pad.top + plotH} stroke="#E5E7EB" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "4 2"} />
+                                <text x={xScale(v)} y={chartH - 10} textAnchor="middle" fontSize="10" fill="#9CA3AF">{v}%</text>
+                              </g>
+                            ))}
+                            {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map(s => (
+                              <g key={`y-${s}`}>
+                                <line x1={pad.left} y1={yScale(s)} x2={pad.left + plotW} y2={yScale(s)} stroke="#E5E7EB" strokeWidth={0.5} strokeDasharray={s === 0.5 ? "0" : "4 2"} />
+                                <text x={pad.left - 8} y={yScale(s) + 4} textAnchor="end" fontSize="10" fill="#9CA3AF">{s.toFixed(1)}</text>
+                              </g>
+                            ))}
+
+                            {/* Center cross */}
+                            <line x1={xScale(50)} y1={pad.top} x2={xScale(50)} y2={pad.top + plotH} stroke="#CBD5E1" strokeWidth={1} />
+                            <line x1={pad.left} y1={yScale(0.5)} x2={pad.left + plotW} y2={yScale(0.5)} stroke="#CBD5E1" strokeWidth={1} />
+
+                            {/* Axis labels */}
+                            <text x={chartW / 2} y={chartH - 2} textAnchor="middle" fontSize="11" fill="#6B7280">Visibility</text>
+                            <text x={12} y={chartH / 2} textAnchor="middle" fontSize="11" fill="#6B7280" transform={`rotate(-90, 12, ${chartH / 2})`}>Sentiment</text>
+
+                            {/* Data points - render non-hovered first, hovered last so tooltip stays on top */}
+                            {[...displayPoints].sort((a, b) => (a.url === hoveredMatricePoint ? 1 : 0) - (b.url === hoveredMatricePoint ? 1 : 0)).map((d, i) => {
+                              const cx = xScale(d.visibility);
+                              const cy = yScale(d.sentiment);
+                              const quadrantInfo = d.visibility >= 50
+                                ? (d.sentiment >= 0.5
+                                  ? { label: 'Leader', desc: 'Très bien positionné. Forte visibilité et perception positive par les IA.', color: '#22C55E' }
+                                  : { label: 'Controversial', desc: 'Visible mais mal perçu. Les IA le mentionnent souvent mais avec un sentiment négatif.', color: '#F59E0B' })
+                                : (d.sentiment >= 0.5
+                                  ? { label: 'Niche Player', desc: 'Bien perçu mais peu visible. Les IA en parlent positivement mais rarement.', color: '#6366F1' }
+                                  : { label: 'Lagger', desc: 'En retard. Faible visibilité et perception négative par les IA.', color: '#EF4444' });
+                              const isHovered = hoveredMatricePoint === d.url;
+                              const tooltipW = 220;
+                              const tooltipH = 130;
+                              const tooltipX = cx + tooltipW + 20 > chartW ? cx - tooltipW - 10 : cx + 24;
+                              const tooltipY = cy - tooltipH / 2 < 0 ? 4 : (cy + tooltipH / 2 > chartH ? chartH - tooltipH - 4 : cy - tooltipH / 2);
+                              return (
+                                <g
+                                  key={d.url + i}
+                                  style={{ cursor: isStarter ? 'default' : 'pointer' }}
+                                  onMouseEnter={() => setHoveredMatricePoint(d.url)}
+                                  onMouseLeave={() => setHoveredMatricePoint(null)}
+                                  onClick={() => {
+                                    if (isStarter) return;
+                                    setSelectedGeoEntry({
+                                      url: d.url,
+                                      domain: d.url.replace(/^https?:\/\//, '').replace(/\/.*/, ''),
+                                      data: d.scoreDetails || {}
+                                    });
+                                    setGeoModalOpen(true);
+                                  }}
+                                >
+                                  <circle cx={cx} cy={cy} r={isHovered ? 22 : 20} fill="rgba(0,0,0,0.06)" />
+                                  <circle
+                                    cx={cx} cy={cy} r={isHovered ? 20 : 18}
+                                    fill={d.isTarget ? '#4F46E5' : '#fff'}
+                                    stroke={d.isTarget ? '#4F46E5' : '#E2E8F0'}
+                                    strokeWidth={isHovered ? 3 : 2}
+                                  />
+                                  <image
+                                    href={d.favicon_url}
+                                    x={cx - 10} y={cy - 10} width={20} height={20}
+                                    style={{ pointerEvents: 'none' }}
+                                  />
+                                  {isHovered && (
+                                    <foreignObject x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} style={{ pointerEvents: 'none', overflow: 'visible' }}>
+                                      <div style={{
+                                        background: '#F8FAFC', color: '#1E293B', borderRadius: 10, padding: '12px 14px',
+                                        fontSize: 11, lineHeight: 1.5, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', border: '1px solid #E2E8F0',
+                                        filter: isStarter ? 'blur(4px)' : 'none',
+                                      }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                          <span style={{ fontWeight: 700, fontSize: 13, color: '#1E293B' }}>{d.name}</span>
+                                          <span style={{ fontSize: 10, fontWeight: 600, color: quadrantInfo.color, background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>{quadrantInfo.label}</span>
+                                        </div>
+                                        <div style={{ fontSize: 11, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
+                                          {quadrantInfo.desc}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 12, fontSize: 11 }}>
+                                          <span><span style={{ color: '#64748B' }}>Visibility </span><span style={{ fontWeight: 600, color: '#1E293B' }}>{d.visibility}%</span></span>
+                                          <span><span style={{ color: '#64748B' }}>Sentiment </span><span style={{ fontWeight: 600, color: '#1E293B' }}>{(d.sentiment * 100).toFixed(0)}%</span></span>
+                                        </div>
+                                      </div>
+                                    </foreignObject>
+                                  )}
+                                  {/* Lock overlay for solo plan on hover */}
+                                  {isHovered && isStarter && (
+                                    <foreignObject x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} style={{ pointerEvents: 'none', overflow: 'visible' }}>
+                                      <div style={{
+                                        width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      }}>
+                                        <div style={{
+                                          background: 'rgba(255,255,255,0.85)', borderRadius: 8, padding: '8px 14px',
+                                          display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                        }}>
+                                          <Lock className="w-3.5 h-3.5 text-gray-500" />
+                                          <span style={{ fontSize: 11, fontWeight: 600, color: '#475569' }}>Plan supérieur requis</span>
+                                        </div>
+                                      </div>
+                                    </foreignObject>
+                                  )}
+                                </g>
+                              );
+                            })}
+                          </svg>
+                        </div>
+                      </Card>
+                    );
+                  })()}
 
                   {/* Données Benchmark - Mode Paysage - Pleine Largeur */}
                   {(currentAnalysis as any).benchmark_results?.benchmark && (() => {
@@ -938,32 +849,33 @@ const Competition = () => {
                             </div>
                           )}
                         </div>
-                        
+
                         {/* Dropdown et tableau en mode paysage */}
                         <div className="w-full">
                           <div className="flex justify-end mb-4">
-                            <Select defaultValue="score">
-                              <SelectTrigger className="w-[160px] h-9 text-sm border-gray-300 bg-white">
+                            <Select value={benchmarkView} onValueChange={(val) => setBenchmarkView(val as 'score' | 'raw_data')}>
+                              <SelectTrigger className="w-[200px] h-9 text-sm border-gray-300 bg-white">
                                 <SelectValue placeholder="Score Benchmark" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="score">Score Benchmark</SelectItem>
-                                <SelectItem value="mention">Taux de Mention</SelectItem>
+                                <SelectItem value="raw_data">Analyse GEO</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
-                          
+
+                          {benchmarkView === 'score' ? (
+                          <>
                           {/* Table Header - Mode Paysage avec plus de colonnes - Pleine Largeur */}
                           <div className="w-full overflow-x-auto">
                             <div className="w-full">
-                              <div className="grid grid-cols-[60px_2fr_1fr_1fr_120px] gap-6 pb-3 border-b-2 border-gray-200 mb-3">
+                              <div className="grid grid-cols-[60px_2fr_1fr_120px] gap-6 pb-3 border-b-2 border-gray-200 mb-3">
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rang</div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Score</div>
-                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Évolution</div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Position</div>
                               </div>
-                              
+
                               {/* Liste scrollable en mode paysage */}
                               <div className="max-h-[600px] overflow-y-auto">
                                 {classement.map((entry: any, idx: number) => {
@@ -972,32 +884,32 @@ const Competition = () => {
                                   const brandName = isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url));
                                   const domain = extractDomain(entry.url);
                                   const rank = idx + 1;
-                                  
+
                                   return (
-                                    <div 
+                                    <div
                                       key={idx}
-                                      className={`grid grid-cols-[60px_2fr_1fr_1fr_120px] gap-6 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors items-center ${isYourSite ? 'bg-blue-50/50' : ''}`}
+                                      className={`grid grid-cols-[60px_2fr_1fr_120px] gap-6 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors items-center ${isYourSite ? 'bg-blue-50/50' : ''}`}
                                     >
                                       <div className="flex items-center">
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${isYourSite ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
                                           {rank}
                                         </div>
                                       </div>
-                                      <div className="min-w-0">
-                                        <div className={`font-semibold text-sm ${isYourSite ? 'text-blue-600' : 'text-gray-900'}`}>
-                                          {brandName}
+                                      <div className="flex items-center gap-3 min-w-0">
+                                        <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt={domain} width={20} height={20} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                        <div className="min-w-0">
+                                          <div className={`font-semibold text-sm ${isYourSite ? 'text-blue-600' : 'text-gray-900'}`}>
+                                            {brandName}
+                                          </div>
+                                          <div className="text-xs text-gray-500 truncate">{domain}</div>
                                         </div>
-                                        <div className="text-xs text-gray-500 truncate">{domain}</div>
                                       </div>
                                       <div>
                                         <div className="text-base font-bold text-gray-900">{entry.score || 0}%</div>
                                       </div>
-                                      <div>
-                                        <div className="text-sm font-medium text-orange-500">+0.0%</div>
-                                      </div>
                                       <div className="text-right">
-                                        <Badge 
-                                          variant="outline" 
+                                        <Badge
+                                          variant="outline"
                                           className={`${isYourSite ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-gray-100 border-gray-300 text-gray-700'}`}
                                         >
                                           {rank}{getOrdinalSuffix(rank)}
@@ -1009,18 +921,266 @@ const Competition = () => {
                               </div>
                             </div>
                           </div>
+                          </>
+                          ) : (
+                          <>
+                          {/* Vue Analyse GEO - raw_data */}
+                          {(() => {
+                            const rawData = (currentAnalysis as any)?.benchmark_results?.raw_data;
+                            if (!rawData || Object.keys(rawData).length === 0) {
+                              return (
+                                <div className="text-center text-gray-500 py-8">
+                                  Aucune donnée GEO disponible pour cette analyse.
+                                </div>
+                              );
+                            }
+
+                            const rawEntries = Object.entries(rawData)
+                              .map(([url, data]: [string, any]) => ({
+                                url,
+                                domain: extractDomain(url),
+                                totalScore: data.total_score || 0,
+                                grade: data.grade || '-',
+                                credibility: data.credibility_authority?.score || 0,
+                                structure: data.structure_readability?.score || 0,
+                                relevance: data.contextual_relevance?.score || 0,
+                                technical: data.technical_compatibility?.score || 0,
+                                recommendations: data.primary_recommendations || [],
+                                fullData: data,
+                              }))
+                              .sort((a, b) => b.totalScore - a.totalScore);
+
+                            const geoContent = (
+                              <div className="w-full overflow-x-auto">
+                                <div className="w-full">
+                                  <div className="grid grid-cols-[60px_2fr_repeat(4,80px)_100px] gap-4 pb-3 border-b-2 border-gray-200 mb-3">
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rang</div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Crédibilité</div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Structure</div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Pertinence</div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Technique</div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Total</div>
+                                  </div>
+
+                                  <div className="max-h-[600px] overflow-y-auto">
+                                    {rawEntries.map((entry, idx) => {
+                                      const isYourSite = entry.url === currentAnalysis.url;
+                                      const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
+                                      const brandName = isYourSite ? 'Votre site' : (competitor?.name || entry.domain);
+
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className={`grid grid-cols-[60px_2fr_repeat(4,80px)_100px] gap-4 py-4 border-b border-gray-100 last:border-b-0 transition-colors items-center ${isStarter ? '' : 'cursor-pointer hover:bg-gray-50'} ${isYourSite ? 'bg-blue-50/50' : ''}`}
+                                          onClick={() => {
+                                            if (isStarter) return;
+                                            setSelectedGeoEntry({ url: entry.url, domain: entry.domain, data: entry.fullData });
+                                            setGeoModalOpen(true);
+                                          }}
+                                        >
+                                          <div className="flex items-center">
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${isYourSite ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                              {idx + 1}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-3 min-w-0">
+                                            <img src={`https://www.google.com/s2/favicons?domain=${entry.domain}&sz=32`} alt={entry.domain} width={20} height={20} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                            <div className="min-w-0">
+                                              <div className={`font-semibold text-sm ${isYourSite ? 'text-blue-600' : 'text-gray-900'}`}>
+                                                {brandName}
+                                              </div>
+                                              <div className="text-xs text-gray-500 truncate">{entry.domain}</div>
+                                            </div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-sm font-semibold text-gray-900">{entry.credibility}</div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-sm font-semibold text-gray-900">{entry.structure}</div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-sm font-semibold text-gray-900">{entry.relevance}</div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-sm font-semibold text-gray-900">{entry.technical}</div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-base font-bold text-gray-900">{entry.totalScore}%</div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+
+                            if (isStarter) {
+                              return (
+                                <div style={{ position: 'relative' }}>
+                                  <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }}>
+                                    {geoContent}
+                                  </div>
+                                  <div style={{
+                                    position: 'absolute', inset: 0,
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                    background: 'rgba(255,255,255,0.4)', zIndex: 10, borderRadius: '12px'
+                                  }}>
+                                    <Lock size={28} style={{ color: '#6366F1', marginBottom: 10 }} />
+                                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#1E293B', marginBottom: 4 }}>
+                                      Contenu réservé aux plans supérieurs
+                                    </p>
+                                    <p style={{ fontSize: '13px', color: '#64748B' }}>
+                                      Passez à un plan supérieur pour accéder à l'analyse GEO
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            return geoContent;
+                          })()}
+                          </>
+                          )}
                         </div>
                       </Card>
                   );
                 })()}
 
+                {/* Modal détails GEO raw_data */}
+                <Dialog open={geoModalOpen} onOpenChange={(open) => {
+                  setGeoModalOpen(open);
+                  if (!open) setSelectedGeoEntry(null);
+                }}>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    {selectedGeoEntry && (() => {
+                      const d = selectedGeoEntry.data;
+                      const competitor = (currentAnalysis as any)?.competitors?.find((c: any) => c.url === selectedGeoEntry.url);
+                      const brandName = selectedGeoEntry.url === currentAnalysis?.url ? 'Votre site' : (competitor?.name || selectedGeoEntry.domain);
+
+                      const categories = [
+                        {
+                          label: 'Crédibilité & Autorité',
+                          score: d.credibility_authority?.score || 0,
+                          details: d.credibility_authority?.details || {},
+                          labels: {
+                            sources_verifiables: 'Sources vérifiables',
+                            certifications: 'Certifications',
+                            avis_clients: 'Avis clients',
+                            historique_marque: 'Historique marque',
+                          }
+                        },
+                        {
+                          label: 'Structure & Lisibilité',
+                          score: d.structure_readability?.score || 0,
+                          details: d.structure_readability?.details || {},
+                          labels: {
+                            hierarchie: 'Hiérarchie',
+                            formatage: 'Formatage',
+                            lisibilite: 'Lisibilité',
+                            longueur_optimale: 'Longueur optimale',
+                            multimedia: 'Multimédia',
+                          }
+                        },
+                        {
+                          label: 'Pertinence contextuelle',
+                          score: d.contextual_relevance?.score || 0,
+                          details: d.contextual_relevance?.details || {},
+                          labels: {
+                            reponse_intention: 'Réponse intention',
+                            personnalisation: 'Personnalisation',
+                            actualite: 'Actualité',
+                            langue_naturelle: 'Langue naturelle',
+                            localisation: 'Localisation',
+                          }
+                        },
+                        {
+                          label: 'Compatibilité technique',
+                          score: d.technical_compatibility?.score || 0,
+                          details: d.technical_compatibility?.details || {},
+                          labels: {
+                            donnees_structurees: 'Données structurées',
+                            meta_donnees: 'Métadonnées',
+                            performances: 'Performances',
+                            compatibilite_mobile: 'Compatibilité mobile',
+                            securite: 'Sécurité',
+                          }
+                        },
+                      ];
+
+                      return (
+                        <div className="space-y-6">
+                          {/* Header */}
+                          <div className="flex items-center gap-4">
+                            <img src={`https://www.google.com/s2/favicons?domain=${selectedGeoEntry.domain}&sz=64`} alt={selectedGeoEntry.domain} width={40} height={40} style={{ borderRadius: '8px' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <div>
+                              <h2 className="text-xl font-bold text-gray-900">{brandName}</h2>
+                              <p className="text-sm text-gray-500">{selectedGeoEntry.domain}</p>
+                            </div>
+                            <div className="ml-auto text-right">
+                              <div className="text-3xl font-bold text-gray-900">{d.total_score || 0}<span className="text-lg text-gray-400">/100</span></div>
+                            </div>
+                          </div>
+
+                          {/* Categories */}
+                          <div className="space-y-4">
+                            {categories.map((cat, catIdx) => {
+                              return (
+                                <div key={catIdx} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <span className="text-sm font-semibold text-gray-800">{cat.label}</span>
+                                    <span className="text-lg font-bold text-gray-900">{cat.score}</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {Object.entries(cat.details as Record<string, number>).map(([key, value]) => {
+                                      const label = (cat.labels as Record<string, string>)[key] || key.replace(/_/g, ' ');
+                                      const percentage = Math.min((value / 5) * 100, 100);
+                                      return (
+                                        <div key={key} className="flex items-center gap-3">
+                                          <span className="text-xs text-gray-500 w-[140px] shrink-0">{label}</span>
+                                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                            <div className="h-full rounded-full bg-gray-900" style={{ width: `${percentage}%`, transition: 'width 0.5s ease' }} />
+                                          </div>
+                                          <span className="text-xs font-semibold text-gray-700 w-[28px] text-right">{value}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Recommandations */}
+                          {d.primary_recommendations && d.primary_recommendations.length > 0 && (
+                            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                              <div className="flex items-center gap-2 mb-3">
+                                <Lightbulb className="w-4 h-4 text-gray-500" />
+                                <span className="text-sm font-semibold text-gray-800">Recommandations</span>
+                              </div>
+                              <ul className="space-y-2">
+                                {d.primary_recommendations.map((rec: string, rIdx: number) => (
+                                  <li key={rIdx} className="flex items-start gap-2 text-sm text-gray-600">
+                                    <ChevronRight className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                                    <span>{rec}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </DialogContent>
+                </Dialog>
+
+
+
               </div>
             )}
 
-            {/* Affichage détaillé de l'analyse concurrentielle */}
-            
-          </TabsContent>
-        </Tabs>
+        </div>
       </div>
     </div>
   );

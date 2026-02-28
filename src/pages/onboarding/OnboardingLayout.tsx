@@ -129,10 +129,10 @@ export function OnboardingLayout() {
         stepsCompleted={status.steps_completed}
         onNavigate={handleStepNavigation}
       />
-      <OnboardingProgress currentStep={currentStepNumber} totalSteps={5} />
+      {/* <OnboardingProgress currentStep={currentStepNumber} totalSteps={5} /> */}
 
       <div className="flex-1 flex items-center justify-center p-8 overflow-y-auto">
-        <div className="w-full max-w-2xl py-8">
+        <div className="w-full max-w-5xl py-8">
           <Outlet context={{ status, refreshStatus, startTimes }} />
         </div>
       </div>

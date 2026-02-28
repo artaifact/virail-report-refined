@@ -128,36 +128,23 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
         </button>
       </div>
 
-      {/* Mode simple: message + liste des mots de passe à éviter */}
+      {/* Mode simple */}
       {simpleMode && (
-        <div className="mt-2 space-y-1.5">
-          {/* Message d'information discret */}
-          <p className="text-[11px] text-gray-400">
-            <span className="text-gray-500">Min. 12 caractères</span> avec majuscules, minuscules, chiffres et caractères spéciaux.
-          </p>
-
-          {/* Liste des mots de passe à éviter */}
-          <p className="text-[10px] text-gray-400">
-            <span className="text-gray-500">À éviter :</span> {COMMON_PASSWORDS_DISPLAY.slice(0, 6).join(', ')}...
-          </p>
-
-          {/* Indicateur de validation simple */}
-          {value && validation && (
-            <p className={cn(
-              'text-[11px] flex items-center gap-1',
-              validation.isValid ? 'text-green-600' : 'text-red-500'
-            )}>
-              {validation.isValid ? (
-                <>
-                  <Check className="w-3 h-3" />
-                  <span>Mot de passe valide</span>
-                </>
-              ) : (
-                <>
-                  <X className="w-3 h-3" />
-                  <span>Mot de passe trop faible</span>
-                </>
-              )}
+        <div className="mt-1.5">
+          {value && validation ? (
+            validation.isValid ? (
+              <p className="text-[11px] flex items-center gap-1 text-green-600">
+                <Check className="w-3 h-3" />
+                Mot de passe valide
+              </p>
+            ) : (
+              <p className="text-[11px] text-red-500">
+                {validation.errors[0]}
+              </p>
+            )
+          ) : (
+            <p className="text-[11px] text-gray-400">
+              Min. 12 caractères, majuscule, minuscule, chiffre et caractère spécial.
             </p>
           )}
         </div>

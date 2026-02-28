@@ -18,16 +18,28 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
 const LLM_ICONS: Record<string, string> = {
-  'gpt-5': '/prompt-model-chatgpt.svg',
-  'gpt-4o': '/prompt-model-chatgpt.svg',
+  'gpt-5': '/prompt-model-openai-for-light.svg',
+  'gpt-4o': '/prompt-model-openai-for-light.svg',
+  'gpt-4': '/prompt-model-openai-for-light.svg',
+  'openai': '/prompt-model-openai-for-light.svg',
+  'chatgpt': '/prompt-model-openai-for-light.svg',
   'claude-4-sonnet': '/prompt-model-claude.svg',
   'claude-3-sonnet': '/prompt-model-claude.svg',
+  'claude': '/prompt-model-claude.svg',
+  'anthropic': '/prompt-model-claude.svg',
   'gemini-2.5-pro': '/prompt-model-gemini.svg',
   'gemini-pro': '/prompt-model-gemini.svg',
-  'mixtral-3.1': '/prompt-model-llama.svg',
-  'mixtral-8x7b': '/prompt-model-llama.svg',
+  'gemini': '/prompt-model-gemini.svg',
+  'mixtral-3.1': '/Mistral.png',
+  'mixtral-8x7b': '/Mistral.png',
+  'mistral': '/Mistral.png',
+  'mixtral': '/Mistral.png',
   'sonar': '/prompt-model-perplexity.svg',
   'perplexity': '/prompt-model-perplexity.svg',
+  'deepseek': '/prompt-model-deepseek.svg',
+  'qwen': '/prompt-model-qwen.svg',
+  'llama': '/prompt-model-llama.svg',
+  'grok': '/prompt-model-grok.svg',
 };
 
 function getEventIcon(type: StreamEvent['type']) {
@@ -189,7 +201,7 @@ export function StreamingNotification() {
                 </span>
                 <span className="font-medium">
                   {displaySession.totalModules > 0
-                    ? `${displaySession.completedModules}/${displaySession.totalModules} modules`
+                    ? `${Math.round((displaySession.completedModules / displaySession.totalModules) * 100)}%`
                     : formatDuration(displaySession.startedAt)
                   }
                 </span>

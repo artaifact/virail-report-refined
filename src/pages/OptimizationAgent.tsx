@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const OptimizationAgent = () => {
+  usePageTitle('Agent d\'optimisation');
   // Données Topics initiales
   const initialTopics = [
     { name: 'Obéissance & Comportement Canin', percentage: 36, prompts: 9, color: 'purple' },

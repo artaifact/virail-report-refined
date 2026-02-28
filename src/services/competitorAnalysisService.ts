@@ -746,11 +746,13 @@ export const getCompetitorAnalysisFromReport = async (reportId: string | number)
     const analyseConcurrentielle = data.analyse_concurrentielle_v1 || data.competitor_analysis;
 
     if (!analyseConcurrentielle) {
+      console.warn('⚠️ analyse_concurrentielle_v1 non trouvé dans la réponse API pour le rapport:', reportId);
       return null;
     }
 
     // Récupérer l'ID du rapport (peut être à différents endroits)
-    const id = data.report?.id || data.id || Number(reportId);
+    // L'API retourne llmo_report au lieu de report
+    const id = data.llmo_report?.id || data.report?.id || data.id || Number(reportId);
 
     // Mapper vers le format CompetitorAnalysisResponse
     return mapAnalyseConcurrentielleV1ToResponse(id, analyseConcurrentielle);
@@ -864,6 +866,32 @@ export const mapAnalyseConcurrentielleV1ToResponse = (
     }))
   };
 
+  // Mapper les mini_llm_results si disponibles
+  // Note: La structure llm_analysis dans l'API peut être simplifiée (juste analyse_resume et score_menace)
+  const miniLLMResults: MiniLLMResult[] = (analysisData.mini_llm_results || []).map((result: any) => ({
+    competitor_name: result.competitor_name || '',
+    competitor_url: result.competitor_url || '',
+    llm_analysis: {
+      // Champs qui peuvent être dans le JSON complet ou extraits du résumé
+      forces_principales: result.llm_analysis?.forces_principales || [],
+      faiblesses_principales: result.llm_analysis?.faiblesses_principales || [],
+      positionnement: result.llm_analysis?.positionnement || '',
+      differenciateurs: result.llm_analysis?.differenciateurs || [],
+      opportunites_differenciation: result.llm_analysis?.opportunites_differenciation || [],
+      // Champs toujours présents dans l'API
+      score_menace: result.llm_analysis?.score_menace ?? 0,
+      analyse_resume: result.llm_analysis?.analyse_resume || ''
+    },
+    status: result.status || 'completed'
+  }));
+
+  console.log('✅ Analyse concurrentielle mappée:', {
+    url: analysisData.url,
+    competitors_count: competitors.length,
+    mini_llm_results_count: miniLLMResults.length,
+    has_benchmark: !!analysisData.benchmark_results?.benchmark
+  });
+
   return {
     analysis_id: reportId,
     url: analysisData.url || '',
@@ -871,7 +899,7 @@ export const mapAnalyseConcurrentielleV1ToResponse = (
     description: analysisData.description || '',
     models_analysis: modelsAnalysis,
     consolidated_competitors: sortedCompetitors,
-    mini_llm_results: [],
+    mini_llm_results: miniLLMResults,
     target_positioning: targetPositioning,
     global_stats: {
       total_models_executed: uniqueModels.length,

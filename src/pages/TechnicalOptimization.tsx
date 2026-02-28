@@ -1,4 +1,5 @@
 import React from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 
 const TechnicalOptimization: React.FC = () => {
+  usePageTitle('Optimisation technique');
   return (
     <div className="p-6 space-y-6">
       {/* En-tête */}

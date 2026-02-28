@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,6 +16,7 @@ const loginSchema = z.object({
 });
 
 export default function Login() {
+  usePageTitle('Connexion');
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading } = useAuthContext();
   const { rateLimitState, handleRateLimitError, isRateLimited } = useRateLimit();

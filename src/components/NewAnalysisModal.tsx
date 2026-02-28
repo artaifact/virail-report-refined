@@ -138,6 +138,9 @@ export function NewAnalysisModal({ open, onOpenChange }: NewAnalysisModalProps) 
                         <img src={modelLogos['gemini']} alt="Gemini" className="h-4 w-4 object-contain" />
                         <img src={modelLogos['claude']} alt="Claude" className="h-4 w-4 object-contain" />
                         <img src={modelLogos['perplexity']} alt="Perplexity" className="h-4 w-4 object-contain" />
+                        <img src={modelLogos['mistral']} alt="Mistral" className="h-4 w-4 object-contain" />
+                        <img src={modelLogos['deepseek']} alt="DeepSeek" className="h-4 w-4 object-contain" />
+                        <img src={modelLogos['grok']} alt="Grok" className="h-4 w-4 object-contain" />
                       </div>
                     </div>
                   </div>

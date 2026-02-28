@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ import { OptimizationRequest, getAvailableStrategies, getAvailableTones } from '
 import { AuthService } from '@/services/authService';
 
 const TextualOptimization: React.FC = () => {
+  usePageTitle('Optimisation textuelle');
   const location = useLocation();
   const [searchParams] = useSearchParams();
   

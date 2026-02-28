@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,6 @@ import {
   Settings as SettingsIcon,
   Sparkles,
   ChevronRight,
-  RotateCcw,
   CreditCard,
   Download,
   ExternalLink,
@@ -22,7 +22,6 @@ import {
   Shield,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiService } from "@/services/apiService";
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -234,14 +233,31 @@ function DashboardSkeleton() {
 }
 
 const Settings = () => {
+  usePageTitle('Param\u00e8tres');
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [isResettingOnboarding, setIsResettingOnboarding] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<StripeInvoice | null>(null);
   const [lastInvoiceId, setLastInvoiceId] = useState<string | undefined>();
+  const [accountData, setAccountData] = useState<{
+    account_type?: string;
+    agency_name?: string;
+    agency_url?: string;
+    brand_name?: string;
+    brand_url?: string;
+    location_country?: string;
+    location_country_code?: string;
+    onboarding_step?: string;
+  } | null>(null);
+  const [isAccountDataLoading, setIsAccountDataLoading] = useState(true);
+  const [isSavingAccount, setIsSavingAccount] = useState(false);
+  // Champs éditables pour les infos du compte
+  const [editBrandName, setEditBrandName] = useState("");
+  const [editBrandUrl, setEditBrandUrl] = useState("");
+  const [editAgencyName, setEditAgencyName] = useState("");
+  const [editAgencyUrl, setEditAgencyUrl] = useState("");
 
   // API Hooks
   const { data: dashboard, isLoading: isDashboardLoading } = useAccountDashboard();
@@ -269,52 +285,35 @@ const Settings = () => {
     };
 
     loadUserProfile();
+
+    // Charger les données de compte (onboarding)
+    const loadAccountData = async () => {
+      try {
+        const apiBase = import.meta.env.DEV ? "" : (import.meta.env.VITE_API_BASE_URL || "https://api.viraill.com");
+        const res = await fetch(`${apiBase}/auth/user/onboarding/account-data`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAccountData(data);
+          setEditBrandName(data.brand_name || "");
+          setEditBrandUrl(data.brand_url || "");
+          setEditAgencyName(data.agency_name || "");
+          setEditAgencyUrl(data.agency_url || "");
+        }
+      } catch {
+      } finally {
+        setIsAccountDataLoading(false);
+      }
+    };
+    loadAccountData();
   }, []);
 
   const getInitial = () => {
     if (firstName) return firstName[0].toUpperCase();
     if (userProfile?.username) return userProfile.username[0].toUpperCase();
     return "U";
-  };
-
-  const handleResetOnboarding = async () => {
-    if (
-      !window.confirm(
-        "Êtes-vous sûr de vouloir réinitialiser l'onboarding ? Cela vous permettra de recommencer le processus d'intégration."
-      )
-    ) {
-      return;
-    }
-
-    setIsResettingOnboarding(true);
-    try {
-      const response = await fetch(
-        `${import.meta.env.DEV ? "" : import.meta.env.VITE_API_BASE_URL || "https://api.viraill.com"}/auth/user/onboarding/reset`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      if (!response.ok) throw new Error("Erreur lors de la réinitialisation");
-
-      toast({
-        title: "Onboarding réinitialisé",
-        description: "Vous allez être redirigé vers l'onboarding.",
-      });
-
-      await apiService.getMeBearer();
-      setTimeout(() => navigate("/onboarding/setup"), 1000);
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de réinitialiser l'onboarding",
-        variant: "destructive",
-      });
-    } finally {
-      setIsResettingOnboarding(false);
-    }
   };
 
   const handleOpenBillingPortal = () => {
@@ -325,6 +324,49 @@ const Settings = () => {
     if (invoicesData?.invoices.length) {
       const lastId = invoicesData.invoices[invoicesData.invoices.length - 1].id;
       setLastInvoiceId(lastId);
+    }
+  };
+
+  const handleSaveAccountData = async () => {
+    if (!accountData) return;
+    setIsSavingAccount(true);
+    try {
+      const apiBase = import.meta.env.DEV ? "" : (import.meta.env.VITE_API_BASE_URL || "https://api.viraill.com");
+      const payload: Record<string, string> = {
+        account_type: accountData.account_type || "in_house",
+        location_country: accountData.location_country || "",
+        location_country_code: accountData.location_country_code || "",
+        onboarding_step: accountData.onboarding_step || "setup",
+        brand_name: editBrandName,
+        brand_url: editBrandUrl,
+      };
+      if (accountData.account_type === "agency") {
+        payload.agency_name = editAgencyName;
+        payload.agency_url = editAgencyUrl;
+      }
+      const res = await fetch(`${apiBase}/auth/user/onboarding/account-data`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.detail?.message || err?.detail || `Erreur ${res.status}`);
+      }
+      setAccountData(prev => prev ? {
+        ...prev,
+        brand_name: editBrandName,
+        brand_url: editBrandUrl,
+        agency_name: editAgencyName,
+        agency_url: editAgencyUrl,
+      } : prev);
+      toast({ title: "Informations mises à jour", description: "Vos informations ont été enregistrées." });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Impossible de sauvegarder les informations";
+      toast({ title: "Erreur", description: msg, variant: "destructive" });
+    } finally {
+      setIsSavingAccount(false);
     }
   };
 
@@ -609,24 +651,109 @@ const Settings = () => {
             )}
           </div>
 
-          {/* Onboarding */}
+          {/* Informations du compte */}
           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Onboarding</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Réinitialisez l'onboarding pour recommencer le processus d'intégration.
-                </p>
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Informations du compte</h2>
+
+            {isAccountDataLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-9 w-full" />
+                  </div>
+                ))}
               </div>
-              <Button
-                onClick={handleResetOnboarding}
-                disabled={isResettingOnboarding}
-                variant="outline"
-              >
-                <RotateCcw className={cn("mr-2 h-4 w-4", isResettingOnboarding && "animate-spin")} />
-                {isResettingOnboarding ? "Réinitialisation..." : "Réinitialiser"}
-              </Button>
-            </div>
+            ) : accountData ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {accountData.account_type && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">Type de compte</Label>
+                      <Input
+                        value={accountData.account_type === "agency" ? "Agence" : "In-house"}
+                        disabled
+                        className="bg-gray-50 border-gray-200"
+                      />
+                    </div>
+                  )}
+
+                  {accountData.location_country && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">Pays</Label>
+                      <Input
+                        value={`${accountData.location_country}${accountData.location_country_code ? ` (${accountData.location_country_code})` : ""}`}
+                        disabled
+                        className="bg-gray-50 border-gray-200"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="brandName" className="text-sm font-medium text-gray-700">Marque</Label>
+                    <Input
+                      id="brandName"
+                      value={editBrandName}
+                      onChange={(e) => setEditBrandName(e.target.value)}
+                      placeholder="Nom de votre marque"
+                      className="border-gray-300"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="brandUrl" className="text-sm font-medium text-gray-700">URL de la marque</Label>
+                    <Input
+                      id="brandUrl"
+                      value={editBrandUrl}
+                      onChange={(e) => setEditBrandUrl(e.target.value)}
+                      placeholder="https://votre-marque.com"
+                      className="border-gray-300"
+                    />
+                  </div>
+
+                  {accountData.account_type === "agency" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="agencyName" className="text-sm font-medium text-gray-700">Agence</Label>
+                        <Input
+                          id="agencyName"
+                          value={editAgencyName}
+                          onChange={(e) => setEditAgencyName(e.target.value)}
+                          placeholder="Nom de votre agence"
+                          className="border-gray-300"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="agencyUrl" className="text-sm font-medium text-gray-700">URL de l'agence</Label>
+                        <Input
+                          id="agencyUrl"
+                          value={editAgencyUrl}
+                          onChange={(e) => setEditAgencyUrl(e.target.value)}
+                          placeholder="https://votre-agence.com"
+                          className="border-gray-300"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button
+                    onClick={handleSaveAccountData}
+                    disabled={isSavingAccount}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isSavingAccount ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : null}
+                    {isSavingAccount ? "Enregistrement..." : "Enregistrer"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Aucune information de compte disponible.</p>
+            )}
           </div>
 
           {/* Sessions actives */}

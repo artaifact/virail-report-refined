@@ -61,10 +61,16 @@ export function useNotificationSocket() {
         return;
       }
 
-      const wsUrl = `${getWsBaseUrl()}/api/v1/notifications/ws?token=${token}`;
+      const wsUrl = `${getWsBaseUrl()}/api/v1/notifications/ws`;
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
+        // Envoyer le token comme premier message après connexion
+        // au lieu de l'exposer dans l'URL (logs serveur, historique navigateur)
+        if (ws.current?.readyState === WebSocket.OPEN) {
+          ws.current.send(JSON.stringify({ type: 'authenticate', token }));
+        }
+
         setIsConnected(true);
         setConnectionError(null);
 

@@ -1,4 +1,4 @@
-import { 
+import {
   MappedReportData,
   OverviewData,
   PerceptionData,
@@ -6,7 +6,8 @@ import {
   RecommendationData,
   ValuePropData,
   SemanticAnalysisData,
-  StrategicSynthesisData
+  StrategicSynthesisData,
+  CompetitiveAnalysisData
 } from '../types/llmo-report';
 import { FullReportData, Analysis } from './api';
 
@@ -31,6 +32,7 @@ export function mapLLMOReportData(data: FullReportData | null): MappedReportData
     const semanticAnalyses = mapSemanticAnalysisData(analyses);
     const strategicSyntheses = mapStrategicSynthesisData(analyses);
     const analyseCitation = data.analyse_citation;
+    const competitiveAnalysis = mapCompetitiveAnalysisData(data.analyse_concurrentielle_v1);
 
     return {
       url: report.url,
@@ -41,7 +43,8 @@ export function mapLLMOReportData(data: FullReportData | null): MappedReportData
       valueProps,
       semanticAnalyses,
       strategicSyntheses,
-      analyseCitation
+      analyseCitation,
+      competitiveAnalysis
     };
   } catch (error) {
     return createEmptyMappedData();
@@ -138,6 +141,28 @@ function mapStrategicSynthesisData(analyses: Analysis[]): StrategicSynthesisData
   }));
 }
 
+function mapCompetitiveAnalysisData(data: any): CompetitiveAnalysisData | undefined {
+  if (!data) return undefined;
+
+  return {
+    version: data.version,
+    session_id: data.session_id,
+    url: data.url,
+    competitors: data.competitors || [],
+    mini_llm_results: data.mini_llm_results || [],
+    benchmark_results: data.benchmark_results || {
+      benchmark: { classement: [], position_cible: 0, ecarts_vs_cible: [] },
+      url_scores: {}
+    },
+    stats: data.stats || {
+      total_mentions: 0,
+      unique_competitors: 0,
+      models_used: []
+    },
+    created_at: data.created_at
+  };
+}
+
 function createEmptyMappedData(): MappedReportData {
   return {
     url: '',
@@ -156,5 +181,6 @@ function createEmptyMappedData(): MappedReportData {
     semanticAnalyses: [],
     strategicSyntheses: [],
     analyseCitation: undefined,
+    competitiveAnalysis: undefined,
   };
 } 

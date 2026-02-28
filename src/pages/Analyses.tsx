@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { BarChart3, TrendingUp, Users, Calendar, FileText, ChevronRight, ArrowLeft, Plus, RefreshCw, Loader2, Zap, Sparkles, Target, Star, Brain } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ import { mapLLMOReportData } from '@/lib/llmo-mapper';
 import { ModelLogosCarousel } from "@/components/ModelLogosCarousel";
 
 const Analyses = () => {
+  usePageTitle('Analyses');
   const navigate = useNavigate();
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [newAnalysisUrl, setNewAnalysisUrl] = useState("");
