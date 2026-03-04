@@ -445,7 +445,7 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
 
       {/* Modal de détails avec Guide d'Implémentation intégré */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           {selectedRec && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <DialogHeader>
@@ -2153,7 +2153,7 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
 
       {/* Modal d'analyse détaillée */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedModel && (() => {
             const selected = data.find(d => d.displayName === selectedModel);
             return (
@@ -2332,32 +2332,11 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
     }
   }, [competitorAnalysis]); // Ne pas mettre selectedModel ici pour éviter les boucles de reset
 
-  // Extraire les concurrents depuis les données de l'API
+  // Extraire les concurrents depuis les données de l'API, filtrés par modèle sélectionné
   const getCompetitorsFromAPI = () => {
     if (!competitorAnalysis) return [];
 
-    // Priorité à consolidated_competitors si disponible
-    if (competitorAnalysis.consolidated_competitors && competitorAnalysis.consolidated_competitors.length > 0) {
-      return competitorAnalysis.consolidated_competitors
-        .slice(0, 5) // Top 5
-        .map((comp, index) => ({
-          name: comp.name,
-          domain: extractDomain(comp.primary_url),
-          score: Math.round(comp.average_score * 100),
-          confidence: Math.round(comp.consensus_level * 100),
-          status: comp.average_score >= 0.7 ? 'green' : comp.average_score >= 0.5 ? 'orange' : 'red',
-          citations: 0, // Non disponible dans consolidated_competitors
-          visibility: Math.round(comp.average_score * 100),
-          keywords: 0, // Non disponible dans consolidated_competitors
-          strengths: comp.competitive_themes || comp.common_features || [],
-          weaknesses: [],
-          modelScores: comp.model_scores || {},
-          globalRank: comp.global_rank
-        }));
-    }
-
-    // Fallback vers models_analysis si consolidated_competitors n'est pas disponible
-    // Matcher par nom commercial (selectedModel est un nom commercial)
+    // Priorité à models_analysis pour filtrer par modèle sélectionné
     if (competitorAnalysis.models_analysis && selectedModel) {
       // Trouver toutes les analyses dont le nom commercial correspond
       const matchingAnalyses = competitorAnalysis.models_analysis.filter(m => {
@@ -2397,6 +2376,26 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
             mentionedFeatures: comp.mentioned_features || []
           }));
       }
+    }
+
+    // Fallback vers consolidated_competitors si models_analysis n'a pas de résultats
+    if (competitorAnalysis.consolidated_competitors && competitorAnalysis.consolidated_competitors.length > 0) {
+      return competitorAnalysis.consolidated_competitors
+        .slice(0, 5) // Top 5
+        .map((comp, index) => ({
+          name: comp.name,
+          domain: extractDomain(comp.primary_url),
+          score: Math.round(comp.average_score * 100),
+          confidence: Math.round(comp.consensus_level * 100),
+          status: comp.average_score >= 0.7 ? 'green' : comp.average_score >= 0.5 ? 'orange' : 'red',
+          citations: 0,
+          visibility: Math.round(comp.average_score * 100),
+          keywords: 0,
+          strengths: comp.competitive_themes || comp.common_features || [],
+          weaknesses: [],
+          modelScores: comp.model_scores || {},
+          globalRank: comp.global_rank
+        }));
     }
 
     return [];
@@ -2772,7 +2771,7 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
             setDomainModalOpen(open);
             if (!open) setSelectedDomain(null);
           }}>
-            <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0" hideCloseButton>
+            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0" hideCloseButton>
               {selectedDomain && (() => {
                 const dom = domains.find(d => d.domain === selectedDomain);
                 if (!dom) return null;
