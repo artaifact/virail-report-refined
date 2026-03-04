@@ -4,11 +4,11 @@ import './Index.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
-import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock } from 'lucide-react';
+import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText } from 'lucide-react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useReport, useReports } from '@/hooks/useReports';
 import { AuthService } from '@/services/authService';
-import type { FullReportData } from '@/lib/api';
+import type { FullReportData, ReportResponse } from '@/lib/api';
 import { listCompetitorAnalyses, getCompetitorAnalysisById, extractDomain, CompetitorAnalysisResponse, mapApiResponseToCompetitorAnalysisResponse, mapAnalyseConcurrentielleV1ToResponse } from '@/services/competitorAnalysisService';
 import { modelLogos } from '@/components/ModelLogosCarousel';
 import { usePayment } from '@/hooks/usePayment';
@@ -142,14 +142,35 @@ function NavigationButtons({ activeView, onViewChange }: { activeView: string, o
  * Section haute du dashboard - Fixe
  * Contient le graphique de citations, le carrousel de logos et les boutons de navigation
  */
-function TopSection({ activeView, onViewChange, reportData }: { activeView: string, onViewChange: (view: string) => void, reportData: FullReportData | null }) {
+function TopSection({ activeView, onViewChange, reportData, reports, onOpenReportsModal }: { activeView: string, onViewChange: (view: string) => void, reportData: FullReportData | null, reports: ReportResponse[], onOpenReportsModal: () => void }) {
   return (
     <div className="top-section">
       <CitationsChart reportData={reportData} />
-      <NavigationButtons 
+      <NavigationButtons
         activeView={activeView}
         onViewChange={onViewChange}
       />
+      {reports.length > 1 && (
+        <Button
+          variant="outline"
+          onClick={onOpenReportsModal}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            margin: '12px auto 0',
+            borderRadius: '12px',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: '#475569',
+            border: '1px solid #E2E8F0',
+            padding: '8px 16px',
+          }}
+        >
+          <FileText size={16} />
+          Mes analyses ({reports.length})
+        </Button>
+      )}
     </div>
   );
 }
@@ -2888,6 +2909,8 @@ const Index = () => {
   usePageTitle('Tableau de bord');
   // État pour gérer la vue active ('details' ou 'ameliorer')
   const [activeView, setActiveView] = useState('details');
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
   const { subscription } = usePayment();
   const isStarter = subscription?.plan?.id === 'solo';
 
@@ -2895,13 +2918,17 @@ const Index = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const explicitReportId = location.state?.selectedReportId || searchParams.get('reportId');
-  
+
   // Récupérer la liste des rapports pour le fallback si aucun ID n'est fourni
   const { reports, loading: reportsLoading } = useReports();
-  
-  // Déterminer l'ID final à utiliser : celui fourni explicitement, ou le plus récent de la liste
-  // On prend le dernier rapport de la liste (le plus récemment créé selon l'ordre de l'API)
-  const reportId = explicitReportId || (reports.length > 0 ? reports[reports.length - 1].id : null);
+
+  // Déterminer l'ID final à utiliser : sélection manuelle > URL explicite > dernier rapport
+  const reportId = selectedReportId || explicitReportId || (reports.length > 0 ? reports[reports.length - 1].id : null);
+
+  const handleSelectReport = (id: string) => {
+    setSelectedReportId(id);
+    setIsReportsModalOpen(false);
+  };
   
   
   // Charger les données du rapport depuis l'API
@@ -2913,10 +2940,12 @@ const Index = () => {
     <div className="ux-dashboard-body">
       <div className="dashboard-container ux-dashboard">
         {/* Section haute avec le graphique de citations */}
-        <TopSection 
+        <TopSection
           activeView={activeView}
           onViewChange={setActiveView}
           reportData={reportData}
+          reports={reports}
+          onOpenReportsModal={() => setIsReportsModalOpen(true)}
         />
         
         {/* Section basse avec contenu dynamique */}
@@ -2968,6 +2997,83 @@ const Index = () => {
           )}
         </div>
       </div>
+
+      {/* Modal de sélection de rapport */}
+      <Dialog open={isReportsModalOpen} onOpenChange={setIsReportsModalOpen}>
+        <DialogContent style={{ maxWidth: '520px', borderRadius: '16px', padding: '0', overflow: 'hidden' }}>
+          <DialogHeader style={{ padding: '20px 24px 12px', borderBottom: '1px solid #F1F5F9' }}>
+            <DialogTitle style={{ fontSize: '16px', fontWeight: 600, color: '#1E293B' }}>
+              Mes analyses
+            </DialogTitle>
+            <DialogDescription style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+              Sélectionnez un rapport pour afficher ses résultats
+            </DialogDescription>
+          </DialogHeader>
+          <div style={{ maxHeight: '400px', overflowY: 'auto', padding: '8px' }}>
+            {reports.map((r) => {
+              const isActive = String(r.id) === String(reportId);
+              let domain = r.url;
+              try { domain = new URL(r.url).hostname; } catch {}
+              const date = new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+              return (
+                <button
+                  key={r.id}
+                  onClick={() => handleSelectReport(r.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: isActive ? '2px solid #6366F1' : '1px solid transparent',
+                    background: isActive ? '#EEF2FF' : 'transparent',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s',
+                    marginBottom: '4px',
+                  }}
+                  onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = '#F8FAFC'; }}
+                  onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div style={{
+                    width: '36px', height: '36px', borderRadius: '10px',
+                    background: isActive ? '#6366F1' : '#F1F5F9',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <FileText size={16} style={{ color: isActive ? '#fff' : '#64748B' }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {domain}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>{date}</span>
+                      <span style={{
+                        padding: '1px 6px', borderRadius: '6px', fontSize: '11px', fontWeight: 500,
+                        background: r.status === 'completed' ? '#DCFCE7' : r.status === 'processing' ? '#FEF3C7' : '#FEE2E2',
+                        color: r.status === 'completed' ? '#16A34A' : r.status === 'processing' ? '#D97706' : '#DC2626',
+                      }}>
+                        {r.status === 'completed' ? 'Terminé' : r.status === 'processing' ? 'En cours' : 'Erreur'}
+                      </span>
+                    </div>
+                  </div>
+                  {r.metadata?.score != null && (
+                    <div style={{
+                      fontSize: '14px', fontWeight: 700, color: '#6366F1', flexShrink: 0,
+                    }}>
+                      {Math.round(r.metadata.score)}/100
+                    </div>
+                  )}
+                  {isActive && (
+                    <CheckCircle size={18} style={{ color: '#6366F1', flexShrink: 0 }} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
