@@ -2916,7 +2916,7 @@ const Index = () => {
 
   // Récupérer le reportId depuis le state de navigation (prioritaire) ou les paramètres d'URL
   const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const explicitReportId = location.state?.selectedReportId || searchParams.get('reportId');
 
   // Récupérer la liste des rapports pour le fallback si aucun ID n'est fourni
@@ -2928,6 +2928,7 @@ const Index = () => {
   const handleSelectReport = (id: string) => {
     setSelectedReportId(id);
     setIsReportsModalOpen(false);
+    setSearchParams({ reportId: id });
   };
   
   

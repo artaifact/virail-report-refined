@@ -104,6 +104,7 @@ import {
   getCompetitorAnalysisFromReport,
 } from '@/services/competitorAnalysisService';
 import { useReports } from '@/hooks/useReports';
+import { useSearchParams } from 'react-router-dom';
 
 const Competition = () => {
   usePageTitle('Veille concurrentielle');
@@ -133,8 +134,10 @@ const Competition = () => {
 
   // Récupérer la liste des rapports comme dans la home page (useReports -> /llmo/reports)
   const { reports, loading: reportsLoading } = useReports();
-  // Le dernier rapport de la liste = le plus récent (même logique que Index.tsx)
-  const latestReportId = reports.length > 0 ? reports[reports.length - 1].id : null;
+  const [searchParams] = useSearchParams();
+  const explicitReportId = searchParams.get('reportId');
+  // Priorité : reportId de l'URL > dernier rapport de la liste
+  const latestReportId = explicitReportId || (reports.length > 0 ? reports[reports.length - 1].id : null);
 
 
   // Fonction pour charger une analyse par ID

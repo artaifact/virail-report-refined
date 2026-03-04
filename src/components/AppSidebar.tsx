@@ -221,7 +221,7 @@ export function AppSidebar() {
                       isActive={location.pathname === item.url}
                       tooltip={item.title}
                     >
-                      <Link to={item.url} onClick={handleNavigation}>
+                      <Link to={explicitReportId ? `${item.url}?reportId=${explicitReportId}` : item.url} onClick={handleNavigation}>
                         <item.icon />
                         <span>{item.title}</span>
                         {item.badge && (
