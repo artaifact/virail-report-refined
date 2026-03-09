@@ -4,7 +4,7 @@ import './Index.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
-import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText } from 'lucide-react';
+import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield } from 'lucide-react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useReport, useReports } from '@/hooks/useReports';
 import { AuthService } from '@/services/authService';
@@ -146,31 +146,7 @@ function TopSection({ activeView, onViewChange, reportData, reports, onOpenRepor
   return (
     <div className="top-section">
       <CitationsChart reportData={reportData} />
-      <NavigationButtons
-        activeView={activeView}
-        onViewChange={onViewChange}
-      />
-      {reports.length > 1 && (
-        <Button
-          variant="outline"
-          onClick={onOpenReportsModal}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            margin: '12px auto 0',
-            borderRadius: '12px',
-            fontSize: '13px',
-            fontWeight: 500,
-            color: '#475569',
-            border: '1px solid #E2E8F0',
-            padding: '8px 16px',
-          }}
-        >
-          <FileText size={16} />
-          Mes analyses ({reports.length})
-        </Button>
-      )}
+      <NavigationButtons activeView={activeView} onViewChange={onViewChange} />
     </div>
   );
 }
@@ -216,17 +192,25 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
     if (!reportData?.analyses || reportData.analyses.length === 0) return [];
 
     const categories = [
-      { key: 'html_score', label: 'Structure HTML', description: 'Qualité du balisage HTML et hiérarchie sémantique' },
-      { key: 'donnees_score', label: 'Données structurées', description: 'Schema.org, JSON-LD et métadonnées enrichies' },
-      { key: 'crawlers_score', label: 'Accessibilité IA', description: 'Compatibilité avec les crawlers et bots IA' },
-      { key: 'contenu_score', label: 'Qualité du contenu', description: 'Pertinence, richesse et structure du contenu' },
-      { key: 'meta_score', label: 'Métadonnées', description: 'Balises meta, Open Graph et directives LLM' },
-      { key: 'standards_score', label: 'Standards web', description: 'Conformité aux standards et bonnes pratiques' },
+      { key: 'html_semantique', label: 'Structure HTML', description: 'Qualité du balisage HTML et hiérarchie sémantique' },
+      { key: 'donnees_structurees', label: 'Données structurées', description: 'Schema.org, JSON-LD et métadonnées enrichies' },
+      { key: 'accessibilite_crawlers', label: 'Accessibilité IA', description: 'Compatibilité avec les crawlers et bots IA' },
+      { key: 'optimisation_contenu', label: 'Qualité du contenu', description: 'Pertinence, richesse et structure du contenu' },
+      { key: 'metadonnees_techniques', label: 'Métadonnées', description: 'Balises meta, Open Graph et directives LLM' },
+      { key: 'conformite_standards', label: 'Standards web', description: 'Conformité aux standards et bonnes pratiques' },
     ];
+
+    // Extraire le score: supporte audit_geo[key] (number) ou audit_geo[key].score (object)
+    const getScore = (audit: any, key: string): number | null => {
+      const val = audit?.[key];
+      if (typeof val === 'number') return val;
+      if (typeof val === 'object' && val !== null && typeof val.score === 'number') return val.score;
+      return null;
+    };
 
     return categories.map(cat => {
       const scores = reportData.analyses
-        .map((a: any) => a.modules?.audit_geo?.[cat.key])
+        .map((a: any) => getScore(a.modules?.audit_geo, cat.key))
         .filter((s: any): s is number => typeof s === 'number' && s > 0);
       const avg = scores.length > 0 ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : 0;
       return {
@@ -234,18 +218,21 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
         description: cat.description,
         score: avg,
         modelScores: reportData.analyses
-          .filter((a: any) => typeof a.modules?.audit_geo?.[cat.key] === 'number')
-          .map((a: any) => ({ model: a.llm_name, score: Math.round(a.modules.audit_geo[cat.key]) })),
+          .filter((a: any) => getScore(a.modules?.audit_geo, cat.key) !== null)
+          .map((a: any) => ({ model: a.llm_name, score: Math.round(getScore(a.modules.audit_geo, cat.key) || 0) })),
       };
     }).filter(c => c.score > 0);
   };
 
-  // Extraire le plan d'action depuis audit_geo
+  // Extraire le plan d'action depuis audit_geo (supporte string[] et object[])
   const getPlanAction = () => {
     if (!reportData?.analyses || reportData.analyses.length === 0) return [];
     for (const analysis of reportData.analyses) {
       if (analysis.modules?.audit_geo?.plan_action_geo && Array.isArray(analysis.modules.audit_geo.plan_action_geo)) {
-        return analysis.modules.audit_geo.plan_action_geo as string[];
+        return analysis.modules.audit_geo.plan_action_geo.map((item: any) => {
+          if (typeof item === 'string') return item;
+          return item.action || String(item);
+        });
       }
     }
     return [];
@@ -282,38 +269,53 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
 
   // Données du Guide d'implémentation - Package d'Optimisation GEO (même source que ImplementationGuide)
   const getGuideData = () => {
-    if (!reportData?.analyses || reportData.analyses.length === 0) {
-      return { scoreActuel: 58, scoreCible: 83, guide: null as any, files: [] as { label: string; content: string; filename: string; type: string }[] };
-    }
+    type GuideFile = { label: string; content: string; filename: string; type: string };
+    const emptyResult = { scoreActuel: 58, scoreCible: 83, guide: null as any, files: [] as GuideFile[] };
+    if (!reportData?.analyses || reportData.analyses.length === 0) return emptyResult;
+
     const auditGeoData = reportData.analyses.find((analysis: any) =>
-      analysis.modules?.audit_geo?.package_optimisation_geo?.implementation_guide
+      analysis.modules?.audit_geo?.package_optimisation_geo
     )?.modules?.audit_geo;
-    if (!auditGeoData?.package_optimisation_geo?.implementation_guide) {
-      const pkg = auditGeoData?.package_optimisation_geo;
-      return {
-        scoreActuel: auditGeoData?.score_global_geo ?? 58,
-        scoreCible: pkg?.package_metadata?.estimated_improvement?.score_estime ?? 83,
-        guide: null as any,
-        files: pkg ? [
-          pkg.llms_txt_content ? { label: 'llms.txt', content: pkg.llms_txt_content, filename: 'llms.txt', type: 'text/plain' } : null,
-          pkg.robots_txt_content ? { label: 'robots.txt', content: pkg.robots_txt_content, filename: 'robots.txt', type: 'text/plain' } : null,
-          pkg.meta_tags_snippet ? { label: 'Meta Tags', content: pkg.meta_tags_snippet, filename: 'meta-tags.html', type: 'text/html' } : null,
-          pkg.open_graph_tags ? { label: 'Open Graph', content: pkg.open_graph_tags, filename: 'open-graph.html', type: 'text/html' } : null,
-        ].filter(Boolean) as { label: string; content: string; filename: string; type: string }[] : []
-      };
+    const pkg = auditGeoData?.package_optimisation_geo;
+    if (!pkg) return { ...emptyResult, scoreActuel: auditGeoData?.score_global_geo ?? 58 };
+
+    const guide = pkg.implementation_guide || null;
+    const tf = pkg.technical_files as Record<string, { content: string; filename: string; description: string }> | undefined;
+
+    // Construire la liste des fichiers depuis technical_files (prioritaire) ou anciens champs plats
+    const files: GuideFile[] = [];
+    const techFilesDefs = [
+      { key: 'schema_org_json', label: 'Schema.org JSON-LD', type: 'application/json' },
+      { key: 'llms_txt', label: 'LLMs.txt', type: 'text/plain' },
+      { key: 'robots_txt', label: 'Robots.txt', type: 'text/plain' },
+      { key: 'meta_tags', label: 'Meta Tags HTML', type: 'text/html' },
+      { key: 'open_graph', label: 'Open Graph Tags', type: 'text/html' },
+    ];
+    techFilesDefs.forEach(def => {
+      const entry = tf?.[def.key];
+      if (entry?.content) {
+        files.push({ label: def.label, content: entry.content, filename: entry.filename, type: def.type });
+      }
+    });
+
+    // Fallback: anciens champs plats si technical_files absent
+    if (files.length === 0) {
+      const flatDefs = [
+        { key: 'llms_txt_content', label: 'llms.txt', filename: 'llms.txt', type: 'text/plain' },
+        { key: 'robots_txt_content', label: 'robots.txt', filename: 'robots.txt', type: 'text/plain' },
+        { key: 'meta_tags_snippet', label: 'Meta Tags', filename: 'meta-tags.html', type: 'text/html' },
+        { key: 'open_graph_tags', label: 'Open Graph', filename: 'open-graph.html', type: 'text/html' },
+      ];
+      flatDefs.forEach(def => {
+        if (pkg[def.key]) files.push({ label: def.label, content: pkg[def.key], filename: def.filename, type: def.type });
+      });
     }
-    const guide = auditGeoData.package_optimisation_geo.implementation_guide;
-    const pkg = auditGeoData.package_optimisation_geo;
+
     return {
-      scoreActuel: guide.score_geo_actuel ?? auditGeoData.score_global_geo ?? 58,
-      scoreCible: guide.score_geo_cible ?? 83,
+      scoreActuel: guide?.score_geo_actuel ?? auditGeoData?.score_global_geo ?? 58,
+      scoreCible: guide?.score_geo_cible ?? pkg.package_metadata?.estimated_improvement?.score_estime ?? 83,
       guide,
-      files: [
-        pkg.llms_txt_content ? { label: 'llms.txt', content: pkg.llms_txt_content, filename: 'llms.txt', type: 'text/plain' } : null,
-        pkg.robots_txt_content ? { label: 'robots.txt', content: pkg.robots_txt_content, filename: 'robots.txt', type: 'text/plain' } : null,
-        pkg.meta_tags_snippet ? { label: 'Meta Tags', content: pkg.meta_tags_snippet, filename: 'meta-tags.html', type: 'text/html' } : null,
-        pkg.open_graph_tags ? { label: 'Open Graph', content: pkg.open_graph_tags, filename: 'open-graph.html', type: 'text/html' } : null,
-      ].filter(Boolean) as { label: string; content: string; filename: string; type: string }[]
+      files,
     };
   };
   const guideData = getGuideData();
@@ -1852,7 +1854,26 @@ function AuditGeoSection({ reportData }: { reportData: FullReportData | null }) 
 
   const scoreGlobal = Math.round(auditGeo.score_global_geo ?? 0);
   const resumeExecutif = auditGeo.resume_executif_geo || '';
-  const planAction: string[] = Array.isArray(auditGeo.plan_action_geo) ? auditGeo.plan_action_geo : [];
+  const rawPlan = Array.isArray(auditGeo.plan_action_geo) ? auditGeo.plan_action_geo : [];
+  // Normaliser: supporter string[] ou object[]
+  const planAction = rawPlan.map((item: any) => {
+    if (typeof item === 'string') return { action: item, categorie: '', priorite: 'moyenne', impact: '', effort: 'moyen' };
+    return item as { action: string; categorie: string; priorite: string; impact: string; effort: string };
+  });
+
+  const getPriorityBadge = (p: string) => {
+    const pr = (p || '').toLowerCase();
+    if (pr === 'haute') return { bg: '#FEE2E2', color: '#DC2626', label: 'Haute' };
+    if (pr === 'moyenne') return { bg: '#FEF3C7', color: '#D97706', label: 'Moyenne' };
+    return { bg: '#D1FAE5', color: '#059669', label: 'Basse' };
+  };
+
+  const getEffortBadge = (e: string) => {
+    const ef = (e || '').toLowerCase();
+    if (ef === 'faible') return { bg: '#D1FAE5', color: '#059669', label: 'Faible' };
+    if (ef === 'moyen') return { bg: '#FEF3C7', color: '#D97706', label: 'Moyen' };
+    return { bg: '#FEE2E2', color: '#DC2626', label: 'Élevé' };
+  };
 
   return (
     <div className="recommendations-table" style={{ boxShadow: 'none', border: '1px solid #F1F5F9', padding: '24px', borderRadius: '16px' }}>
@@ -1902,23 +1923,44 @@ function AuditGeoSection({ reportData }: { reportData: FullReportData | null }) 
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {planAction.map((action, idx) => (
+            {planAction.map((item: any, idx: number) => {
+              const priority = getPriorityBadge(item.priorite);
+              const effort = getEffortBadge(item.effort);
+              return (
                 <div
                   key={idx}
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
                     gap: '12px',
-                    padding: '10px 14px',
+                    padding: '12px 14px',
                     borderRadius: '10px',
                     border: '1px solid #E2E8F0',
                   }}
                 >
-                  <p style={{ fontSize: '14px', color: '#334155', lineHeight: '1.6', margin: 0, flex: 1 }}>
-                    {action}
-                  </p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '14px', color: '#334155', lineHeight: '1.6', margin: 0, fontWeight: 500 }}>
+                      {item.action}
+                    </p>
+                    {item.impact && (
+                      <p style={{ fontSize: '12px', color: '#64748B', margin: 0, marginTop: '4px', lineHeight: '1.4' }}>
+                        {item.impact}
+                      </p>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                    <span style={{
+                      padding: '2px 7px', borderRadius: '6px', fontSize: '10px', fontWeight: 600,
+                      background: priority.bg, color: priority.color
+                    }}>{priority.label}</span>
+                    <span style={{
+                      padding: '2px 7px', borderRadius: '6px', fontSize: '10px', fontWeight: 600,
+                      background: effort.bg, color: effort.color
+                    }}>{effort.label}</span>
+                  </div>
                 </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}
@@ -1958,6 +2000,10 @@ const getCommercialModelName = (apiName: string): string => {
 function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // TODO: Évolution citations - décommenter quand l'API renvoie evolution_citations
+  // const [viewMode, setViewMode] = useState<'table' | 'evolution'>('table');
+  // const evoData = (reportData?.evolution_citations as EvolutionCitations | null);
+  // const evoLoading = false;
 
   // Extraire les données depuis l'API, regroupées par nom commercial
   const getDataFromAPI = () => {
@@ -2047,7 +2093,7 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Citations par modèle</h3>
       </div>
-      
+
       {allCitationsZero && isApiData && (
         <div style={{ 
           marginBottom: '20px', 
@@ -2257,26 +2303,24 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
     const loadCompetitorAnalysis = async () => {
       if (!reportData) return;
 
-      // SOURCE 1: Données déjà présentes dans le rapport (chemin le plus rapide)
-      // Vérifier analyse_concurrentielle_v1 OU competitor_analysis OU competitors (selon le format de l'API)
+      // SOURCE 1 (PRIORITAIRE): analyse_concurrentielle_v3
+      // Géré directement dans getCompetitorsFromAPI et le select source_models
+
+      // SOURCE 2: analyse_concurrentielle_v1 ou competitor_analysis ou competitors
       const competitorData = reportData.analyse_concurrentielle_v1 || reportData.competitor_analysis || (reportData as any).competitors;
 
       if (competitorData) {
-        // Utiliser le bon mapper selon la source des données
         let mappedAnalysis: CompetitorAnalysisResponse;
 
         if (reportData.analyse_concurrentielle_v1) {
-          // Données venant de analyse_concurrentielle_v1 - utiliser le mapper spécifique
           const reportId = reportData.report?.id || (reportData as any).llmo_report?.id || 0;
           mappedAnalysis = mapAnalyseConcurrentielleV1ToResponse(reportId, reportData.analyse_concurrentielle_v1);
         } else {
-          // Autres sources - utiliser le mapper générique
           mappedAnalysis = mapApiResponseToCompetitorAnalysisResponse(competitorData);
         }
 
         setCompetitorAnalysis(mappedAnalysis);
 
-        // Sélectionner le premier modèle par défaut s'il n'y en a pas encore
         if (!selectedModel) {
           const firstRaw = mappedAnalysis.models_analysis?.[0]?.model_info?.display_name ||
                             mappedAnalysis.models_analysis?.[0]?.model_info?.model_name || '';
@@ -2287,7 +2331,7 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
         return;
       }
 
-      // SOURCE 2: Recherche par URL si non présent dans le rapport (fallback)
+      // SOURCE 3: Recherche par URL si non présent dans le rapport (fallback)
       const reportUrlValue = reportData.report?.url || (reportData as any)?.llmo_report?.url;
       if (!reportUrlValue) return;
 
@@ -2301,10 +2345,10 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
         const matchingAnalysis = analyses.find(analysis => {
           const analysisUrl = (analysis.url || '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^www\./, '');
           const analysisDomain = extractDomain(analysis.url || '').toLowerCase();
-          
+
           return (
-            reportUrl === analysisUrl || 
-            analysisUrl.includes(reportUrl) || 
+            reportUrl === analysisUrl ||
+            analysisUrl.includes(reportUrl) ||
             reportUrl.includes(analysisUrl) ||
             reportDomain === analysisDomain
           );
@@ -2313,7 +2357,7 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
         if (matchingAnalysis) {
           const fullAnalysis = await getCompetitorAnalysisById(matchingAnalysis.analysis_id);
           setCompetitorAnalysis(fullAnalysis);
-          
+
           if (!selectedModel && fullAnalysis.models_analysis && fullAnalysis.models_analysis.length > 0) {
             const firstRaw = fullAnalysis.models_analysis[0].model_info?.display_name ||
                               fullAnalysis.models_analysis[0].model_info?.model_name || '';
@@ -2353,19 +2397,75 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
     }
   }, [competitorAnalysis]); // Ne pas mettre selectedModel ici pour éviter les boucles de reset
 
+  // Détecter v3
+  const v3Data = reportData?.analyse_concurrentielle_v3;
+  const isV3 = v3Data && v3Data.consolidated_competitors && v3Data.consolidated_competitors.length > 0;
+
+  // Extraire les modèles source uniques depuis v3, dédupliqués par nom commercial
+  const v3Models = useMemo(() => {
+    if (!isV3) return [];
+    const commercialSeen = new Set<string>();
+    const models: { raw: string; commercial: string }[] = [];
+    v3Data!.consolidated_competitors.forEach(c => {
+      c.source_models?.forEach(m => {
+        const commercial = getCommercialModelName(m);
+        if (!commercialSeen.has(commercial)) {
+          commercialSeen.add(commercial);
+          models.push({ raw: m, commercial });
+        }
+      });
+    });
+    return models.sort((a, b) => a.commercial.localeCompare(b.commercial));
+  }, [v3Data, isV3]);
+
+  // Initialiser le modèle sélectionné pour v3 : premier modèle par défaut
+  useEffect(() => {
+    if (isV3 && v3Models.length > 0 && !selectedModel) {
+      setSelectedModel(v3Models[0].commercial);
+    }
+  }, [isV3, v3Models]);
+
   // Extraire les concurrents depuis les données de l'API, filtrés par modèle sélectionné
   const getCompetitorsFromAPI = () => {
+    // V3 : filtrer par source_models (comparaison par nom commercial)
+    if (isV3) {
+      // Exclure le site client de la liste des concurrents
+      const clientUrl = reportData?.report?.url || (reportData as any)?.llmo_report?.url || '';
+      const clientDomain = clientUrl ? extractDomain(clientUrl).toLowerCase().replace('www.', '') : '';
+      // Extraire le nom de base sans TLD (ex: "amundi.fr" -> "amundi")
+      const clientBase = clientDomain.split('.')[0];
+
+      let filtered = v3Data!.consolidated_competitors.filter(c => {
+        const compDomain = extractDomain(c.primary_url).toLowerCase().replace('www.', '');
+        const compBase = compDomain.split('.')[0];
+        const compName = (c.name || '').toLowerCase();
+        // Exclure si même domaine, même base, ou nom contient le client
+        return !clientBase || (compDomain !== clientDomain && compBase !== clientBase && !compName.includes(clientBase));
+      });
+      if (selectedModel && selectedModel !== 'all') {
+        filtered = filtered.filter(c =>
+          c.source_models?.some(m => getCommercialModelName(m) === selectedModel)
+        );
+      }
+      return filtered.slice(0, 5).map(c => ({
+        name: c.name,
+        domain: extractDomain(c.primary_url),
+        faviconUrl: c.favicon_url,
+        score: Math.round(c.average_score * 100),
+        globalRank: c.global_rank,
+        sourceModels: c.source_models,
+      }));
+    }
+
     if (!competitorAnalysis) return [];
 
     // Priorité à models_analysis pour filtrer par modèle sélectionné
     if (competitorAnalysis.models_analysis && selectedModel) {
-      // Trouver toutes les analyses dont le nom commercial correspond
       const matchingAnalyses = competitorAnalysis.models_analysis.filter(m => {
         const rawName = m.model_info?.display_name || m.model_info?.model_name || '';
         return getCommercialModelName(rawName) === selectedModel;
       });
 
-      // Fusionner les concurrents de toutes les analyses correspondantes et dédupliquer par domaine
       const allCompetitors: any[] = [];
       const seenDomains = new Set<string>();
       matchingAnalyses.forEach(analysis => {
@@ -2386,36 +2486,19 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
             name: comp.name,
             domain: extractDomain(comp.url),
             score: Math.round(comp.similarity_score * 100),
-            confidence: Math.round(comp.confidence_level * 100),
-            status: comp.similarity_score >= 0.7 ? 'green' : comp.similarity_score >= 0.5 ? 'orange' : 'red',
-            citations: 0,
-            visibility: Math.round(comp.similarity_score * 100),
-            keywords: comp.mentioned_features?.length || 0,
-            strengths: comp.competitive_advantages || [],
-            weaknesses: [],
-            reasoning: comp.reasoning,
-            mentionedFeatures: comp.mentioned_features || []
           }));
       }
     }
 
-    // Fallback vers consolidated_competitors si models_analysis n'a pas de résultats
+    // Fallback consolidated_competitors
     if (competitorAnalysis.consolidated_competitors && competitorAnalysis.consolidated_competitors.length > 0) {
       return competitorAnalysis.consolidated_competitors
-        .slice(0, 5) // Top 5
-        .map((comp, index) => ({
+        .slice(0, 5)
+        .map((comp) => ({
           name: comp.name,
           domain: extractDomain(comp.primary_url),
           score: Math.round(comp.average_score * 100),
-          confidence: Math.round(comp.consensus_level * 100),
-          status: comp.average_score >= 0.7 ? 'green' : comp.average_score >= 0.5 ? 'orange' : 'red',
-          citations: 0,
-          visibility: Math.round(comp.average_score * 100),
-          keywords: 0,
-          strengths: comp.competitive_themes || comp.common_features || [],
-          weaknesses: [],
-          modelScores: comp.model_scores || {},
-          globalRank: comp.global_rank
+          globalRank: comp.global_rank,
         }));
     }
 
@@ -2424,9 +2507,9 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
 
   const competitors = getCompetitorsFromAPI();
 
-  // Obtenir les modèles disponibles depuis l'analyse concurrentielle (uniquement ceux avec >= 2 concurrents)
-  // Regroupés par nom commercial pour éviter les doublons (sonar + sonar-pro → Perplexity)
+  // Modèles pour le select (v1/fallback)
   const competitorModels = useMemo(() => {
+    if (isV3) return [];
     const raw = competitorAnalysis?.models_analysis
       ?.filter(m => m.competitors && m.competitors.length >= 2)
       .map(m => m.model_info?.display_name || m.model_info?.model_name || '')
@@ -2437,7 +2520,10 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
       seen.add(name);
       return true;
     });
-  }, [competitorAnalysis]);
+  }, [competitorAnalysis, isV3]);
+
+  // Liste des modèles pour le select
+  const selectModels = isV3 ? v3Models.map(m => m.commercial) : competitorModels;
 
   return (
     <div className="chart-card competitor-card">
@@ -2447,36 +2533,33 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
           <span className="selector-label">Modèle:</span>
           <Select
             value={selectedModel}
-            onValueChange={(val) => {
-              setSelectedModel(val);
-            }}
-            disabled={loadingCompetitors || competitorModels.length === 0}
+            onValueChange={setSelectedModel}
+            disabled={loadingCompetitors || selectModels.length === 0}
           >
             <SelectTrigger className="w-[200px] h-9 bg-white border-slate-200">
               <SelectValue placeholder="Choisir un modèle" />
             </SelectTrigger>
             <SelectContent>
-              {competitorModels.length > 0 ? (
-                competitorModels.map(commercialName => (
-                  <SelectItem key={commercialName} value={commercialName}>
-                    <div className="flex items-center gap-2">
-                      {getModelLogo(commercialName) ? (
-                        <img src={getModelLogo(commercialName)!} alt={commercialName} className="w-5 h-5 object-contain" />
-                      ) : (
-                        <Zap size={16} className="text-blue-500" />
-                      )}
-                      <span>{commercialName}</span>
-                    </div>
-                  </SelectItem>
-                ))
-              ) : (
+              {selectModels.map(modelName => (
+                <SelectItem key={modelName} value={modelName}>
+                  <div className="flex items-center gap-2">
+                    {getModelLogo(modelName) ? (
+                      <img src={getModelLogo(modelName)!} alt={modelName} className="w-5 h-5 object-contain" />
+                    ) : (
+                      <Zap size={16} className="text-blue-500" />
+                    )}
+                    <span>{modelName}</span>
+                  </div>
+                </SelectItem>
+              ))}
+              {selectModels.length === 0 && (
                 <SelectItem value="none" disabled>Aucun modèle disponible</SelectItem>
               )}
             </SelectContent>
           </Select>
         </div>
       </div>
-      
+
       <div className="competitors-list">
         {loadingCompetitors ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
@@ -2490,25 +2573,30 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div className="subtitle-section">
-                Top 5 Concurrents{selectedModel ? ` - ${selectedModel}` : ''}
+                Top {competitors.length} Concurrents{selectedModel && selectedModel !== 'all' ? ` - ${getCommercialModelName(selectedModel)}` : ''}
               </div>
             </div>
-        
+
             {competitors.map((competitor, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="competitor-item"
                 style={{ cursor: 'default' }}
               >
-                <img src={`https://www.google.com/s2/favicons?domain=${competitor.domain}&sz=32`} alt={competitor.domain} width={20} height={20} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                <img
+                  src={(competitor as any).faviconUrl || `https://www.google.com/s2/favicons?domain=${competitor.domain}&sz=32`}
+                  alt={competitor.domain}
+                  width={20} height={20}
+                  style={{ borderRadius: '4px', flexShrink: 0 }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
                 <div className="competitor-info" style={{ flex: 1 }}>
                   <div className="competitor-name">{competitor.name}</div>
                   <div className="competitor-domain">{competitor.domain}</div>
                 </div>
               </div>
             ))}
-            
-           
+
           </>
         )}
       </div>
@@ -2884,6 +2972,201 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
  * Vue "Améliorer"
  * Affiche les analyses, graphiques et tableaux de performance
  */
+/**
+ * Résumé du Plan d'Action GEO dans la vue d'ensemble
+ * Affiche les actions prioritaires avec leur catégorie, priorité et effort
+ */
+function PlanActionGeoOverview({ reportData }: { reportData: FullReportData | null }) {
+  if (!reportData?.analyses || reportData.analyses.length === 0) return null;
+
+  // Chercher l'analyse avec le plan d'action GEO le plus complet
+  const analysisWithGeoPlan = reportData.analyses
+    .filter(a => a.modules?.audit_geo?.plan_action_geo && Array.isArray(a.modules.audit_geo.plan_action_geo) && a.modules.audit_geo.plan_action_geo.length > 0)
+    .sort((a, b) => (b.modules?.audit_geo?.plan_action_geo?.length || 0) - (a.modules?.audit_geo?.plan_action_geo?.length || 0))[0];
+
+  if (!analysisWithGeoPlan) return null;
+
+  const auditGeo = analysisWithGeoPlan.modules.audit_geo;
+  const rawPlan = auditGeo.plan_action_geo || [];
+  const scoreGlobal = Math.round(auditGeo.score_global_geo ?? 0);
+
+  // Normaliser les items (supporter string[] ou object[])
+  const planItems = rawPlan.map((item: any) => {
+    if (typeof item === 'string') {
+      return { action: item, categorie: '', priorite: 'moyenne', impact: '', effort: 'moyen' };
+    }
+    return item as { action: string; categorie: string; priorite: string; impact: string; effort: string };
+  });
+
+  if (planItems.length === 0) return null;
+
+  const highPriority = planItems.filter((i: any) => i.priorite?.toLowerCase() === 'haute').length;
+  const medPriority = planItems.filter((i: any) => i.priorite?.toLowerCase() === 'moyenne').length;
+  const lowPriority = planItems.filter((i: any) => i.priorite?.toLowerCase() === 'basse').length;
+
+  const getPriorityStyle = (p: string) => {
+    const pr = (p || '').toLowerCase();
+    if (pr === 'haute') return { bg: '#FEE2E2', color: '#DC2626', label: 'Haute' };
+    if (pr === 'moyenne') return { bg: '#FEF3C7', color: '#D97706', label: 'Moyenne' };
+    return { bg: '#D1FAE5', color: '#059669', label: 'Basse' };
+  };
+
+  const getEffortStyle = (e: string) => {
+    const ef = (e || '').toLowerCase();
+    if (ef === 'faible') return { bg: '#D1FAE5', color: '#059669', label: 'Faible' };
+    if (ef === 'moyen') return { bg: '#FEF3C7', color: '#D97706', label: 'Moyen' };
+    return { bg: '#FEE2E2', color: '#DC2626', label: 'Élevé' };
+  };
+
+  const getCategoryIcon = (cat: string) => {
+    const c = (cat || '').toLowerCase();
+    if (c.includes('structur')) return '🏗️';
+    if (c.includes('crawl') || c.includes('accessib')) return '🤖';
+    if (c.includes('html') || c.includes('semantique')) return '📄';
+    if (c.includes('meta') || c.includes('technique')) return '⚙️';
+    if (c.includes('contenu') || c.includes('optimisation')) return '✍️';
+    if (c.includes('conform') || c.includes('standard')) return '✅';
+    return '📋';
+  };
+
+  return (
+    <div style={{
+      background: '#FFFFFF',
+      borderRadius: '16px',
+      border: '1px solid #E2E8F0',
+      overflow: 'hidden'
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '20px 24px',
+        borderBottom: '1px solid #F1F5F9',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '40px', height: '40px', borderRadius: '10px',
+            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <ListChecks size={20} color="white" />
+          </div>
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+              Plan d'action GEO
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748B', margin: 0, marginTop: '2px' }}>
+              {planItems.length} actions identifiées pour améliorer votre visibilité IA
+            </p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Score GEO badge */}
+          <div style={{
+            padding: '6px 14px',
+            borderRadius: '20px',
+            background: scoreGlobal >= 70 ? '#D1FAE5' : scoreGlobal >= 40 ? '#FEF3C7' : '#FEE2E2',
+            color: scoreGlobal >= 70 ? '#059669' : scoreGlobal >= 40 ? '#D97706' : '#DC2626',
+            fontSize: '14px',
+            fontWeight: 700
+          }}>
+            Score GEO: {scoreGlobal}/100
+          </div>
+        </div>
+      </div>
+
+      {/* Résumé des priorités */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '1px',
+        background: '#F1F5F9',
+        borderBottom: '1px solid #F1F5F9'
+      }}>
+        <div style={{ background: '#FFF', padding: '14px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#DC2626' }}>{highPriority}</div>
+          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>Priorité haute</div>
+        </div>
+        <div style={{ background: '#FFF', padding: '14px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#D97706' }}>{medPriority}</div>
+          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>Priorité moyenne</div>
+        </div>
+        <div style={{ background: '#FFF', padding: '14px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#059669' }}>{lowPriority}</div>
+          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>Priorité basse</div>
+        </div>
+      </div>
+
+      {/* Liste des actions */}
+      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {planItems.map((item: any, idx: number) => {
+          const priority = getPriorityStyle(item.priorite);
+          const effort = getEffortStyle(item.effort);
+          return (
+            <div key={idx} style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+              padding: '14px 16px',
+              borderRadius: '12px',
+              border: '1px solid #E2E8F0',
+              background: '#FAFBFC',
+              transition: 'all 0.2s ease'
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.borderColor = '#CBD5E1'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#FAFBFC'; e.currentTarget.style.borderColor = '#E2E8F0'; }}
+            >
+              {/* Numéro */}
+              <div style={{
+                minWidth: '28px', height: '28px', borderRadius: '8px',
+                background: priority.bg, color: priority.color,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '13px', fontWeight: 700, flexShrink: 0
+              }}>
+                {idx + 1}
+              </div>
+
+              {/* Contenu */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  {item.categorie && (
+                    <span style={{ fontSize: '12px' }}>{getCategoryIcon(item.categorie)}</span>
+                  )}
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#1E293B', margin: 0, lineHeight: '1.4' }}>
+                    {item.action}
+                  </p>
+                </div>
+                {item.impact && (
+                  <p style={{ fontSize: '12px', color: '#64748B', margin: 0, marginTop: '4px', lineHeight: '1.4' }}>
+                    {item.impact}
+                  </p>
+                )}
+              </div>
+
+              {/* Badges */}
+              <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'flex-start' }}>
+                <span style={{
+                  padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
+                  background: priority.bg, color: priority.color
+                }}>
+                  {priority.label}
+                </span>
+                <span style={{
+                  padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
+                  background: effort.bg, color: effort.color
+                }}>
+                  {effort.label}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
   return (
     <div className="view-content">
@@ -2892,7 +3175,7 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
         <GeoScoreChart reportData={reportData} />
         <CompetitorAnalysis reportData={reportData} />
       </div>
-      
+
       {/* Tableau des domaines */}
       <DomainsTable reportData={reportData} />
     </div>

@@ -731,16 +731,46 @@ export const getCompetitorAnalysisFromReport = async (reportId: string | number)
 
     const data = await response.json();
 
-    // Vérifier si analyse_concurrentielle_v1 existe (peut être à la racine ou dans le report)
+    // Récupérer l'ID du rapport (peut être à différents endroits)
+    const id = data.llmo_report?.id || data.report?.id || data.id || Number(reportId);
+
+    // PRIORITÉ 1: analyse_concurrentielle_v3
+    const v3Data = data.analyse_concurrentielle_v3;
+    if (v3Data && v3Data.consolidated_competitors && v3Data.consolidated_competitors.length > 0) {
+      const mapped: CompetitorAnalysisResponse = {
+        analysis_id: String(v3Data.analysis_id || id),
+        url: v3Data.url || '',
+        status: v3Data.status || 'completed',
+        created_at: v3Data.created_at || new Date().toISOString(),
+        consolidated_competitors: v3Data.consolidated_competitors.map((c: any, index: number) => ({
+          name: c.name,
+          primary_url: c.primary_url,
+          all_urls: c.all_urls || [c.primary_url],
+          average_score: c.average_score,
+          weighted_score: c.average_score,
+          models_count: c.models_count,
+          consensus_level: c.models_count / (v3Data.global_stats?.total_models_executed || 1),
+          global_rank: c.global_rank || index + 1,
+          model_scores: {},
+          model_ranks: {},
+          source_models: c.source_models || [],
+          llmo_analysis: null,
+          benchmark: null,
+          competitive_themes: [],
+          common_features: [],
+        })),
+        models_analysis: [],
+        global_stats: v3Data.global_stats,
+      };
+      return mapped;
+    }
+
+    // PRIORITÉ 2: analyse_concurrentielle_v1 ou competitor_analysis
     const analyseConcurrentielle = data.analyse_concurrentielle_v1 || data.competitor_analysis;
 
     if (!analyseConcurrentielle) {
       return null;
     }
-
-    // Récupérer l'ID du rapport (peut être à différents endroits)
-    // L'API retourne llmo_report au lieu de report
-    const id = data.llmo_report?.id || data.report?.id || data.id || Number(reportId);
 
     // Mapper vers le format CompetitorAnalysisResponse
     return mapAnalyseConcurrentielleV1ToResponse(id, analyseConcurrentielle);

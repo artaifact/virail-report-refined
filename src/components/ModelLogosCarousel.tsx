@@ -17,6 +17,7 @@ export const modelLogos: Record<string, string> = {
   'deepseek': '/prompt-model-deepseek.svg',
   'qwen': '/prompt-model-qwen.svg',
   'llama': '/prompt-model-llama.svg',
+  'meta': '/prompt-model-llama.svg',
   'grok': '/prompt-model-grok.svg',
 };
 

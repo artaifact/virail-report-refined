@@ -12,19 +12,19 @@ import {
   useSidebar,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { 
-  Home, 
-  MessageSquare, 
-  Globe, 
-  Swords, 
-  Tag, 
-  Users, 
-  Folder, 
-  Building2, 
-  CreditCard, 
-  Wallet, 
-  ChevronsUpDown, 
-  Plus, 
+import {
+  Home,
+  MessageSquare,
+  Globe,
+  Swords,
+  Tag,
+  Users,
+  Folder,
+  Building2,
+  CreditCard,
+  Wallet,
+  ChevronsUpDown,
+  Plus,
   LogOut,
   ShieldCheck,
   BadgeDollarSign,
@@ -51,6 +51,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 import * as React from "react"
 import { NotificationBell } from "./NotificationBell"
 
@@ -62,6 +63,7 @@ export function AppSidebar() {
   const { userPlan, isLoading } = usePayment()
   const { isMobile, setOpenMobile } = useSidebar()
   const [isNewAnalysisModalOpen, setIsNewAnalysisModalOpen] = React.useState(false)
+  const [isReportsModalOpen, setIsReportsModalOpen] = React.useState(false)
 
   // Récupérer le nom de domaine pour l'afficher à la place de "Virail Studio"
   const explicitReportId = location.state?.selectedReportId || searchParams.get('reportId');
@@ -93,7 +95,6 @@ export function AppSidebar() {
   }
 
   const data = {
-    versions: ["1.0.0", "1.1.0-alpha", "2.0.0-beta1"],
     navMain: [
       {
         title: "Général",
@@ -110,7 +111,7 @@ export function AppSidebar() {
             icon: Target,
             badge: undefined as string | undefined,
           },
-         
+
         ],
       },
       {
@@ -145,43 +146,16 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{domainName || "Virail Studio"}</span>
-                  </div>
-                  <NotificationBell />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                align="start"
-                side="bottom"
-                sideOffset={4}
-              >
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Versions
-                </DropdownMenuLabel>
-                {data.versions.map((version) => (
-                  <DropdownMenuItem
-                    key={version}
-                    onSelect={() => {}}
-                    className="gap-2 p-2"
-                  >
-                    v{version}
-                    {version === "1.0.0" && (
-                      <div className="ml-auto flex h-4 w-4 items-center justify-center rounded-full border bg-background">
-                        <Plus className="size-2" />
-                      </div>
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <SidebarMenuButton
+              size="lg"
+              onClick={() => setIsReportsModalOpen(true)}
+            >
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">{domainName || "Virail Studio"}</span>
+                <span className="truncate text-[11px] text-muted-foreground">Mes analyses</span>
+              </div>
+              <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -298,10 +272,61 @@ export function AppSidebar() {
       </SidebarFooter>
       <SidebarRail />
       
-      <NewAnalysisModal 
-        open={isNewAnalysisModalOpen} 
-        onOpenChange={setIsNewAnalysisModalOpen} 
+      <NewAnalysisModal
+        open={isNewAnalysisModalOpen}
+        onOpenChange={setIsNewAnalysisModalOpen}
       />
+
+      {/* Modal plein écran - Mes analyses */}
+      <Dialog open={isReportsModalOpen} onOpenChange={setIsReportsModalOpen}>
+        <DialogContent className="sm:max-w-2xl p-0 gap-0 rounded-2xl overflow-hidden">
+          <div className="flex flex-col max-h-[70vh]">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h2 className="text-base font-semibold text-gray-900">Mes analyses</h2>
+              <p className="text-xs text-gray-500 mt-0.5">{reports.length} rapport{reports.length > 1 ? 's' : ''}</p>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-3">
+              <div className="flex flex-col gap-1.5">
+                {reports.map((report) => {
+                  const reportDomain = (() => {
+                    try { return new URL(report.url).hostname.replace('www.', ''); } catch { return report.url; }
+                  })();
+                  const isActive = String(report.id) === String(reportId);
+                  return (
+                    <div
+                      key={report.id}
+                      onClick={() => {
+                        navigate(`/?reportId=${report.id}`);
+                        setIsReportsModalOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors",
+                        isActive ? "bg-primary/5" : "hover:bg-gray-50"
+                      )}
+                    >
+                      <img
+                        src={`https://www.google.com/s2/favicons?domain=${reportDomain}&sz=32`}
+                        alt={reportDomain}
+                        className="w-6 h-6 rounded flex-shrink-0"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className={cn("font-medium truncate text-sm", isActive ? "text-primary" : "text-gray-900")}>{reportDomain}</div>
+                      </div>
+                      {isActive && (
+                        <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Sidebar>
   )
 }

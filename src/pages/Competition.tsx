@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +53,7 @@ const modelLogos: Record<string, string> = {
   'deepseek': '/prompt-model-deepseek.svg',
   'qwen': '/prompt-model-qwen.svg',
   'llama': '/prompt-model-llama.svg',
+  'meta': '/prompt-model-llama.svg',
   'grok': '/prompt-model-grok.svg',
 };
 
@@ -103,8 +104,19 @@ import {
   MiniLLMResult,
   getCompetitorAnalysisFromReport,
 } from '@/services/competitorAnalysisService';
-import { useReports } from '@/hooks/useReports';
+import { useReports, useReport } from '@/hooks/useReports';
 import { useSearchParams } from 'react-router-dom';
+import type { AnalyseConcurrentielleV3, BenchmarkTechnique, EvolutionConcurrents } from '@/lib/api';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 
 const Competition = () => {
   usePageTitle('Veille concurrentielle');
@@ -128,6 +140,7 @@ const Competition = () => {
 
   // État pour le tooltip hover de la matrice
   const [hoveredMatricePoint, setHoveredMatricePoint] = useState<string | null>(null);
+  const [showAllLegend, setShowAllLegend] = useState(false);
 
   const { usageLimits, canUseFeature, subscription } = usePayment() as any;
   const isStarter = subscription?.plan?.id === 'solo';
@@ -139,6 +152,27 @@ const Competition = () => {
   // Priorité : reportId de l'URL > dernier rapport de la liste
   const latestReportId = explicitReportId || (reports.length > 0 ? reports[reports.length - 1].id : null);
 
+  // Charger le rapport complet pour accéder à analyse_concurrentielle_v3 et materiality_matrix
+  const { report: reportData } = useReport(latestReportId);
+
+  // Données v3, materiality_matrix et benchmark_technique depuis le rapport
+  const v3Data = reportData?.analyse_concurrentielle_v3 as AnalyseConcurrentielleV3 | null | undefined;
+  const benchmarkTechnique = reportData?.benchmark_technique as BenchmarkTechnique | null | undefined;
+  const materialityMatrix = (reportData as any)?.materiality_matrix as {
+    brands: Array<{
+      name: string;
+      url: string;
+      is_target: boolean;
+      audited: boolean;
+      visibility: number;
+      sentiment: number;
+      total_score: number;
+      pillars: Record<string, { score: number; max: number }>;
+      gaps: string[];
+    }>;
+    quadrants: { leaders: string[]; niche_players: string[]; controversial: string[]; laggers: string[] };
+    stats: { total_brands: number; with_audit: number; without_audit: number; source: string };
+  } | null | undefined;
 
   // Fonction pour charger une analyse par ID
   const loadAnalysisById = async (analysisId: number) => {
@@ -174,6 +208,27 @@ const Competition = () => {
     }
   }, [latestReportId, reportsLoading]);
 
+  // Fake data pour preview (à supprimer quand l'API est prête)
+  const FAKE_EVOLUTION_DATA: EvolutionConcurrents = {
+    target_evolution: [
+      { session_id: 1, date: '2025-06-01', score: 0.35 },
+      { session_id: 2, date: '2025-07-01', score: 0.38 },
+      { session_id: 3, date: '2025-08-01', score: 0.42 },
+      { session_id: 4, date: '2025-09-01', score: 0.45 },
+      { session_id: 5, date: '2025-10-01', score: 0.48 },
+      { session_id: 6, date: '2025-11-01', score: 0.52 },
+      { session_id: 7, date: '2025-12-01', score: 0.55 },
+      { session_id: 8, date: '2026-01-01', score: 0.60 },
+      { session_id: 9, date: '2026-02-01', score: 0.63 },
+    ],
+    target_trend: { direction: 'up', change: 0.28 },
+    competitors: {},
+    new_competitors: [],
+    disappeared_competitors: [],
+  };
+
+  // Données d'évolution concurrentielle depuis le rapport, fallback sur fake data
+  const evolutionData = (reportData?.evolution_concurrents as EvolutionConcurrents | null) || FAKE_EVOLUTION_DATA;
 
   // Fonction extractDomain déjà importée du service
 
@@ -390,55 +445,123 @@ const Competition = () => {
                   </CardContent>
                 </Card> */}
 
-                {/* Section Top concurrents et Détails par Modèle côte à côte */}
+                {/* Section Evo concurrentielle et Détails par Modèle côte à côte */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Top concurrents */}
-                  {currentAnalysis.target_positioning?.top_competitors && currentAnalysis.target_positioning.top_competitors.length > 0 && (
-                    <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                      <div className="divide-y divide-gray-200 rounded-lg overflow-hidden border border-gray-200">
-                        {currentAnalysis.target_positioning.top_competitors.map((c, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center gap-4 min-w-0">
-                              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-300 text-sm font-bold text-gray-900">
-                                {c.rank}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-semibold text-gray-900 truncate text-sm">
-                                  {c.name}
-                                </div>
-                              </div>
+                  {/* Évolution concurrentielle - Graphiques et données */}
+                  {(() => {
+                    if (!evolutionData || !evolutionData.target_evolution) return null;
+
+                    const trendIcon = (dir: string) => dir === 'up' ? '\u2191' : dir === 'down' ? '\u2193' : '\u2192';
+                    const trendColor = (dir: string) => dir === 'up' ? 'text-green-600' : dir === 'down' ? 'text-red-500' : 'text-gray-500';
+
+                    // Build line chart data from target_evolution only
+                    const lineChartData = (evolutionData.target_evolution || [])
+                      .filter(s => s && s.date)
+                      .map(s => ({ date: String(s.date), Score: Math.round((s.score || 0) * 100) }))
+                      .sort((a, b) => a.date.localeCompare(b.date));
+
+                    return (
+                      <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4" style={{ letterSpacing: '1.2px' }}>
+                          Évolution concurrentielle
+                        </div>
+
+                        {/* A) Line chart - votre score */}
+                        {lineChartData.length > 0 && (
+                          <div className="mb-6">
+                            <div className="text-sm font-semibold text-gray-700 mb-2">Votre score dans le temps</div>
+                            <div style={{ width: '100%', height: 260 }}>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={lineChartData}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                                  <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} />
+                                  <Tooltip formatter={(value: number) => `${value}%`} />
+                                  <Line type="monotone" dataKey="Score" stroke="#6366f1" strokeWidth={2.5} dot={false} />
+                                </LineChart>
+                              </ResponsiveContainer>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </Card>
-                  )}
+                        )}
+
+                        {/* B) Badge trend */}
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <span className={trendColor(evolutionData.target_trend.direction)}>
+                              {trendIcon(evolutionData.target_trend.direction)}
+                            </span>
+                            Vous {evolutionData.target_trend.change !== 0 && `(${evolutionData.target_trend.change > 0 ? '+' : ''}${Math.round(evolutionData.target_trend.change * 100)}%)`}
+                          </Badge>
+                        </div>
+
+                      </Card>
+                    );
+                  })()}
 
                   {/* Détails par modèle */}
                   {(() => {
                     // Grouper les concurrents par nom commercial (fusionner sonar + sonar-pro → Perplexity)
                     const competitorsByCommercial: Record<string, any[]> = {};
 
-                    const competitors = (currentAnalysis as any)?.competitors;
-                    if (competitors && Array.isArray(competitors)) {
-                      competitors.forEach((competitor: any) => {
-                        if (competitor.sources && Array.isArray(competitor.sources)) {
-                          competitor.sources.forEach((source: string) => {
-                            const commercial = getCommercialModelName(source);
+                    const isV3 = !!(v3Data && v3Data.consolidated_competitors && v3Data.consolidated_competitors.length > 0);
+
+                    // Domaine client pour exclusion
+                    const clientUrl = currentAnalysis?.url || v3Data?.url || '';
+                    const clientDomain = extractDomain(clientUrl).toLowerCase().replace('www.', '');
+                    const clientBase = clientDomain.split('.')[0];
+
+                    if (isV3) {
+                      // SOURCE PRIORITAIRE: v3 consolidated_competitors avec source_models
+                      const filtered = v3Data!.consolidated_competitors.filter(c => {
+                        const compDomain = extractDomain(c.primary_url).toLowerCase().replace('www.', '');
+                        const compBase = compDomain.split('.')[0];
+                        const compName = (c.name || '').toLowerCase();
+                        return !clientBase || (compDomain !== clientDomain && compBase !== clientBase && !compName.includes(clientBase));
+                      });
+
+                      filtered.forEach(c => {
+                        if (c.source_models && Array.isArray(c.source_models)) {
+                          c.source_models.forEach(model => {
+                            const commercial = getCommercialModelName(model);
                             if (!competitorsByCommercial[commercial]) {
                               competitorsByCommercial[commercial] = [];
                             }
-                            // Dédupliquer par domaine au sein d'un même groupe commercial
-                            const domain = extractDomain(competitor.url || competitor.primary_url || '');
+                            const domain = extractDomain(c.primary_url);
                             const alreadyAdded = competitorsByCommercial[commercial].some(
-                              (c: any) => extractDomain(c.url || c.primary_url || '') === domain
+                              (existing: any) => extractDomain(existing.url || existing.primary_url || '') === domain
                             );
                             if (!alreadyAdded) {
-                              competitorsByCommercial[commercial].push(competitor);
+                              competitorsByCommercial[commercial].push({
+                                ...c,
+                                url: c.primary_url,
+                                sources: c.source_models,
+                              });
                             }
                           });
                         }
                       });
+                    } else {
+                      // FALLBACK: ancienne logique
+                      const competitors = (currentAnalysis as any)?.competitors;
+                      if (competitors && Array.isArray(competitors)) {
+                        competitors.forEach((competitor: any) => {
+                          if (competitor.sources && Array.isArray(competitor.sources)) {
+                            competitor.sources.forEach((source: string) => {
+                              const commercial = getCommercialModelName(source);
+                              if (!competitorsByCommercial[commercial]) {
+                                competitorsByCommercial[commercial] = [];
+                              }
+                              const domain = extractDomain(competitor.url || competitor.primary_url || '');
+                              const alreadyAdded = competitorsByCommercial[commercial].some(
+                                (c: any) => extractDomain(c.url || c.primary_url || '') === domain
+                              );
+                              if (!alreadyAdded) {
+                                competitorsByCommercial[commercial].push(competitor);
+                              }
+                            });
+                          }
+                        });
+                      }
                     }
 
                     const modelNames = Object.keys(competitorsByCommercial);
@@ -552,12 +675,9 @@ const Competition = () => {
 
                   {/* Matrice de Matérialité */}
                   {(() => {
-                    const competitors = (currentAnalysis as any)?.competitors;
-                    const benchmarkRaw = (currentAnalysis as any)?.benchmark_results?.raw_data;
-                    const analysisUrl = currentAnalysis?.url || '';
-                    const totalMentions = competitors?.reduce((sum: number, c: any) => sum + (c.mentions || 0), 0) || 1;
-
-                    if (!competitors || competitors.length === 0) return null;
+                    // Source prioritaire : materialityMatrix (endpoint dédié)
+                    // Fallback : ancienne logique via competitors + benchmark_results.raw_data
+                    const useMateriality = !!(materialityMatrix && materialityMatrix.brands && materialityMatrix.brands.length > 0);
 
                     type MatricePoint = {
                       name: string;
@@ -568,66 +688,96 @@ const Competition = () => {
                       totalScore: number;
                       mentions: number;
                       isTarget: boolean;
+                      audited: boolean;
                       scoreDetails?: any;
                       grade?: string;
                       recommendations?: string[];
+                      pillars?: Record<string, { score: number; max: number }>;
+                      gaps?: string[];
                     };
 
                     const dataPoints: MatricePoint[] = [];
 
-                    // Deduplicate competitors by URL
-                    const competitorsByUrl = new Map<string, any>();
-                    for (const c of competitors) {
-                      const existing = competitorsByUrl.get(c.url);
-                      if (!existing || c.mentions > existing.mentions) {
-                        competitorsByUrl.set(c.url, c);
+                    if (useMateriality) {
+                      // Nouvelle source : materiality_matrix
+                      materialityMatrix!.brands.forEach(b => {
+                        const domain = extractDomain(b.url);
+                        dataPoints.push({
+                          name: b.name,
+                          url: b.url,
+                          favicon_url: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+                          visibility: b.visibility,
+                          sentiment: b.sentiment,
+                          totalScore: b.total_score,
+                          mentions: 0,
+                          isTarget: b.is_target,
+                          audited: b.audited,
+                          pillars: b.pillars,
+                          gaps: b.gaps,
+                        });
+                      });
+                    } else {
+                      // Fallback : ancienne logique
+                      const competitors = (currentAnalysis as any)?.competitors;
+                      const benchmarkRaw = (currentAnalysis as any)?.benchmark_results?.raw_data;
+                      const analysisUrl = currentAnalysis?.url || '';
+
+                      if (!competitors || competitors.length === 0) return null;
+
+                      const competitorsByUrl = new Map<string, any>();
+                      for (const c of competitors) {
+                        const existing = competitorsByUrl.get(c.url);
+                        if (!existing || c.mentions > existing.mentions) {
+                          competitorsByUrl.set(c.url, c);
+                        }
                       }
-                    }
 
-                    for (const [url, comp] of competitorsByUrl) {
-                      const benchEntry = benchmarkRaw?.[url];
-                      const hasScore = benchEntry && typeof benchEntry.total_score === 'number';
-                      const totalScore = hasScore ? benchEntry.total_score : 0;
+                      for (const [url, comp] of competitorsByUrl) {
+                        const benchEntry = benchmarkRaw?.[url];
+                        const hasScore = benchEntry && typeof benchEntry.total_score === 'number';
+                        const totalScore = hasScore ? benchEntry.total_score : 0;
 
-                      dataPoints.push({
-                        name: comp.name,
-                        url,
-                        favicon_url: comp.favicon_url || `https://www.google.com/s2/favicons?domain=${url.replace(/^https?:\/\//, '').replace(/\/.*/, '')}&sz=32`,
-                        visibility: totalScore,
-                        sentiment: comp.average_score || 0,
-                        totalScore,
-                        mentions: comp.mentions || 0,
-                        isTarget: false,
-                        scoreDetails: hasScore ? benchEntry : undefined,
-                        grade: hasScore ? benchEntry.grade : undefined,
-                        recommendations: hasScore ? benchEntry.primary_recommendations : undefined,
-                      });
-                    }
+                        dataPoints.push({
+                          name: comp.name,
+                          url,
+                          favicon_url: comp.favicon_url || `https://www.google.com/s2/favicons?domain=${url.replace(/^https?:\/\//, '').replace(/\/.*/, '')}&sz=32`,
+                          visibility: totalScore,
+                          sentiment: comp.average_score || 0,
+                          totalScore,
+                          mentions: comp.mentions || 0,
+                          isTarget: false,
+                          audited: false,
+                          scoreDetails: hasScore ? benchEntry : undefined,
+                          grade: hasScore ? benchEntry.grade : undefined,
+                          recommendations: hasScore ? benchEntry.primary_recommendations : undefined,
+                        });
+                      }
 
-                    // Add user's site
-                    if (analysisUrl && benchmarkRaw?.[analysisUrl]) {
-                      const targetEntry = benchmarkRaw[analysisUrl];
-                      const targetScore = targetEntry.total_score || 0;
-                      const domain = analysisUrl.replace(/^https?:\/\//, '').replace(/\/.*/, '');
-                      dataPoints.push({
-                        name: domain,
-                        url: analysisUrl,
-                        favicon_url: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
-                        visibility: targetScore,
-                        sentiment: Math.min(1, targetScore / 100 * 1.2),
-                        totalScore: targetScore,
-                        mentions: 0,
-                        isTarget: true,
-                        scoreDetails: targetEntry,
-                        grade: targetEntry.grade,
-                        recommendations: targetEntry.primary_recommendations,
-                      });
+                      // Add user's site
+                      if (analysisUrl && benchmarkRaw?.[analysisUrl]) {
+                        const targetEntry = benchmarkRaw[analysisUrl];
+                        const targetScore = targetEntry.total_score || 0;
+                        const domain = analysisUrl.replace(/^https?:\/\//, '').replace(/\/.*/, '');
+                        dataPoints.push({
+                          name: domain,
+                          url: analysisUrl,
+                          favicon_url: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+                          visibility: targetScore,
+                          sentiment: Math.min(1, targetScore / 100 * 1.2),
+                          totalScore: targetScore,
+                          mentions: 0,
+                          isTarget: true,
+                          audited: true,
+                          scoreDetails: targetEntry,
+                          grade: targetEntry.grade,
+                          recommendations: targetEntry.primary_recommendations,
+                        });
+                      }
                     }
 
                     if (dataPoints.length === 0) return null;
 
                     // Limiter à 12 concurrents max pour éviter le parasitage
-                    // Garder le target + top concurrents par score
                     const MAX_DISPLAY = 12;
                     let displayPoints = dataPoints;
                     if (dataPoints.length > MAX_DISPLAY) {
@@ -638,13 +788,19 @@ const Competition = () => {
                       displayPoints = [...target, ...others];
                     }
 
-                    const chartW = 900;
-                    const chartH = 560;
-                    const pad = { top: 30, right: 30, bottom: 50, left: 60 };
+                    const chartW = 1000;
+                    const chartH = 720;
+                    const pad = { top: 40, right: 40, bottom: 75, left: 75 };
                     const plotW = chartW - pad.left - pad.right;
                     const plotH = chartH - pad.top - pad.bottom;
                     const xScale = (v: number) => pad.left + (v / 100) * plotW;
                     const yScale = (s: number) => pad.top + plotH - s * plotH;
+
+                    // Legend pagination
+                    const LEGEND_INITIAL = 5;
+                    const legendItems = displayPoints;
+                    const visibleLegend = showAllLegend ? legendItems : legendItems.slice(0, LEGEND_INITIAL);
+                    const hasMoreLegend = legendItems.length > LEGEND_INITIAL;
 
                     return (
                       <Card className="w-full bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
@@ -657,10 +813,10 @@ const Competition = () => {
                           </p>
                         )}
 
-                        {/* Legend */}
+                        {/* Legend with pagination */}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16, alignItems: 'center', justifyContent: 'center' }}>
                           <span style={{ fontSize: 12, color: '#64748B' }}>Marques</span>
-                          {displayPoints.map(d => (
+                          {visibleLegend.map(d => (
                             <div
                               key={d.url}
                               style={{
@@ -673,8 +829,8 @@ const Competition = () => {
                                 if (isStarter) return;
                                 setSelectedGeoEntry({
                                   url: d.url,
-                                  domain: d.url.replace(/^https?:\/\//, '').replace(/\/.*/, ''),
-                                  data: d.scoreDetails || {}
+                                  domain: extractDomain(d.url),
+                                  data: d.scoreDetails || { pillars: d.pillars, gaps: d.gaps, total_score: d.totalScore, audited: d.audited, visibility: d.visibility, sentiment: d.sentiment }
                                 });
                                 setGeoModalOpen(true);
                               }}
@@ -688,8 +844,22 @@ const Competition = () => {
                               <span style={{ fontSize: 11, color: d.isTarget ? '#4F46E5' : '#475569', fontWeight: d.isTarget ? 600 : 400 }}>
                                 {d.name}
                               </span>
+                              {d.audited && (
+                                <span style={{ fontSize: 9, color: '#16A34A', fontWeight: 600 }} title="Audité">&#x2713;</span>
+                              )}
                             </div>
                           ))}
+                          {hasMoreLegend && (
+                            <button
+                              onClick={() => setShowAllLegend(!showAllLegend)}
+                              style={{
+                                fontSize: 11, color: '#6366F1', background: 'none', border: 'none', cursor: 'pointer',
+                                padding: '2px 6px', fontWeight: 500, textDecoration: 'underline',
+                              }}
+                            >
+                              {showAllLegend ? 'Voir moins' : `+${legendItems.length - LEGEND_INITIAL} autres`}
+                            </button>
+                          )}
                         </div>
 
                         {/* SVG Scatter Chart */}
@@ -699,22 +869,22 @@ const Competition = () => {
                             <rect x={pad.left} y={pad.top} width={plotW} height={plotH} fill="#FAFBFC" />
 
                             {/* Quadrant labels */}
-                            <text x={pad.left + plotW * 0.25} y={pad.top + 16} textAnchor="middle" fontSize="11" fill="#6B7280" fontWeight="500">Niche Players</text>
-                            <text x={pad.left + plotW * 0.75} y={pad.top + 16} textAnchor="middle" fontSize="11" fill="#16A34A" fontWeight="500">Leaders</text>
-                            <text x={pad.left + plotW * 0.25} y={pad.top + plotH - 6} textAnchor="middle" fontSize="11" fill="#DC2626" fontWeight="500">Laggers</text>
-                            <text x={pad.left + plotW * 0.75} y={pad.top + plotH - 6} textAnchor="middle" fontSize="11" fill="#D97706" fontWeight="500">Controversial</text>
+                            <text x={pad.left + plotW * 0.25} y={pad.top + 22} textAnchor="middle" fontSize="14" fill="#6B7280" fontWeight="600">Niche Players</text>
+                            <text x={pad.left + plotW * 0.75} y={pad.top + 22} textAnchor="middle" fontSize="14" fill="#16A34A" fontWeight="600">Leaders</text>
+                            <text x={pad.left + plotW * 0.25} y={pad.top + plotH - 10} textAnchor="middle" fontSize="14" fill="#DC2626" fontWeight="600">Laggers</text>
+                            <text x={pad.left + plotW * 0.75} y={pad.top + plotH - 10} textAnchor="middle" fontSize="14" fill="#D97706" fontWeight="600">Controversial</text>
 
                             {/* Grid lines */}
                             {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(v => (
                               <g key={`x-${v}`}>
                                 <line x1={xScale(v)} y1={pad.top} x2={xScale(v)} y2={pad.top + plotH} stroke="#E5E7EB" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "4 2"} />
-                                <text x={xScale(v)} y={chartH - 10} textAnchor="middle" fontSize="10" fill="#9CA3AF">{v}%</text>
+                                <text x={xScale(v)} y={pad.top + plotH + 20} textAnchor="middle" fontSize="11" fill="#9CA3AF">{v}%</text>
                               </g>
                             ))}
                             {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map(s => (
                               <g key={`y-${s}`}>
                                 <line x1={pad.left} y1={yScale(s)} x2={pad.left + plotW} y2={yScale(s)} stroke="#E5E7EB" strokeWidth={0.5} strokeDasharray={s === 0.5 ? "0" : "4 2"} />
-                                <text x={pad.left - 8} y={yScale(s) + 4} textAnchor="end" fontSize="10" fill="#9CA3AF">{s.toFixed(1)}</text>
+                                <text x={pad.left - 12} y={yScale(s) + 4} textAnchor="end" fontSize="11" fill="#9CA3AF">{s.toFixed(1)}</text>
                               </g>
                             ))}
 
@@ -723,8 +893,8 @@ const Competition = () => {
                             <line x1={pad.left} y1={yScale(0.5)} x2={pad.left + plotW} y2={yScale(0.5)} stroke="#CBD5E1" strokeWidth={1} />
 
                             {/* Axis labels */}
-                            <text x={chartW / 2} y={chartH - 2} textAnchor="middle" fontSize="11" fill="#6B7280">Visibility</text>
-                            <text x={12} y={chartH / 2} textAnchor="middle" fontSize="11" fill="#6B7280" transform={`rotate(-90, 12, ${chartH / 2})`}>Sentiment</text>
+                            <text x={pad.left + plotW / 2} y={chartH - 10} textAnchor="middle" fontSize="13" fill="#6B7280" fontWeight="500">Visibility</text>
+                            <text x={18} y={pad.top + plotH / 2} textAnchor="middle" fontSize="13" fill="#6B7280" fontWeight="500" transform={`rotate(-90, 18, ${pad.top + plotH / 2})`}>Sentiment</text>
 
                             {/* Data points - render non-hovered first, hovered last so tooltip stays on top */}
                             {[...displayPoints].sort((a, b) => (a.url === hoveredMatricePoint ? 1 : 0) - (b.url === hoveredMatricePoint ? 1 : 0)).map((d, i) => {
@@ -742,6 +912,8 @@ const Competition = () => {
                               const tooltipH = 130;
                               const tooltipX = cx + tooltipW + 20 > chartW ? cx - tooltipW - 10 : cx + 24;
                               const tooltipY = cy - tooltipH / 2 < 0 ? 4 : (cy + tooltipH / 2 > chartH ? chartH - tooltipH - 4 : cy - tooltipH / 2);
+
+
                               return (
                                 <g
                                   key={d.url + i}
@@ -752,22 +924,23 @@ const Competition = () => {
                                     if (isStarter) return;
                                     setSelectedGeoEntry({
                                       url: d.url,
-                                      domain: d.url.replace(/^https?:\/\//, '').replace(/\/.*/, ''),
-                                      data: d.scoreDetails || {}
+                                      domain: extractDomain(d.url),
+                                      data: d.scoreDetails || { pillars: d.pillars, gaps: d.gaps, total_score: d.totalScore, audited: d.audited, visibility: d.visibility, sentiment: d.sentiment }
                                     });
                                     setGeoModalOpen(true);
                                   }}
                                 >
-                                  <circle cx={cx} cy={cy} r={isHovered ? 22 : 20} fill="rgba(0,0,0,0.06)" />
+                                  <circle cx={cx} cy={cy} r={isHovered ? 28 : 26} fill="rgba(0,0,0,0.06)" />
                                   <circle
-                                    cx={cx} cy={cy} r={isHovered ? 20 : 18}
+                                    cx={cx} cy={cy} r={isHovered ? 26 : 24}
                                     fill={d.isTarget ? '#4F46E5' : '#fff'}
-                                    stroke={d.isTarget ? '#4F46E5' : '#E2E8F0'}
+                                    stroke={d.isTarget ? '#4F46E5' : d.audited ? '#22C55E' : '#E2E8F0'}
                                     strokeWidth={isHovered ? 3 : 2}
+                                    strokeDasharray={d.audited ? '0' : '4 2'}
                                   />
                                   <image
                                     href={d.favicon_url}
-                                    x={cx - 10} y={cy - 10} width={20} height={20}
+                                    x={cx - 14} y={cy - 14} width={28} height={28}
                                     style={{ pointerEvents: 'none' }}
                                   />
                                   {isHovered && (
@@ -780,6 +953,7 @@ const Competition = () => {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                                           <span style={{ fontWeight: 700, fontSize: 13, color: '#1E293B' }}>{d.name}</span>
                                           <span style={{ fontSize: 10, fontWeight: 600, color: quadrantInfo.color, background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>{quadrantInfo.label}</span>
+                                          {d.audited && <span style={{ fontSize: 9, color: '#16A34A', fontWeight: 600, background: '#F0FDF4', padding: '1px 4px', borderRadius: 3 }}>Audité</span>}
                                         </div>
                                         <div style={{ fontSize: 11, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
                                           {quadrantInfo.desc}
@@ -811,6 +985,54 @@ const Competition = () => {
                               );
                             })}
                           </svg>
+                        </div>
+                      </Card>
+                    );
+                  })()}
+
+                  {/* Benchmark Technique */}
+                  {benchmarkTechnique && benchmarkTechnique.status === 'completed' && (() => {
+                    const targetUrl = benchmarkTechnique.target?.url || currentAnalysis?.url || '';
+                    const targetDomain = extractDomain(targetUrl).toLowerCase().replace('www.', '');
+                    const targetScore = benchmarkTechnique.target?.score_global ?? null;
+
+                    // Build list: ranking + target if not already in ranking
+                    const ranking = benchmarkTechnique.ranking || [];
+                    const targetInRanking = ranking.some(s => extractDomain(s.url).toLowerCase().replace('www.', '') === targetDomain);
+                    const allSites = targetInRanking ? ranking : [
+                      ...(targetScore !== null ? [{ url: targetUrl, score_global: targetScore }] : []),
+                      ...ranking,
+                    ].sort((a, b) => ((b as any).score_global ?? (b as any).total_score ?? 0) - ((a as any).score_global ?? (a as any).total_score ?? 0));
+
+                    if (allSites.length === 0) return null;
+
+                    return (
+                      <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4" style={{ letterSpacing: '1.2px' }}>
+                          Benchmark Technique — {allSites.length} sites
+                        </div>
+
+                        {/* Rows */}
+                        <div className="max-h-[600px] overflow-y-auto">
+                          {allSites.map((site, idx) => {
+                            const domain = extractDomain(site.url);
+                            const isTarget = domain.toLowerCase().replace('www.', '') === targetDomain;
+                            const s = site as any;
+                            const globalScore = s.score_global ?? s.total_score ?? s.score ?? 0;
+                            const scoreColor = (s: number) => s >= 70 ? '#10B981' : s >= 40 ? '#F59E0B' : '#EF4444';
+
+                            return (
+                              <div
+                                key={idx}
+                                className={`flex items-center gap-4 py-4 border-b border-gray-100 last:border-b-0 ${isTarget ? 'bg-blue-50/50' : 'hover:bg-gray-50'} transition-colors px-2`}
+                              >
+                                <div className="text-base font-bold text-gray-400 min-w-[32px]">{idx + 1}</div>
+                                <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt={domain} width={24} height={24} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                <span className={`flex-1 text-base font-medium truncate ${isTarget ? 'text-blue-600' : 'text-gray-900'}`}>{domain}</span>
+                                <span className="text-lg font-bold" style={{ color: scoreColor(globalScore) }}>{Math.round(globalScore)}<span className="text-sm text-gray-400 font-normal">/100</span></span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </Card>
                     );
@@ -1051,11 +1273,16 @@ const Competition = () => {
                       const d = selectedGeoEntry.data;
                       const competitor = (currentAnalysis as any)?.competitors?.find((c: any) => c.url === selectedGeoEntry.url);
                       const brandName = selectedGeoEntry.url === currentAnalysis?.url ? 'Votre site' : (competitor?.name || selectedGeoEntry.domain);
+                      const isAudited = !!d.audited;
+
+                      // Pillars depuis materiality_matrix
+                      const p = d.pillars as Record<string, { score: number; max: number }> | undefined;
 
                       const categories = [
                         {
-                          label: 'Crédibilité & Autorité',
-                          score: d.credibility_authority?.score || 0,
+                          label: 'Crédibilité & Autoridé',
+                          score: d.credibility_authority?.score ?? p?.credibility_authority?.score ?? 0,
+                          max: p?.credibility_authority?.max ?? 25,
                           details: d.credibility_authority?.details || {},
                           labels: {
                             sources_verifiables: 'Sources vérifiables',
@@ -1066,7 +1293,8 @@ const Competition = () => {
                         },
                         {
                           label: 'Structure & Lisibilité',
-                          score: d.structure_readability?.score || 0,
+                          score: d.structure_readability?.score ?? p?.structure_readability?.score ?? 0,
+                          max: p?.structure_readability?.max ?? 25,
                           details: d.structure_readability?.details || {},
                           labels: {
                             hierarchie: 'Hiérarchie',
@@ -1078,7 +1306,8 @@ const Competition = () => {
                         },
                         {
                           label: 'Pertinence contextuelle',
-                          score: d.contextual_relevance?.score || 0,
+                          score: d.contextual_relevance?.score ?? p?.contextual_relevance?.score ?? 0,
+                          max: p?.contextual_relevance?.max ?? 25,
                           details: d.contextual_relevance?.details || {},
                           labels: {
                             reponse_intention: 'Réponse intention',
@@ -1090,7 +1319,8 @@ const Competition = () => {
                         },
                         {
                           label: 'Compatibilité technique',
-                          score: d.technical_compatibility?.score || 0,
+                          score: d.technical_compatibility?.score ?? p?.technical_compatibility?.score ?? 0,
+                          max: p?.technical_compatibility?.max ?? 25,
                           details: d.technical_compatibility?.details || {},
                           labels: {
                             donnees_structurees: 'Données structurées',
@@ -1101,6 +1331,30 @@ const Competition = () => {
                           }
                         },
                       ];
+
+                      // Quadrant info
+                      const vis = d.visibility ?? 0;
+                      const sent = d.sentiment ?? 0;
+                      const quadrant = vis >= 50
+                        ? (sent >= 0.5
+                          ? { label: 'Leader', color: '#22C55E', desc: 'Forte visibilité et perception positive par les IA.' }
+                          : { label: 'Controversial', color: '#F59E0B', desc: 'Visible mais mal perçu par les IA.' })
+                        : (sent >= 0.5
+                          ? { label: 'Niche Player', color: '#6366F1', desc: 'Bien perçu mais peu visible par les IA.' }
+                          : { label: 'Lagger', color: '#EF4444', desc: 'Faible visibilité et perception négative.' });
+
+                      // Gaps
+                      const gaps = (d.gaps as string[]) || [];
+                      const gapLabels: Record<string, string> = {
+                        sources_verifiables: 'Sources vérifiables', certifications: 'Certifications',
+                        avis_clients: 'Avis clients', historique_marque: 'Historique marque',
+                        hierarchie: 'Hiérarchie', formatage: 'Formatage', lisibilite: 'Lisibilité',
+                        longueur_optimale: 'Longueur optimale', multimedia: 'Multimédia',
+                        reponse_intention: 'Réponse intention', personnalisation: 'Personnalisation',
+                        actualite: 'Actualité', langue_naturelle: 'Langue naturelle', localisation: 'Localisation',
+                        donnees_structurees: 'Données structurées', meta_donnees: 'Métadonnées',
+                        performances: 'Performances', compatibilite_mobile: 'Compatibilité mobile', securite: 'Sécurité',
+                      };
 
                       return (
                         <div className="space-y-6">
@@ -1116,35 +1370,66 @@ const Competition = () => {
                             </div>
                           </div>
 
-                          {/* Categories */}
-                          <div className="space-y-4">
-                            {categories.map((cat, catIdx) => {
-                              return (
-                                <div key={catIdx} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <span className="text-sm font-semibold text-gray-800">{cat.label}</span>
-                                    <span className="text-lg font-bold text-gray-900">{cat.score}</span>
-                                  </div>
-                                  <div className="space-y-2">
-                                    {Object.entries(cat.details as Record<string, number>).map(([key, value]) => {
-                                      const label = (cat.labels as Record<string, string>)[key] || key.replace(/_/g, ' ');
-                                      const percentage = Math.min((value / 5) * 100, 100);
-                                      return (
-                                        <div key={key} className="flex items-center gap-3">
-                                          <span className="text-xs text-gray-500 w-[140px] shrink-0">{label}</span>
-                                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                            <div className="h-full rounded-full bg-gray-900" style={{ width: `${percentage}%`, transition: 'width 0.5s ease' }} />
-                                          </div>
-                                          <span className="text-xs font-semibold text-gray-700 w-[28px] text-right">{value}</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              );
-                            })}
+                          {/* Quadrant + Visibility/Sentiment */}
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: quadrant.color + '18', color: quadrant.color }}>{quadrant.label}</span>
+                            <span className="text-xs text-gray-500">Visibilité <span className="font-semibold text-gray-800">{Math.round(vis)}%</span></span>
+                            <span className="text-xs text-gray-500">Sentiment <span className="font-semibold text-gray-800">{Math.round(sent * 100)}%</span></span>
                           </div>
+                          <p className="text-xs text-gray-500">{quadrant.desc}</p>
 
+                          {/* Categories */}
+                          {categories.length > 0 && (
+                            <div className="space-y-4">
+                              {categories.map((cat, catIdx) => {
+                                const hasDetails = Object.keys(cat.details).length > 0;
+                                const scoreVal = Math.round(cat.score * 10) / 10;
+                                const barColor = scoreVal >= 18 ? '#10B981' : scoreVal >= 10 ? '#F59E0B' : '#EF4444';
+                                return (
+                                  <div key={catIdx} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <span className="text-sm font-semibold text-gray-800">{cat.label}</span>
+                                      <span className="text-lg font-bold" style={{ color: barColor }}>
+                                        {scoreVal}<span className="text-sm text-gray-400 font-normal">/{cat.max}</span>
+                                      </span>
+                                    </div>
+                                    {hasDetails && (
+                                      <div className="space-y-2">
+                                        {Object.entries(cat.details as Record<string, number>).map(([key, value]) => {
+                                          const label = (cat.labels as Record<string, string>)[key] || key.replace(/_/g, ' ');
+                                          const percentage = Math.min((value / 5) * 100, 100);
+                                          return (
+                                            <div key={key} className="flex items-center gap-3">
+                                              <span className="text-xs text-gray-500 w-[140px] shrink-0">{label}</span>
+                                              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div className="h-full rounded-full bg-gray-900" style={{ width: `${percentage}%`, transition: 'width 0.5s ease' }} />
+                                              </div>
+                                              <span className="text-xs font-semibold text-gray-700 w-[28px] text-right">{value}</span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+
+                          {/* Gaps */}
+                          {gaps.length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-800 mb-2">Points faibles identifiés</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {gaps.map(g => (
+                                  <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-600 font-medium">
+                                    {gapLabels[g] || g.replace(/_/g, ' ')}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })()}

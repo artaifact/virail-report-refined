@@ -241,12 +241,89 @@ export interface AnalyseConcurrentielleV1 {
   created_at: string;
 }
 
+export interface AnalyseConcurrentielleV3 {
+  version: string;
+  analysis_id: number;
+  url: string;
+  status: string;
+  consolidated_competitors: Array<{
+    name: string;
+    primary_url: string;
+    all_urls: string[];
+    average_score: number;
+    models_count: number;
+    global_rank: number;
+    source_models: string[];
+    favicon_url?: string;
+  }>;
+  global_stats: {
+    total_models_executed: number;
+    total_competitors_found: number;
+    min_score: number;
+    min_mentions: number;
+  };
+  created_at: string;
+}
+
+export interface EvolutionConcurrents {
+  target_evolution: Array<{ session_id: number; date: string; score: number }>;
+  target_trend: { direction: 'up' | 'down' | 'stable' | 'insufficient_data'; change: number };
+  competitors: Record<string, {
+    history: Array<{ session_id: number; date: string; score: number; rank: number }>;
+    score_trend: 'up' | 'down' | 'stable';
+    presence_rate: number;
+  }>;
+  new_competitors: Array<{ name: string; first_seen: string; rank: number }>;
+  disappeared_competitors: Array<{ name: string; last_seen: string; rank: number }>;
+}
+
+export interface EvolutionCitations {
+  global_evolution: Array<{ session_id: number; date: string; probability: number }>;
+  global_trend: { direction: 'up' | 'down' | 'stable' | 'insufficient_data'; change: number };
+  per_model: Record<string, Array<{ session_id: number; date: string; probability: number }>>;
+  sentiment_evolution: Array<{ session_id: number; date: string; positive_rate: number; negative_rate: number }>;
+  insights: string[];
+}
+
+export interface BenchmarkTechnique {
+  status: string;
+  target: {
+    url: string;
+    score_global: number;
+    content_score: number;
+    response_time_score: number;
+    seo_score: number;
+    load_time_ms: number;
+    content_elements: {
+      paragraphs: number;
+      headings: number;
+      links: number;
+      images: number;
+    };
+    seo_elements: {
+      title: string;
+      description: string;
+      structured_data: number;
+    };
+  };
+  ranking: Array<{ url: string; score_global: number; [key: string]: any }>;
+  target_position: number;
+  total_sites: number;
+  competitor_comparisons: Array<{ url: string; [key: string]: any }>;
+  summary: Record<string, any>;
+}
+
 export interface FullReportData {
   report: Report;
   analyses: Analysis[];
   analyse_citation?: any;
   competitor_analysis?: any;
   analyse_concurrentielle_v1?: AnalyseConcurrentielleV1 | null;
+  analyse_concurrentielle_v3?: AnalyseConcurrentielleV3 | null;
+  materiality_matrix?: any;
+  benchmark_technique?: BenchmarkTechnique | null;
+  evolution_concurrents?: EvolutionConcurrents | null;
+  evolution_citations?: EvolutionCitations | null;
 }
 
 /**
@@ -254,7 +331,7 @@ export interface FullReportData {
  */
 export async function fetchReport(reportId: string): Promise<FullReportData | null> {
   try {
-    const url = `${API_BASE_URL}/llmo/reports/${reportId}`;
+    const url = `${API_BASE_URL}/llmo/reports/${reportId}?include_evolution=true`;
 
     // Utiliser AuthService.makeAuthenticatedRequest comme dans LLMODashboard
     const response = await AuthService.makeAuthenticatedRequest(url, {
@@ -305,6 +382,11 @@ export async function fetchReport(reportId: string): Promise<FullReportData | nu
       analyse_citation: rawData.analyse_citation,
       competitor_analysis: rawData.competitor_analysis,
       analyse_concurrentielle_v1: rawData.analyse_concurrentielle_v1 || null,
+      analyse_concurrentielle_v3: rawData.analyse_concurrentielle_v3 || null,
+      materiality_matrix: rawData.materiality_matrix || null,
+      benchmark_technique: rawData.benchmark_technique || null,
+      evolution_concurrents: rawData.evolution_concurrents || null,
+      evolution_citations: rawData.evolution_citations || null,
     };
 
     return data;
@@ -933,4 +1015,6 @@ export async function startOptimizedAnalysis(
   } catch (error) {
     return await startAnalysisSimple(url, { model });
   }
-} 
+}
+
+
