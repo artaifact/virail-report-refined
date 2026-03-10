@@ -106,16 +106,17 @@ import {
 } from '@/services/competitorAnalysisService';
 import { useReports, useReport } from '@/hooks/useReports';
 import { useSearchParams } from 'react-router-dom';
-import type { AnalyseConcurrentielleV3, BenchmarkTechnique, EvolutionConcurrents } from '@/lib/api';
+import type { AnalyseConcurrentielleV3, BenchmarkTechnique } from '@/lib/api';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
+  ReferenceLine,
+  ReferenceDot,
 } from 'recharts';
 
 const Competition = () => {
@@ -155,9 +156,9 @@ const Competition = () => {
   // Charger le rapport complet pour accéder à analyse_concurrentielle_v3 et materiality_matrix
   const { report: reportData } = useReport(latestReportId);
 
-  // Données v3, materiality_matrix et benchmark_technique depuis le rapport
+  // Données v3, materiality_matrix et benchmark depuis le rapport
   const v3Data = reportData?.analyse_concurrentielle_v3 as AnalyseConcurrentielleV3 | null | undefined;
-  const benchmarkTechnique = reportData?.benchmark_technique as BenchmarkTechnique | null | undefined;
+  const v1BenchmarkResults = (reportData?.analyse_concurrentielle_v1 as any)?.benchmark_results || null;
   const materialityMatrix = (reportData as any)?.materiality_matrix as {
     brands: Array<{
       name: string;
@@ -208,27 +209,9 @@ const Competition = () => {
     }
   }, [latestReportId, reportsLoading]);
 
-  // Fake data pour preview (à supprimer quand l'API est prête)
-  const FAKE_EVOLUTION_DATA: EvolutionConcurrents = {
-    target_evolution: [
-      { session_id: 1, date: '2025-06-01', score: 0.35 },
-      { session_id: 2, date: '2025-07-01', score: 0.38 },
-      { session_id: 3, date: '2025-08-01', score: 0.42 },
-      { session_id: 4, date: '2025-09-01', score: 0.45 },
-      { session_id: 5, date: '2025-10-01', score: 0.48 },
-      { session_id: 6, date: '2025-11-01', score: 0.52 },
-      { session_id: 7, date: '2025-12-01', score: 0.55 },
-      { session_id: 8, date: '2026-01-01', score: 0.60 },
-      { session_id: 9, date: '2026-02-01', score: 0.63 },
-    ],
-    target_trend: { direction: 'up', change: 0.28 },
-    competitors: {},
-    new_competitors: [],
-    disappeared_competitors: [],
-  };
-
-  // Données d'évolution concurrentielle depuis le rapport, fallback sur fake data
-  const evolutionData = (reportData?.evolution_concurrents as EvolutionConcurrents | null) || FAKE_EVOLUTION_DATA;
+  // Données competitor_comparisons depuis benchmark_technique
+  const benchmarkTechData = reportData?.benchmark_technique as BenchmarkTechnique | null;
+  const competitorComparisons = (benchmarkTechData as any)?.competitor_comparisons as Array<{ url: string; score: number; [key: string]: any }> | null;
 
   // Fonction extractDomain déjà importée du service
 
@@ -447,51 +430,127 @@ const Competition = () => {
 
                 {/* Section Evo concurrentielle et Détails par Modèle côte à côte */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Évolution concurrentielle - Graphiques et données */}
+                  {/* Votre positionnement concurrentiel */}
                   {(() => {
-                    if (!evolutionData || !evolutionData.target_evolution) return null;
+                    if (!competitorComparisons || competitorComparisons.length === 0) return null;
 
-                    const trendIcon = (dir: string) => dir === 'up' ? '\u2191' : dir === 'down' ? '\u2193' : '\u2192';
-                    const trendColor = (dir: string) => dir === 'up' ? 'text-green-600' : dir === 'down' ? 'text-red-500' : 'text-gray-500';
+                    // Site cible
+                    const targetUrl = benchmarkTechData?.target?.url || currentAnalysis?.url || '';
+                    const targetDomain = extractDomain(targetUrl).toLowerCase().replace('www.', '');
+                    const targetScore = benchmarkTechData?.target?.score_global || 0;
 
-                    // Build line chart data from target_evolution only
-                    const lineChartData = (evolutionData.target_evolution || [])
-                      .filter(s => s && s.date)
-                      .map(s => ({ date: String(s.date), Score: Math.round((s.score || 0) * 100) }))
-                      .sort((a, b) => a.date.localeCompare(b.date));
+                    // Dédupliquer par domaine
+                    const dedupMap = new Map<string, { score: number; isTarget: boolean }>();
+                    competitorComparisons.forEach(comp => {
+                      const domain = extractDomain(comp.url).toLowerCase().replace('www.', '');
+                      const score = comp.score || 0;
+                      const isTarget = domain === targetDomain;
+                      if (!dedupMap.has(domain) || score > (dedupMap.get(domain)!.score)) {
+                        dedupMap.set(domain, { score, isTarget });
+                      }
+                    });
+                    if (targetDomain && !dedupMap.has(targetDomain)) {
+                      dedupMap.set(targetDomain, { score: targetScore, isTarget: true });
+                    }
+
+                    // Trier par score décroissant → courbe du marché
+                    const sorted = Array.from(dedupMap.entries())
+                      .sort((a, b) => b[1].score - a[1].score);
+
+                    let targetRank = 0;
+                    let targetScoreVal = 0;
+                    const curveData = sorted.map(([, val], i) => {
+                      if (val.isTarget) { targetRank = i + 1; targetScoreVal = val.score; }
+                      return { rank: i + 1, score: val.score };
+                    });
+
+                    const total = sorted.length;
+                    const percentile = total > 0 ? Math.round(((total - targetRank) / total) * 100) : 0;
+                    const isTop3 = targetRank <= 3;
+                    const isBelowMedian = targetRank > total / 2;
 
                     return (
                       <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4" style={{ letterSpacing: '1.2px' }}>
-                          Évolution concurrentielle
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1" style={{ letterSpacing: '1.2px' }}>
+                          Votre positionnement
                         </div>
 
-                        {/* A) Line chart - votre score */}
-                        {lineChartData.length > 0 && (
-                          <div className="mb-6">
-                            <div className="text-sm font-semibold text-gray-700 mb-2">Votre score dans le temps</div>
-                            <div style={{ width: '100%', height: 260 }}>
-                              <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={lineChartData}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                                  <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} />
-                                  <Tooltip formatter={(value: number) => `${value}%`} />
-                                  <Line type="monotone" dataKey="Score" stroke="#6366f1" strokeWidth={2.5} dot={false} />
-                                </LineChart>
-                              </ResponsiveContainer>
-                            </div>
-                          </div>
-                        )}
+                        {/* KPI hero */}
+                        <div className="flex items-baseline gap-3 mb-5">
+                          <span className="text-4xl font-extrabold" style={{ color: '#6366f1' }}>
+                            {targetRank}<sup className="text-lg font-semibold text-gray-400">/{total}</sup>
+                          </span>
+                          <span className={`text-sm font-medium px-2.5 py-0.5 rounded-full ${isTop3 ? 'bg-emerald-50 text-emerald-600' : isBelowMedian ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-600'}`}>
+                            Top {percentile}%
+                          </span>
+                        </div>
 
-                        {/* B) Badge trend */}
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <span className={trendColor(evolutionData.target_trend.direction)}>
-                              {trendIcon(evolutionData.target_trend.direction)}
-                            </span>
-                            Vous {evolutionData.target_trend.change !== 0 && `(${evolutionData.target_trend.change > 0 ? '+' : ''}${Math.round(evolutionData.target_trend.change * 100)}%)`}
-                          </Badge>
+                        {/* Courbe marché + position */}
+                        <div style={{ width: '100%', height: 200 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={curveData} margin={{ left: -10, right: 15, top: 10, bottom: 0 }}>
+                              <defs>
+                                <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="#e0e7ff" stopOpacity={0.7} />
+                                  <stop offset="100%" stopColor="#e0e7ff" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                              <XAxis dataKey="rank" tick={false} axisLine={false} tickLine={false} />
+                              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                              <Tooltip
+                                content={({ active, payload }) => {
+                                  if (!active || !payload?.[0]) return null;
+                                  const d = payload[0].payload;
+                                  const isMe = d.rank === targetRank;
+                                  return (
+                                    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-lg text-xs">
+                                      <span className="font-semibold" style={{ color: isMe ? '#6366f1' : '#64748b' }}>
+                                        {isMe ? 'Votre site' : `#${d.rank}`}
+                                      </span>
+                                      <span className="text-gray-500 ml-2">Score {d.score}</span>
+                                    </div>
+                                  );
+                                }}
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="score"
+                                stroke="#c7d2fe"
+                                strokeWidth={2}
+                                fill="url(#scoreGrad)"
+                                dot={false}
+                                activeDot={false}
+                              />
+                              {/* Ligne horizontale du score cible */}
+                              <ReferenceLine
+                                y={targetScoreVal}
+                                stroke="#6366f1"
+                                strokeDasharray="6 4"
+                                strokeWidth={1}
+                                strokeOpacity={0.5}
+                              />
+                              {/* Point du site cible */}
+                              <ReferenceDot
+                                x={targetRank}
+                                y={targetScoreVal}
+                                r={7}
+                                fill="#6366f1"
+                                stroke="#fff"
+                                strokeWidth={3}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+
+                        {/* Label sous le chart */}
+                        <div className="flex items-center justify-between mt-3">
+                          <span className="text-[11px] text-gray-400">Meilleur score</span>
+                          <div className="flex items-center gap-1.5">
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', display: 'inline-block' }} />
+                            <span className="text-[11px] font-medium text-gray-600">Votre site — score {targetScoreVal}</span>
+                          </div>
+                          <span className="text-[11px] text-gray-400">Score le + bas</span>
                         </div>
 
                       </Card>
@@ -719,7 +778,7 @@ const Competition = () => {
                     } else {
                       // Fallback : ancienne logique
                       const competitors = (currentAnalysis as any)?.competitors;
-                      const benchmarkRaw = (currentAnalysis as any)?.benchmark_results?.raw_data;
+                      const benchmarkRaw = (v1BenchmarkResults || (currentAnalysis as any)?.benchmark_results)?.raw_data;
                       const analysisUrl = currentAnalysis?.url || '';
 
                       if (!competitors || competitors.length === 0) return null;
@@ -741,8 +800,8 @@ const Competition = () => {
                           name: comp.name,
                           url,
                           favicon_url: comp.favicon_url || `https://www.google.com/s2/favicons?domain=${url.replace(/^https?:\/\//, '').replace(/\/.*/, '')}&sz=32`,
-                          visibility: totalScore,
-                          sentiment: comp.average_score || 0,
+                          visibility: benchEntry?.visibility ?? totalScore,
+                          sentiment: benchEntry?.sentiment ?? comp.average_score ?? 0,
                           totalScore,
                           mentions: comp.mentions || 0,
                           isTarget: false,
@@ -762,8 +821,8 @@ const Competition = () => {
                           name: domain,
                           url: analysisUrl,
                           favicon_url: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
-                          visibility: targetScore,
-                          sentiment: Math.min(1, targetScore / 100 * 1.2),
+                          visibility: targetEntry.visibility ?? targetScore,
+                          sentiment: targetEntry.sentiment ?? 0,
                           totalScore: targetScore,
                           mentions: 0,
                           isTarget: true,
@@ -830,7 +889,7 @@ const Competition = () => {
                                 setSelectedGeoEntry({
                                   url: d.url,
                                   domain: extractDomain(d.url),
-                                  data: d.scoreDetails || { pillars: d.pillars, gaps: d.gaps, total_score: d.totalScore, audited: d.audited, visibility: d.visibility, sentiment: d.sentiment }
+                                  data: { ...(d.scoreDetails || { pillars: d.pillars, gaps: d.gaps, total_score: d.totalScore, audited: d.audited }), visibility: d.visibility, sentiment: d.sentiment }
                                 });
                                 setGeoModalOpen(true);
                               }}
@@ -925,7 +984,7 @@ const Competition = () => {
                                     setSelectedGeoEntry({
                                       url: d.url,
                                       domain: extractDomain(d.url),
-                                      data: d.scoreDetails || { pillars: d.pillars, gaps: d.gaps, total_score: d.totalScore, audited: d.audited, visibility: d.visibility, sentiment: d.sentiment }
+                                      data: { ...(d.scoreDetails || { pillars: d.pillars, gaps: d.gaps, total_score: d.totalScore, audited: d.audited }), visibility: d.visibility, sentiment: d.sentiment }
                                     });
                                     setGeoModalOpen(true);
                                   }}
@@ -990,59 +1049,43 @@ const Competition = () => {
                     );
                   })()}
 
-                  {/* Benchmark Technique */}
-                  {benchmarkTechnique && benchmarkTechnique.status === 'completed' && (() => {
-                    const targetUrl = benchmarkTechnique.target?.url || currentAnalysis?.url || '';
-                    const targetDomain = extractDomain(targetUrl).toLowerCase().replace('www.', '');
-                    const targetScore = benchmarkTechnique.target?.score_global ?? null;
+                  {/* Benchmark - depuis benchmark_results API */}
+                  {(() => {
+                    const br = v1BenchmarkResults || (currentAnalysis as any)?.benchmark_results;
+                    if (!br?.benchmark?.classement) return null;
+                    const rawList = br.benchmark.classement || [];
+                    const seen = new Set<string>();
+                    const dedupList = rawList.filter((e: any) => {
+                      const d = extractDomain(e.url);
+                      if (seen.has(d)) return false;
+                      seen.add(d);
+                      return true;
+                    });
+                    const clientDomain = extractDomain(currentAnalysis?.url || '');
 
-                    // Build list: ranking + target if not already in ranking
-                    const ranking = benchmarkTechnique.ranking || [];
-                    const targetInRanking = ranking.some(s => extractDomain(s.url).toLowerCase().replace('www.', '') === targetDomain);
-                    const allSites = targetInRanking ? ranking : [
-                      ...(targetScore !== null ? [{ url: targetUrl, score_global: targetScore }] : []),
-                      ...ranking,
-                    ].sort((a, b) => ((b as any).score_global ?? (b as any).total_score ?? 0) - ((a as any).score_global ?? (a as any).total_score ?? 0));
-
-                    if (allSites.length === 0) return null;
+                    if (dedupList.length === 0) return null;
 
                     return (
-                      <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4" style={{ letterSpacing: '1.2px' }}>
-                          Benchmark Technique — {allSites.length} sites
-                        </div>
-
-                        {/* Rows */}
-                        <div className="max-h-[600px] overflow-y-auto">
-                          {allSites.map((site, idx) => {
-                            const domain = extractDomain(site.url);
-                            const isTarget = domain.toLowerCase().replace('www.', '') === targetDomain;
-                            const s = site as any;
-                            const globalScore = s.score_global ?? s.total_score ?? s.score ?? 0;
-                            const scoreColor = (s: number) => s >= 70 ? '#10B981' : s >= 40 ? '#F59E0B' : '#EF4444';
-
-                            return (
-                              <div
-                                key={idx}
-                                className={`flex items-center gap-4 py-4 border-b border-gray-100 last:border-b-0 ${isTarget ? 'bg-blue-50/50' : 'hover:bg-gray-50'} transition-colors px-2`}
-                              >
-                                <div className="text-base font-bold text-gray-400 min-w-[32px]">{idx + 1}</div>
-                                <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt={domain} width={24} height={24} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                <span className={`flex-1 text-base font-medium truncate ${isTarget ? 'text-blue-600' : 'text-gray-900'}`}>{domain}</span>
-                                <span className="text-lg font-bold" style={{ color: scoreColor(globalScore) }}>{Math.round(globalScore)}<span className="text-sm text-gray-400 font-normal">/100</span></span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </Card>
+                      <></>
                     );
                   })()}
 
                   {/* Données Benchmark - Mode Paysage - Pleine Largeur */}
-                  {(currentAnalysis as any).benchmark_results?.benchmark && (() => {
-                  const benchmarkData = (currentAnalysis as any).benchmark_results.benchmark;
-                  const classement = benchmarkData.classement || [];
-                  const yourSiteIndex = classement.findIndex((e: any) => e.url === currentAnalysis.url);
+                  {(() => {
+                  const _br2 = v1BenchmarkResults || (currentAnalysis as any)?.benchmark_results;
+                  if (!_br2?.benchmark) return null;
+                  const benchmarkData = _br2.benchmark;
+                  // Dédupliquer par domaine (éviter carmignac.fr et carmignac.fr/)
+                  const rawClassement = benchmarkData.classement || [];
+                  const seenDomains = new Set<string>();
+                  const classement = rawClassement.filter((e: any) => {
+                    const domain = extractDomain(e.url);
+                    if (seenDomains.has(domain)) return false;
+                    seenDomains.add(domain);
+                    return true;
+                  });
+                  const yourSiteDomain = extractDomain(currentAnalysis.url || '');
+                  const yourSiteIndex = classement.findIndex((e: any) => extractDomain(e.url) === yourSiteDomain);
                   const yourSiteRank = yourSiteIndex >= 0 ? yourSiteIndex + 1 : null;
                   
                   return (
@@ -1094,8 +1137,9 @@ const Competition = () => {
                               {/* Liste scrollable en mode paysage */}
                               <div className="max-h-[600px] overflow-y-auto">
                                 {classement.map((entry: any, idx: number) => {
-                                  const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
-                                  const isYourSite = entry.url === currentAnalysis.url;
+                                  const entryDomain = extractDomain(entry.url);
+                                  const competitor = (currentAnalysis as any).competitors?.find((c: any) => extractDomain(c.url) === entryDomain);
+                                  const isYourSite = entryDomain === yourSiteDomain;
                                   const brandName = isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url));
                                   const domain = extractDomain(entry.url);
                                   const rank = idx + 1;
@@ -1139,10 +1183,10 @@ const Competition = () => {
                           </>
                           ) : (
                           <>
-                          {/* Vue Analyse GEO - raw_data */}
+                          {/* Vue Analyse GEO - materiality_matrix */}
                           {(() => {
-                            const rawData = (currentAnalysis as any)?.benchmark_results?.raw_data;
-                            if (!rawData || Object.keys(rawData).length === 0) {
+                            const matBrands = materialityMatrix?.brands;
+                            if (!matBrands || matBrands.length === 0) {
                               return (
                                 <div className="text-center text-gray-500 py-8">
                                   Aucune donnée GEO disponible pour cette analyse.
@@ -1150,20 +1194,22 @@ const Competition = () => {
                               );
                             }
 
-                            const rawEntries = Object.entries(rawData)
-                              .map(([url, data]: [string, any]) => ({
-                                url,
-                                domain: extractDomain(url),
-                                totalScore: data.total_score || 0,
-                                grade: data.grade || '-',
-                                credibility: data.credibility_authority?.score || 0,
-                                structure: data.structure_readability?.score || 0,
-                                relevance: data.contextual_relevance?.score || 0,
-                                technical: data.technical_compatibility?.score || 0,
-                                recommendations: data.primary_recommendations || [],
-                                fullData: data,
+                            const rawEntries = matBrands
+                              .map((b: any) => ({
+                                url: b.url,
+                                domain: extractDomain(b.url),
+                                totalScore: b.total_score || 0,
+                                grade: '-',
+                                credibility: b.pillars?.credibility_authority?.score || 0,
+                                structure: b.pillars?.structure_readability?.score || 0,
+                                relevance: b.pillars?.contextual_relevance?.score || 0,
+                                technical: b.pillars?.technical_compatibility?.score || 0,
+                                recommendations: [],
+                                fullData: { pillars: b.pillars, gaps: b.gaps, total_score: b.total_score, audited: b.audited, visibility: b.visibility, sentiment: b.sentiment },
+                                brandName: b.name,
+                                isTarget: b.is_target,
                               }))
-                              .sort((a, b) => b.totalScore - a.totalScore);
+                              .sort((a: any, b: any) => b.totalScore - a.totalScore);
 
                             const geoContent = (
                               <div className="w-full overflow-x-auto">
@@ -1179,10 +1225,9 @@ const Competition = () => {
                                   </div>
 
                                   <div className="max-h-[600px] overflow-y-auto">
-                                    {rawEntries.map((entry, idx) => {
-                                      const isYourSite = entry.url === currentAnalysis.url;
-                                      const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
-                                      const brandName = isYourSite ? 'Votre site' : (competitor?.name || entry.domain);
+                                    {rawEntries.map((entry: any, idx: number) => {
+                                      const isYourSite = entry.isTarget || false;
+                                      const brandName = isYourSite ? 'Votre site' : (entry.brandName || entry.domain);
 
                                       return (
                                         <div
@@ -1370,11 +1415,9 @@ const Competition = () => {
                             </div>
                           </div>
 
-                          {/* Quadrant + Visibility/Sentiment */}
+                          {/* Quadrant */}
                           <div className="flex items-center gap-3 flex-wrap">
                             <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: quadrant.color + '18', color: quadrant.color }}>{quadrant.label}</span>
-                            <span className="text-xs text-gray-500">Visibilité <span className="font-semibold text-gray-800">{Math.round(vis)}%</span></span>
-                            <span className="text-xs text-gray-500">Sentiment <span className="font-semibold text-gray-800">{Math.round(sent * 100)}%</span></span>
                           </div>
                           <p className="text-xs text-gray-500">{quadrant.desc}</p>
 
@@ -1390,7 +1433,7 @@ const Competition = () => {
                                     <div className="flex items-center justify-between mb-3">
                                       <span className="text-sm font-semibold text-gray-800">{cat.label}</span>
                                       <span className="text-lg font-bold" style={{ color: barColor }}>
-                                        {scoreVal}<span className="text-sm text-gray-400 font-normal">/{cat.max}</span>
+                                        {scoreVal}
                                       </span>
                                     </div>
                                     {hasDetails && (

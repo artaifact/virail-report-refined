@@ -313,6 +313,33 @@ export interface BenchmarkTechnique {
   summary: Record<string, any>;
 }
 
+export interface CrawlOptimizerResult {
+  score: {
+    overall: number;
+    breakdown: {
+      structured_data: number;
+      semantic_html: number;
+      entity_coverage: number;
+      content_clarity: number;
+      meta_completeness: number;
+    };
+  };
+  platform: string;
+  schemas_added: string[];
+  enrichments_applied: string[];
+  existing_schemas: any[];
+  missing_schemas: string[];
+  recommendations: Array<{ message: string; details?: string; priority: 'high' | 'medium' | 'low' }>;
+  entity_coverage: Record<string, boolean>;
+  structured_data_coverage: { existing: string[]; recommended: string[] };
+  llms_txt: string;
+  llms_full_txt?: string;
+  robots_txt: string;
+  schemas: any[];
+  html?: string;
+  processing_time_ms?: number;
+}
+
 export interface FullReportData {
   report: Report;
   analyses: Analysis[];
@@ -324,6 +351,7 @@ export interface FullReportData {
   benchmark_technique?: BenchmarkTechnique | null;
   evolution_concurrents?: EvolutionConcurrents | null;
   evolution_citations?: EvolutionCitations | null;
+  crawl_optimizer?: CrawlOptimizerResult | null;
 }
 
 /**
@@ -387,6 +415,7 @@ export async function fetchReport(reportId: string): Promise<FullReportData | nu
       benchmark_technique: rawData.benchmark_technique || null,
       evolution_concurrents: rawData.evolution_concurrents || null,
       evolution_citations: rawData.evolution_citations || null,
+      crawl_optimizer: rawData.crawl_optimizer || null,
     };
 
     return data;
@@ -423,7 +452,8 @@ export async function startAnalysisStream(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ url, include_competitor_v1: true, include_citation: true }),
+      body: JSON.stringify({ url, include_competitor_v1: true, include_competitor_v3: true, include_citation: true, citation_num_queries: 12, include_evolution: true, include_crawl_optimizer: true, include_analyses: false
+ }),
     });
 
     if (!response.ok) {
@@ -502,7 +532,7 @@ export async function startAnalysisStreamWithContext(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ url, include_competitor_v1: true, include_citation: true }),
+      body: JSON.stringify({ url, include_competitor_v1: true, include_competitor_v3: true, include_citation: true, citation_num_queries: 12, include_evolution: true, include_crawl_optimizer: true, include_analyses: false}),
     });
 
     if (!response.ok) {
@@ -634,7 +664,7 @@ export async function startAnalysis(url: string): Promise<{ reportId: string; st
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url, include_competitor_v1: true, include_citation: true }),
+        body: JSON.stringify({ url, include_competitor_v1: true, include_competitor_v3: true, include_citation: true, citation_num_queries: 12, include_evolution: true, include_crawl_optimizer: true, include_analyses: false }),
       }),
 
       // Deuxième appel : Récupérer les métadonnées ou configurations
@@ -696,7 +726,7 @@ export async function startAnalysisSequential(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url, include_competitor_v1: true, include_citation: true }),
+      body: JSON.stringify({ url, include_competitor_v1: true, include_competitor_v3: true, include_citation: true, citation_num_queries: 12, include_evolution: true, include_crawl_optimizer: true, include_analyses: false }),
     });
 
     if (!analysisResponse.ok) {

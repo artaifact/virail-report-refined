@@ -4,7 +4,7 @@ import './Index.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
-import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield } from 'lucide-react';
+import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Bot, Copy, FileCode } from 'lucide-react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useReport, useReports } from '@/hooks/useReports';
 import { AuthService } from '@/services/authService';
@@ -1969,10 +1969,444 @@ function AuditGeoSection({ reportData }: { reportData: FullReportData | null }) 
 }
 
 function InfosDetailleesView({ reportData }: { reportData: FullReportData | null }) {
+  const [activeOptTab, setActiveOptTab] = useState<'overview' | 'schemas' | 'meta' | 'llms' | 'robots' | 'htmldiff'>('overview');
+  const [copied, setCopied] = useState<string | null>(null);
+
+  // Source prioritaire : crawl_optimizer de l'API
+  // Structure API réelle : { status, analysis: { crawl_score, platform, ... }, optimization: { llms_txt, robots_txt, ... } }
+  const co = reportData?.crawl_optimizer as any;
+  const coAnalysis = co?.analysis;
+  const coOptimization = co?.optimization;
+
+  // Fallback : package_optimisation_geo des analyses
+  const auditGeoData = reportData?.analyses?.find((a: any) =>
+    a.modules?.audit_geo?.package_optimisation_geo
+  )?.modules?.audit_geo;
+  const pkg = auditGeoData?.package_optimisation_geo;
+  const tf = pkg?.technical_files as Record<string, { content: string; filename: string; description: string }> | undefined;
+
+  // Score global : crawl_optimizer.analysis.crawl_score > audit_geo
+  const scoreGlobal = coAnalysis?.crawl_score?.overall ?? Math.round(auditGeoData?.score_global_geo ?? 0);
+
+  // Scores détaillés depuis crawl_optimizer.analysis.crawl_score.breakdown
+  const coBreakdown = coAnalysis?.crawl_score?.breakdown;
+  const crawlOptimizerScores = coBreakdown ? [
+    { key: 'structured_data', label: 'Données structurées', icon: Code, color: '#6366F1', score: Math.round(coBreakdown.structured_data) },
+    { key: 'semantic_html', label: 'HTML sémantique', icon: FileCode, color: '#8B5CF6', score: Math.round(coBreakdown.semantic_html) },
+    { key: 'entity_coverage', label: 'Couverture entités', icon: Bot, color: '#06B6D4', score: Math.round(coBreakdown.entity_coverage) },
+    { key: 'content_clarity', label: 'Clarté contenu', icon: FileText, color: '#F59E0B', score: Math.round(coBreakdown.content_clarity) },
+    { key: 'meta_completeness', label: 'Métadonnées', icon: Globe, color: '#10B981', score: Math.round(coBreakdown.meta_completeness) },
+  ].filter(c => c.score > 0) : null;
+
+  // Fallback : scores depuis audit_geo
+  const getScore = (audit: any, key: string): number | null => {
+    const val = audit?.[key];
+    if (typeof val === 'number') return val;
+    if (typeof val === 'object' && val !== null && typeof val.score === 'number') return val.score;
+    return null;
+  };
+  const auditGeoScores = [
+    { key: 'donnees_structurees', label: 'Données structurées', icon: Code, color: '#6366F1' },
+    { key: 'html_semantique', label: 'HTML sémantique', icon: FileCode, color: '#8B5CF6' },
+    { key: 'accessibilite_crawlers', label: 'Accessibilité IA', icon: Bot, color: '#06B6D4' },
+    { key: 'optimisation_contenu', label: 'Contenu', icon: FileText, color: '#F59E0B' },
+    { key: 'metadonnees_techniques', label: 'Métadonnées', icon: Globe, color: '#10B981' },
+    { key: 'conformite_standards', label: 'Standards', icon: Shield, color: '#EC4899' },
+  ].map(cat => {
+    const allScores = (reportData?.analyses || [])
+      .map((a: any) => getScore(a.modules?.audit_geo, cat.key))
+      .filter((s: any): s is number => typeof s === 'number' && s > 0);
+    return { ...cat, score: allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0 };
+  }).filter(c => c.score > 0);
+
+  // Utiliser crawl_optimizer en priorité, sinon audit_geo
+  const scores = crawlOptimizerScores || auditGeoScores;
+
+  // Supprimer les emojis d'un texte
+  const stripEmojis = (text: string) => text.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2702}-\u{27B0}]/gu, '').replace(/ {2,}/g, ' ').trim();
+
+  // Fichiers : crawl_optimizer.optimization > technical_files
+  const schemaContent = coOptimization?.schemas_added ? JSON.stringify(coOptimization.schemas_added, null, 2) : (tf?.schema_org_json?.content || '');
+  const llmsContent = stripEmojis(coOptimization?.llms_txt || tf?.llms_txt?.content || '');
+  const llmsFullContent = stripEmojis(coOptimization?.llms_full_txt || '');
+  const robotsContent = coOptimization?.robots_txt || tf?.robots_txt?.content || '';
+  const optimizedHtmlContent = coOptimization?.optimized_html || '';
+  const metaTagsContent = tf?.meta_tags?.content || '';
+  const openGraphContent = tf?.open_graph?.content || '';
+
+  // Données enrichies depuis crawl_optimizer
+  const coRecommendations = coAnalysis?.recommendations || [];
+  const coSchemasAdded = coOptimization?.schemas_added || [];
+  const coEnrichments = coOptimization?.enrichments_applied || [];
+  const coMissingSchemas = coAnalysis?.missing_schemas || [];
+  const coEntityCoverage = coAnalysis?.entity_coverage || {};
+  const coPlatform = coAnalysis?.platform || '';
+
+  // Plan d'action depuis audit_geo
+  const planAction: string[] = (() => {
+    if (!reportData?.analyses || reportData.analyses.length === 0) return [];
+    for (const analysis of reportData.analyses) {
+      if (analysis.modules?.audit_geo?.plan_action_geo && Array.isArray(analysis.modules.audit_geo.plan_action_geo)) {
+        return analysis.modules.audit_geo.plan_action_geo.map((item: any) => {
+          if (typeof item === 'string') return item;
+          return item.action || String(item);
+        });
+      }
+    }
+    return [];
+  })();
+
+  // Déterminer si on a du contenu à afficher
+  const hasAnyFileContent = !!(schemaContent || llmsContent || robotsContent || metaTagsContent || openGraphContent);
+  const hasAnyData = scores.length > 0 || hasAnyFileContent || planAction.length > 0 || coRecommendations.length > 0;
+
+  const handleCopy = (content: string, key: string) => {
+    navigator.clipboard.writeText(content);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const downloadFile = (content: string, filename: string, type: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  };
+
+  const fileTabsMeta: Record<string, { icon: any; badge: string }> = {
+    schemas:  { icon: Code, badge: 'JSON-LD' },
+    meta:     { icon: Globe, badge: 'HTML' },
+    llms:     { icon: Bot, badge: 'TXT' },
+    robots:   { icon: Shield, badge: 'TXT' },
+    htmldiff: { icon: FileCode, badge: 'HTML' },
+  };
+
+  const tabs = [
+    { id: 'overview' as const, label: 'Recommandations' },
+    { id: 'htmldiff' as const, label: 'HTML Diff', has: !!optimizedHtmlContent },
+    { id: 'llms' as const, label: 'llms.txt', has: !!(llmsContent || llmsFullContent) },
+    { id: 'schemas' as const, label: 'Schema.org', has: !!schemaContent },
+    { id: 'meta' as const, label: 'Meta Tags & Enrichments', has: !!(metaTagsContent || openGraphContent) },
+    { id: 'robots' as const, label: 'robots.txt', has: !!robotsContent },
+  ];
+
+  // Composant réutilisable : carte fichier technique (neutre)
+  const FileCard = ({ title, description, content, copyKey, filename, fileType }: {
+    title: string; description: string; content: string; copyKey: string; filename: string; fileType: string;
+  }) => {
+    const meta = fileTabsMeta[activeOptTab] || fileTabsMeta.schemas;
+    const Icon = meta.icon;
+    return (
+      <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Icon size={16} style={{ color: '#64748B' }} />
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>{title}</div>
+              <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '1px' }}>{description}</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              onClick={() => handleCopy(content, copyKey)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '8px',
+                border: '1px solid #E2E8F0', cursor: 'pointer', fontSize: '12px', fontWeight: 500, transition: 'all 0.2s',
+                background: copied === copyKey ? '#F0FDF4' : '#FFFFFF', color: copied === copyKey ? '#16A34A' : '#475569',
+              }}
+            >
+              {copied === copyKey ? <><Check size={12} /> Copié</> : <><Copy size={12} /> Copier</>}
+            </button>
+            <button
+              onClick={() => downloadFile(content, filename, fileType)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '8px',
+                border: '1px solid #E2E8F0', cursor: 'pointer', fontSize: '12px', fontWeight: 500,
+                background: '#F8FAFC', color: '#334155', transition: 'all 0.2s',
+              }}
+            >
+              <Download size={12} /> Télécharger
+            </button>
+          </div>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <div style={{ position: 'absolute', top: '8px', right: '12px', padding: '2px 7px', borderRadius: '4px', background: '#F1F5F9', fontSize: '10px', fontWeight: 600, color: '#94A3B8', letterSpacing: '0.5px' }}>
+            {meta.badge}
+          </div>
+          <pre style={{
+            padding: '16px 20px', margin: 0, fontSize: '12px', fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+            color: '#334155', overflowX: 'auto', maxHeight: '500px', background: '#FAFBFC', lineHeight: '1.6',
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          }}>
+            {fileType === 'application/json' ? (() => { try { return JSON.stringify(JSON.parse(content), null, 2); } catch { return content; } })() : content}
+          </pre>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="view-content">
-      {/* Tableau des recommandations SEO */}
-      <RecommendationsTable reportData={reportData} />
+    <div className="view-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+      {/* ═══ NAVIGATION ═══ */}
+      <div style={{
+        display: 'flex', gap: '6px', padding: '4px',
+        background: '#F8FAFC', borderRadius: '14px', border: '1px solid #F1F5F9',
+        overflowX: 'auto',
+      }}>
+        {tabs.map(tab => {
+          const isActive = activeOptTab === tab.id;
+          const hasContent = tab.id === 'overview' || tab.has;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => hasContent && setActiveOptTab(tab.id)}
+              style={{
+                flex: 1, minWidth: 0,
+                padding: '10px 14px', fontSize: '13px', fontWeight: isActive ? 700 : 500,
+                color: isActive ? '#0F172A' : hasContent ? '#64748B' : '#CBD5E1',
+                background: isActive ? '#FFFFFF' : 'transparent',
+                borderRadius: '10px', border: 'none',
+                boxShadow: isActive ? '0 2px 8px rgba(15,23,42,0.06)' : 'none',
+                cursor: hasContent ? 'pointer' : 'default',
+                transition: 'all 0.2s', whiteSpace: 'nowrap',
+              }}
+            >
+              {tab.label}
+              {tab.id !== 'overview' && tab.has && (
+                <span style={{
+                  display: 'inline-block', width: 6, height: 6, borderRadius: '50%', marginLeft: 6,
+                  background: isActive ? '#6366F1' : '#CBD5E1', verticalAlign: 'middle',
+                }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ═══ CONTENU DES ONGLETS ═══ */}
+      {activeOptTab === 'overview' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* Score + sous-scores */}
+          {scores.length > 0 && (
+            <div style={{ background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
+                <div style={{ position: 'relative', width: '64px', height: '64px', flexShrink: 0 }}>
+                  <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#E2E8F0" strokeWidth="2.5" />
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#64748B" strokeWidth="2.5"
+                      strokeDasharray={`${scoreGlobal * 0.974} 100`} strokeLinecap="round" />
+                  </svg>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', lineHeight: 1 }}>{scoreGlobal}</span>
+                    <span style={{ fontSize: '9px', color: '#94A3B8', fontWeight: 600 }}>/100</span>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Score de crawlabilite IA</div>
+                  <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>{scores.length} categories analysees</div>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+                {scores.map(cat => (
+                  <div key={cat.key} style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '12px', color: '#475569', fontWeight: 500 }}>{cat.label}</span>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{cat.score}</span>
+                    </div>
+                    <div style={{ height: '3px', background: '#E2E8F0', borderRadius: '999px', overflow: 'hidden' }}>
+                      <div style={{ width: `${cat.score}%`, height: '100%', borderRadius: '999px', background: '#94A3B8', transition: 'width 0.8s ease' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Infos plateforme + enrichissements */}
+          {co && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+              {coPlatform && (
+                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Plateforme</div>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', textTransform: 'capitalize' }}>{coPlatform}</span>
+                </div>
+              )}
+              {coSchemasAdded.length > 0 && (
+                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schemas ajoutes</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{coSchemasAdded.length}</span>
+                  </div>
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#475569' }}>{coSchemasAdded.join(' | ')}</span>
+                </div>
+              )}
+              {coEnrichments.length > 0 && (
+                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Enrichissements</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{coEnrichments.length}</span>
+                  </div>
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#475569' }}>{coEnrichments.map((e: string) => e.replace(/_/g, ' ')).join(' | ')}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Recommandations */}
+          {coRecommendations.length > 0 && (
+            <div style={{ background: '#FFFFFF', borderRadius: '10px', border: '1px solid #F1F5F9', overflow: 'hidden' }}>
+              <div style={{ padding: '14px 18px', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Recommandations</span>
+              </div>
+              <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {coRecommendations.map((rec: any, i: number) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '10px',
+                    padding: '10px 12px', borderRadius: '8px', background: '#FAFBFC', border: '1px solid #F1F5F9',
+                  }}>
+                    <span style={{
+                      flexShrink: 0, padding: '2px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: 600,
+                      color: '#94A3B8', background: '#FFFFFF', border: '1px solid #F1F5F9',
+                      textTransform: 'uppercase', letterSpacing: '0.3px',
+                    }}>
+                      {rec.priority === 'high' ? 'Haute' : rec.priority === 'medium' ? 'Moyenne' : 'Basse'}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', fontWeight: 500, color: '#1E293B', lineHeight: '1.4' }}>{rec.message}</div>
+                      {rec.details && <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px', lineHeight: '1.4' }}>{rec.details}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Plan d'action */}
+          {planAction.length > 0 && (
+            <div style={{ background: '#FFFFFF', borderRadius: '10px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+              <div style={{ padding: '14px 18px', borderBottom: '1px solid #E2E8F0' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Plan d'action</span>
+              </div>
+              <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {planAction.map((action, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '10px',
+                    padding: '8px 12px', borderRadius: '8px', background: '#F8FAFC', border: '1px solid #E2E8F0',
+                  }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', minWidth: '16px' }}>{i + 1}.</span>
+                    <span style={{ fontSize: '13px', color: '#334155', lineHeight: '1.5' }}>{action}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fichiers techniques disponibles */}
+          {scores.length === 0 && !co && hasAnyFileContent && (
+            <div style={{ padding: '16px 20px', background: '#FFFFFF', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', marginBottom: '8px' }}>Fichiers techniques disponibles</div>
+              <p style={{ fontSize: '13px', color: '#64748B', margin: 0, lineHeight: '1.5' }}>
+                Consultez les onglets ci-dessus pour acceder aux fichiers Schema.org, llms.txt, robots.txt et meta tags.
+              </p>
+            </div>
+          )}
+
+          {/* Aucune donnee */}
+          {!hasAnyData && (
+            <div style={{ textAlign: 'center', padding: '40px 24px', color: '#94A3B8' }}>
+              <div style={{ fontSize: '14px', fontWeight: 500, color: '#64748B', marginBottom: '4px' }}>Aucune donnee d'optimisation disponible</div>
+              <div style={{ fontSize: '13px' }}>Les donnees seront disponibles une fois l'analyse terminee.</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeOptTab === 'schemas' && schemaContent && (
+        <FileCard
+          title="Schema.org JSON-LD"
+          description="Données structurées pour améliorer la compréhension de votre site par les crawlers IA"
+          content={schemaContent}
+          copyKey="schema"
+          filename={tf?.schema_org_json?.filename || 'schema.json'}
+          fileType="application/json"
+        />
+      )}
+
+      {activeOptTab === 'meta' && (metaTagsContent || openGraphContent) && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {metaTagsContent && (
+            <FileCard
+              title="Meta Tags HTML"
+              description="Balises meta optimisées : canonical, robots, language"
+              content={metaTagsContent}
+              copyKey="meta"
+              filename={tf?.meta_tags?.filename || 'meta-tags.html'}
+              fileType="text/html"
+            />
+          )}
+          {openGraphContent && (
+            <FileCard
+              title="Open Graph Tags"
+              description="Balises de partage social et compatibilité IA"
+              content={openGraphContent}
+              copyKey="og"
+              filename={tf?.open_graph?.filename || 'open-graph.html'}
+              fileType="text/html"
+            />
+          )}
+        </div>
+      )}
+
+      {activeOptTab === 'llms' && (llmsContent || llmsFullContent) && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {llmsContent && (
+            <FileCard
+              title="llms.txt"
+              description="Version courte pour les LLMs"
+              content={llmsContent}
+              copyKey="llms"
+              filename={tf?.llms_txt?.filename || 'llms.txt'}
+              fileType="text/plain"
+            />
+          )}
+          {llmsFullContent && (
+            <FileCard
+              title="llms-full.txt"
+              description="Version complete avec tout le contexte du site"
+              content={llmsFullContent}
+              copyKey="llmsfull"
+              filename="llms-full.txt"
+              fileType="text/plain"
+            />
+          )}
+        </div>
+      )}
+
+      {activeOptTab === 'robots' && robotsContent && (
+        <FileCard
+          title="robots.txt"
+          description="Allow explicites pour GPTBot, ClaudeBot, PerplexityBot et autres crawlers IA"
+          content={robotsContent}
+          copyKey="robots"
+          filename={tf?.robots_txt?.filename || 'robots.txt'}
+          fileType="text/plain"
+        />
+      )}
+
+      {activeOptTab === 'htmldiff' && optimizedHtmlContent && (
+        <FileCard
+          title="HTML Diff"
+          description="Version optimisée de votre page avec schemas et balises enrichies"
+          content={optimizedHtmlContent}
+          copyKey="htmldiff"
+          filename="optimized.html"
+          fileType="text/html"
+        />
+      )}
 
     </div>
   );
@@ -2120,29 +2554,53 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
       )}
       
       {totalCitations === 1 && isApiData && (
-        <div style={{ 
-          marginBottom: '20px', 
-          padding: '16px', 
-          background: '#FFF7ED', 
-          borderRadius: '12px', 
+        <div style={{
+          marginBottom: '20px',
+          padding: '16px',
+          background: '#FFF7ED',
+          borderRadius: '12px',
           border: '1px solid #FED7AA',
           display: 'flex',
           alignItems: 'start',
           gap: '12px'
         }}>
-          <CheckCircle2 size={20} style={{ color: '#F97316', flexShrink: 0, marginTop: '2px' }} />
+          <AlertCircle size={20} style={{ color: '#F97316', flexShrink: 0, marginTop: '2px' }} />
           <div>
             <div style={{ fontSize: '14px', fontWeight: 600, color: '#9A3412', marginBottom: '4px' }}>
-              Bravo ! Tu es cité une fois
+              Visibilité très faible
             </div>
             <div style={{ fontSize: '13px', color: '#7C2D12', lineHeight: '1.5' }}>
-              Votre site est cité <strong>1 fois</strong> dans les moteurs génératifs. 
-              C'est un bon début ! Continue à optimiser votre contenu pour augmenter votre visibilité.
+              Votre site n'est cité qu'<strong>1 seule fois</strong> dans les moteurs génératifs.
+              C'est insuffisant pour garantir une visibilité durable. <strong>Consultez les recommandations GEO</strong> pour améliorer votre présence.
             </div>
           </div>
         </div>
       )}
-      
+
+      {totalCitations >= 2 && totalCitations <= 4 && isApiData && (
+        <div style={{
+          marginBottom: '20px',
+          padding: '16px',
+          background: '#FFF7ED',
+          borderRadius: '12px',
+          border: '1px solid #FED7AA',
+          display: 'flex',
+          alignItems: 'start',
+          gap: '12px'
+        }}>
+          <AlertCircle size={20} style={{ color: '#F97316', flexShrink: 0, marginTop: '2px' }} />
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: '#9A3412', marginBottom: '4px' }}>
+              Visibilité à améliorer
+            </div>
+            <div style={{ fontSize: '13px', color: '#7C2D12', lineHeight: '1.5' }}>
+              Votre site est cité <strong>{totalCitations} fois</strong> dans les moteurs génératifs.
+              C'est un début mais votre visibilité reste limitée. Continuez à optimiser votre contenu en suivant les recommandations GEO.
+            </div>
+          </div>
+        </div>
+      )}
+
       {totalCitations >= 5 && isApiData && (
         <div style={{ 
           marginBottom: '20px', 
@@ -2223,6 +2681,14 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedModel && (() => {
             const selected = data.find(d => d.displayName === selectedModel);
+            const citations = selected?.citations || 0;
+
+            const alertConfig = citations === 0
+              ? { bg: '#FEE2E2', border: '#FCA5A5', iconColor: '#EF4444', titleColor: '#991B1B', textColor: '#7F1D1D', title: 'Aucune citation', message: `Votre site n'est pas du tout cité par ${selectedModel}. Ce moteur génératif ne vous mentionne dans aucune de ses réponses. Consultez les recommandations GEO pour y remédier.` }
+              : citations <= 5
+              ? { bg: '#FFF7ED', border: '#FED7AA', iconColor: '#F97316', titleColor: '#9A3412', textColor: '#7C2D12', title: 'Visibilité insuffisante', message: `Votre site n'est cité que ${citations} fois par ${selectedModel}. C'est insuffisant pour garantir une visibilité durable sur ce moteur. Optimisez votre contenu en suivant les recommandations GEO.` }
+              : { bg: '#F0FDF4', border: '#86EFAC', iconColor: '#10B981', titleColor: '#166534', textColor: '#14532D', title: 'Bonne visibilité', message: `Votre site est cité ${citations} fois par ${selectedModel}. Vous bénéficiez d'une bonne visibilité sur ce moteur génératif. Continuez sur cette lancée !` };
+
             return (
             <>
               <DialogHeader>
@@ -2238,6 +2704,30 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
               </DialogHeader>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
+                {/* Alerte contextuelle */}
+                <div style={{
+                  padding: '16px',
+                  background: alertConfig.bg,
+                  borderRadius: '12px',
+                  border: `1px solid ${alertConfig.border}`,
+                  display: 'flex',
+                  alignItems: 'start',
+                  gap: '12px'
+                }}>
+                  {citations >= 6
+                    ? <CheckCircle2 size={20} style={{ color: alertConfig.iconColor, flexShrink: 0, marginTop: '2px' }} />
+                    : <AlertCircle size={20} style={{ color: alertConfig.iconColor, flexShrink: 0, marginTop: '2px' }} />
+                  }
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: alertConfig.titleColor, marginBottom: '4px' }}>
+                      {alertConfig.title}
+                    </div>
+                    <div style={{ fontSize: '13px', color: alertConfig.textColor, lineHeight: '1.5' }}>
+                      {alertConfig.message}
+                    </div>
+                  </div>
+                </div>
+
                 <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
                   <div style={{ fontSize: '14px', fontWeight: 600, color: '#64748B', marginBottom: '8px' }}>Analyse</div>
                   <div style={{ fontSize: '15px', color: '#475569', lineHeight: '1.6' }}>
@@ -3020,13 +3510,13 @@ function PlanActionGeoOverview({ reportData }: { reportData: FullReportData | nu
 
   const getCategoryIcon = (cat: string) => {
     const c = (cat || '').toLowerCase();
-    if (c.includes('structur')) return '🏗️';
-    if (c.includes('crawl') || c.includes('accessib')) return '🤖';
-    if (c.includes('html') || c.includes('semantique')) return '📄';
-    if (c.includes('meta') || c.includes('technique')) return '⚙️';
-    if (c.includes('contenu') || c.includes('optimisation')) return '✍️';
-    if (c.includes('conform') || c.includes('standard')) return '✅';
-    return '📋';
+    if (c.includes('structur')) return '-';
+    if (c.includes('crawl') || c.includes('accessib')) return '-';
+    if (c.includes('html') || c.includes('semantique')) return '-';
+    if (c.includes('meta') || c.includes('technique')) return '-';
+    if (c.includes('contenu') || c.includes('optimisation')) return '-';
+    if (c.includes('conform') || c.includes('standard')) return '-';
+    return '-';
   };
 
   return (
