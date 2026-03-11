@@ -460,8 +460,8 @@ const Competition = () => {
                     let targetRank = 0;
                     let targetScoreVal = 0;
                     const curveData = sorted.map(([, val], i) => {
-                      if (val.isTarget) { targetRank = i + 1; targetScoreVal = val.score; }
-                      return { rank: i + 1, score: val.score };
+                      if (val.isTarget) { targetRank = i + 1; targetScoreVal = Number(val.score.toFixed(2)); }
+                      return { rank: i + 1, score: Number(val.score.toFixed(2)) };
                     });
 
                     const total = sorted.length;
@@ -479,9 +479,6 @@ const Competition = () => {
                         <div className="flex items-baseline gap-3 mb-5">
                           <span className="text-4xl font-extrabold" style={{ color: '#6366f1' }}>
                             {targetRank}<sup className="text-lg font-semibold text-gray-400">/{total}</sup>
-                          </span>
-                          <span className={`text-sm font-medium px-2.5 py-0.5 rounded-full ${isTop3 ? 'bg-emerald-50 text-emerald-600' : isBelowMedian ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-600'}`}>
-                            Top {percentile}%
                           </span>
                         </div>
 
@@ -508,7 +505,7 @@ const Competition = () => {
                                       <span className="font-semibold" style={{ color: isMe ? '#6366f1' : '#64748b' }}>
                                         {isMe ? 'Votre site' : `#${d.rank}`}
                                       </span>
-                                      <span className="text-gray-500 ml-2">Score {d.score}</span>
+                                      <span className="text-gray-500 ml-2">Score {d.score.toFixed(2)}</span>
                                     </div>
                                   );
                                 }}
@@ -912,9 +909,11 @@ const Competition = () => {
                             <button
                               onClick={() => setShowAllLegend(!showAllLegend)}
                               style={{
-                                fontSize: 11, color: '#6366F1', background: 'none', border: 'none', cursor: 'pointer',
-                                padding: '2px 6px', fontWeight: 500, textDecoration: 'underline',
+                                fontSize: 11, color: '#475569', background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer',
+                                padding: '4px 12px', fontWeight: 600, borderRadius: '6px', transition: 'all 0.15s',
                               }}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#F1F5F9'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; }}
                             >
                               {showAllLegend ? 'Voir moins' : `+${legendItems.length - LEGEND_INITIAL} autres`}
                             </button>

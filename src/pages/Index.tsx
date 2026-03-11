@@ -2026,7 +2026,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const stripEmojis = (text: string) => text.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2702}-\u{27B0}]/gu, '').replace(/ {2,}/g, ' ').trim();
 
   // Fichiers : crawl_optimizer.optimization > technical_files
-  const schemaContent = coOptimization?.schemas_added ? JSON.stringify(coOptimization.schemas_added, null, 2) : (tf?.schema_org_json?.content || '');
+  const schemaContent = coOptimization?.schemas_injected ? JSON.stringify(coOptimization.schemas_injected, null, 2) : (tf?.schema_org_json?.content || '');
   const llmsContent = stripEmojis(coOptimization?.llms_txt || tf?.llms_txt?.content || '');
   const llmsFullContent = stripEmojis(coOptimization?.llms_full_txt || '');
   const robotsContent = coOptimization?.robots_txt || tf?.robots_txt?.content || '';
@@ -2092,52 +2092,54 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     { id: 'robots' as const, label: 'robots.txt', has: !!robotsContent },
   ];
 
-  // Composant réutilisable : carte fichier technique (neutre)
+  // Composant réutilisable : carte fichier technique
   const FileCard = ({ title, description, content, copyKey, filename, fileType }: {
     title: string; description: string; content: string; copyKey: string; filename: string; fileType: string;
   }) => {
     const meta = fileTabsMeta[activeOptTab] || fileTabsMeta.schemas;
     const Icon = meta.icon;
     return (
-      <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ background: '#FFFFFF', borderRadius: '14px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Icon size={16} style={{ color: '#64748B' }} />
+            <div style={{ width: '28px', height: '28px', borderRadius: '7px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon size={14} style={{ color: '#6366F1' }} />
+            </div>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>{title}</div>
-              <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '1px' }}>{description}</div>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>{title}</div>
+              <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '1px' }}>{description}</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
               onClick={() => handleCopy(content, copyKey)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '8px',
-                border: '1px solid #E2E8F0', cursor: 'pointer', fontSize: '12px', fontWeight: 500, transition: 'all 0.2s',
-                background: copied === copyKey ? '#F0FDF4' : '#FFFFFF', color: copied === copyKey ? '#16A34A' : '#475569',
+                display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '7px',
+                border: '1px solid #EEEDF5', cursor: 'pointer', fontSize: '11px', fontWeight: 500, transition: 'all 0.2s',
+                background: copied === copyKey ? '#F5F3FF' : '#FFFFFF', color: copied === copyKey ? '#6366F1' : '#64748B',
               }}
             >
-              {copied === copyKey ? <><Check size={12} /> Copié</> : <><Copy size={12} /> Copier</>}
+              {copied === copyKey ? <><Check size={11} /> Copie</> : <><Copy size={11} /> Copier</>}
             </button>
             <button
               onClick={() => downloadFile(content, filename, fileType)}
               style={{
-                display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '8px',
-                border: '1px solid #E2E8F0', cursor: 'pointer', fontSize: '12px', fontWeight: 500,
-                background: '#F8FAFC', color: '#334155', transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '7px',
+                border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600,
+                background: '#6366F1', color: '#FFFFFF', transition: 'all 0.2s',
               }}
             >
-              <Download size={12} /> Télécharger
+              <Download size={11} /> Telecharger
             </button>
           </div>
         </div>
         <div style={{ position: 'relative' }}>
-          <div style={{ position: 'absolute', top: '8px', right: '12px', padding: '2px 7px', borderRadius: '4px', background: '#F1F5F9', fontSize: '10px', fontWeight: 600, color: '#94A3B8', letterSpacing: '0.5px' }}>
+          <div style={{ position: 'absolute', top: '8px', right: '12px', padding: '2px 8px', borderRadius: '5px', background: '#F5F3FF', fontSize: '10px', fontWeight: 600, color: '#8B5CF6', letterSpacing: '0.5px' }}>
             {meta.badge}
           </div>
           <pre style={{
             padding: '16px 20px', margin: 0, fontSize: '12px', fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-            color: '#334155', overflowX: 'auto', maxHeight: '500px', background: '#FAFBFC', lineHeight: '1.6',
+            color: '#334155', overflowX: 'auto', maxHeight: '500px', background: '#FAFAFC', lineHeight: '1.6',
             whiteSpace: 'pre-wrap', wordBreak: 'break-word',
           }}>
             {fileType === 'application/json' ? (() => { try { return JSON.stringify(JSON.parse(content), null, 2); } catch { return content; } })() : content}
@@ -2152,8 +2154,8 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
       {/* ═══ NAVIGATION ═══ */}
       <div style={{
-        display: 'flex', gap: '6px', padding: '4px',
-        background: '#F8FAFC', borderRadius: '14px', border: '1px solid #F1F5F9',
+        display: 'flex', gap: '4px', padding: '4px',
+        background: '#F8FAFC', borderRadius: '12px', border: '1px solid #EEEDF5',
         overflowX: 'auto',
       }}>
         {tabs.map(tab => {
@@ -2165,11 +2167,11 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
               onClick={() => hasContent && setActiveOptTab(tab.id)}
               style={{
                 flex: 1, minWidth: 0,
-                padding: '10px 14px', fontSize: '13px', fontWeight: isActive ? 700 : 500,
-                color: isActive ? '#0F172A' : hasContent ? '#64748B' : '#CBD5E1',
+                padding: '9px 14px', fontSize: '12.5px', fontWeight: isActive ? 600 : 500,
+                color: isActive ? '#6366F1' : hasContent ? '#64748B' : '#CBD5E1',
                 background: isActive ? '#FFFFFF' : 'transparent',
-                borderRadius: '10px', border: 'none',
-                boxShadow: isActive ? '0 2px 8px rgba(15,23,42,0.06)' : 'none',
+                borderRadius: '9px', border: isActive ? '1px solid #EEEDF5' : '1px solid transparent',
+                boxShadow: isActive ? '0 1px 4px rgba(99,102,241,0.08)' : 'none',
                 cursor: hasContent ? 'pointer' : 'default',
                 transition: 'all 0.2s', whiteSpace: 'nowrap',
               }}
@@ -2177,7 +2179,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
               {tab.label}
               {tab.id !== 'overview' && tab.has && (
                 <span style={{
-                  display: 'inline-block', width: 6, height: 6, borderRadius: '50%', marginLeft: 6,
+                  display: 'inline-block', width: 5, height: 5, borderRadius: '50%', marginLeft: 6,
                   background: isActive ? '#6366F1' : '#CBD5E1', verticalAlign: 'middle',
                 }} />
               )}
@@ -2192,36 +2194,42 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
           {/* Score + sous-scores */}
           {scores.length > 0 && (
-            <div style={{ background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
-                <div style={{ position: 'relative', width: '64px', height: '64px', flexShrink: 0 }}>
+            <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E8ECF1', padding: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '22px', marginBottom: '22px' }}>
+                <div style={{ position: 'relative', width: '72px', height: '72px', flexShrink: 0 }}>
                   <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#E2E8F0" strokeWidth="2.5" />
-                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#64748B" strokeWidth="2.5"
-                      strokeDasharray={`${scoreGlobal * 0.974} 100`} strokeLinecap="round" />
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#F1F5F9" strokeWidth="2.8" />
+                    <circle cx="18" cy="18" r="15.5" fill="none"
+                      stroke={scoreGlobal >= 60 ? '#6366F1' : scoreGlobal >= 35 ? '#8B5CF6' : '#A78BFA'}
+                      strokeWidth="2.8"
+                      strokeDasharray={`${scoreGlobal * 0.974} 100`} strokeLinecap="round"
+                      style={{ transition: 'stroke-dasharray 1s ease' }} />
                   </svg>
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', lineHeight: 1 }}>{scoreGlobal}</span>
+                    <span style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', lineHeight: 1 }}>{scoreGlobal}</span>
                     <span style={{ fontSize: '9px', color: '#94A3B8', fontWeight: 600 }}>/100</span>
                   </div>
                 </div>
                 <div>
                   <div style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Score de crawlabilite IA</div>
-                  <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>{scores.length} categories analysees</div>
+                  <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '3px' }}>{scores.length} categories analysees</div>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
-                {scores.map(cat => (
-                  <div key={cat.key} style={{ padding: '12px 14px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '12px', color: '#475569', fontWeight: 500 }}>{cat.label}</span>
-                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{cat.score}</span>
+                {scores.map(cat => {
+                  const barColor = cat.score >= 60 ? '#6366F1' : cat.score >= 40 ? '#8B5CF6' : '#C4B5FD';
+                  return (
+                    <div key={cat.key} style={{ padding: '12px 14px', background: '#FAFAFC', borderRadius: '10px', border: '1px solid #EEEDF5' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>{cat.label}</span>
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{cat.score}</span>
+                      </div>
+                      <div style={{ height: '4px', background: '#EDE9FE', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ width: `${cat.score}%`, height: '100%', borderRadius: '999px', background: barColor, transition: 'width 0.8s ease' }} />
+                      </div>
                     </div>
-                    <div style={{ height: '3px', background: '#E2E8F0', borderRadius: '999px', overflow: 'hidden' }}>
-                      <div style={{ width: `${cat.score}%`, height: '100%', borderRadius: '999px', background: '#94A3B8', transition: 'width 0.8s ease' }} />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2230,27 +2238,27 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
           {co && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
               {coPlatform && (
-                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Plateforme</div>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', textTransform: 'capitalize' }}>{coPlatform}</span>
+                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Plateforme</div>
+                  <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '6px', background: '#F5F3FF', fontSize: '13px', fontWeight: 600, color: '#6366F1', textTransform: 'capitalize' }}>{coPlatform}</span>
                 </div>
               )}
               {coSchemasAdded.length > 0 && (
-                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schemas ajoutes</span>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{coSchemasAdded.length}</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#6366F1' }}>{coSchemasAdded.length}</span>
                   </div>
-                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#475569' }}>{coSchemasAdded.join(' | ')}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748B' }}>{coSchemasAdded.join(' | ')}</span>
                 </div>
               )}
               {coEnrichments.length > 0 && (
-                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Enrichissements</span>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{coEnrichments.length}</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#6366F1' }}>{coEnrichments.length}</span>
                   </div>
-                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#475569' }}>{coEnrichments.map((e: string) => e.replace(/_/g, ' ')).join(' | ')}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748B' }}>{coEnrichments.map((e: string) => e.replace(/_/g, ' ')).join(' | ')}</span>
                 </div>
               )}
             </div>
@@ -2258,46 +2266,57 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
           {/* Recommandations */}
           {coRecommendations.length > 0 && (
-            <div style={{ background: '#FFFFFF', borderRadius: '10px', border: '1px solid #F1F5F9', overflow: 'hidden' }}>
-              <div style={{ padding: '14px 18px', borderBottom: '1px solid #F1F5F9' }}>
+            <div style={{ background: '#FFFFFF', borderRadius: '14px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9' }}>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Recommandations</span>
               </div>
               <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {coRecommendations.map((rec: any, i: number) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'flex-start', gap: '10px',
-                    padding: '10px 12px', borderRadius: '8px', background: '#FAFBFC', border: '1px solid #F1F5F9',
-                  }}>
-                    <span style={{
-                      flexShrink: 0, padding: '2px 7px', borderRadius: '4px', fontSize: '10px', fontWeight: 600,
-                      color: '#94A3B8', background: '#FFFFFF', border: '1px solid #F1F5F9',
-                      textTransform: 'uppercase', letterSpacing: '0.3px',
+                {coRecommendations.map((rec: any, i: number) => {
+                  const prioBadge = rec.priority === 'high'
+                    ? { label: 'Haute', bg: '#FEF2F2', color: '#B91C1C', border: '#FECACA' }
+                    : rec.priority === 'medium'
+                    ? { label: 'Moyenne', bg: '#FFF7ED', color: '#C2410C', border: '#FED7AA' }
+                    : { label: 'Basse', bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0' };
+                  return (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'flex-start', gap: '10px',
+                      padding: '12px 14px', borderRadius: '10px', background: '#FAFAFC',
                     }}>
-                      {rec.priority === 'high' ? 'Haute' : rec.priority === 'medium' ? 'Moyenne' : 'Basse'}
-                    </span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '13px', fontWeight: 500, color: '#1E293B', lineHeight: '1.4' }}>{rec.message}</div>
-                      {rec.details && <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px', lineHeight: '1.4' }}>{rec.details}</div>}
+                      <span style={{
+                        flexShrink: 0, padding: '2px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: 600,
+                        color: prioBadge.color, background: prioBadge.bg, border: `1px solid ${prioBadge.border}`,
+                        textTransform: 'uppercase', letterSpacing: '0.3px',
+                      }}>
+                        {prioBadge.label}
+                      </span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', fontWeight: 500, color: '#1E293B', lineHeight: '1.45' }}>{rec.message}</div>
+                        {rec.details && <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '3px', lineHeight: '1.45' }}>{rec.details}</div>}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* Plan d'action */}
           {planAction.length > 0 && (
-            <div style={{ background: '#FFFFFF', borderRadius: '10px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-              <div style={{ padding: '14px 18px', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ background: '#FFFFFF', borderRadius: '14px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9' }}>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Plan d'action</span>
               </div>
               <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {planAction.map((action, i) => (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'flex-start', gap: '10px',
-                    padding: '8px 12px', borderRadius: '8px', background: '#F8FAFC', border: '1px solid #E2E8F0',
+                    padding: '10px 14px', borderRadius: '10px', background: '#FAFAFC',
                   }}>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', minWidth: '16px' }}>{i + 1}.</span>
+                    <span style={{
+                      width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
+                      background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '11px', fontWeight: 700, color: '#6366F1',
+                    }}>{i + 1}</span>
                     <span style={{ fontSize: '13px', color: '#334155', lineHeight: '1.5' }}>{action}</span>
                   </div>
                 ))}
