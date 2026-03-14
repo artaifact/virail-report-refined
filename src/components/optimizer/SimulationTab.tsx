@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, CheckCircle, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
+import { CheckCircle, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
 import { ScoreCard } from '@/components/dashboard/ScoreCard';
 
 // Types crawler
@@ -66,7 +66,7 @@ interface SimulationTabProps {
   scoreDelta?: number;
 }
 
-const stripEmojis = (text: string) => text.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B50}\u{2B55}\u{25A0}-\u{25FF}\u{2702}-\u{27B0}\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').replace(/[#*]\uFE0F?\u20E3/g, '').replace(/ {2,}/g, ' ').replace(/^ +| +$/gm, '').trim();
+const stripEmojis = (text: string) => text.replace(/\p{Emoji}/gu, (m) => /^[0-9#*]$/.test(m) ? m : '').replace(/ {2,}/g, ' ').replace(/^ +| +$/gm, '').trim();
 
 export function SimulationTab({
   crawlScore,
@@ -622,7 +622,7 @@ export function SimulationTab({
           textAlign: 'center', padding: '40px 24px',
           background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1',
         }}>
-          <Bot size={40} style={{ color: '#CBD5E1', margin: '0 auto 12px' }} />
+          <div style={{ width: 40, height: 40, margin: '0 auto 12px', borderRadius: '50%', background: '#F1F5F9' }} />
           <div style={{ fontSize: '14px', fontWeight: 500, color: '#64748B', marginBottom: '4px' }}>
             Simulation non disponible
           </div>

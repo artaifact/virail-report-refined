@@ -4,7 +4,7 @@ import './Index.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
-import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Bot, Copy, FileCode } from 'lucide-react';
+import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode } from 'lucide-react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useReport, useReports } from '@/hooks/useReports';
 import { AuthService } from '@/services/authService';
@@ -2009,7 +2009,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const crawlOptimizerScores = coBreakdown ? [
     { key: 'structured_data', label: 'Données structurées', icon: Code, color: '#6366F1', score: Math.round(coBreakdown.structured_data ?? 0) },
     { key: 'semantic_html', label: 'HTML sémantique', icon: FileCode, color: '#8B5CF6', score: Math.round(coBreakdown.semantic_html ?? 0) },
-    { key: 'entity_coverage', label: 'Couverture entités', icon: Bot, color: '#06B6D4', score: Math.round(coBreakdown.entity_coverage ?? 0) },
+    { key: 'entity_coverage', label: 'Couverture entités', icon: Globe, color: '#06B6D4', score: Math.round(coBreakdown.entity_coverage ?? 0) },
     { key: 'content_clarity', label: 'Clarté contenu', icon: FileText, color: '#F59E0B', score: Math.round(coBreakdown.content_clarity ?? 0) },
     { key: 'meta_completeness', label: 'Métadonnées', icon: Globe, color: '#10B981', score: Math.round(coBreakdown.meta_completeness ?? 0) },
   ].filter(c => c.score > 0) : null;
@@ -2024,7 +2024,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const auditGeoScores = [
     { key: 'donnees_structurees', label: 'Données structurées', icon: Code, color: '#6366F1' },
     { key: 'html_semantique', label: 'HTML sémantique', icon: FileCode, color: '#8B5CF6' },
-    { key: 'accessibilite_crawlers', label: 'Accessibilité IA', icon: Bot, color: '#06B6D4' },
+    { key: 'accessibilite_crawlers', label: 'Accessibilité IA', icon: Globe, color: '#06B6D4' },
     { key: 'optimisation_contenu', label: 'Contenu', icon: FileText, color: '#F59E0B' },
     { key: 'metadonnees_techniques', label: 'Métadonnées', icon: Globe, color: '#10B981' },
     { key: 'conformite_standards', label: 'Standards', icon: Shield, color: '#EC4899' },
@@ -2039,7 +2039,39 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const scores = crawlOptimizerScores || auditGeoScores;
 
   // Supprimer les emojis d'un texte
-  const stripEmojis = (text: string) => text.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B50}\u{2B55}\u{25A0}-\u{25FF}\u{2702}-\u{27B0}\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').replace(/[#*]\uFE0F?\u20E3/g, '').replace(/ {2,}/g, ' ').replace(/^ +| +$/gm, '').trim();
+  const stripEmojis = (text: string) => text.replace(/\p{Emoji}/gu, (m) => /^[0-9#*]$/.test(m) ? m : '').replace(/ {2,}/g, ' ').replace(/^ +| +$/gm, '').trim();
+
+  // Extraire les balises meta depuis le HTML optimise
+  const extractMetaFromHtml = (html: string): { metaTags: string; openGraph: string } => {
+    if (!html) return { metaTags: '', openGraph: '' };
+    const metaLines: string[] = [];
+    const ogLines: string[] = [];
+    // Extraire toutes les balises <meta>, <title>, <link rel="canonical">
+    const tagRegex = /<(meta|title|link)\b[^>]*\/?>/gi;
+    let match;
+    while ((match = tagRegex.exec(html)) !== null) {
+      const tag = match[0];
+      const tagLower = tag.toLowerCase();
+      // Filtrer : ne garder que les link canonical
+      if (match[1].toLowerCase() === 'link' && !tagLower.includes('canonical')) continue;
+      // Séparer OG / Twitter des meta standards
+      if (tagLower.includes('property="og:') || tagLower.includes("property='og:") ||
+          tagLower.includes('name="twitter:') || tagLower.includes("name='twitter:")) {
+        ogLines.push(tag);
+      } else {
+        metaLines.push(tag);
+      }
+    }
+    // Extraire le contenu de <title>...</title>
+    const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    if (titleMatch) {
+      metaLines.unshift(`<title>${titleMatch[1].trim()}</title>`);
+    }
+    return {
+      metaTags: metaLines.join('\n'),
+      openGraph: ogLines.join('\n'),
+    };
+  };
 
   // Fichiers : optimize > simulate.generated_files > technical_files
   const schemaContent = coOptimize?.schemas
@@ -2049,8 +2081,9 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const llmsFullContent = stripEmojis(coOptimize?.llms_full_txt || coSimulate?.generated_files?.llms_full_txt || '');
   const robotsContent = stripEmojis(coOptimize?.robots_txt || coSimulate?.generated_files?.robots_txt || tf?.robots_txt?.content || '');
   const optimizedHtmlContent = coOptimize?.html || '';
-  const metaTagsContent = stripEmojis(tf?.meta_tags?.content || '');
-  const openGraphContent = stripEmojis(tf?.open_graph?.content || '');
+  const extractedMeta = extractMetaFromHtml(optimizedHtmlContent);
+  const metaTagsContent = stripEmojis(extractedMeta.metaTags || tf?.meta_tags?.content || '');
+  const openGraphContent = stripEmojis(extractedMeta.openGraph || tf?.open_graph?.content || '');
 
   // Données enrichies
   const coRecommendations = coAnalyze?.recommendations || co?.recommendations || [];
@@ -2105,7 +2138,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const fileTabsMeta: Record<string, { icon: any; badge: string }> = {
     schemas:  { icon: Code, badge: 'JSON-LD' },
     meta:     { icon: Globe, badge: 'HTML' },
-    llms:     { icon: Bot, badge: 'TXT' },
+    llms:     { icon: FileText, badge: 'TXT' },
     robots:   { icon: Shield, badge: 'TXT' },
     htmldiff: { icon: FileCode, badge: 'HTML' },
   };
@@ -2172,7 +2205,44 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
             color: '#334155', overflowX: 'auto', maxHeight: '500px', background: '#FAFAFC', lineHeight: '1.6',
             whiteSpace: 'pre-wrap', wordBreak: 'break-word',
           }}>
-            {fileType === 'application/json' ? (() => { try { return JSON.stringify(JSON.parse(content), null, 2); } catch { return content; } })() : content}
+            {(() => {
+              const raw = fileType === 'application/json'
+                ? (() => { try { return JSON.stringify(JSON.parse(content), null, 2); } catch { return content; } })()
+                : content;
+              if (fileType !== 'text/html') return raw;
+              // Coloration syntaxique HTML basique
+              const parts: React.ReactNode[] = [];
+              const regex = /(<!--[\s\S]*?-->)|(<\/?[a-zA-Z][a-zA-Z0-9-]*)((?:\s+[a-zA-Z:_][\w:.-]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*))?)*)\s*(\/?>)/g;
+              let lastIndex = 0;
+              let m;
+              while ((m = regex.exec(raw)) !== null) {
+                if (m.index > lastIndex) parts.push(raw.slice(lastIndex, m.index));
+                if (m[1]) {
+                  // Commentaire
+                  parts.push(<span key={m.index} style={{ color: '#94A3B8', fontStyle: 'italic' }}>{m[1]}</span>);
+                } else {
+                  // Tag
+                  const tagParts: React.ReactNode[] = [];
+                  tagParts.push(<span key={`t${m.index}`} style={{ color: '#0F172A', fontWeight: 500 }}>{m[2]}</span>);
+                  // Attributs
+                  if (m[3]) {
+                    const attrRegex = /(\s+)([a-zA-Z:_][\w:.-]*)(\s*=\s*)?("[^"]*"|'[^']*'|[^\s>]*)?/g;
+                    let am;
+                    while ((am = attrRegex.exec(m[3])) !== null) {
+                      tagParts.push(am[1]); // espace
+                      tagParts.push(<span key={`a${m.index}-${am.index}`} style={{ color: '#64748B' }}>{am[2]}</span>);
+                      if (am[3]) tagParts.push(am[3]); // =
+                      if (am[4]) tagParts.push(<span key={`v${m.index}-${am.index}`} style={{ color: '#0369A1' }}>{am[4]}</span>);
+                    }
+                  }
+                  tagParts.push(<span key={`c${m.index}`} style={{ color: '#0F172A', fontWeight: 500 }}>{m[4]}</span>);
+                  parts.push(<span key={m.index}>{tagParts}</span>);
+                }
+                lastIndex = m.index + m[0].length;
+              }
+              if (lastIndex < raw.length) parts.push(raw.slice(lastIndex));
+              return parts;
+            })()}
           </pre>
         </div>
       </div>
@@ -2514,29 +2584,28 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
         </div>
       )}
 
-      {activeOptTab === 'htmldiff' && optimizedHtmlContent && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <HtmlDiffViewer
-            original={(() => {
-              // Essayer d'extraire le HTML original depuis les analyses
-              const originalHtml = (reportData?.analyses || []).reduce((html: string, a: any) => {
-                if (html) return html;
-                return a.modules?.audit_geo?.original_html || a.modules?.audit_geo?.html_original || '';
-              }, '');
-              return originalHtml || '<!-- HTML original non disponible -->\n<!-- Seule la version optimisee est affichee -->';
-            })()}
-            optimized={optimizedHtmlContent}
-          />
-          <FileCard
-            title="Telecharger le HTML optimise"
-            description="Version optimisee de votre page avec schemas et balises enrichies"
-            content={optimizedHtmlContent}
-            copyKey="htmldiff"
-            filename="optimized.html"
-            fileType="text/html"
-          />
-        </div>
-      )}
+      {activeOptTab === 'htmldiff' && optimizedHtmlContent && (() => {
+        const originalHtml = (reportData?.analyses || []).reduce((html: string, a: any) => {
+          if (html) return html;
+          return a.modules?.audit_geo?.original_html || a.modules?.audit_geo?.html_original || '';
+        }, '');
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {originalHtml ? (
+              <HtmlDiffViewer original={originalHtml} optimized={optimizedHtmlContent} />
+            ) : (
+              <FileCard
+                title="HTML Optimise"
+                description="Version optimisee de votre page avec schemas et balises enrichies"
+                content={optimizedHtmlContent}
+                copyKey="htmlview"
+                filename="optimized.html"
+                fileType="text/html"
+              />
+            )}
+          </div>
+        );
+      })()}
 
     </div>
   );
