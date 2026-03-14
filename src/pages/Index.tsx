@@ -4,7 +4,7 @@ import './Index.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
-import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Bot, Copy, FileCode } from 'lucide-react';
+import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Bot, Copy, FileCode } from 'lucide-react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useReport, useReports } from '@/hooks/useReports';
 import { AuthService } from '@/services/authService';
@@ -12,6 +12,10 @@ import type { FullReportData, ReportResponse } from '@/lib/api';
 import { listCompetitorAnalyses, getCompetitorAnalysisById, extractDomain, CompetitorAnalysisResponse, mapApiResponseToCompetitorAnalysisResponse, mapAnalyseConcurrentielleV1ToResponse } from '@/services/competitorAnalysisService';
 import { modelLogos } from '@/components/ModelLogosCarousel';
 import { usePayment } from '@/hooks/usePayment';
+import { ScoreCard } from '@/components/dashboard/ScoreCard';
+import { HtmlDiffViewer } from '@/components/optimizer/HtmlDiffViewer';
+import { SchemaPreview } from '@/components/optimizer/SchemaPreview';
+import { SimulationTab } from '@/components/optimizer/SimulationTab';
 
 // === CONSTANTES ===
 /**
@@ -1969,14 +1973,17 @@ function AuditGeoSection({ reportData }: { reportData: FullReportData | null }) 
 }
 
 function InfosDetailleesView({ reportData }: { reportData: FullReportData | null }) {
-  const [activeOptTab, setActiveOptTab] = useState<'overview' | 'schemas' | 'meta' | 'llms' | 'robots' | 'htmldiff'>('overview');
+  const [activeOptTab, setActiveOptTab] = useState<'overview' | 'schemas' | 'meta' | 'llms' | 'robots' | 'htmldiff' | 'simulation'>('overview');
   const [copied, setCopied] = useState<string | null>(null);
 
   // Source prioritaire : crawl_optimizer de l'API
-  // Structure API réelle : { status, analysis: { crawl_score, platform, ... }, optimization: { llms_txt, robots_txt, ... } }
+  // Structure API : { analyze: { score, recommendations, ... }, optimize: { llms_txt, robots_txt, schemas, html, ... }, simulate: { comparison, crawler_perspective, llm_analysis, ... } }
   const co = reportData?.crawl_optimizer as any;
-  const coAnalysis = co?.analysis;
-  const coOptimization = co?.optimization;
+
+  // Sous-objets principaux
+  const coAnalyze = co?.analyze;
+  const coOptimize = co?.optimize;
+  const coSimulate = co?.simulate;
 
   // Fallback : package_optimisation_geo des analyses
   const auditGeoData = reportData?.analyses?.find((a: any) =>
@@ -1985,17 +1992,26 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const pkg = auditGeoData?.package_optimisation_geo;
   const tf = pkg?.technical_files as Record<string, { content: string; filename: string; description: string }> | undefined;
 
-  // Score global : crawl_optimizer.analysis.crawl_score > audit_geo
-  const scoreGlobal = coAnalysis?.crawl_score?.overall ?? Math.round(auditGeoData?.score_global_geo ?? 0);
+  // Score global : analyze > simulate.comparison.optimized > simulate.comparison.original > flat > audit_geo
+  const scoreGlobal =
+    coAnalyze?.score?.overall ??
+    coSimulate?.comparison?.optimized_score?.overall ??
+    coSimulate?.comparison?.original_score?.overall ??
+    co?.score?.overall ??
+    Math.round(auditGeoData?.score_global_geo ?? 0);
 
-  // Scores détaillés depuis crawl_optimizer.analysis.crawl_score.breakdown
-  const coBreakdown = coAnalysis?.crawl_score?.breakdown;
+  // Scores détaillés
+  const coBreakdown =
+    coAnalyze?.score?.breakdown ??
+    coSimulate?.comparison?.optimized_score?.breakdown ??
+    coSimulate?.comparison?.original_score?.breakdown ??
+    co?.score?.breakdown;
   const crawlOptimizerScores = coBreakdown ? [
-    { key: 'structured_data', label: 'Données structurées', icon: Code, color: '#6366F1', score: Math.round(coBreakdown.structured_data) },
-    { key: 'semantic_html', label: 'HTML sémantique', icon: FileCode, color: '#8B5CF6', score: Math.round(coBreakdown.semantic_html) },
-    { key: 'entity_coverage', label: 'Couverture entités', icon: Bot, color: '#06B6D4', score: Math.round(coBreakdown.entity_coverage) },
-    { key: 'content_clarity', label: 'Clarté contenu', icon: FileText, color: '#F59E0B', score: Math.round(coBreakdown.content_clarity) },
-    { key: 'meta_completeness', label: 'Métadonnées', icon: Globe, color: '#10B981', score: Math.round(coBreakdown.meta_completeness) },
+    { key: 'structured_data', label: 'Données structurées', icon: Code, color: '#6366F1', score: Math.round(coBreakdown.structured_data ?? 0) },
+    { key: 'semantic_html', label: 'HTML sémantique', icon: FileCode, color: '#8B5CF6', score: Math.round(coBreakdown.semantic_html ?? 0) },
+    { key: 'entity_coverage', label: 'Couverture entités', icon: Bot, color: '#06B6D4', score: Math.round(coBreakdown.entity_coverage ?? 0) },
+    { key: 'content_clarity', label: 'Clarté contenu', icon: FileText, color: '#F59E0B', score: Math.round(coBreakdown.content_clarity ?? 0) },
+    { key: 'meta_completeness', label: 'Métadonnées', icon: Globe, color: '#10B981', score: Math.round(coBreakdown.meta_completeness ?? 0) },
   ].filter(c => c.score > 0) : null;
 
   // Fallback : scores depuis audit_geo
@@ -2023,24 +2039,35 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const scores = crawlOptimizerScores || auditGeoScores;
 
   // Supprimer les emojis d'un texte
-  const stripEmojis = (text: string) => text.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2702}-\u{27B0}]/gu, '').replace(/ {2,}/g, ' ').trim();
+  const stripEmojis = (text: string) => text.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B50}\u{2B55}\u{25A0}-\u{25FF}\u{2702}-\u{27B0}\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').replace(/[#*]\uFE0F?\u20E3/g, '').replace(/ {2,}/g, ' ').replace(/^ +| +$/gm, '').trim();
 
-  // Fichiers : crawl_optimizer.optimization > technical_files
-  const schemaContent = coOptimization?.schemas_injected ? JSON.stringify(coOptimization.schemas_injected, null, 2) : (tf?.schema_org_json?.content || '');
-  const llmsContent = stripEmojis(coOptimization?.llms_txt || tf?.llms_txt?.content || '');
-  const llmsFullContent = stripEmojis(coOptimization?.llms_full_txt || '');
-  const robotsContent = coOptimization?.robots_txt || tf?.robots_txt?.content || '';
-  const optimizedHtmlContent = coOptimization?.optimized_html || '';
-  const metaTagsContent = tf?.meta_tags?.content || '';
-  const openGraphContent = tf?.open_graph?.content || '';
+  // Fichiers : optimize > simulate.generated_files > technical_files
+  const schemaContent = coOptimize?.schemas
+    ? JSON.stringify(coOptimize.schemas, null, 2)
+    : (tf?.schema_org_json?.content || '');
+  const llmsContent = stripEmojis(coOptimize?.llms_txt || coSimulate?.generated_files?.llms_txt || tf?.llms_txt?.content || '');
+  const llmsFullContent = stripEmojis(coOptimize?.llms_full_txt || coSimulate?.generated_files?.llms_full_txt || '');
+  const robotsContent = stripEmojis(coOptimize?.robots_txt || coSimulate?.generated_files?.robots_txt || tf?.robots_txt?.content || '');
+  const optimizedHtmlContent = coOptimize?.html || '';
+  const metaTagsContent = stripEmojis(tf?.meta_tags?.content || '');
+  const openGraphContent = stripEmojis(tf?.open_graph?.content || '');
 
-  // Données enrichies depuis crawl_optimizer
-  const coRecommendations = coAnalysis?.recommendations || [];
-  const coSchemasAdded = coOptimization?.schemas_added || [];
-  const coEnrichments = coOptimization?.enrichments_applied || [];
-  const coMissingSchemas = coAnalysis?.missing_schemas || [];
-  const coEntityCoverage = coAnalysis?.entity_coverage || {};
-  const coPlatform = coAnalysis?.platform || '';
+  // Données enrichies
+  const coRecommendations = coAnalyze?.recommendations || co?.recommendations || [];
+  const coSchemasAdded = coOptimize?.metadata?.schemas_added || coSimulate?.comparison?.schemas_diff?.added || [];
+  const coEnrichments = coOptimize?.metadata?.enrichments_applied
+    || (coSimulate?.comparison?.enrichments_diff?.map((e: any) => e.description || e.type) ?? [])
+    || [];
+  const coMissingSchemas = coAnalyze?.missing_schemas || [];
+  const coEntityCoverage = coAnalyze?.entity_coverage || {};
+  const coPlatform = coAnalyze?.platform || coOptimize?.metadata?.platform || co?.platform || '';
+  const coCrawlerPerspective = coSimulate?.crawler_perspective;
+  const coOriginalScore = coSimulate?.comparison?.original_score;
+  const coOptimizedScore = coSimulate?.comparison?.optimized_score;
+  const coScoreDelta = coSimulate?.comparison?.score_delta;
+  const coLlmAnalysis = coSimulate?.llm_analysis;
+  const coRobotsAnalyze = co?.robots_analyze;
+  const coStructuredDataCoverage = coAnalyze?.structured_data_coverage;
 
   // Plan d'action depuis audit_geo
   const planAction: string[] = (() => {
@@ -2083,13 +2110,16 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     htmldiff: { icon: FileCode, badge: 'HTML' },
   };
 
+  const hasSimulationData = !!(co || scores.length > 0 || coSchemasAdded.length > 0 || coEnrichments.length > 0 || coRecommendations.length > 0);
+
   const tabs = [
-    { id: 'overview' as const, label: 'Recommandations' },
-    { id: 'htmldiff' as const, label: 'HTML Diff', has: !!optimizedHtmlContent },
+    { id: 'overview' as const, label: 'Overview' },
+    { id: 'schemas' as const, label: 'JSON-LD Schemas', has: !!schemaContent },
+    { id: 'meta' as const, label: 'Meta Tags & Enrichments', has: !!(metaTagsContent || openGraphContent || coEnrichments.length > 0) },
     { id: 'llms' as const, label: 'llms.txt', has: !!(llmsContent || llmsFullContent) },
-    { id: 'schemas' as const, label: 'Schema.org', has: !!schemaContent },
-    { id: 'meta' as const, label: 'Meta Tags & Enrichments', has: !!(metaTagsContent || openGraphContent) },
     { id: 'robots' as const, label: 'robots.txt', has: !!robotsContent },
+    { id: 'htmldiff' as const, label: 'HTML Diff', has: !!optimizedHtmlContent },
+    { id: 'simulation' as const, label: 'AI Simulation', has: hasSimulationData },
   ];
 
   // Composant réutilisable : carte fichier technique
@@ -2102,8 +2132,8 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
       <div style={{ background: '#FFFFFF', borderRadius: '14px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '7px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Icon size={14} style={{ color: '#6366F1' }} />
+            <div style={{ width: '28px', height: '28px', borderRadius: '7px', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon size={14} style={{ color: '#64748B' }} />
             </div>
             <div>
               <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>{title}</div>
@@ -2116,7 +2146,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
               style={{
                 display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '7px',
                 border: '1px solid #EEEDF5', cursor: 'pointer', fontSize: '11px', fontWeight: 500, transition: 'all 0.2s',
-                background: copied === copyKey ? '#F5F3FF' : '#FFFFFF', color: copied === copyKey ? '#6366F1' : '#64748B',
+                background: copied === copyKey ? '#F1F5F9' : '#FFFFFF', color: copied === copyKey ? '#334155' : '#64748B',
               }}
             >
               {copied === copyKey ? <><Check size={11} /> Copie</> : <><Copy size={11} /> Copier</>}
@@ -2126,7 +2156,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
               style={{
                 display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '7px',
                 border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600,
-                background: '#6366F1', color: '#FFFFFF', transition: 'all 0.2s',
+                background: '#334155', color: '#FFFFFF', transition: 'all 0.2s',
               }}
             >
               <Download size={11} /> Telecharger
@@ -2134,7 +2164,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
           </div>
         </div>
         <div style={{ position: 'relative' }}>
-          <div style={{ position: 'absolute', top: '8px', right: '12px', padding: '2px 8px', borderRadius: '5px', background: '#F5F3FF', fontSize: '10px', fontWeight: 600, color: '#8B5CF6', letterSpacing: '0.5px' }}>
+          <div style={{ position: 'absolute', top: '8px', right: '12px', padding: '2px 8px', borderRadius: '5px', background: '#F1F5F9', fontSize: '10px', fontWeight: 600, color: '#64748B', letterSpacing: '0.5px' }}>
             {meta.badge}
           </div>
           <pre style={{
@@ -2168,10 +2198,10 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
               style={{
                 flex: 1, minWidth: 0,
                 padding: '9px 14px', fontSize: '12.5px', fontWeight: isActive ? 600 : 500,
-                color: isActive ? '#6366F1' : hasContent ? '#64748B' : '#CBD5E1',
+                color: isActive ? '#0F172A' : hasContent ? '#64748B' : '#CBD5E1',
                 background: isActive ? '#FFFFFF' : 'transparent',
-                borderRadius: '9px', border: isActive ? '1px solid #EEEDF5' : '1px solid transparent',
-                boxShadow: isActive ? '0 1px 4px rgba(99,102,241,0.08)' : 'none',
+                borderRadius: '9px', border: isActive ? '1px solid #E2E8F0' : '1px solid transparent',
+                boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
                 cursor: hasContent ? 'pointer' : 'default',
                 transition: 'all 0.2s', whiteSpace: 'nowrap',
               }}
@@ -2180,7 +2210,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
               {tab.id !== 'overview' && tab.has && (
                 <span style={{
                   display: 'inline-block', width: 5, height: 5, borderRadius: '50%', marginLeft: 6,
-                  background: isActive ? '#6366F1' : '#CBD5E1', verticalAlign: 'middle',
+                  background: isActive ? '#0F172A' : '#CBD5E1', verticalAlign: 'middle',
                 }} />
               )}
             </button>
@@ -2192,44 +2222,25 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
       {activeOptTab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-          {/* Score + sous-scores */}
+          {/* Score global + sous-scores */}
           {scores.length > 0 && (
-            <div style={{ background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E8ECF1', padding: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '22px', marginBottom: '22px' }}>
-                <div style={{ position: 'relative', width: '72px', height: '72px', flexShrink: 0 }}>
-                  <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#F1F5F9" strokeWidth="2.8" />
-                    <circle cx="18" cy="18" r="15.5" fill="none"
-                      stroke={scoreGlobal >= 60 ? '#6366F1' : scoreGlobal >= 35 ? '#8B5CF6' : '#A78BFA'}
-                      strokeWidth="2.8"
-                      strokeDasharray={`${scoreGlobal * 0.974} 100`} strokeLinecap="round"
-                      style={{ transition: 'stroke-dasharray 1s ease' }} />
-                  </svg>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', lineHeight: 1 }}>{scoreGlobal}</span>
-                    <span style={{ fontSize: '9px', color: '#94A3B8', fontWeight: 600 }}>/100</span>
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>Score de crawlabilite IA</div>
-                  <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '3px' }}>{scores.length} categories analysees</div>
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
-                {scores.map(cat => {
-                  const barColor = cat.score >= 60 ? '#6366F1' : cat.score >= 40 ? '#8B5CF6' : '#C4B5FD';
-                  return (
-                    <div key={cat.key} style={{ padding: '12px 14px', background: '#FAFAFC', borderRadius: '10px', border: '1px solid #EEEDF5' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>{cat.label}</span>
-                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{cat.score}</span>
-                      </div>
-                      <div style={{ height: '4px', background: '#EDE9FE', borderRadius: '999px', overflow: 'hidden' }}>
-                        <div style={{ width: `${cat.score}%`, height: '100%', borderRadius: '999px', background: barColor, transition: 'width 0.8s ease' }} />
-                      </div>
-                    </div>
-                  );
-                })}
+            <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '12px', alignItems: 'start' }}>
+              {/* Score global a gauche */}
+              <ScoreCard
+                title="Score Global IA"
+                score={scoreGlobal}
+                description={`${scores.length} categories`}
+              />
+              {/* Sous-scores a droite */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {scores.map(cat => (
+                    <ScoreCard
+                      key={cat.key}
+                      title={cat.label}
+                      score={cat.score}
+                      compact
+                    />
+                ))}
               </div>
             </div>
           )}
@@ -2240,14 +2251,14 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
               {coPlatform && (
                 <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1' }}>
                   <div style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Plateforme</div>
-                  <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '6px', background: '#F5F3FF', fontSize: '13px', fontWeight: 600, color: '#6366F1', textTransform: 'capitalize' }}>{coPlatform}</span>
+                  <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '6px', background: '#F1F5F9', fontSize: '13px', fontWeight: 600, color: '#334155', textTransform: 'capitalize' }}>{coPlatform}</span>
                 </div>
               )}
               {coSchemasAdded.length > 0 && (
                 <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schemas ajoutes</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#6366F1' }}>{coSchemasAdded.length}</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#334155' }}>{coSchemasAdded.length}</span>
                   </div>
                   <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748B' }}>{coSchemasAdded.join(' | ')}</span>
                 </div>
@@ -2256,7 +2267,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                 <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Enrichissements</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#6366F1' }}>{coEnrichments.length}</span>
+                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#334155' }}>{coEnrichments.length}</span>
                   </div>
                   <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748B' }}>{coEnrichments.map((e: string) => e.replace(/_/g, ' ')).join(' | ')}</span>
                 </div>
@@ -2290,8 +2301,8 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                         {prioBadge.label}
                       </span>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '13px', fontWeight: 500, color: '#1E293B', lineHeight: '1.45' }}>{rec.message}</div>
-                        {rec.details && <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '3px', lineHeight: '1.45' }}>{rec.details}</div>}
+                        <div style={{ fontSize: '13px', fontWeight: 500, color: '#1E293B', lineHeight: '1.45' }}>{stripEmojis(rec.message)}</div>
+                        {rec.details && <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '3px', lineHeight: '1.45' }}>{stripEmojis(rec.details)}</div>}
                       </div>
                     </div>
                   );
@@ -2314,8 +2325,8 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                   }}>
                     <span style={{
                       width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
-                      background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '11px', fontWeight: 700, color: '#6366F1',
+                      background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '11px', fontWeight: 700, color: '#64748B',
                     }}>{i + 1}</span>
                     <span style={{ fontSize: '13px', color: '#334155', lineHeight: '1.5' }}>{action}</span>
                   </div>
@@ -2344,19 +2355,85 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
         </div>
       )}
 
-      {activeOptTab === 'schemas' && schemaContent && (
-        <FileCard
-          title="Schema.org JSON-LD"
-          description="Données structurées pour améliorer la compréhension de votre site par les crawlers IA"
-          content={schemaContent}
-          copyKey="schema"
-          filename={tf?.schema_org_json?.filename || 'schema.json'}
-          fileType="application/json"
+      {activeOptTab === 'simulation' && (
+        <SimulationTab
+          crawlScore={coBreakdown ? { overall: scoreGlobal, breakdown: coBreakdown } : (scoreGlobal > 0 ? { overall: scoreGlobal } : undefined)}
+          platform={coPlatform}
+          schemasAdded={coSchemasAdded}
+          enrichments={coEnrichments}
+          existingSchemas={coAnalyze?.existing_schemas || []}
+          missingSchemas={coMissingSchemas}
+          recommendations={coRecommendations}
+          entityCoverage={coEntityCoverage}
+          structuredDataCoverage={coStructuredDataCoverage}
+          auditGeoData={auditGeoData}
+          crawlerPerspective={coCrawlerPerspective}
+          llmAnalysis={coLlmAnalysis}
+          originalScore={coOriginalScore}
+          optimizedScore={coOptimizedScore}
+          scoreDelta={coScoreDelta}
         />
       )}
 
-      {activeOptTab === 'meta' && (metaTagsContent || openGraphContent) && (
+      {activeOptTab === 'schemas' && schemaContent && (() => {
+        // Parser les schemas pour le SchemaPreview
+        let parsedSchemas: any[] = [];
+        try {
+          const parsed = JSON.parse(schemaContent);
+          if (Array.isArray(parsed)) {
+            parsedSchemas = parsed;
+          } else if (parsed['@graph']) {
+            parsedSchemas = parsed['@graph'];
+          } else {
+            parsedSchemas = [parsed];
+          }
+        } catch {
+          parsedSchemas = [];
+        }
+
+        return parsedSchemas.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <SchemaPreview schemas={parsedSchemas} title="Schema.org JSON-LD" />
+            <FileCard
+              title="Telecharger le Schema.org complet"
+              description="Donnees structurees pour ameliorer la comprehension de votre site par les crawlers IA"
+              content={schemaContent}
+              copyKey="schema"
+              filename={tf?.schema_org_json?.filename || 'schema.json'}
+              fileType="application/json"
+            />
+          </div>
+        ) : (
+          <FileCard
+            title="Schema.org JSON-LD"
+            description="Donnees structurees pour ameliorer la comprehension de votre site par les crawlers IA"
+            content={schemaContent}
+            copyKey="schema"
+            filename={tf?.schema_org_json?.filename || 'schema.json'}
+            fileType="application/json"
+          />
+        );
+      })()}
+
+      {activeOptTab === 'meta' && (metaTagsContent || openGraphContent || coEnrichments.length > 0) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Enrichissements appliques */}
+          {coEnrichments.length > 0 && (
+            <div style={{ background: '#FFFFFF', borderRadius: '14px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Enrichissements appliques</span>
+                <span style={{ marginLeft: '8px', fontSize: '11px', color: '#94A3B8' }}>{coEnrichments.length} modification{coEnrichments.length > 1 ? 's' : ''}</span>
+              </div>
+              <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {coEnrichments.map((enrichment: string, i: number) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '10px', background: '#FAFAFC' }}>
+                    <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#94A3B8', flexShrink: 0 }} />
+                    <span style={{ fontSize: '13px', color: '#334155' }}>{enrichment.replace(/_/g, ' ')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {metaTagsContent && (
             <FileCard
               title="Meta Tags HTML"
@@ -2406,25 +2483,59 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
       )}
 
       {activeOptTab === 'robots' && robotsContent && (
-        <FileCard
-          title="robots.txt"
-          description="Allow explicites pour GPTBot, ClaudeBot, PerplexityBot et autres crawlers IA"
-          content={robotsContent}
-          copyKey="robots"
-          filename={tf?.robots_txt?.filename || 'robots.txt'}
-          fileType="text/plain"
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Analyse robots.txt existant */}
+          {coRobotsAnalyze && (
+            <div style={{ background: '#FFFFFF', borderRadius: '14px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
+              <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Analyse du robots.txt actuel</span>
+                <span style={{ fontSize: '20px', fontWeight: 700, color: '#334155' }}>{coRobotsAnalyze.score}/100</span>
+              </div>
+              {coRobotsAnalyze.issues?.length > 0 && (
+                <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {coRobotsAnalyze.issues.map((issue: any, i: number) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 14px', borderRadius: '8px', background: '#FAFAFC' }}>
+                      {issue.type === 'warning' ? <AlertTriangle size={12} style={{ color: '#94A3B8', flexShrink: 0 }} /> : <Info size={12} style={{ color: '#94A3B8', flexShrink: 0 }} />}
+                      <span style={{ fontSize: '12px', color: '#334155' }}>{issue.message}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <FileCard
+            title="robots.txt optimise"
+            description="Allow explicites pour GPTBot, ClaudeBot, PerplexityBot et autres crawlers IA"
+            content={robotsContent}
+            copyKey="robots"
+            filename={tf?.robots_txt?.filename || 'robots.txt'}
+            fileType="text/plain"
+          />
+        </div>
       )}
 
       {activeOptTab === 'htmldiff' && optimizedHtmlContent && (
-        <FileCard
-          title="HTML Diff"
-          description="Version optimisée de votre page avec schemas et balises enrichies"
-          content={optimizedHtmlContent}
-          copyKey="htmldiff"
-          filename="optimized.html"
-          fileType="text/html"
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <HtmlDiffViewer
+            original={(() => {
+              // Essayer d'extraire le HTML original depuis les analyses
+              const originalHtml = (reportData?.analyses || []).reduce((html: string, a: any) => {
+                if (html) return html;
+                return a.modules?.audit_geo?.original_html || a.modules?.audit_geo?.html_original || '';
+              }, '');
+              return originalHtml || '<!-- HTML original non disponible -->\n<!-- Seule la version optimisee est affichee -->';
+            })()}
+            optimized={optimizedHtmlContent}
+          />
+          <FileCard
+            title="Telecharger le HTML optimise"
+            description="Version optimisee de votre page avec schemas et balises enrichies"
+            content={optimizedHtmlContent}
+            copyKey="htmldiff"
+            filename="optimized.html"
+            fileType="text/html"
+          />
+        </div>
       )}
 
     </div>
