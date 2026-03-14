@@ -340,6 +340,40 @@ export interface CrawlOptimizerResult {
   processing_time_ms?: number;
 }
 
+/**
+ * Récupère l'optimisation complète d'une page (schemas, llms.txt, etc.)
+ * Essaie d'abord de récupérer une analyse stockée (GET), puis lance l'optimisation (POST) si aucune n'existe.
+ */
+export async function fetchPageOptimization(url: string): Promise<any | null> {
+  try {
+    // 1. Essayer de récupérer une analyse déjà stockée/cachée
+    const cached = await fetchWithAuth(`${API_BASE_URL}/api/v1/crawl-optimize/optimize?url=${encodeURIComponent(url)}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+    if (cached.ok) {
+      const data = await cached.json();
+      if (data && (data.schemas || data.llms_txt || data.score || data.metadata)) return data;
+    }
+  } catch {
+    // GET non supporté ou erreur, on continue avec POST
+  }
+  try {
+    // 2. Fallback : lancer l'optimisation
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/crawl-optimize/optimize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ url }),
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
 export interface FullReportData {
   report: Report;
   analyses: Analysis[];
@@ -1006,6 +1040,227 @@ export async function startCustomAnalysis(params: {
 /**
  * Fonction utilitaire pour choisir automatiquement la meilleure stratégie d'appels API
  */
+// === BULK OPTIMIZATION ===
+
+export interface BulkJobResponse {
+  job_id: string;
+}
+
+export interface BulkJobProgress {
+  job_id: string;
+  status: 'discovering' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  phase: 'discovery' | 'processing' | 'aggregation' | 'completed';
+  domain_url: string;
+  discovery: { urls_found: number; sitemap_urls: number; crawled_urls: number };
+  processing: { total: number; completed: number; failed: number };
+  pages: BulkPageResult[];
+  languages: string[] | null;
+  avg_score: number | null;
+  site_llms_txt: string | null;
+  site_robots_txt: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  elapsed_seconds: number;
+}
+
+export interface BulkPageResult {
+  url: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  score: number | null;
+  language: string | null;
+  page_type: string | null;
+  schemas_added: string[] | null;
+  processing_time_ms: number | null;
+  error_message: string | null;
+}
+
+export interface BulkJobSummary {
+  job_id: string;
+  status: 'discovering' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  phase: 'discovery' | 'processing' | 'aggregation' | 'completed';
+  domain_url: string;
+  pages_total: number;
+  pages_completed: number;
+  pages_failed: number;
+  avg_score: number | null;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+/**
+ * Lance un job d'optimisation bulk sur un domaine entier
+ */
+export async function startBulkOptimization(params: {
+  domain_url: string;
+  llmo_report_id: number;
+  max_pages?: number;
+  concurrency?: number;
+  crawler?: string;
+}): Promise<BulkJobResponse | null> {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/crawl-optimize/bulk/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        domain_url: params.domain_url,
+        llmo_report_id: params.llmo_report_id,
+        max_pages: params.max_pages ?? 500,
+        concurrency: params.concurrency ?? 3,
+        crawler: params.crawler ?? 'gptbot',
+      }),
+    });
+    if (!response.ok) {
+      const message = await getAnalysisErrorMessage(response, `Erreur HTTP: ${response.status}`);
+      throw new Error(message);
+    }
+    return await response.json();
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    return null;
+  }
+}
+
+/**
+ * Récupère la progression d'un job bulk
+ */
+export async function getBulkProgress(jobId: string): Promise<BulkJobProgress | null> {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/crawl-optimize/bulk/${jobId}/progress`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Liste les jobs bulk de l'utilisateur
+ */
+export async function listBulkJobs(): Promise<BulkJobSummary[]> {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/crawl-optimize/bulk/jobs`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+    if (!response.ok) return [];
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Récupère les pages d'un job bulk (endpoint paginé dédié)
+ */
+export interface BulkPagesResponse {
+  pages: BulkPageResult[];
+  pagination: {
+    page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+export async function getBulkPages(jobId: string, params?: {
+  page?: number;
+  per_page?: number;
+  language?: string;
+  status?: string;
+  sort?: string;
+}): Promise<BulkPagesResponse | null> {
+  try {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.per_page) query.set('per_page', String(params.per_page));
+    if (params?.language) query.set('language', params.language);
+    if (params?.status) query.set('status', params.status);
+    if (params?.sort) query.set('sort', params.sort);
+    const qs = query.toString();
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/crawl-optimize/bulk/${jobId}/pages${qs ? `?${qs}` : ''}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    console.log('[getBulkPages] response:', data);
+    // Support both { pages: [...] } and direct array
+    if (Array.isArray(data)) {
+      return { pages: data, pagination: { page: 1, per_page: data.length, total: data.length, total_pages: 1 } };
+    }
+    if (data?.pages) return data;
+    // Maybe { results: [...] } or other key
+    const possibleKeys = Object.keys(data);
+    for (const key of possibleKeys) {
+      if (Array.isArray(data[key])) {
+        return { pages: data[key], pagination: { page: 1, per_page: data[key].length, total: data[key].length, total_pages: 1 } };
+      }
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Récupère les résultats agrégés d'un job bulk
+ */
+export interface BulkResultsResponse {
+  summary: {
+    total_pages: number;
+    completed: number;
+    failed: number;
+    avg_score: number | null;
+    languages: string[] | null;
+  };
+  score_distribution: {
+    excellent: number;
+    good: number;
+    needs_work: number;
+    poor: number;
+  };
+  page_types: Record<string, number>;
+  site_llms_txt: string | null;
+  site_robots_txt: string | null;
+}
+
+export async function getBulkResults(jobId: string): Promise<BulkResultsResponse | null> {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/crawl-optimize/bulk/${jobId}/results`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Annule un job bulk
+ */
+export async function cancelBulkJob(jobId: string): Promise<boolean> {
+  try {
+    const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/crawl-optimize/bulk/${jobId}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function startOptimizedAnalysis(
   url: string, 
   options: {
