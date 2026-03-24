@@ -91,14 +91,14 @@ const RecommendationsPanel = ({ data }: RecommendationsPanelProps) => {
         <CardContent className="space-y-6">
           {priorityRecommendations.map((rec, index) => (
             <div key={index} className="border border-gray-200 rounded-lg p-6 hover:shadow-sm transition-shadow">
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     {getPriorityIcon(rec.priority)}
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">{rec.title}</h3>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">{rec.title}</h3>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {getPriorityBadge(rec.priority)}
                   <Badge variant="outline" className="text-gray-600">{rec.category}</Badge>
                 </div>

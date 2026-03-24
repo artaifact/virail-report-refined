@@ -115,7 +115,7 @@ function InvoiceDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="w-[95vw] max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5" />
@@ -128,14 +128,14 @@ function InvoiceDetailModal({
 
         <div className="space-y-4">
           {/* Statut et montants */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between flex-wrap gap-3 p-4 bg-gray-50 rounded-lg">
             <div>
               <p className="text-sm text-gray-500">Statut</p>
               <InvoiceStatusBadge status={invoice.status} />
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-500">Total</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">
                 {formatCurrency(invoice.total, invoice.currency)}
               </p>
             </div>
@@ -188,7 +188,7 @@ function InvoiceDetailModal({
           )}
 
           {/* Actions */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-col sm:flex-row gap-2 pt-2">
             {invoice.pdf_url && (
               <Button
                 variant="outline"
@@ -221,7 +221,7 @@ function DashboardSkeleton() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="bg-white border border-gray-200 rounded-lg p-6">
+        <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 md:p-6">
           <Skeleton className="h-6 w-40 mb-4" />
           <Skeleton className="h-4 w-full mb-2" />
           <Skeleton className="h-4 w-3/4 mb-2" />
@@ -376,7 +376,7 @@ const Settings = () => {
   if (isDashboardLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="max-w-6xl mx-auto px-4 py-6 md:px-6 md:py-8">
           <DashboardSkeleton />
         </div>
       </div>
@@ -385,9 +385,9 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Paramètres du compte</h1>
+      <div className="max-w-6xl mx-auto px-4 py-6 md:px-6 md:py-8">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Paramètres du compte</h1>
           <p className="text-gray-600 mt-1">
             Gérez votre abonnement, vos informations de facturation et vos préférences.
           </p>
@@ -395,12 +395,12 @@ const Settings = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Informations personnelles */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Informations personnelles</h2>
 
             <div className="mb-6">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                <span className="text-3xl font-semibold text-white">{getInitial()}</span>
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                <span className="text-2xl sm:text-3xl font-semibold text-white">{getInitial()}</span>
               </div>
             </div>
 
@@ -450,7 +450,7 @@ const Settings = () => {
           </div>
 
           {/* Abonnement */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Mon Abonnement</h2>
               {dashboard?.subscription && (
@@ -496,7 +496,7 @@ const Settings = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-4 border-t border-gray-100">
+                <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-100">
                   <Button onClick={handleOpenBillingPortal} variant="outline" size="sm" disabled={billingPortal.isPending}>
                     {billingPortal.isPending ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -526,7 +526,7 @@ const Settings = () => {
           </div>
 
           {/* Utilisation */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Utilisation du mois</h2>
               <TrendingUp className="h-5 w-5 text-gray-400" />
@@ -566,7 +566,7 @@ const Settings = () => {
           </div>
 
           {/* Moyen de paiement */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Moyen de paiement</h2>
               <CreditCard className="h-5 w-5 text-gray-400" />
@@ -600,7 +600,7 @@ const Settings = () => {
                 {/* Prochaine facture */}
                 {upcomingInvoice && (
                   <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                    <div className="flex items-center flex-wrap gap-2 text-sm text-blue-700">
                       <Calendar className="h-4 w-4" />
                       <span>Prochaine facture :</span>
                       <span className="font-semibold">
@@ -652,7 +652,7 @@ const Settings = () => {
           </div>
 
           {/* Informations du compte */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm lg:col-span-2">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm lg:col-span-2">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Informations du compte</h2>
 
             {isAccountDataLoading ? (
@@ -757,7 +757,7 @@ const Settings = () => {
           </div>
 
           {/* Sessions actives */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm lg:col-span-2">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm lg:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <Shield className="h-5 w-5 text-gray-400" />
               <h2 className="text-lg font-semibold text-gray-900">Sécurité & Sessions</h2>
@@ -769,8 +769,8 @@ const Settings = () => {
           </div>
 
           {/* Factures Stripe */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm lg:col-span-2">
+            <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Mes Factures</h2>
               <div className="flex items-center gap-2">
                 <Button
@@ -798,7 +798,7 @@ const Settings = () => {
             ) : invoicesData?.invoices && invoicesData.invoices.length > 0 ? (
               <>
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-[600px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>N° Facture</TableHead>
@@ -820,7 +820,7 @@ const Settings = () => {
                             <InvoiceStatusBadge status={invoice.status} />
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -881,20 +881,20 @@ const Settings = () => {
 
           {/* Stats globales */}
           {dashboard?.total_spent !== undefined && dashboard.total_spent > 0 && (
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 shadow-sm lg:col-span-2 text-white">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-4 md:p-6 shadow-sm lg:col-span-2 text-white">
               <h2 className="text-lg font-semibold mb-4">Récapitulatif</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div>
                   <p className="text-blue-200 text-sm">Total dépensé</p>
-                  <p className="text-2xl font-bold">{formatCurrency(dashboard.total_spent)}</p>
+                  <p className="text-lg sm:text-2xl font-bold">{formatCurrency(dashboard.total_spent)}</p>
                 </div>
                 <div>
                   <p className="text-blue-200 text-sm">Factures</p>
-                  <p className="text-2xl font-bold">{invoicesData?.invoices?.length || 0}</p>
+                  <p className="text-lg sm:text-2xl font-bold">{invoicesData?.invoices?.length || 0}</p>
                 </div>
                 <div>
                   <p className="text-blue-200 text-sm">Membre depuis</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-lg sm:text-2xl font-bold">
                     {dashboard.member_since
                       ? new Date(dashboard.member_since).toLocaleDateString("fr-FR", {
                           month: "short",
@@ -905,7 +905,7 @@ const Settings = () => {
                 </div>
                 <div>
                   <p className="text-blue-200 text-sm">Statut</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-lg sm:text-2xl font-bold">
                     {dashboard.has_subscription ? "Premium" : "Gratuit"}
                   </p>
                 </div>

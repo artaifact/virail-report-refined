@@ -136,20 +136,20 @@ const TextualOptimization: React.FC = () => {
     <div className="flex-1 min-h-screen bg-background">
       <div className="max-w-6xl mx-auto">
         {/* Hero Header Section */}
-        <div className="relative overflow-hidden bg-card px-8 py-12 border-b border-border">
+        <div className="relative overflow-hidden bg-card px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 border-b border-border">
         {/* Background decorative elements */}
         <div className="absolute inset-0 bg-muted/50"></div>
         
         <div className="relative z-10">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <div className="max-w-3xl">
-              <h1 className="text-4xl font-bold text-foreground mb-3">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3">
                 Optimisation Textuelle
               </h1>
-              <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 leading-relaxed">
                 Optimisez votre contenu avec l'intelligence artificielle et des stratégies d'enrichissement avancées.
               </p>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                 <Button 
                   onClick={() => setShowCreateForm(true)}
                   className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-semibold px-6 py-3 h-auto"
@@ -184,9 +184,9 @@ const TextualOptimization: React.FC = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="px-8 py-6">
+      <div className="px-4 py-4 sm:px-6 md:px-8 md:py-6">
         <div className="flex items-center justify-center">
-          <div className="bg-card rounded-xl p-2 shadow-lg border border-transparent inline-block relative">
+          <div className="bg-card rounded-xl p-1.5 sm:p-2 shadow-lg border border-transparent inline-block relative">
             {/* Indicateur animé qui se déplace */}
             <div
               className="absolute top-2 bottom-2 bg-primary rounded-lg transition-all duration-300 ease-in-out"
@@ -203,21 +203,21 @@ const TextualOptimization: React.FC = () => {
             <div className="relative flex items-center justify-center space-x-0 z-10">
               <button
                 onClick={() => setActiveTab('Résumé')}
-                className="px-6 py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
+                className="px-3 py-2 sm:px-6 sm:py-3 text-sm sm:text-base transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
                 style={{ color: activeTab === 'Résumé' ? 'white' : 'var(--muted-foreground)' }}
               >
                 Résumé
               </button>
               <button
                 onClick={() => setActiveTab('Modifications')}
-                className="px-6 py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
+                className="px-3 py-2 sm:px-6 sm:py-3 text-sm sm:text-base transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
                 style={{ color: activeTab === 'Modifications' ? 'white' : 'var(--muted-foreground)' }}
               >
                 Modifications
               </button>
               <button
                 onClick={() => setActiveTab('Analyse')}
-                className="px-6 py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
+                className="px-3 py-2 sm:px-6 sm:py-3 text-sm sm:text-base transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
                 style={{ color: activeTab === 'Analyse' ? 'white' : 'var(--muted-foreground)' }}
               >
                 Analyse
@@ -262,9 +262,9 @@ const TextualOptimization: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent className="p-6 text-foreground">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold">{currentOptimization.input_parameters.original_text_words}</div>
+                        <div className="text-xl sm:text-2xl font-bold">{currentOptimization.input_parameters.original_text_words}</div>
                         <div className="text-sm text-muted-foreground">Mots originaux</div>
                       </div>
                       <div className="text-center">
@@ -313,7 +313,7 @@ const TextualOptimization: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       {Object.entries(currentOptimization.analysis_details.checklist).map(([key, value]) => (
                         <div key={key} className="flex items-center gap-2">
                           {value ? (
@@ -417,7 +417,7 @@ const TextualOptimization: React.FC = () => {
                       <div className="grid gap-4">
                         {currentOptimization.analysis_details.semantic_analysis.map((analysis, index) => (
                           <div key={index} className="border border-border rounded-lg p-4">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                               <div>
                                 <span className="text-sm font-medium text-muted-foreground">Avant</span>
                                 <p className="text-foreground">{analysis.Avant}</p>
@@ -490,7 +490,7 @@ const TextualOptimization: React.FC = () => {
                       
       {/* Dialog pour créer une nouvelle optimisation */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               Nouvelle Optimisation Textuelle

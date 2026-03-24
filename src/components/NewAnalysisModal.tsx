@@ -84,7 +84,7 @@ export function NewAnalysisModal({ open, onOpenChange }: NewAnalysisModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl rounded-2xl">
+      <DialogContent className="w-[95vw] sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl rounded-2xl">
         <div className="bg-white px-6 py-8 border-b border-slate-100">
           <div className="flex items-center gap-3 mb-2">
             <DialogTitle className="text-2xl font-bold text-slate-900">Nouvelle Analyse</DialogTitle>

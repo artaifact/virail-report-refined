@@ -155,7 +155,7 @@ const LLMODashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-background p-3 sm:p-6">
       <div className="max-w-6xl mx-auto">
         {(() => {
           // Helpers pour rechercher dynamiquement le guide d'implémentation dans la structure réelle
@@ -378,8 +378,8 @@ const LLMODashboard = () => {
           return null;
         })()}
         {/* En-tête */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-3 sm:mb-4">
           Analyse GEO
           </h1>
 
@@ -437,16 +437,16 @@ const LLMODashboard = () => {
           </div>
 
           {/* Sous-titre */}
-          <p className="text-lg text-muted-foreground text-center">
+          <p className="text-sm sm:text-lg text-muted-foreground text-center">
             Compréhension instantanée · Présentation actionnable · Focus sur l'impact
           </p>
         </div>
 
         {/* Cartes d'indicateurs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Carte Score Global (progress circulaire) */}
           <Card className="bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">SCORE GEO GLOBAL</span>
                 <span className="text-xs text-muted-foreground">en direct</span>
@@ -482,7 +482,7 @@ const LLMODashboard = () => {
 
           {/* Carte Top Gap (barre) */}
           <Card className="bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">TOP GAP</span>
                 <Target className="w-4 h-4 text-muted-foreground" />
@@ -507,7 +507,7 @@ const LLMODashboard = () => {
 
           {/* Carte Gain Rapide */}
           <Card className="bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">GAIN RAPIDE</span>
                 <TrendingUp className="w-4 h-4 text-primary" />
@@ -523,7 +523,7 @@ const LLMODashboard = () => {
 
           {/* Carte Action Immédiate */}
           <Card className="bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">ACTION IMMÉDIATE</span>
                 <Zap className="w-4 h-4 text-primary" />
@@ -537,10 +537,10 @@ const LLMODashboard = () => {
 
         {/* Menu de navigation */}
         <div className="mt-8 flex justify-center">
-          <div className="bg-card rounded-xl p-2 shadow-lg border border-transparent inline-block relative">
+          <div className="bg-card rounded-xl p-2 shadow-lg border border-transparent inline-block relative overflow-x-auto max-w-full">
             {/* Indicateur animé qui se déplace */}
             <div
-              className="absolute top-2 bottom-2 bg-primary rounded-lg transition-all duration-300 ease-in-out"
+              className="absolute top-2 bottom-2 bg-primary rounded-lg transition-all duration-300 ease-in-out hidden sm:block"
               style={{
                 width: 'calc(25% - 0.25rem)',
                 left: '0.5rem',
@@ -552,32 +552,32 @@ const LLMODashboard = () => {
               }}
             ></div>
 
-            <div className="relative flex items-center justify-center space-x-0 z-10">
+            <div className="relative flex items-center justify-center space-x-0 z-10 flex-nowrap">
               <button
                 onClick={() => setActiveTab('Résumé')}
-                className="px-6 py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
-                style={{ color: activeTab === 'Résumé' ? 'white' : '#6b7280' }}
+                className="px-3 sm:px-6 py-2 sm:py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20 text-sm sm:text-base whitespace-nowrap"
+                style={{ color: activeTab === 'Résumé' ? 'white' : '#6b7280', backgroundColor: activeTab === 'Résumé' ? 'hsl(var(--primary))' : 'transparent' }}
               >
                 Résumé
               </button>
               <button
                 onClick={() => setActiveTab('Preuves')}
-                className="px-6 py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
-                style={{ color: activeTab === 'Preuves' ? 'white' : '#6b7280' }}
+                className="px-3 sm:px-6 py-2 sm:py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20 text-sm sm:text-base whitespace-nowrap"
+                style={{ color: activeTab === 'Preuves' ? 'white' : '#6b7280', backgroundColor: activeTab === 'Preuves' ? 'hsl(var(--primary))' : 'transparent' }}
               >
                 Preuves
               </button>
               <button
                 onClick={() => setActiveTab('Détails')}
-                className="px-6 py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
-                style={{ color: activeTab === 'Détails' ? 'white' : '#6b7280' }}
+                className="px-3 sm:px-6 py-2 sm:py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20 text-sm sm:text-base whitespace-nowrap"
+                style={{ color: activeTab === 'Détails' ? 'white' : '#6b7280', backgroundColor: activeTab === 'Détails' ? 'hsl(var(--primary))' : 'transparent' }}
               >
                 Détails
               </button>
               <button
                 onClick={() => setActiveTab('Action')}
-                className="px-6 py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
-                style={{ color: activeTab === 'Action' ? 'white' : '#6b7280' }}
+                className="px-3 sm:px-6 py-2 sm:py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20 text-sm sm:text-base whitespace-nowrap"
+                style={{ color: activeTab === 'Action' ? 'white' : '#6b7280', backgroundColor: activeTab === 'Action' ? 'hsl(var(--primary))' : 'transparent' }}
               >
                 Action
               </button>
@@ -587,7 +587,7 @@ const LLMODashboard = () => {
 
         {/* Contenu conditionnel selon l'onglet actif */}
         {activeTab === 'Résumé' && (
-          <div className="mt-8 space-y-6">
+          <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
             <Card className="bg-card border border-border shadow-lg">
               <CardHeader>
                 <CardTitle className="text-foreground text-center text-xl">
@@ -595,17 +595,17 @@ const LLMODashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+                <div className="overflow-x-auto -mx-2 sm:mx-0">
+                  <table className="w-full min-w-[640px]">
                     <thead>
                       <tr className="border-b border-border">
-                        <th className="text-left py-3 px-4 font-medium text-foreground">#</th>
-                        <th className="text-left py-3 px-4 font-medium text-foreground">Priorité</th>
-                        <th className="text-left py-3 px-4 font-medium text-foreground">Impact</th>
-                        <th className="text-left py-3 px-4 font-medium text-foreground">Effort</th>
-                        <th className="text-left py-3 px-4 font-medium text-foreground">Pourquoi</th>
-                        <th className="text-left py-3 px-4 font-medium text-foreground">Prochaine action</th>
-                        <th className="text-left py-3 px-4 font-medium text-foreground">Statut</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">#</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Priorité</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Impact</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Effort</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Pourquoi</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Prochaine action</th>
+                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Statut</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -713,9 +713,9 @@ const LLMODashboard = () => {
 
                           return (
                             <tr key={priority.id} className={index < priorities.length - 1 ? "border-b border-border" : ""}>
-                              <td className="py-3 px-4 font-medium text-foreground">{priority.id}</td>
-                              <td className="py-3 px-4 font-medium text-foreground">{priority.name}</td>
-                              <td className="py-3 px-4">
+                              <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">{priority.id}</td>
+                              <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">{priority.name}</td>
+                              <td className="py-2 sm:py-3 px-2 sm:px-4">
                                 {(() => {
                                   const level = impact >= 4 ? 'Haut' : impact >= 3 ? 'Moyen' : 'Faible';
                                   // Palette 100% verte (intensité croissante)
@@ -731,7 +731,7 @@ const LLMODashboard = () => {
                                   );
                                 })()}
                               </td>
-                              <td className="py-3 px-4">
+                              <td className="py-2 sm:py-3 px-2 sm:px-4">
                                 {(() => {
                                   const e = Math.min(Math.max(effort, 1), 5);
                                   return (
@@ -746,9 +746,9 @@ const LLMODashboard = () => {
                                   );
                                 })()}
                               </td>
-                              <td className="py-3 px-4 text-muted-foreground">{priority.why}</td>
-                              <td className="py-3 px-4 text-muted-foreground">{priority.action}</td>
-                              <td className="py-3 px-4">
+                              <td className="py-2 sm:py-3 px-2 sm:px-4 text-muted-foreground text-xs sm:text-sm">{priority.why}</td>
+                              <td className="py-2 sm:py-3 px-2 sm:px-4 text-muted-foreground text-xs sm:text-sm">{priority.action}</td>
+                              <td className="py-2 sm:py-3 px-2 sm:px-4">
                                 <Badge
                                   className={`${status.color} text-white font-medium px-3 py-1 rounded-full transition-all duration-200 shadow-sm hover:shadow-md cursor-default`}
                                   title={status.description}
@@ -766,7 +766,7 @@ const LLMODashboard = () => {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Graphique Radar - Performance par Métriques */}
               <Card className="bg-card border border-border shadow-lg">
                 <CardHeader>
@@ -778,7 +778,7 @@ const LLMODashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-80 w-full relative overflow-hidden bg-card rounded-2xl border border-border p-4 shadow-lg">
+                  <div className="h-56 sm:h-80 w-full relative overflow-hidden bg-card rounded-2xl border border-border p-2 sm:p-4 shadow-lg">
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart
                         data={(() => {
@@ -879,7 +879,7 @@ const LLMODashboard = () => {
                   </div>
 
                   {/* Légende */}
-                  <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-1">
+                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
                     {/* Colonne gauche */}
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -917,7 +917,7 @@ const LLMODashboard = () => {
 
               {/* Checklist exécutable */}
               <Card className="bg-card border border-border shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0 pb-2">
                   <CardTitle className="text-foreground text-xl">
                     Checklist exécutable
                   </CardTitle>
@@ -931,7 +931,7 @@ const LLMODashboard = () => {
                     </div>
                   </div>
                   {checklistItems.map((item) => (
-                    <div key={item.id} className="flex items-center p-4 bg-card rounded-lg border border-border hover:border-neutral-300 transition-colors">
+                    <div key={item.id} className="flex items-center p-3 sm:p-4 bg-card rounded-lg border border-border hover:border-neutral-300 transition-colors">
                       <Checkbox
                         checked={item.completed}
                         onCheckedChange={() => toggleChecklistItem(item.id)}
@@ -956,17 +956,17 @@ const LLMODashboard = () => {
 
         {/* Section Preuves */}
         {activeTab === 'Preuves' && (
-          <div className="mt-8">
+          <div className="mt-6 sm:mt-8">
             <Card className="bg-card border border-border shadow-lg">
               <CardHeader>
-                <CardTitle className="text-2xl font-normal text-foreground">Cartes métriques détaillées</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl font-normal text-foreground">Cartes métriques détaillées</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
 
                   {/* Carte Schema.org */}
                   {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-5') && (
-                    <div className="bg-card border border-border rounded-lg p-4">
+                    <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-foreground text-lg font-medium">Schema.org</h3>
                         <span className="text-sm font-bold text-blue-600">
@@ -1003,7 +1003,7 @@ const LLMODashboard = () => {
 
                   {/* Carte HTML sémantique */}
                   {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-5') && (
-                    <div className="bg-card border border-border rounded-lg p-4">
+                    <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-foreground text-lg font-medium">HTML sémantique</h3>
                         <span className="text-sm font-bold text-blue-600">
@@ -1040,7 +1040,7 @@ const LLMODashboard = () => {
 
                   {/* Carte Métadonnées */}
                   {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-5') && (
-                    <div className="bg-card border border-border rounded-lg p-4">
+                    <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-foreground text-lg font-medium">Métadonnées</h3>
                         <span className="text-sm font-bold text-blue-600">
@@ -1077,7 +1077,7 @@ const LLMODashboard = () => {
 
                   {/* Carte Contenu */}
                   {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-5') && (
-                    <div className="bg-card border border-border rounded-lg p-4">
+                    <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-foreground text-lg font-medium">Contenu</h3>
                         <span className="text-sm font-bold text-blue-600">
@@ -1137,7 +1137,7 @@ const LLMODashboard = () => {
 
         {/* Section Détails */}
         {activeTab === 'Détails' && (
-          <div className="mt-8 space-y-6">
+          <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
 
             {/* Carte Détails des priorités */}
             <Card className="bg-card border border-border shadow-lg">
@@ -1179,11 +1179,11 @@ const LLMODashboard = () => {
                     </div>
                   </div>
                   {expandedItems.schema && (
-                    <div className="px-4 py-4 bg-background border-b border-border">
+                    <div className="px-2 sm:px-4 py-3 sm:py-4 bg-background border-b border-border">
                       <div className="space-y-4">
                         <div>
                           <h4 className="font-semibold text-foreground mb-2">Responsable & Planning</h4>
-                          <div className="flex items-center gap-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                             <span className="text-sm text-muted-foreground"><strong>Owner:</strong> SEO</span>
                             <span className="text-sm text-muted-foreground"><strong>ETA:</strong> 0,5 j</span>
                             <span className="text-sm text-muted-foreground"><strong>Score actuel:</strong> {(() => {
@@ -1252,7 +1252,7 @@ const LLMODashboard = () => {
                                     Télécharger (schema_org.json)
                                   </Button>
                                 </div>
-                                <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-muted rounded-md p-3 overflow-auto">
+                                <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-muted rounded-md p-2 sm:p-3 overflow-auto max-w-full">
                                   {display}
                                 </pre>
                               </div>
@@ -1298,11 +1298,11 @@ const LLMODashboard = () => {
                     </div>
                   </div>
                   {expandedItems.balises && (
-                    <div className="px-4 py-4 bg-background border-b border-border">
+                    <div className="px-2 sm:px-4 py-3 sm:py-4 bg-background border-b border-border">
                       <div className="space-y-4">
                         <div>
                           <h4 className="font-semibold text-foreground mb-2">Responsable & Planning</h4>
-                          <div className="flex items-center gap-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                             <span className="text-sm text-muted-foreground"><strong>Owner:</strong> Dev</span>
                             <span className="text-sm text-muted-foreground"><strong>ETA:</strong> 1 j</span>
                             <span className="text-sm text-muted-foreground"><strong>Score actuel:</strong> {(() => {
@@ -1367,7 +1367,7 @@ const LLMODashboard = () => {
                                     Télécharger (meta_tags_snippet.txt)
                                   </Button>
                                 </div>
-                                <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-muted rounded-md p-3 overflow-auto">
+                                <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-muted rounded-md p-2 sm:p-3 overflow-auto max-w-full">
                                   {display || '— Aucun meta_tags_snippet trouvé dans les données.'}
                                 </pre>
                               </div>
@@ -1411,7 +1411,7 @@ const LLMODashboard = () => {
                                     Télécharger (open_graph_tags.txt)
                                   </Button>
                                 </div>
-                                <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-muted rounded-md p-3 overflow-auto">
+                                <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-muted rounded-md p-2 sm:p-3 overflow-auto max-w-full">
                                   {display || '— Aucun open_graph_tags trouvé dans les données.'}
                                 </pre>
                               </div>
@@ -1457,11 +1457,11 @@ const LLMODashboard = () => {
                     </div>
                   </div>
                   {expandedItems.fraicheur && (
-                    <div className="px-4 py-4 bg-background">
+                    <div className="px-2 sm:px-4 py-3 sm:py-4 bg-background">
                       <div className="space-y-4">
                         <div>
                           <h4 className="font-semibold text-foreground mb-2">Responsable & Planning</h4>
-                          <div className="flex items-center gap-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                             <span className="text-sm text-muted-foreground"><strong>Owner:</strong> Content</span>
                             <span className="text-sm text-muted-foreground"><strong>ETA:</strong> Continu</span>
                             <span className="text-sm text-muted-foreground"><strong>Score actuel:</strong> {(() => {
@@ -1529,7 +1529,7 @@ const LLMODashboard = () => {
                                     Télécharger (llms.txt)
                                   </Button>
                                 </div>
-                                <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-muted rounded-md p-3 overflow-auto">
+                                <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-muted rounded-md p-2 sm:p-3 overflow-auto max-w-full">
                                   {display || '— Aucun llms_txt_content trouvé dans les données.'}
                                 </pre>
                               </div>
@@ -1554,7 +1554,7 @@ const LLMODashboard = () => {
 
                   {/* Section GPT */}
                   {report && report.analyses && report.analyses.find(a => a.llm_name === 'gpt-5') && (
-                    <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                    <div className="bg-muted/50 p-3 sm:p-4 rounded-lg space-y-3">
                       <div className="flex items-center gap-3">
                         <img
                           src="/prompt-model-openai-for-light.svg"
@@ -1577,7 +1577,7 @@ const LLMODashboard = () => {
 
                   {/* Section Claude */}
                   {report && report.analyses && report.analyses.find(a => a.llm_name === 'claude-4-sonnet') && (
-                    <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                    <div className="bg-muted/50 p-3 sm:p-4 rounded-lg space-y-3">
                       <div className="flex items-center gap-3">
                         <img
                           src="/prompt-model-claude.svg"
@@ -1600,7 +1600,7 @@ const LLMODashboard = () => {
 
                   {/* Section Gemini */}
                   {report && report.analyses && report.analyses.find(a => a.llm_name === 'gemini-2.5-pro') && (
-                    <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                    <div className="bg-muted/50 p-3 sm:p-4 rounded-lg space-y-3">
                       <div className="flex items-center gap-3">
                         <img
                           src="/prompt-model-gemini.svg"
@@ -1623,7 +1623,7 @@ const LLMODashboard = () => {
 
                   {/* Section Mixtral */}
                   {report && report.analyses && report.analyses.find(a => a.llm_name === 'mixtral-8x7b') && (
-                    <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                    <div className="bg-muted/50 p-3 sm:p-4 rounded-lg space-y-3">
                       <div className="flex items-center gap-3">
                         <img
                           src="/Mistral.png"
@@ -1646,7 +1646,7 @@ const LLMODashboard = () => {
 
                   {/* Section Sonar */}
                   {report && report.analyses && report.analyses.find(a => a.llm_name === 'sonar') && (
-                    <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                    <div className="bg-muted/50 p-3 sm:p-4 rounded-lg space-y-3">
                       <div className="flex items-center gap-3">
                         <img
                           src="/prompt-model-perplexity.svg"
@@ -1676,11 +1676,11 @@ const LLMODashboard = () => {
 
         {/* Section Action */}
         {activeTab === 'Action' && (
-          <div className="mt-8 space-y-6">
+          <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
 
             {/* Checklist exécutable - en premier */}
             <Card className="bg-card border border-border shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0 pb-2">
                 <CardTitle className="text-foreground text-xl">
                   Checklist exécutable
                 </CardTitle>
@@ -1694,7 +1694,7 @@ const LLMODashboard = () => {
                   </div>
                 </div>
                 {checklistItems.map((item) => (
-                  <div key={item.id} className="flex items-center p-4 bg-card rounded-lg border border-border hover:border-neutral-300 transition-colors">
+                  <div key={item.id} className="flex items-center p-3 sm:p-4 bg-card rounded-lg border border-border hover:border-neutral-300 transition-colors">
                     <Checkbox
                       checked={item.completed}
                       onCheckedChange={() => toggleChecklistItem(item.id)}
@@ -2053,7 +2053,7 @@ const LLMODashboard = () => {
 
                   // Fallback: rendu textuel formaté
                   return (
-                    <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-muted rounded-md p-3 overflow-auto">
+                    <pre className="text-sm text-foreground whitespace-pre-wrap leading-relaxed bg-muted rounded-md p-2 sm:p-3 overflow-auto max-w-full">
                       {renderGuide(guide)}
                     </pre>
                   );
@@ -2062,7 +2062,7 @@ const LLMODashboard = () => {
             </Card>
 
             {/* Planning de déploiement et Métriques de suivi (tout en bas) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Planning de déploiement (remplacé par informations générales d'impact) */}
               <Card className="bg-card border border-border shadow-lg">
                 <CardHeader>
@@ -2090,26 +2090,26 @@ const LLMODashboard = () => {
                     const maintenance = perf?.maintenance_requise || '—';
                     return (
                       <>
-                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-blue-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg border border-blue-200">
                           <div>
-                            <h4 className="font-semibold text-foreground">Temps d'implémentation</h4>
-                            <p className="text-sm text-muted-foreground">Durée estimée pour appliquer le package</p>
+                            <h4 className="font-semibold text-foreground text-sm sm:text-base">Temps d'implémentation</h4>
+                            <p className="text-xs sm:text-sm text-muted-foreground">Durée estimée pour appliquer le package</p>
                           </div>
-                          <Badge variant="secondary" className="bg-muted text-muted-foreground">{temps}</Badge>
+                          <Badge variant="secondary" className="bg-muted text-muted-foreground shrink-0">{temps}</Badge>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-purple-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg border border-purple-200">
                           <div>
-                            <h4 className="font-semibold text-foreground">Retour sur investissement</h4>
-                            <p className="text-sm text-muted-foreground">Délai pour percevoir les bénéfices</p>
+                            <h4 className="font-semibold text-foreground text-sm sm:text-base">Retour sur investissement</h4>
+                            <p className="text-xs sm:text-sm text-muted-foreground">Délai pour percevoir les bénéfices</p>
                           </div>
-                          <Badge variant="secondary" className="bg-muted text-muted-foreground">{roi}</Badge>
+                          <Badge variant="secondary" className="bg-muted text-muted-foreground shrink-0">{roi}</Badge>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-green-200">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-muted/50 rounded-lg border border-green-200">
                           <div>
-                            <h4 className="font-semibold text-foreground">Maintenance requise</h4>
-                            <p className="text-sm text-muted-foreground">Effort de maintien recommandé</p>
+                            <h4 className="font-semibold text-foreground text-sm sm:text-base">Maintenance requise</h4>
+                            <p className="text-xs sm:text-sm text-muted-foreground">Effort de maintien recommandé</p>
                           </div>
-                          <Badge variant="secondary" className="bg-muted text-muted-foreground">{maintenance}</Badge>
+                          <Badge variant="secondary" className="bg-muted text-muted-foreground shrink-0">{maintenance}</Badge>
                         </div>
                       </>
                     );
@@ -2146,12 +2146,12 @@ const LLMODashboard = () => {
                     return (
                       <div className="space-y-3">
                         {rows.map((row, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 bg-background rounded-lg border border-border">
+                          <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-background rounded-lg border border-border">
                             <div>
-                              <h4 className="font-semibold text-foreground">{row.label}</h4>
-                              <p className="text-sm text-muted-foreground">{row.data?.description || '—'}</p>
+                              <h4 className="font-semibold text-foreground text-sm sm:text-base">{row.label}</h4>
+                              <p className="text-xs sm:text-sm text-muted-foreground">{row.data?.description || '—'}</p>
                             </div>
-                            <Badge variant="secondary" className="bg-muted text-foreground">
+                            <Badge variant="secondary" className="bg-muted text-foreground shrink-0">
                               {row.data?.amelioration_estimee || '—'}
                             </Badge>
                           </div>

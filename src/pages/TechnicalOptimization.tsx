@@ -17,11 +17,11 @@ import {
 const TechnicalOptimization: React.FC = () => {
   usePageTitle('Optimisation technique');
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-4 md:p-6 space-y-6">
       {/* En-tête */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <Code className="h-8 w-8 text-blue-600" />
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <Code className="h-7 w-7 sm:h-8 sm:w-8 text-blue-600" />
           Optimisation Technique
         </h1>
         <p className="text-gray-600 mt-2">
@@ -86,36 +86,36 @@ const TechnicalOptimization: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
-              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+            <div className="flex flex-col sm:flex-row items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
+              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <h4 className="font-medium text-red-900">Optimisation des images</h4>
                 <p className="text-sm text-red-700 mt-1">
                   Les images représentent 60% du poids de la page. Compresser et convertir en WebP peut réduire le temps de chargement de 40%.
                 </p>
-                <div className="flex gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-2">
                   <Badge variant="destructive" className="text-xs">Priorité Haute</Badge>
                   <Badge variant="outline" className="text-xs">Impact: -40% temps de chargement</Badge>
                 </div>
               </div>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" className="self-start sm:self-auto">
                 Corriger
               </Button>
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-              <Database className="h-5 w-5 text-orange-600 mt-0.5" />
+            <div className="flex flex-col sm:flex-row items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+              <Database className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <h4 className="font-medium text-orange-900">Cache navigateur</h4>
                 <p className="text-sm text-orange-700 mt-1">
                   Configurer des en-têtes de cache appropriés pour les ressources statiques peut améliorer les visites répétées.
                 </p>
-                <div className="flex gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-2">
                   <Badge variant="secondary" className="text-xs">Priorité Moyenne</Badge>
                   <Badge variant="outline" className="text-xs">Impact: +25% vitesse retour</Badge>
                 </div>
               </div>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" className="self-start sm:self-auto">
                 Configurer
               </Button>
             </div>

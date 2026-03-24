@@ -49,9 +49,9 @@ export default function GoogleCallback() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
       {/* Cercles décoratifs animés */}
-      <div className="absolute top-1/4 -left-20 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-indigo-200/30 rounded-full blur-3xl animate-pulse delay-700" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-blue-100/20 to-indigo-100/20 rounded-full blur-3xl" />
+      <div className="absolute top-1/4 -left-20 w-40 h-40 md:w-72 md:h-72 bg-blue-200/30 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-1/4 -right-20 w-52 h-52 md:w-96 md:h-96 bg-indigo-200/30 rounded-full blur-3xl animate-pulse delay-700" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[600px] md:h-[600px] bg-gradient-to-r from-blue-100/20 to-indigo-100/20 rounded-full blur-3xl" />
 
       {/* Confetti pour le succès */}
       {status === 'success' && (

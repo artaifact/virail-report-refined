@@ -58,14 +58,15 @@
 
 .ux-dashboard-body {
     font-family: 'Inter', sans-serif;
-    font-size: 14px; /* Texte normal */
+    font-size: 14px;
     line-height: 1.5;
     color: var(--color-text-primary);
     background-color: var(--color-bg-secondary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.01em; /* Tight tracking for premium feel */
+    letter-spacing: -0.01em;
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 /* === TAILLES DE POLICES STANDARDISÉES === */
@@ -119,6 +120,7 @@
     margin: 0 auto;
     padding: var(--spacing-lg);
     width: 100%;
+    overflow-x: hidden;
 }
 
 /* === SECTION HAUTE - Fixe === */
@@ -312,10 +314,13 @@
 .bottom-section {
     position: relative;
     min-height: 600px;
+    overflow-x: hidden;
 }
 
 .view-content {
     animation: fadeIn 0.3s ease;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 @keyframes ping {
@@ -934,11 +939,12 @@
 
 @media (max-width: 768px) {
     .dashboard-container {
-        padding: var(--spacing-md);
+        padding: var(--spacing-sm);
     }
     
     .top-section {
-        padding: var(--spacing-lg);
+        padding: var(--spacing-md);
+        border-radius: var(--border-radius-md);
     }
     
     .filters-bar {
@@ -948,10 +954,13 @@
     
     .navigation-buttons {
         flex-direction: column;
+        gap: var(--spacing-xs);
     }
     
     .nav-btn {
         width: 100%;
+        min-width: unset;
+        padding: 10px 16px;
     }
     
     .guide-header {
@@ -966,6 +975,107 @@
     .domains-table th,
     .domains-table td {
         padding: var(--spacing-xs);
+    }
+
+    .chart-card,
+    .chart-card-wide {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .competitor-card {
+        padding: 16px;
+    }
+
+    .card-header-with-selector {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .model-selector {
+        width: 100%;
+    }
+
+    .citations-container {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .citations-models {
+        min-width: unset;
+        width: 100%;
+    }
+
+    .bottom-section {
+        min-height: auto;
+    }
+
+    .domains-table-card {
+        border-radius: 12px;
+    }
+
+    .recommendations-table {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .accordion-header {
+        padding: 10px 14px;
+    }
+
+    .accordion-content {
+        padding: 8px 14px;
+    }
+
+    .btn-full-analysis {
+        padding: 12px 14px;
+        font-size: 14px;
+        border-radius: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-container {
+        padding: 6px;
+    }
+
+    .top-section {
+        padding: 12px;
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .chart-card,
+    .chart-card-wide {
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .recommendations-table {
+        padding: 8px;
+    }
+
+    .competitor-name {
+        font-size: 14px;
+    }
+
+    .competitor-domain {
+        font-size: 12px;
+    }
+
+    .competitor-rank {
+        font-size: 12px;
+        min-width: 24px;
+    }
+
+    .competitor-item {
+        padding: 10px 0;
+        gap: 8px;
+    }
+
+    .analytics-section {
+        gap: var(--spacing-md);
     }
 }
 

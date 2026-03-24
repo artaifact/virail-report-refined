@@ -65,10 +65,10 @@ const Export = () => {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-8 pt-6 bg-gradient-to-br from-blue-50 via-white to-blue-100 min-h-screen">
+    <div className="flex-1 space-y-6 p-3 pt-4 sm:p-4 md:p-6 lg:p-8 lg:pt-6 bg-gradient-to-br from-blue-50 via-white to-blue-100 min-h-screen">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Export & Partage</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Export & Partage</h2>
           <p className="text-gray-600 mt-1">Exportez et partagez vos rapports GEO</p>
         </div>
       </div>

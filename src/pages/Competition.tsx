@@ -228,7 +228,7 @@ const Competition = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F6F7] p-6">
+    <div className="min-h-screen bg-[#F5F6F7] p-3 md:p-6">
       <div className="w-full space-y-6">
         {/* Header avec titre et filtres */}
         
@@ -316,7 +316,7 @@ const Competition = () => {
             {/* État vide - Squelette */}
             {!currentAnalysis && !error && (
               <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                <CardContent className="p-8">
+                <CardContent className="p-4 md:p-8">
                   <div className="space-y-6">
                     {/* Squelette header */}
                     <div className="flex items-center gap-4">
@@ -466,26 +466,37 @@ const Competition = () => {
 
                     const total = sorted.length;
                     const percentile = total > 0 ? Math.round(((total - targetRank) / total) * 100) : 0;
-                    const isTop3 = targetRank <= 3;
-                    const isBelowMedian = targetRank > total / 2;
+
+                    const rankTicks = Array.from(
+                      new Set(
+                        [1, total, targetRank, Math.ceil(total / 2)].filter((r) => r >= 1 && r <= total)
+                      )
+                    ).sort((a, b) => a - b);
 
                     return (
-                      <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                      <Card className="bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
                         <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1" style={{ letterSpacing: '1.2px' }}>
                           Votre positionnement
                         </div>
+                        <p className="text-xs text-gray-500 leading-relaxed mb-4 max-w-prose">
+                          Chaque point correspond à un acteur du marché, classés par score global décroissant (rang&nbsp;1 = meilleur).
+                          La courbe montre comment le score se répartit sur l’ensemble du classement ; le point violet indique votre rang.
+                        </p>
 
                         {/* KPI hero */}
                         <div className="flex items-baseline gap-3 mb-5">
-                          <span className="text-4xl font-extrabold" style={{ color: '#6366f1' }}>
+                          <span className="text-3xl md:text-4xl font-extrabold" style={{ color: '#6366f1' }}>
                             {targetRank}<sup className="text-lg font-semibold text-gray-400">/{total}</sup>
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            {percentile}% des acteurs sont derrière vous
                           </span>
                         </div>
 
                         {/* Courbe marché + position */}
-                        <div style={{ width: '100%', height: 200 }}>
+                        <div className="w-full h-[220px] min-w-0">
                           <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={curveData} margin={{ left: -10, right: 15, top: 10, bottom: 0 }}>
+                            <AreaChart data={curveData} margin={{ left: 4, right: 12, top: 8, bottom: 28 }}>
                               <defs>
                                 <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
                                   <stop offset="0%" stopColor="#e0e7ff" stopOpacity={0.7} />
@@ -493,19 +504,51 @@ const Competition = () => {
                                 </linearGradient>
                               </defs>
                               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                              <XAxis dataKey="rank" tick={false} axisLine={false} tickLine={false} />
-                              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                              <XAxis
+                                dataKey="rank"
+                                type="number"
+                                domain={[1, total]}
+                                ticks={rankTicks}
+                                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                                tickLine={false}
+                                axisLine={{ stroke: '#e2e8f0' }}
+                                label={{
+                                  value: 'Rang dans le classement (1 = meilleur score)',
+                                  position: 'bottom',
+                                  offset: 10,
+                                  style: { fill: '#94a3b8', fontSize: 10 },
+                                }}
+                              />
+                              <YAxis
+                                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                                axisLine={false}
+                                tickLine={false}
+                                width={36}
+                                label={{
+                                  value: 'Score',
+                                  angle: -90,
+                                  position: 'insideLeft',
+                                  style: { fill: '#94a3b8', fontSize: 10 },
+                                }}
+                              />
                               <Tooltip
                                 content={({ active, payload }) => {
                                   if (!active || !payload?.[0]) return null;
                                   const d = payload[0].payload;
                                   const isMe = d.rank === targetRank;
                                   return (
-                                    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-lg text-xs">
-                                      <span className="font-semibold" style={{ color: isMe ? '#6366f1' : '#64748b' }}>
-                                        {isMe ? 'Votre site' : `#${d.rank}`}
-                                      </span>
-                                      <span className="text-gray-500 ml-2">Score {d.score.toFixed(2)}</span>
+                                    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-lg text-xs max-w-[220px]">
+                                      <div className="font-semibold" style={{ color: isMe ? '#6366f1' : '#64748b' }}>
+                                        {isMe ? 'Votre site' : `Acteur au rang ${d.rank}`}
+                                      </div>
+                                      <div className="text-gray-500 mt-0.5">
+                                        Rang {d.rank} sur {total} • Score {d.score.toFixed(2)}
+                                      </div>
+                                      {!isMe && (
+                                        <div className="text-[10px] text-gray-400 mt-1 border-t border-gray-100 pt-1">
+                                          Les rangs sont triés du meilleur au plus faible score.
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 }}
@@ -517,7 +560,7 @@ const Competition = () => {
                                 strokeWidth={2}
                                 fill="url(#scoreGrad)"
                                 dot={false}
-                                activeDot={false}
+                                activeDot={{ r: 4, strokeWidth: 1, stroke: '#6366f1', fill: '#fff' }}
                               />
                               {/* Ligne horizontale du score cible */}
                               <ReferenceLine
@@ -526,6 +569,12 @@ const Competition = () => {
                                 strokeDasharray="6 4"
                                 strokeWidth={1}
                                 strokeOpacity={0.5}
+                                label={{
+                                  value: 'Votre score',
+                                  position: 'right',
+                                  fill: '#6366f1',
+                                  fontSize: 10,
+                                }}
                               />
                               {/* Point du site cible */}
                               <ReferenceDot
@@ -540,14 +589,14 @@ const Competition = () => {
                           </ResponsiveContainer>
                         </div>
 
-                        {/* Label sous le chart */}
-                        <div className="flex items-center justify-between mt-3">
-                          <span className="text-[11px] text-gray-400">Meilleur score</span>
-                          <div className="flex items-center gap-1.5">
+                        {/* Légende alignée sur la lecture du graphique */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mt-2 gap-2 text-center sm:text-left">
+                          <span className="text-[11px] text-gray-400">Gauche : rang 1 (meilleur score du panel)</span>
+                          <div className="flex items-center justify-center gap-1.5 shrink-0">
                             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', display: 'inline-block' }} />
-                            <span className="text-[11px] font-medium text-gray-600">Votre site — score {targetScoreVal}</span>
+                            <span className="text-[11px] font-medium text-gray-600">Vous (rang {targetRank}) — {targetScoreVal}</span>
                           </div>
-                          <span className="text-[11px] text-gray-400">Score le + bas</span>
+                          <span className="text-[11px] text-gray-400 sm:text-right">Droite : derniers rangs (scores plus bas)</span>
                         </div>
 
                       </Card>
@@ -645,10 +694,10 @@ const Competition = () => {
                     }
 
                     return (
-                      <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                      <Card className="bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
                         <div className="flex justify-end items-center mb-4">
                           <Select value={currentSelectedModel} onValueChange={setSelectedModel}>
-                            <SelectTrigger className="w-[180px] h-8 text-xs border-gray-300 bg-white rounded-md px-2.5 py-1">
+                            <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs border-gray-300 bg-white rounded-md px-2.5 py-1">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -859,8 +908,8 @@ const Competition = () => {
                     const hasMoreLegend = legendItems.length > LEGEND_INITIAL;
 
                     return (
-                      <Card className="w-full bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2" style={{ textAlign: 'center' }}>
+                      <Card className="w-full bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2" style={{ textAlign: 'center' }}>
                           Matrice de Matérialité
                         </h3>
                         {dataPoints.length > MAX_DISPLAY && (
@@ -1088,11 +1137,11 @@ const Competition = () => {
                   const yourSiteRank = yourSiteIndex >= 0 ? yourSiteIndex + 1 : null;
                   
                   return (
-                    <Card className="w-full bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', padding: '28px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                    <Card className="w-full bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
                         {/* Header */}
-                        <div className="flex items-start justify-between mb-6">
+                        <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1">
                               Analyse Benchmark
                             </h3>
                             <p className="text-sm text-gray-600">
@@ -1101,7 +1150,7 @@ const Competition = () => {
                           </div>
                           {yourSiteRank && (
                             <div className="text-right">
-                              <div className="text-3xl font-bold text-gray-900">{yourSiteRank}{getOrdinalSuffix(yourSiteRank)}</div>
+                              <div className="text-2xl md:text-3xl font-bold text-gray-900">{yourSiteRank}{getOrdinalSuffix(yourSiteRank)}</div>
                               <div className="text-sm font-medium text-orange-500">+0</div>
                             </div>
                           )}
@@ -1111,7 +1160,7 @@ const Competition = () => {
                         <div className="w-full">
                           <div className="flex justify-end mb-4">
                             <Select value={benchmarkView} onValueChange={(val) => setBenchmarkView(val as 'score' | 'raw_data')}>
-                              <SelectTrigger className="w-[200px] h-9 text-sm border-gray-300 bg-white">
+                              <SelectTrigger className="w-full sm:w-[200px] h-9 text-sm border-gray-300 bg-white">
                                 <SelectValue placeholder="Score Benchmark" />
                               </SelectTrigger>
                               <SelectContent>
@@ -1125,7 +1174,7 @@ const Competition = () => {
                           <>
                           {/* Table Header - Mode Paysage avec plus de colonnes - Pleine Largeur */}
                           <div className="w-full overflow-x-auto">
-                            <div className="w-full">
+                            <div className="min-w-[500px]">
                               <div className="grid grid-cols-[60px_2fr_1fr_120px] gap-6 pb-3 border-b-2 border-gray-200 mb-3">
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rang</div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
@@ -1212,7 +1261,7 @@ const Competition = () => {
 
                             const geoContent = (
                               <div className="w-full overflow-x-auto">
-                                <div className="w-full">
+                                <div className="min-w-[700px]">
                                   <div className="grid grid-cols-[60px_2fr_repeat(4,80px)_100px] gap-4 pb-3 border-b-2 border-gray-200 mb-3">
                                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rang</div>
                                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
@@ -1312,7 +1361,7 @@ const Competition = () => {
                   setGeoModalOpen(open);
                   if (!open) setSelectedGeoEntry(null);
                 }}>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
                     {selectedGeoEntry && (() => {
                       const d = selectedGeoEntry.data;
                       const competitor = (currentAnalysis as any)?.competitors?.find((c: any) => c.url === selectedGeoEntry.url);
@@ -1403,14 +1452,14 @@ const Competition = () => {
                       return (
                         <div className="space-y-6">
                           {/* Header */}
-                          <div className="flex items-center gap-4">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                             <img src={`https://www.google.com/s2/favicons?domain=${selectedGeoEntry.domain}&sz=64`} alt={selectedGeoEntry.domain} width={40} height={40} style={{ borderRadius: '8px' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             <div>
-                              <h2 className="text-xl font-bold text-gray-900">{brandName}</h2>
+                              <h2 className="text-lg md:text-xl font-bold text-gray-900">{brandName}</h2>
                               <p className="text-sm text-gray-500">{selectedGeoEntry.domain}</p>
                             </div>
-                            <div className="ml-auto text-right">
-                              <div className="text-3xl font-bold text-gray-900">{d.total_score || 0}<span className="text-lg text-gray-400">/100</span></div>
+                            <div className="sm:ml-auto text-left sm:text-right">
+                              <div className="text-2xl md:text-3xl font-bold text-gray-900">{d.total_score || 0}<span className="text-base md:text-lg text-gray-400">/100</span></div>
                             </div>
                           </div>
 
@@ -1442,7 +1491,7 @@ const Competition = () => {
                                           const percentage = Math.min((value / 5) * 100, 100);
                                           return (
                                             <div key={key} className="flex items-center gap-3">
-                                              <span className="text-xs text-gray-500 w-[140px] shrink-0">{label}</span>
+                                              <span className="text-xs text-gray-500 w-[100px] sm:w-[140px] shrink-0">{label}</span>
                                               <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                                                 <div className="h-full rounded-full bg-gray-900" style={{ width: `${percentage}%`, transition: 'width 0.5s ease' }} />
                                               </div>

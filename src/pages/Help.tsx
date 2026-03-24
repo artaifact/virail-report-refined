@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 const Help = () => {
   usePageTitle('Aide');
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
+    <div className="flex-1 space-y-4 p-3 pt-4 sm:p-4 md:p-6 lg:p-8 lg:pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Centre d'aide</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Centre d'aide</h2>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -108,7 +108,7 @@ const Help = () => {
           <CardDescription>Apprenez à utiliser GEO Analyzer avec nos vidéos</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             <div className="border rounded-lg p-4">
               <div className="bg-gray-100 rounded-lg h-32 mb-3 flex items-center justify-center">
                 <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">

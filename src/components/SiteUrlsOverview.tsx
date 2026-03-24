@@ -382,17 +382,15 @@ const SiteUrlsOverview: React.FC = () => {
             filteredSites.map((site) => (
               <div 
                 key={site.id}
-                className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group gap-3"
               >
-                <div className="flex items-center gap-4 flex-1">
-                  {/* Icône du site */}
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Globe className="h-6 w-6 text-blue-600" />
+                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                   </div>
 
-                  {/* Informations du site */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h4 className="font-medium text-gray-900 truncate">
                         {site.title || site.domain}
                       </h4>
@@ -405,20 +403,19 @@ const SiteUrlsOverview: React.FC = () => {
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <div className="flex items-center gap-1">
-                        <ExternalLink className="h-3 w-3" />
-                        <span className="truncate max-w-xs">{site.url}</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-500">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{site.url}</span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         <Clock className="h-3 w-3" />
                         <span>{formatDate(site.analysisDate)}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Score et métriques */}
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0 hidden sm:block">
                     <div className={`text-2xl font-bold ${getScoreColor(site.score || 0)}`}>
                       {site.score || '--'}
                     </div>
@@ -426,13 +423,18 @@ const SiteUrlsOverview: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Bouton d'action */}
-                <div className="ml-4">
+                <div className="flex items-center justify-between sm:justify-end gap-3">
+                  <div className="text-left sm:hidden flex-shrink-0">
+                    <div className={`text-xl font-bold ${getScoreColor(site.score || 0)}`}>
+                      {site.score || '--'}
+                    </div>
+                    <div className="text-xs text-gray-500">Score LLMO</div>
+                  </div>
                   <Button
                     onClick={() => handleOptimizeSite(site)}
                     variant="outline"
                     size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2"
+                    className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-2"
                   >
                     <FileText className="h-4 w-4" />
                     Optimiser
@@ -448,8 +450,8 @@ const SiteUrlsOverview: React.FC = () => {
         {filteredSites.length > 0 && (
           <>
             <Separator />
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-gray-600">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                 <span>
                   {filteredSites.filter(s => s.hasOptimization).length} site{filteredSites.filter(s => s.hasOptimization).length > 1 ? 's' : ''} avec optimisation
                 </span>

@@ -155,12 +155,12 @@ const CompetitiveAnalysisDisplay: React.FC<CompetitiveAnalysisDisplayProps> = ({
       )}
       {/* Header */}
       <Card className="bg-gradient-to-r from-primary-600 to-primary-700 text-white">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-2xl font-bold mb-2">{title}</h1>
-              <p className="text-primary-100 mb-4 leading-relaxed">{description}</p>
-              <div className="flex items-center gap-4 text-sm">
+              <h1 className="text-xl sm:text-2xl font-bold mb-2">{title}</h1>
+              <p className="text-primary-100 mb-4 leading-relaxed text-sm sm:text-base">{description}</p>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   <span>Analysé {new Date(createdAt).toLocaleDateString('fr-FR')}</span>
@@ -175,7 +175,7 @@ const CompetitiveAnalysisDisplay: React.FC<CompetitiveAnalysisDisplayProps> = ({
                 </div>
               </div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center min-w-[150px]">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center self-start sm:self-auto">
               <div className="text-3xl font-bold">{userScore}</div>
               <div className="text-primary-100 text-sm mb-2">Score estimé</div>
               <div className="flex items-center justify-center gap-1">
@@ -224,18 +224,18 @@ const CompetitiveAnalysisDisplay: React.FC<CompetitiveAnalysisDisplayProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary-500 text-white rounded-full flex items-center justify-center font-bold">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary-500 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">
                 {userRank}
               </div>
-              <div>
-                <h3 className="font-bold text-lg text-primary-900">{title.split(' - ')[0] || 'Votre site'}</h3>
-                <p className="text-primary-700">{url}</p>
+              <div className="min-w-0">
+                <h3 className="font-bold text-base sm:text-lg text-primary-900 truncate">{title.split(' - ')[0] || 'Votre site'}</h3>
+                <p className="text-primary-700 text-sm truncate">{url}</p>
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-primary-900">{userScore}/100</div>
+            <div className="text-left sm:text-right flex-shrink-0">
+              <div className="text-2xl sm:text-3xl font-bold text-primary-900">{userScore}/100</div>
               <Badge className="bg-primary-100 text-primary-800">Score estimé</Badge>
             </div>
           </div>
@@ -260,9 +260,9 @@ const CompetitiveAnalysisDisplay: React.FC<CompetitiveAnalysisDisplayProps> = ({
               const sources = competitor.sources || competitor.report?.sources || ['IA'];
               
               return (
-                <div key={competitor.name || competitor.domain} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+                <div key={competitor.name || competitor.domain} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg hover:bg-neutral-100 transition-colors gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${
                       rank === 1 ? 'bg-yellow-500' :
                       rank <= 3 ? 'bg-gray-500' :
                       rank <= 5 ? 'bg-orange-500' :
@@ -270,15 +270,15 @@ const CompetitiveAnalysisDisplay: React.FC<CompetitiveAnalysisDisplayProps> = ({
                     }`}>
                       {rank}
                     </div>
-                    <div>
-                      <h4 className="font-medium">{competitor.name || competitor.domain}</h4>
+                    <div className="min-w-0">
+                      <h4 className="font-medium truncate">{competitor.name || competitor.domain}</h4>
                       <div className="flex items-center gap-1 text-sm text-neutral-600">
-                        <ExternalLink className="h-3 w-3" />
-                        <span>{competitorUrl.replace('https://', '').replace('www.', '')}</span>
+                        <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{competitorUrl.replace('https://', '').replace('www.', '')}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0">
                     <div className="font-bold text-lg">{score}/100</div>
                     <div className="flex items-center gap-1 text-xs text-neutral-500">
                       <span>{mentions} mention{mentions > 1 ? 's' : ''}</span>

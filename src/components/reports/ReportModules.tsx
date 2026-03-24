@@ -229,14 +229,14 @@ const ReportModules = ({ mappedData }: ReportModulesProps) => {
               className="cursor-pointer transition-colors hover:bg-gray-50/50 pb-4"
               onClick={() => setExpandedModule(expandedModule === module.id ? null : module.id)}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="text-2xl bg-gray-50 p-3 rounded-lg">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <div className="text-xl sm:text-2xl bg-gray-50 p-2 sm:p-3 rounded-lg flex-shrink-0">
                     {module.icon}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{module.title}</h3>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">{module.title}</h3>
                       {module.score !== undefined && (
                         <Badge variant="outline" className="font-bold text-gray-700 border-gray-300">
                           {module.score}/100
@@ -245,7 +245,7 @@ const ReportModules = ({ mappedData }: ReportModulesProps) => {
                     </div>
                     {module.score !== undefined && (
                       <div className="flex items-center gap-3">
-                        <Progress value={module.score} className="w-32 h-2" />
+                        <Progress value={module.score} className="w-20 sm:w-32 h-2" />
                         <div className="flex">
                           {Array.from({ length: Math.floor(module.score / 25) }, (_, i) => (
                             <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
@@ -255,8 +255,8 @@ const ReportModules = ({ mappedData }: ReportModulesProps) => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 font-medium">
+                <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 font-medium hidden sm:inline-flex">
                     <CheckCircle className="w-3 h-3 mr-1" />
                     Terminé
                   </Badge>

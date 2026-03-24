@@ -163,16 +163,16 @@ const OptimizationAgent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F6F7] p-6">
+    <div className="min-h-screen bg-[#F5F6F7] p-3 sm:p-4 md:p-6">
       <div className="mx-auto space-y-6" style={{ maxWidth: '1700px' }}>
         {/* Header avec titre et filtres */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Prompts.</h1>
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Prompts.</h1>
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <div className="relative">
                 <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger className="w-[180px] border-gray-300 bg-white hover:bg-gray-50">
+                  <SelectTrigger className="w-full sm:w-[180px] border-gray-300 bg-white hover:bg-gray-50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -184,7 +184,7 @@ const OptimizationAgent = () => {
               </div>
               <div className="relative">
                 <Select value={regionFilter} onValueChange={setRegionFilter}>
-                  <SelectTrigger className="w-[180px] border-gray-300 bg-white hover:bg-gray-50">
+                  <SelectTrigger className="w-full sm:w-[180px] border-gray-300 bg-white hover:bg-gray-50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -196,7 +196,8 @@ const OptimizationAgent = () => {
               </div>
               <Button variant="outline" className="border-gray-300 bg-white hover:bg-gray-50">
                 <Search className="h-4 w-4 mr-2" />
-                Ajouter un filtre
+                <span className="hidden sm:inline">Ajouter un filtre</span>
+                <span className="sm:hidden">Filtre</span>
               </Button>
             </div>
           </div>
@@ -285,20 +286,23 @@ const OptimizationAgent = () => {
         {/* Section Prompts */}
         <Card className="border-gray-200 shadow-sm">
           <CardHeader>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
               <CardTitle className="text-lg font-semibold text-gray-900">Prompts</CardTitle>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button variant="outline" size="sm" className="border-gray-300">
                   <Download className="h-4 w-4 mr-2" />
-                  Exporter CSV
+                  <span className="hidden sm:inline">Exporter CSV</span>
+                  <span className="sm:hidden">CSV</span>
                 </Button>
                 <Button variant="outline" size="sm" className="border-gray-300" onClick={handleOpenEditTopics}>
                   <Edit className="h-4 w-4 mr-2" />
-                  Modifier les Sujets
+                  <span className="hidden sm:inline">Modifier les Sujets</span>
+                  <span className="sm:hidden">Sujets</span>
                 </Button>
                 <Button size="sm" className="bg-black text-white hover:bg-gray-900">
                   <Plus className="h-4 w-4 mr-2" />
-                  Ajouter un Prompt
+                  <span className="hidden sm:inline">Ajouter un Prompt</span>
+                  <span className="sm:hidden">Ajouter</span>
                 </Button>
               </div>
             </div>
@@ -315,7 +319,7 @@ const OptimizationAgent = () => {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[800px]">
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Sujets/Prompts</th>
@@ -456,12 +460,11 @@ const OptimizationAgent = () => {
 
       {/* Dialog pour la vue détaillée du prompt */}
       <Dialog open={selectedPrompt !== null} onOpenChange={() => setSelectedPrompt(null)}>
-        <DialogContent className="max-w-[1700px] w-full max-h-[90vh] overflow-y-auto p-0" hideCloseButton={true}>
+        <DialogContent className="w-[95vw] max-w-[1700px] max-h-[90vh] overflow-y-auto p-0" hideCloseButton={true}>
           {selectedPrompt && (
             <div className="bg-white">
               {/* Header */}
-              <div className="border-b border-gray-200 p-6 bg-white relative">
-                {/* Bouton de fermeture optimisé - positionné en haut à droite */}
+              <div className="border-b border-gray-200 p-4 sm:p-6 bg-white relative">
                 <Button 
                   variant="ghost" 
                   size="icon"
@@ -472,9 +475,9 @@ const OptimizationAgent = () => {
                   <X className="h-5 w-5 text-gray-600 hover:text-gray-900" />
                 </Button>
                 
-                <div className="flex items-start justify-between pr-12">
-                  <div className="flex-1 pr-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-3">{selectedPrompt.text}</h2>
+                <div className="flex flex-col sm:flex-row items-start justify-between pr-12 gap-3">
+                  <div className="flex-1 sm:pr-6">
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">{selectedPrompt.text}</h2>
                     <div className="flex items-center gap-3 flex-wrap">
                       <span className="text-sm text-gray-600">Mot-clé Associé :</span>
                       <div className="px-3 py-1.5 bg-gray-100 rounded-full">
@@ -497,7 +500,7 @@ const OptimizationAgent = () => {
                 </div>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-4 sm:p-6 space-y-6">
                 {/* Prompt Visibility */}
                 <Card className="border-gray-200 shadow-sm">
                   <CardHeader>
@@ -649,7 +652,7 @@ const OptimizationAgent = () => {
 
       {/* Dialog pour modifier les sujets */}
       <Dialog open={isEditTopicsOpen} onOpenChange={setIsEditTopicsOpen}>
-        <DialogContent className="max-w-2xl w-full p-0" hideCloseButton={true}>
+        <DialogContent className="w-[95vw] max-w-2xl p-0" hideCloseButton={true}>
           <div className="bg-white">
             {/* Header */}
             <div className="border-b border-gray-200 p-6 relative">

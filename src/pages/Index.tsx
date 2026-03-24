@@ -39,77 +39,141 @@ const getModelLogo = (modelName: string): string | null => {
  * Graphique circulaire SVG affichant les citations
  * Design multicolore avec segments orange, vert et accents colorés
  */
+const MODEL_COLORS: Record<string, string> = {
+  'ChatGPT': '#86CEAC',
+  'Perplexity': '#8ECFD9',
+  'Gemini': '#93B5E1',
+  'Claude': '#E0C08A',
+  'Mistral': '#F0B88A',
+  'DeepSeek': '#A5A7E0',
+  'Meta AI': '#88B5E8',
+  'Qwen': '#B8A3DB',
+  'Grok': '#E8A0A0',
+};
+const MODEL_COLORS_FALLBACK = ['#B5A8D8', '#DBA8C4', '#8DD0C4', '#E0C68A', '#A5A7E0', '#8BC5E0'];
+
 function CitationsChart({ reportData }: { reportData: FullReportData | null }) {
-  // Calculer le nombre total de citations depuis les analyses
+  const [hoveredModel, setHoveredModel] = useState<string | null>(null);
   const getTotalCitations = () => {
-    // Utiliser les données de citation explicites si disponibles
     if (reportData?.analyse_citation?.total_citations !== undefined) {
       return reportData.analyse_citation.total_citations;
     }
-
-    if (!reportData?.analyses || reportData.analyses.length === 0) {
-      return 0; // Pas de données = 0 citations
-    }
-    
-    // Essayer d'extraire les citations depuis les modules
+    if (!reportData?.analyses || reportData.analyses.length === 0) return 0;
     const totalFromApi = reportData.analyses.reduce((sum, analysis) => {
       const geoData = analysis.modules?.audit_geo;
       const citations = geoData?.citations || geoData?.mentions || 0;
       return sum + Number(citations);
     }, 0);
-
-    // Si on a trouvé des citations dans l'API, on les utilise
-    if (totalFromApi > 0) {
-      return totalFromApi;
-    }
-
-    return 0;
+    return totalFromApi > 0 ? totalFromApi : 0;
   };
 
   const totalCitations = getTotalCitations();
   const citationsByModel = (reportData?.analyse_citation?.citations_by_model || {}) as Record<string, number>;
-  
-  // Déterminer la couleur selon le nombre de citations
-  let circleColor = '#EF4444'; // Rouge par défaut (0 citation)
-  if (totalCitations >= 5) {
-    circleColor = '#10B981'; // Vert (5+ citations)
-  } else if (totalCitations >= 1) {
-    circleColor = '#F97316'; // Orange (1-4 citations)
-  }
 
-  const radius = 110;
-  const circumference = 2 * Math.PI * radius;
+  // Regrouper par nom commercial et trier par citations desc
+  const grouped = useMemo(() => {
+    const map: Record<string, number> = {};
+    Object.entries(citationsByModel).forEach(([raw, count]) => {
+      const name = getModelLogo(raw) ? raw : raw;
+      const commercial = (() => {
+        const n = raw.toLowerCase().trim();
+        if (n.includes('sonar')) return 'Perplexity';
+        if (n.includes('claude')) return 'Claude';
+        if (n.startsWith('gpt') || n === 'chatgpt') return 'ChatGPT';
+        if (n.includes('gemini') || n === 'ai overview' || n === 'ai-overview') return 'Gemini';
+        if (n.includes('mistral') || n.includes('mixtral')) return 'Mistral';
+        if (n.includes('deepseek')) return 'DeepSeek';
+        if (n.includes('llama')) return 'Meta AI';
+        if (n.includes('qwen')) return 'Qwen';
+        if (n.includes('grok')) return 'Grok';
+        return raw;
+      })();
+      map[commercial] = (map[commercial] || 0) + (count as number);
+    });
+    return Object.entries(map)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [citationsByModel]);
+
+  const cx = 140, cy = 140, r = 95;
+  const totalSweep = 360;
+
+  const polarToCartesian = (angle: number, radius: number) => {
+    const rad = (angle * Math.PI) / 180;
+    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
+  };
+
+  const describeArc = (start: number, end: number, arcR: number) => {
+    if (end - start >= 360) end = start + 359.99;
+    const s = polarToCartesian(start, arcR);
+    const e = polarToCartesian(end, arcR);
+    const large = end - start > 180 ? 1 : 0;
+    return `M ${s.x} ${s.y} A ${arcR} ${arcR} 0 ${large} 1 ${e.x} ${e.y}`;
+  };
+
+  const hasModels = grouped.length > 0 && totalCitations > 0;
+  const activeModels = grouped.filter(m => m.count > 0);
+  let fallbackIdx = 0;
+  let currentAngle = -90;
+
+  const hoveredData = hoveredModel ? activeModels.find(m => m.name === hoveredModel) : null;
 
   return (
     <div className="citations-chart">
-      <svg width="280" height="280" viewBox="0 0 280 280">
-        <circle 
-          cx="140" 
-          cy="140" 
-          r={radius}
-          fill="none" 
-          stroke="#F5F6F7" 
-          strokeWidth="30"
-        />
-        <circle 
-          cx="140" 
-          cy="140" 
-          r={radius}
-          fill="none" 
-          stroke={circleColor}
-          strokeWidth="30"
-          strokeDasharray={circumference}
-          strokeDashoffset="0"
-          transform="rotate(-90 140 140)" 
-          strokeLinecap="round"
-        />
-        <text x="140" y="130" textAnchor="middle" className="chart-number">
-          {totalCitations}
-        </text>
-        <text x="140" y="160" textAnchor="middle" className="chart-label">
-          Citations
-        </text>
-      </svg>
+      <div className="relative w-fit mx-auto">
+        <svg viewBox="0 0 280 280" className="w-full max-w-[200px] sm:max-w-[240px] h-auto mx-auto">
+          {/* Background circle */}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="24" />
+
+          {/* Model segments */}
+          {hasModels && activeModels.map((model, i) => {
+            const fraction = model.count / totalCitations;
+            const segSweep = fraction * totalSweep;
+            const segStart = currentAngle;
+            const segEnd = segStart + segSweep;
+            currentAngle = segEnd;
+            const color = MODEL_COLORS[model.name] || MODEL_COLORS_FALLBACK[fallbackIdx++ % MODEL_COLORS_FALLBACK.length];
+            const isHovered = hoveredModel === model.name;
+            return (
+              <path
+                key={model.name}
+                d={describeArc(segStart, segEnd, r)}
+                fill="none" stroke={color} strokeWidth="32" strokeLinecap="butt"
+                opacity={hoveredModel && !isHovered ? 0.35 : 1}
+                style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+                onMouseEnter={() => setHoveredModel(model.name)}
+                onMouseLeave={() => setHoveredModel(null)}
+              />
+            );
+          })}
+
+          {/* Si pas de modèles, cercle gris */}
+          {!hasModels && totalCitations > 0 && (
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#CBD5E1" strokeWidth="24" opacity={0.5} />
+          )}
+
+          {/* Center text: nombre ou info modèle survolé */}
+          {hoveredData ? (
+            <>
+              <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                {hoveredData.count}
+              </text>
+              <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 500, fill: '#64748B', fontFamily: 'Inter, sans-serif' }}>
+                {hoveredData.name}
+              </text>
+            </>
+          ) : (
+            <>
+              <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                {totalCitations}
+              </text>
+              <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
+                Tot Citations
+              </text>
+            </>
+          )}
+        </svg>
+      </div>
     </div>
   );
 }
@@ -390,59 +454,70 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
 
   return (
     <>
-      <div className="recommendations-table" style={{ boxShadow: 'none', border: '1px solid #F1F5F9', padding: '24px', borderRadius: '16px' }}>
+      <div className="recommendations-table border border-slate-100 rounded-2xl p-4 md:p-6 shadow-none">
         
-        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0' }}>
-          <thead>
-            <tr>
-              <th style={{ padding: '0 0 16px 0', textTransform: 'uppercase', fontSize: '12px', color: '#94A3B8', fontWeight: 600, letterSpacing: '0.05em', textAlign: 'left', borderBottom: '1px solid #F1F5F9' }}>CATÉGORIE</th>
-              <th style={{ padding: '0 0 16px 0', textTransform: 'uppercase', fontSize: '12px', color: '#94A3B8', fontWeight: 600, letterSpacing: '0.05em', textAlign: 'left', borderBottom: '1px solid #F1F5F9' }}>DESCRIPTION</th>
-              <th style={{ padding: '0 0 16px 0', textTransform: 'uppercase', fontSize: '12px', color: '#94A3B8', fontWeight: 600, letterSpacing: '0.05em', textAlign: 'left', borderBottom: '1px solid #F1F5F9', width: '35%' }}>SCORE</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recommendations.map((rec, index) => (
-              <tr
-                key={index}
-                onClick={() => handleRowClick(rec)}
-                style={{ cursor: 'pointer', transition: 'background 0.2s ease' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#FFFFFF'}
-              >
-                <td style={{ padding: '20px 0', fontSize: '15px', color: '#334155', fontWeight: 500, borderBottom: index === recommendations.length - 1 ? 'none' : '1px solid #F1F5F9' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {rec.element}
-                    <Info size={14} style={{ color: '#94A3B8' }} />
-                  </div>
-                </td>
-                <td style={{ padding: '20px 0', fontSize: '14px', color: '#64748B', borderBottom: index === recommendations.length - 1 ? 'none' : '1px solid #F1F5F9' }}>
-                  {rec.description}
-                </td>
-                <td style={{ padding: '20px 0', borderBottom: index === recommendations.length - 1 ? 'none' : '1px solid #F1F5F9' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ flex: 1, height: '6px', background: '#F1F5F9', borderRadius: '999px' }}>
-                      <div style={{
-                        width: `${rec.score}%`,
-                        borderRadius: '999px',
-                        height: '100%',
-                        background: '#1E293B',
-                        transition: 'width 0.5s ease'
-                      }} />
-                    </div>
-                    <span style={{
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      color: '#0F172A',
-                      minWidth: '40px'
-                    }}>
-                      {rec.score}%
-                    </span>
-                  </div>
-                </td>
+        {/* Desktop: table layout */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full border-separate" style={{ borderSpacing: '0' }}>
+            <thead>
+              <tr>
+                <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100">CATÉGORIE</th>
+                <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100">DESCRIPTION</th>
+                <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100 w-[35%]">SCORE</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {recommendations.map((rec, index) => (
+                <tr
+                  key={index}
+                  onClick={() => handleRowClick(rec)}
+                  className="cursor-pointer transition-colors hover:bg-slate-50"
+                >
+                  <td className={`py-5 text-[15px] text-slate-700 font-medium ${index === recommendations.length - 1 ? '' : 'border-b border-slate-100'}`}>
+                    <div className="flex items-center gap-2">
+                      {rec.element}
+                      <Info size={14} className="text-slate-400" />
+                    </div>
+                  </td>
+                  <td className={`py-5 text-sm text-slate-500 ${index === recommendations.length - 1 ? '' : 'border-b border-slate-100'}`}>
+                    {rec.description}
+                  </td>
+                  <td className={`py-5 ${index === recommendations.length - 1 ? '' : 'border-b border-slate-100'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
+                        <div className="h-full bg-slate-800 rounded-full transition-all duration-500" style={{ width: `${rec.score}%` }} />
+                      </div>
+                      <span className="text-sm font-bold text-slate-900 min-w-[40px]">{rec.score}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile: card layout */}
+        <div className="md:hidden flex flex-col gap-3">
+          {recommendations.map((rec, index) => (
+            <div
+              key={index}
+              onClick={() => handleRowClick(rec)}
+              className="cursor-pointer p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-semibold text-slate-700">{rec.element}</span>
+                <Info size={14} className="text-slate-400" />
+              </div>
+              <p className="text-xs text-slate-500 mb-3">{rec.description}</p>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
+                  <div className="h-full bg-slate-800 rounded-full transition-all duration-500" style={{ width: `${rec.score}%` }} />
+                </div>
+                <span className="text-sm font-bold text-slate-900">{rec.score}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
         
       </div>
 
@@ -450,22 +525,20 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
       {reportData?.report?.id && (
         <div
           onClick={(e) => { e.stopPropagation(); handleDownloadPdf(); }}
-          style={{ marginTop: '12px', padding: '16px 24px', border: '1px solid #F1F5F9', borderRadius: '16px', cursor: pdfLoading ? 'wait' : 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'background 0.2s ease', opacity: pdfLoading ? 0.6 : 1 }}
-          onMouseEnter={(e) => { if (!pdfLoading) e.currentTarget.style.background = '#F8FAFC'; }}
-          onMouseLeave={(e) => e.currentTarget.style.background = '#FFFFFF'}
+          className={`mt-3 px-4 py-3 md:px-6 md:py-4 border border-slate-100 rounded-2xl flex justify-between items-center transition-colors hover:bg-slate-50 ${pdfLoading ? 'cursor-wait opacity-60' : 'cursor-pointer'}`}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Download size={18} style={{ color: '#1E293B' }} />
+          <div className="flex items-center gap-3">
+            <Download size={18} className="text-slate-800" />
             <div>
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>Rapport PDF</span>
-              <span style={{ fontSize: '12px', color: '#64748B', marginLeft: '10px' }}>Télécharger le rapport complet</span>
+              <span className="text-sm font-semibold text-slate-900">Rapport PDF</span>
+              <span className="text-xs text-slate-500 ml-2 hidden sm:inline">Télécharger le rapport complet</span>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="flex items-center gap-2">
             {pdfLoading ? (
-              <span style={{ fontSize: '13px', color: '#64748B' }}>Téléchargement...</span>
+              <span className="text-[13px] text-slate-500">Téléchargement...</span>
             ) : (
-              <span style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B', background: '#F1F5F9', padding: '4px 12px', borderRadius: '8px' }}>PDF</span>
+              <span className="text-[13px] font-semibold text-slate-800 bg-slate-100 px-3 py-1 rounded-lg">PDF</span>
             )}
           </div>
         </div>
@@ -473,7 +546,7 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
 
       {/* Modal de détails avec Guide d'Implémentation intégré */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto">
           {selectedRec && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <DialogHeader>
@@ -500,19 +573,19 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
               {selectedRec.modelScores && selectedRec.modelScores.length > 0 && (
                 <div>
                   <div style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score par modèle</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div className="flex flex-col gap-2.5">
                     {selectedRec.modelScores.map((ms: any, idx: number) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '160px' }}>
+                      <div key={idx} className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 min-w-[100px] sm:min-w-[160px] shrink-0">
                           {getModelLogo(ms.model) ? (
                             <img src={getModelLogo(ms.model)!} alt={ms.model} className="w-4 h-4 object-contain" />
                           ) : null}
-                          <span style={{ fontSize: '13px', color: '#334155', fontWeight: 500 }}>{ms.model}</span>
+                          <span className="text-[13px] text-slate-700 font-medium truncate">{ms.model}</span>
                         </div>
-                        <div style={{ flex: 1, height: '6px', background: '#F1F5F9', borderRadius: '999px' }}>
-                          <div style={{ width: `${ms.score}%`, height: '100%', background: '#1E293B', borderRadius: '999px', transition: 'width 0.5s ease' }} />
+                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
+                          <div className="h-full bg-slate-800 rounded-full transition-all duration-500" style={{ width: `${ms.score}%` }} />
                         </div>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', minWidth: '40px', textAlign: 'right' }}>{ms.score}%</span>
+                        <span className="text-[13px] font-bold text-slate-900 min-w-[40px] text-right">{ms.score}%</span>
                       </div>
                     ))}
                   </div>
@@ -652,7 +725,7 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
                   {guideData.files && guideData.files.length > 0 && (
                     <div style={{ marginTop: '12px' }}>
                       <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fichiers</div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      <div style={{ display: 'grid', gap: '6px' }} className="grid-cols-1 sm:grid-cols-2">
                         {guideData.files.map((file, fIdx) => (
                           <div
                             key={fIdx}
@@ -2412,11 +2485,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     <div className="view-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
       {/* ═══ NAVIGATION ═══ */}
-      <div style={{
-        display: 'flex', gap: '4px', padding: '4px',
-        background: '#F8FAFC', borderRadius: '12px', border: '1px solid #EEEDF5',
-        overflowX: 'auto',
-      }}>
+      <div className="flex gap-1 p-1 bg-slate-50 rounded-xl border border-[#EEEDF5] overflow-x-auto scrollbar-none">
         {tabs.map(tab => {
           const isActive = activeOptTab === tab.id;
           const hasContent = tab.id === 'overview' || tab.has;
@@ -2424,23 +2493,21 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
             <button
               key={tab.id}
               onClick={() => hasContent && setActiveOptTab(tab.id)}
+              className="shrink-0 px-3 sm:px-3.5 py-2 text-xs sm:text-[12.5px] rounded-[9px] transition-all whitespace-nowrap"
               style={{
-                flex: 1, minWidth: 0,
-                padding: '9px 14px', fontSize: '12.5px', fontWeight: isActive ? 600 : 500,
+                fontWeight: isActive ? 600 : 500,
                 color: isActive ? '#0F172A' : hasContent ? '#64748B' : '#CBD5E1',
                 background: isActive ? '#FFFFFF' : 'transparent',
-                borderRadius: '9px', border: isActive ? '1px solid #E2E8F0' : '1px solid transparent',
+                border: isActive ? '1px solid #E2E8F0' : '1px solid transparent',
                 boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
                 cursor: hasContent ? 'pointer' : 'default',
-                transition: 'all 0.2s', whiteSpace: 'nowrap',
               }}
             >
               {tab.label}
               {tab.id !== 'overview' && tab.has && (
-                <span style={{
-                  display: 'inline-block', width: 5, height: 5, borderRadius: '50%', marginLeft: 6,
-                  background: isActive ? '#0F172A' : '#CBD5E1', verticalAlign: 'middle',
-                }} />
+                <span className="inline-block w-[5px] h-[5px] rounded-full ml-1.5 align-middle"
+                  style={{ background: isActive ? '#0F172A' : '#CBD5E1' }}
+                />
               )}
             </button>
           );
@@ -2453,7 +2520,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
           {/* Score global + sous-scores */}
           {scores.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '12px', alignItems: 'start' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-3 items-start">
               {/* Score global a gauche */}
               <ScoreCard
                 title="Score Global IA"
@@ -2476,7 +2543,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
           {/* Infos plateforme + enrichissements */}
           {co && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]" style={{ gap: '10px' }}>
               {coPlatform && (
                 <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1' }}>
                   <div style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Plateforme</div>
@@ -2577,49 +2644,44 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                 </div>
               </div>
 
-              {/* Historique des jobs */}
-              {bulkJobsHistory.length > 0 && (
-                <div style={{ padding: '0 20px', borderBottom: '1px solid #F1F5F9' }}>
-                  <div style={{ display: 'flex', gap: '6px', padding: '10px 0', overflowX: 'auto' }}>
-                    {bulkJobsHistory.map((job) => {
-                      const isActive = bulkJobId === job.job_id;
-                      const statusIcon = job.status === 'completed' ? <CheckCircle size={11} style={{ color: '#16A34A' }} />
-                        : job.status === 'failed' || job.status === 'cancelled' ? <XCircle size={11} style={{ color: '#DC2626' }} />
-                        : <Loader2 size={11} className="animate-spin" style={{ color: '#6366F1' }} />;
-                      let domain = job.domain_url;
-                      try { domain = new URL(job.domain_url).hostname; } catch {}
-                      const date = job.started_at ? new Date(job.started_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-                      return (
-                        <button
-                          key={job.job_id}
-                          onClick={() => handleLoadJob(job)}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: '6px',
-                            padding: '6px 12px', borderRadius: '8px', flexShrink: 0,
-                            border: isActive ? '1.5px solid #6366F1' : '1px solid #E2E8F0',
-                            background: isActive ? '#EEF2FF' : '#FFFFFF',
-                            cursor: 'pointer', transition: 'all 0.15s',
-                            fontSize: '11px', color: isActive ? '#4338CA' : '#64748B', fontWeight: isActive ? 600 : 500,
-                          }}
-                        >
-                          {statusIcon}
-                          <span style={{ maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{domain}</span>
-                          <span style={{ color: '#CBD5E1' }}>|</span>
-                          <span>{job.pages_completed}/{job.pages_total}</span>
-                          {job.avg_score != null && (
-                            <span style={{ fontWeight: 700, color: job.avg_score >= 70 ? '#16A34A' : job.avg_score >= 50 ? '#D97706' : '#DC2626' }}>{Math.round(job.avg_score)}</span>
-                          )}
-                          {date && <span style={{ color: '#CBD5E1', fontSize: '10px' }}>{date}</span>}
-                        </button>
-                      );
-                    })}
-                    {/* Bouton nouveau job */}
+              {/* Dernière analyse */}
+              {bulkJobsHistory.length > 0 && (() => {
+                const job = bulkJobsHistory[0];
+                const isActive = bulkJobId === job.job_id;
+                const statusIcon = job.status === 'completed' ? <CheckCircle size={12} style={{ color: '#16A34A' }} />
+                  : job.status === 'failed' || job.status === 'cancelled' ? <XCircle size={12} style={{ color: '#DC2626' }} />
+                  : <Loader2 size={12} className="animate-spin" style={{ color: '#6366F1' }} />;
+                let domain = job.domain_url;
+                try { domain = new URL(job.domain_url).hostname; } catch {}
+                const date = job.started_at ? new Date(job.started_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                return (
+                  <div style={{ padding: '10px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <button
+                      onClick={() => handleLoadJob(job)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '6px 14px', borderRadius: '8px',
+                        border: isActive ? '1.5px solid #6366F1' : '1px solid #E2E8F0',
+                        background: isActive ? '#EEF2FF' : '#FFFFFF',
+                        cursor: 'pointer', transition: 'all 0.15s',
+                        fontSize: '12px', color: isActive ? '#4338CA' : '#64748B', fontWeight: isActive ? 600 : 500,
+                      }}
+                    >
+                      {statusIcon}
+                      <span>{domain}</span>
+                      <span style={{ color: '#CBD5E1' }}>|</span>
+                      <span>{job.pages_completed}/{job.pages_total}</span>
+                      {job.avg_score != null && (
+                        <span style={{ fontWeight: 700, color: job.avg_score >= 70 ? '#16A34A' : job.avg_score >= 50 ? '#D97706' : '#DC2626' }}>{Math.round(job.avg_score)}</span>
+                      )}
+                      {date && <span style={{ color: '#94A3B8', fontSize: '11px' }}>{date}</span>}
+                    </button>
                     {bulkJobId && (
                       <button
                         onClick={() => { setBulkJobId(null); setBulkProgress(null); setBulkPages([]); setBulkResults(null); setBulkError(null); setBulkLoading(false); }}
                         style={{
                           display: 'flex', alignItems: 'center', gap: '4px',
-                          padding: '6px 12px', borderRadius: '8px', flexShrink: 0,
+                          padding: '6px 12px', borderRadius: '8px',
                           border: '1px dashed #CBD5E1', background: '#FFFFFF',
                           cursor: 'pointer', fontSize: '11px', color: '#64748B', fontWeight: 500,
                         }}
@@ -2628,8 +2690,8 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                       </button>
                     )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               <div style={{ padding: '16px 20px' }}>
                 {!bulkJobId && !bulkProgress && (
@@ -2788,7 +2850,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                     )}
 
                     {/* Stats */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' }}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: '8px' }}>
                       {bulkProgress.discovery.urls_found > 0 && (
                         <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#F8FAFC', textAlign: 'center' }}>
                           <div style={{ fontSize: '18px', fontWeight: 700, color: '#334155' }}>{bulkProgress.discovery.urls_found}</div>
@@ -2885,11 +2947,6 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                   <div style={{ background: '#FAFAFC', borderRadius: '10px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
                     <div style={{ padding: '12px 16px', borderBottom: '1px solid #E8ECF1', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Détail des pages ({bulkPages.length})</span>
-                      <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#94A3B8' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A', display: 'inline-block' }} /> Optimisée</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B', display: 'inline-block' }} /> En cours</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#DC2626', display: 'inline-block' }} /> Échouée</span>
-                      </div>
                     </div>
                     <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                       {bulkPages.map((page, idx) => {
@@ -3207,7 +3264,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
                   {/* Score + infos */}
                   {pgOverall != null && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '12px', alignItems: 'start' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-3 items-start">
                       <div style={{ padding: '16px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E8ECF1', textAlign: 'center' }}>
                         <div style={{ fontSize: '28px', fontWeight: 700, color: pgOverall >= 80 ? '#16A34A' : pgOverall >= 60 ? '#F59E0B' : '#DC2626' }}>
                           {Math.round(pgOverall)}
@@ -3300,7 +3357,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                             </button>
                           </div>
                         </div>
-                        <pre style={{
+                        <pre className="max-w-full" style={{
                           padding: '14px 16px', margin: 0, fontSize: '11.5px',
                           fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                           background: '#FAFAFC', overflow: 'auto',
@@ -3314,7 +3371,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
                   {/* llms.txt + llms-full.txt cote a cote */}
                   {(pgLlmsTxt || pgLlmsFullTxt) && (
-                    <div style={{ display: 'grid', gridTemplateColumns: pgLlmsTxt && pgLlmsFullTxt ? '1fr 1fr' : '1fr', gap: '12px' }}>
+                    <div className={`grid gap-3 ${pgLlmsTxt && pgLlmsFullTxt ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                       {pgLlmsTxt && (
                         <div style={{ background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
                           <div style={{ padding: '12px 16px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -3481,7 +3538,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                             </button>
                           </div>
                         </div>
-                        <pre style={{
+                        <pre className="max-w-full" style={{
                           padding: '14px 16px', margin: 0, fontSize: '11.5px',
                           fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                           color: '#334155', background: '#FAFAFC', overflow: 'auto',
@@ -3769,7 +3826,7 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
 
       {/* Modal d'analyse détaillée */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedModel && (() => {
             const selected = data.find(d => d.displayName === selectedModel);
             const citations = selected?.citations || 0;
@@ -3826,16 +3883,16 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-                  <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '8px' }}>Citations</div>
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 bg-slate-50 rounded-xl">
+                    <div className="text-xs text-slate-500 mb-2">Citations</div>
+                    <div className="text-lg font-bold text-slate-900">
                       {selected?.citations || 0}
                     </div>
                   </div>
-                  <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '8px' }}>Dernière mise à jour</div>
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
+                  <div className="p-4 bg-slate-50 rounded-xl">
+                    <div className="text-xs text-slate-500 mb-2">Dernière mise à jour</div>
+                    <div className="text-sm font-semibold text-slate-900">
                       {(() => {
                         const dateStr = selected?.lastUpdate;
                         if (!dateStr) return 'N/A';
@@ -4108,8 +4165,8 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
 
   return (
     <div className="chart-card competitor-card">
-      <div className="card-header-with-selector">
-        <h3 className="text-xl font-bold text-slate-900">Analyse concurrentielle</h3>
+      <div className="card-header-with-selector flex-col sm:flex-row gap-3">
+        <h3 className="text-lg sm:text-xl font-bold text-slate-900">Analyse concurrentielle</h3>
         <div className="model-selector">
           <span className="selector-label">Modèle:</span>
           <Select
@@ -4117,7 +4174,7 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
             onValueChange={setSelectedModel}
             disabled={loadingCompetitors || selectModels.length === 0}
           >
-            <SelectTrigger className="w-[200px] h-9 bg-white border-slate-200">
+            <SelectTrigger className="w-full sm:w-[200px] h-9 bg-white border-slate-200">
               <SelectValue placeholder="Choisir un modèle" />
             </SelectTrigger>
             <SelectContent>
@@ -4402,14 +4459,15 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
         </div>
       ) : (
         <>
-          <table className="domains-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+          <div className="overflow-x-auto -mx-1">
+          <table className="domains-table w-full border-separate" style={{ borderSpacing: 0, minWidth: '600px' }}>
             <thead>
-              <tr style={{ textAlign: 'left', fontSize: '12px', textTransform: 'uppercase', color: '#94A3B8', fontWeight: 600, letterSpacing: '0.05em', background: '#F8FAFC' }}>
-                <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0' }}>Domaine</th>
-                <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0' }}>Utilisé</th>
-                <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0' }}>Pages</th>
-                <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0' }}>Citations moy.</th>
-                <th style={{ padding: '14px 26px', borderBottom: '1px solid #E2E8F0', textAlign: 'right' }}>Type</th>
+              <tr className="text-left text-xs uppercase text-slate-400 font-semibold tracking-wider bg-slate-50">
+                <th className="py-3 px-4 md:px-6 border-b border-slate-200">Domaine</th>
+                <th className="py-3 px-4 md:px-6 border-b border-slate-200">Utilisé</th>
+                <th className="py-3 px-4 md:px-6 border-b border-slate-200">Pages</th>
+                <th className="py-3 px-4 md:px-6 border-b border-slate-200">Citations moy.</th>
+                <th className="py-3 px-4 md:px-6 border-b border-slate-200 text-right">Type</th>
               </tr>
             </thead>
             <tbody>
@@ -4434,19 +4492,19 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
                     if (!domain.highlight) e.currentTarget.style.background = '#FFFFFF';
                   }}
                 >
-                  <td style={{ padding: '18px 26px' }}>
-                    <div className="domain-cell" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: '#0F172A', fontWeight: domain.highlight ? 600 : 500 }}>
-                      <img src={domain.icon} alt={domain.domain} width={20} height={20} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>{domain.domain}</span>
-                        {selectedDomain === domain.domain && <ChevronRight size={14} style={{ color: '#3B82F6' }} />}
+                  <td className="py-4 px-4 md:px-6">
+                    <div className="domain-cell flex items-center gap-3 text-sm md:text-[15px] text-slate-900" style={{ fontWeight: domain.highlight ? 600 : 500 }}>
+                      <img src={domain.icon} alt={domain.domain} width={20} height={20} className="rounded flex-shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      <div className="flex items-center gap-2">
+                        <span className="truncate max-w-[120px] sm:max-w-none">{domain.domain}</span>
+                        {selectedDomain === domain.domain && <ChevronRight size={14} className="text-blue-500" />}
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '18px 26px', fontSize: '14px', color: '#475569', fontWeight: 600 }}>{domain.used}</td>
-                  <td style={{ padding: '18px 26px', fontSize: '14px', color: '#475569' }}>{domain.pages}</td>
-                  <td style={{ padding: '18px 26px', fontSize: '14px', color: '#475569', fontWeight: 600 }}>{domain.citations}</td>
-                  <td style={{ padding: '18px 26px', textAlign: 'right' }}>
+                  <td className="py-4 px-4 md:px-6 text-sm text-slate-600 font-semibold">{domain.used}</td>
+                  <td className="py-4 px-4 md:px-6 text-sm text-slate-600">{domain.pages}</td>
+                  <td className="py-4 px-4 md:px-6 text-sm text-slate-600 font-semibold">{domain.citations}</td>
+                  <td className="py-4 px-4 md:px-6 text-right">
                     <span className={`badge badge-${domain.type}`} style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', padding: '4px 12px', background: domain.type === 'you' ? 'rgba(74, 222, 128, 0.15)' : domain.type === 'model' ? 'rgba(99, 102, 241, 0.15)' : undefined }}>
                       {domain.label}
                     </span>
@@ -4455,13 +4513,14 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
               ))}
             </tbody>
           </table>
+          </div>
 
           {/* Modal Informations détaillées - ouvert au clic sur une source (domaine) */}
           <Dialog open={domainModalOpen} onOpenChange={(open) => {
             setDomainModalOpen(open);
             if (!open) setSelectedDomain(null);
           }}>
-            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0" hideCloseButton>
+            <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0" hideCloseButton>
               {selectedDomain && (() => {
                 const dom = domains.find(d => d.domain === selectedDomain);
                 if (!dom) return null;
@@ -4865,7 +4924,7 @@ const Index = () => {
 
       {/* Modal de sélection de rapport */}
       <Dialog open={isReportsModalOpen} onOpenChange={setIsReportsModalOpen}>
-        <DialogContent style={{ maxWidth: '520px', borderRadius: '16px', padding: '0', overflow: 'hidden' }}>
+        <DialogContent className="w-[95vw] sm:max-w-[520px] rounded-2xl p-0 overflow-hidden">
           <DialogHeader style={{ padding: '20px 24px 12px', borderBottom: '1px solid #F1F5F9' }}>
             <DialogTitle style={{ fontSize: '16px', fontWeight: 600, color: '#1E293B' }}>
               Mes analyses

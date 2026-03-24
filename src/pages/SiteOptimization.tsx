@@ -242,7 +242,7 @@ const SiteOptimization: React.FC = () => {
     <div className="flex-1 min-h-screen bg-background">
       <div className="max-w-6xl mx-auto">
         {/* Hero Header Section */}
-        <div className="relative overflow-hidden bg-card px-8 py-12 border-b border-border">
+        <div className="relative overflow-hidden bg-card px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 border-b border-border">
         {/* Background decorative elements */}
         <div className="absolute inset-0 bg-neutral-50/50"></div>
         
@@ -257,13 +257,13 @@ const SiteOptimization: React.FC = () => {
                   🚀 Optimisation IA
                 </Badge>
               </div> */}
-              <h1 className="text-4xl font-bold text-foreground mb-3">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3">
                 Optimisation de Sites
               </h1>
-              <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 leading-relaxed">
                 Optimisez vos contenus avec l'intelligence artificielle et boostez vos performances.
               </p>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                 <Dialog open={isAnalysisDialogOpen} onOpenChange={setIsAnalysisDialogOpen}>
                   <DialogTrigger asChild>
                     <Button 
@@ -291,7 +291,7 @@ const SiteOptimization: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="px-8 py-8 space-y-8">
+      <div className="px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 space-y-8">
         {/* Dialog */}
         <Dialog open={isAnalysisDialogOpen} onOpenChange={setIsAnalysisDialogOpen}>
           <DialogContent className="sm:max-w-md bg-card text-foreground border border-border">
@@ -396,7 +396,7 @@ const SiteOptimization: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
               <div className="group space-y-4">
                 <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                   <span className="text-primary-foreground font-bold text-lg">1</span>
