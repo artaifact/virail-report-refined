@@ -782,7 +782,6 @@ const LLMODashboard = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart
                         data={(() => {
-                          // Données par défaut si pas de rapport
                           if (!report?.analyses) {
                             return [
                               { metric: 'Schema.org', Score: 65 },
@@ -790,39 +789,20 @@ const LLMODashboard = () => {
                               { metric: 'Métadonnées', Score: 82 },
                               { metric: 'Contenu', Score: 75 },
                               { metric: 'Accessibilité', Score: 88 },
-                              { metric: 'Performance', Score: 85 }
+                              { metric: 'Performance', Score: 85 },
                             ];
                           }
 
-                          // Récupérer les scores depuis le rapport
-                          const analysis = report.analyses.find(a => a.llm_name === 'gpt-5');
+                          const analysis = report.analyses.find((a) => a.llm_name === 'gpt-5');
                           const auditGeo = analysis?.modules?.audit_geo;
 
                           return [
-                            { 
-                              metric: 'Schema.org', 
-                              Score: auditGeo?.donnees_score || 65 
-                            },
-                            { 
-                              metric: 'HTML sémantique', 
-                              Score: auditGeo?.html_score || 78 
-                            },
-                            { 
-                              metric: 'Métadonnées', 
-                              Score: auditGeo?.meta_score || 82 
-                            },
-                            { 
-                              metric: 'Contenu', 
-                              Score: auditGeo?.contenu_score || 75 
-                            },
-                            { 
-                              metric: 'Accessibilité', 
-                              Score: auditGeo?.accessibilite_score || 88 
-                            },
-                            { 
-                              metric: 'Performance', 
-                              Score: auditGeo?.performance_score || 85 
-                            }
+                            { metric: 'Schema.org', Score: auditGeo?.donnees_score || 65 },
+                            { metric: 'HTML sémantique', Score: auditGeo?.html_score || 78 },
+                            { metric: 'Métadonnées', Score: auditGeo?.meta_score || 82 },
+                            { metric: 'Contenu', Score: auditGeo?.contenu_score || 75 },
+                            { metric: 'Accessibilité', Score: auditGeo?.accessibilite_score || 88 },
+                            { metric: 'Performance', Score: auditGeo?.performance_score || 85 },
                           ];
                         })()}
                         margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
@@ -839,7 +819,6 @@ const LLMODashboard = () => {
                           tickCount={6}
                         />
 
-                        {/* Radar principal */}
                         <Radar
                           name="Score"
                           dataKey="Score"
@@ -878,36 +857,33 @@ const LLMODashboard = () => {
                     </ResponsiveContainer>
                   </div>
 
-                  {/* Légende */}
                   <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-                    {/* Colonne gauche */}
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">Schema.org</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">HTML sémantique</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">Métadonnées</span>
                       </div>
                     </div>
 
-                    {/* Colonne droite */}
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">Contenu</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">Accessibilité</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                        <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">Performance</span>
                       </div>
                     </div>

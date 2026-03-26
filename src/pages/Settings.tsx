@@ -20,6 +20,7 @@ import {
   Calendar,
   Eye,
   Shield,
+  Info,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -42,6 +43,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { onboardingService } from "@/services/onboardingService";
 import {
   useAccountDashboard,
   useStripeInvoices,
@@ -258,6 +261,7 @@ const Settings = () => {
   const [editBrandUrl, setEditBrandUrl] = useState("");
   const [editAgencyName, setEditAgencyName] = useState("");
   const [editAgencyUrl, setEditAgencyUrl] = useState("");
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
 
   // API Hooks
   const { data: dashboard, isLoading: isDashboardLoading } = useAccountDashboard();
@@ -286,16 +290,25 @@ const Settings = () => {
 
     loadUserProfile();
 
-    // Charger les données de compte (onboarding)
+    // Charger les données de compte (onboarding) + statut (pour verrouiller l’édition si terminé)
     const loadAccountData = async () => {
       try {
         const apiBase = import.meta.env.DEV ? "" : (import.meta.env.VITE_API_BASE_URL || "https://api.viraill.com");
-        const res = await fetch(`${apiBase}/auth/user/onboarding/account-data`, {
-          method: "GET",
-          credentials: "include",
-        });
+        const [res, onboardingStatus] = await Promise.all([
+          fetch(`${apiBase}/auth/user/onboarding/account-data`, {
+            method: "GET",
+            credentials: "include",
+          }),
+          onboardingService.getOnboardingStatus().catch(() => null),
+        ]);
+        if (onboardingStatus?.completed) {
+          setOnboardingCompleted(true);
+        }
         if (res.ok) {
           const data = await res.json();
+          if (data.onboarding_completed === true || data.onboarding_completed === "true") {
+            setOnboardingCompleted(true);
+          }
           setAccountData(data);
           setEditBrandName(data.brand_name || "");
           setEditBrandUrl(data.brand_url || "");
@@ -328,7 +341,7 @@ const Settings = () => {
   };
 
   const handleSaveAccountData = async () => {
-    if (!accountData) return;
+    if (!accountData || onboardingCompleted) return;
     setIsSavingAccount(true);
     try {
       const apiBase = import.meta.env.DEV ? "" : (import.meta.env.VITE_API_BASE_URL || "https://api.viraill.com");
@@ -363,7 +376,12 @@ const Settings = () => {
       } : prev);
       toast({ title: "Informations mises à jour", description: "Vos informations ont été enregistrées." });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Impossible de sauvegarder les informations";
+      let msg = err instanceof Error ? err.message : "Impossible de sauvegarder les informations";
+      if (/onboarding est déjà complété|onboarding.*complété|account.*ne peuvent plus/i.test(msg)) {
+        setOnboardingCompleted(true);
+        msg =
+          "L’onboarding est terminé : ces champs ne sont plus modifiables depuis cette page. Contactez le support pour toute modification.";
+      }
       toast({ title: "Erreur", description: msg, variant: "destructive" });
     } finally {
       setIsSavingAccount(false);
@@ -666,6 +684,17 @@ const Settings = () => {
               </div>
             ) : accountData ? (
               <div className="space-y-6">
+                {onboardingCompleted && (
+                  <Alert className="border-blue-200 bg-blue-50/80">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="text-blue-900">Onboarding terminé</AlertTitle>
+                    <AlertDescription className="text-blue-800">
+                      Les informations de marque et d’agence ne sont plus modifiables via ce formulaire une fois l’onboarding
+                      terminé. Pour toute mise à jour, contactez le support.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {accountData.account_type && (
                     <div className="space-y-2">
@@ -697,6 +726,7 @@ const Settings = () => {
                       onChange={(e) => setEditBrandName(e.target.value)}
                       placeholder="Nom de votre marque"
                       className="border-gray-300"
+                      disabled={onboardingCompleted}
                     />
                   </div>
 
@@ -708,6 +738,7 @@ const Settings = () => {
                       onChange={(e) => setEditBrandUrl(e.target.value)}
                       placeholder="https://votre-marque.com"
                       className="border-gray-300"
+                      disabled={onboardingCompleted}
                     />
                   </div>
 
@@ -721,6 +752,7 @@ const Settings = () => {
                           onChange={(e) => setEditAgencyName(e.target.value)}
                           placeholder="Nom de votre agence"
                           className="border-gray-300"
+                          disabled={onboardingCompleted}
                         />
                       </div>
 
@@ -732,6 +764,7 @@ const Settings = () => {
                           onChange={(e) => setEditAgencyUrl(e.target.value)}
                           placeholder="https://votre-agence.com"
                           className="border-gray-300"
+                          disabled={onboardingCompleted}
                         />
                       </div>
                     </>
@@ -741,7 +774,7 @@ const Settings = () => {
                 <div className="flex justify-end pt-2">
                   <Button
                     onClick={handleSaveAccountData}
-                    disabled={isSavingAccount}
+                    disabled={isSavingAccount || onboardingCompleted}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     {isSavingAccount ? (

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePayment } from '@/hooks/usePayment';
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,8 @@ import {
   Calendar,
   Trophy,
   Star,
-  Lock
+  Lock,
+  Info
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCompetitiveAnalysis } from "@/hooks/useCompetitiveAnalysis";
@@ -113,10 +115,11 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   ReferenceLine,
   ReferenceDot,
+  Customized,
 } from 'recharts';
 
 const Competition = () => {
@@ -460,12 +463,23 @@ const Competition = () => {
                     let targetRank = 0;
                     let targetScoreVal = 0;
                     const curveData = sorted.map(([, val], i) => {
-                      if (val.isTarget) { targetRank = i + 1; targetScoreVal = Number(val.score.toFixed(2)); }
+                      if (val.isTarget) {
+                        targetRank = i + 1;
+                        targetScoreVal = Number(val.score.toFixed(2));
+                      }
                       return { rank: i + 1, score: Number(val.score.toFixed(2)) };
                     });
 
                     const total = sorted.length;
-                    const percentile = total > 0 ? Math.round(((total - targetRank) / total) * 100) : 0;
+                    const isTop3 = targetRank <= 3 && total >= 3;
+                    const medianRankX = total > 1 ? (total + 1) / 2 : 1;
+
+                    const scoresOnly = curveData.map((d) => d.score);
+                    const scoreMinPanel = Math.min(...scoresOnly);
+                    const scoreMaxPanel = Math.max(...scoresOnly);
+                    const yPad = Math.max((scoreMaxPanel - scoreMinPanel) * 0.12, scoreMaxPanel > 0 ? scoreMaxPanel * 0.02 : 0.5);
+                    const yDomainMin = Math.max(0, scoreMinPanel - yPad);
+                    const yDomainMax = scoreMaxPanel + yPad;
 
                     const rankTicks = Array.from(
                       new Set(
@@ -473,30 +487,68 @@ const Competition = () => {
                       )
                     ).sort((a, b) => a - b);
 
+                    const analysisDateIso =
+                      currentAnalysis?.created_at
+                      || v3Data?.created_at
+                      || reportData?.report?.created_at
+                      || reportData?.report?.updated_at;
+                    let analysisDateLabel: string | null = null;
+                    let analysisDateShort: string | null = null;
+                    if (analysisDateIso) {
+                      const d = new Date(analysisDateIso);
+                      if (!Number.isNaN(d.getTime())) {
+                        analysisDateLabel = d.toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        });
+                        analysisDateShort = d.toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        });
+                      }
+                    }
+
                     return (
                       <Card className="bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1" style={{ letterSpacing: '1.2px' }}>
-                          Votre positionnement
+                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ letterSpacing: '1.2px' }}>
+                            Votre positionnement
+                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className="-m-0.5 rounded-full p-0.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1"
+                                aria-label="Aide : lecture de votre position sur le graphique"
+                              >
+                                <Info className="h-3.5 w-3.5" strokeWidth={2} />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="max-w-[260px] text-xs leading-snug">
+                              Meilleurs scores à gauche, plus faibles à droite. Trait vertical = milieu du classement.
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
-                        <p className="text-xs text-gray-500 leading-relaxed mb-4 max-w-prose">
-                          Chaque point correspond à un acteur du marché, classés par score global décroissant (rang&nbsp;1 = meilleur).
-                          La courbe montre comment le score se répartit sur l’ensemble du classement ; le point violet indique votre rang.
-                        </p>
-
-                        {/* KPI hero */}
-                        <div className="flex items-baseline gap-3 mb-5">
+                        {analysisDateLabel && (
+                          <p className="text-[11px] text-gray-500 mb-3">
+                            Données issues de l’analyse du {analysisDateLabel}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-4">
                           <span className="text-3xl md:text-4xl font-extrabold" style={{ color: '#6366f1' }}>
                             {targetRank}<sup className="text-lg font-semibold text-gray-400">/{total}</sup>
                           </span>
-                          <span className="text-sm text-gray-500">
-                            {percentile}% des acteurs sont derrière vous
-                          </span>
+                          {isTop3 && (
+                            <span className="text-[10px] font-semibold uppercase text-amber-700">Top 3</span>
+                          )}
                         </div>
 
-                        {/* Courbe marché + position */}
-                        <div className="w-full h-[220px] min-w-0">
+                        {/* Courbe marché + légende statique « Votre position » sur le graphique */}
+                        <div className="w-full h-[240px] min-w-0">
                           <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={curveData} margin={{ left: 4, right: 12, top: 8, bottom: 28 }}>
+                            <AreaChart data={curveData} margin={{ left: 16, right: 14, top: 10, bottom: 28 }}>
                               <defs>
                                 <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
                                   <stop offset="0%" stopColor="#e0e7ff" stopOpacity={0.7} />
@@ -504,6 +556,20 @@ const Competition = () => {
                                 </linearGradient>
                               </defs>
                               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                              {total > 1 && (
+                                <ReferenceLine
+                                  x={medianRankX}
+                                  stroke="#cbd5e1"
+                                  strokeDasharray="4 4"
+                                  strokeWidth={1}
+                                  label={{
+                                    value: '50%',
+                                    position: 'insideTopLeft',
+                                    fill: '#94a3b8',
+                                    fontSize: 9,
+                                  }}
+                                />
+                              )}
                               <XAxis
                                 dataKey="rank"
                                 type="number"
@@ -513,25 +579,29 @@ const Competition = () => {
                                 tickLine={false}
                                 axisLine={{ stroke: '#e2e8f0' }}
                                 label={{
-                                  value: 'Rang dans le classement (1 = meilleur score)',
+                                  value: 'Position',
                                   position: 'bottom',
                                   offset: 10,
                                   style: { fill: '#94a3b8', fontSize: 10 },
                                 }}
                               />
                               <YAxis
-                                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                                domain={[yDomainMin, yDomainMax]}
+                                tick={{ fontSize: 12, fill: '#64748b', fontWeight: 500 }}
+                                tickFormatter={(v) =>
+                                  typeof v === 'number' ? v.toFixed(1) : String(v)
+                                }
                                 axisLine={false}
                                 tickLine={false}
-                                width={36}
+                                width={54}
                                 label={{
                                   value: 'Score',
                                   angle: -90,
                                   position: 'insideLeft',
-                                  style: { fill: '#94a3b8', fontSize: 10 },
+                                  style: { fill: '#64748b', fontSize: 11, fontWeight: 600 },
                                 }}
                               />
-                              <Tooltip
+                              <RechartsTooltip
                                 content={({ active, payload }) => {
                                   if (!active || !payload?.[0]) return null;
                                   const d = payload[0].payload;
@@ -539,16 +609,11 @@ const Competition = () => {
                                   return (
                                     <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-lg text-xs max-w-[220px]">
                                       <div className="font-semibold" style={{ color: isMe ? '#6366f1' : '#64748b' }}>
-                                        {isMe ? 'Votre site' : `Acteur au rang ${d.rank}`}
+                                        {isMe ? 'Vous' : `#${d.rank}`}
                                       </div>
-                                      <div className="text-gray-500 mt-0.5">
-                                        Rang {d.rank} sur {total} • Score {d.score.toFixed(2)}
+                                      <div className="text-gray-600 mt-0.5 text-sm font-medium tabular-nums">
+                                        {d.rank}/{total} · {d.score.toFixed(2)}
                                       </div>
-                                      {!isMe && (
-                                        <div className="text-[10px] text-gray-400 mt-1 border-t border-gray-100 pt-1">
-                                          Les rangs sont triés du meilleur au plus faible score.
-                                        </div>
-                                      )}
                                     </div>
                                   );
                                 }}
@@ -562,21 +627,68 @@ const Competition = () => {
                                 dot={false}
                                 activeDot={{ r: 4, strokeWidth: 1, stroke: '#6366f1', fill: '#fff' }}
                               />
-                              {/* Ligne horizontale du score cible */}
                               <ReferenceLine
                                 y={targetScoreVal}
                                 stroke="#6366f1"
                                 strokeDasharray="6 4"
                                 strokeWidth={1}
                                 strokeOpacity={0.5}
-                                label={{
-                                  value: 'Votre score',
-                                  position: 'right',
-                                  fill: '#6366f1',
-                                  fontSize: 10,
+                              />
+                              <Customized
+                                component={(chartProps: {
+                                  xAxisMap?: Record<string, { scale: (v: number) => number }>;
+                                  yAxisMap?: Record<string, { scale: (v: number) => number }>;
+                                  offset?: { left: number; top: number; width: number; height: number };
+                                }) => {
+                                  const { xAxisMap, yAxisMap, offset } = chartProps;
+                                  if (!xAxisMap || !yAxisMap || !offset) return null;
+                                  const xAxis = Object.values(xAxisMap)[0];
+                                  const yAxis = Object.values(yAxisMap)[0];
+                                  if (!xAxis?.scale || !yAxis?.scale) return null;
+                                  const cx = xAxis.scale(targetRank);
+                                  const cy = yAxis.scale(targetScoreVal);
+                                  const boxW = 132;
+                                  const boxH = analysisDateShort ? 62 : 44;
+                                  const dotR = 7;
+                                  const gap = 6;
+                                  const left = offset.left;
+                                  const top = offset.top;
+                                  const right = left + offset.width;
+                                  const bottom = top + offset.height;
+                                  const idealAboveY = cy - boxH - gap - dotR;
+                                  let fx = cx - boxW / 2;
+                                  let fy = idealAboveY >= top + 4 ? idealAboveY : cy + dotR + gap;
+                                  fx = Math.max(left + 4, Math.min(fx, right - boxW - 4));
+                                  fy = Math.max(top + 4, Math.min(fy, bottom - boxH - 4));
+                                  return (
+                                    <foreignObject
+                                      x={fx}
+                                      y={fy}
+                                      width={boxW}
+                                      height={boxH}
+                                      style={{ overflow: 'visible', pointerEvents: 'none' }}
+                                      aria-hidden
+                                    >
+                                      <div
+                                        className="rounded-md border border-indigo-100 bg-white/95 px-2 py-1.5 shadow-md"
+                                        style={{ boxSizing: 'border-box', width: boxW, height: boxH }}
+                                      >
+                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-indigo-600 leading-tight">
+                                          Votre position
+                                        </div>
+                                        <div className="text-base font-bold tabular-nums text-gray-900 leading-tight tracking-tight">
+                                          {targetRank} / {total}
+                                        </div>
+                                        {analysisDateShort && (
+                                          <div className="mt-1.5 border-t border-indigo-200/80 pt-1.5 text-[11px] font-medium leading-snug tracking-wide text-gray-800 tabular-nums">
+                                            {analysisDateShort}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </foreignObject>
+                                  );
                                 }}
                               />
-                              {/* Point du site cible */}
                               <ReferenceDot
                                 x={targetRank}
                                 y={targetScoreVal}
@@ -584,19 +696,10 @@ const Competition = () => {
                                 fill="#6366f1"
                                 stroke="#fff"
                                 strokeWidth={3}
+                                isFront
                               />
                             </AreaChart>
                           </ResponsiveContainer>
-                        </div>
-
-                        {/* Légende alignée sur la lecture du graphique */}
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mt-2 gap-2 text-center sm:text-left">
-                          <span className="text-[11px] text-gray-400">Gauche : rang 1 (meilleur score du panel)</span>
-                          <div className="flex items-center justify-center gap-1.5 shrink-0">
-                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', display: 'inline-block' }} />
-                            <span className="text-[11px] font-medium text-gray-600">Vous (rang {targetRank}) — {targetScoreVal}</span>
-                          </div>
-                          <span className="text-[11px] text-gray-400 sm:text-right">Droite : derniers rangs (scores plus bas)</span>
                         </div>
 
                       </Card>
@@ -918,6 +1021,14 @@ const Competition = () => {
                           </p>
                         )}
 
+                        <div style={{ position: 'relative' }}>
+                          <div
+                            style={
+                              isStarter
+                                ? { filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }
+                                : undefined
+                            }
+                          >
                         {/* Legend with pagination */}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16, alignItems: 'center', justifyContent: 'center' }}>
                           <span style={{ fontSize: 12, color: '#64748B' }}>Marques</span>
@@ -1055,7 +1166,6 @@ const Competition = () => {
                                       <div style={{
                                         background: '#F8FAFC', color: '#1E293B', borderRadius: 10, padding: '12px 14px',
                                         fontSize: 11, lineHeight: 1.5, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', border: '1px solid #E2E8F0',
-                                        filter: isStarter ? 'blur(4px)' : 'none',
                                       }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                                           <span style={{ fontWeight: 700, fontSize: 13, color: '#1E293B' }}>{d.name}</span>
@@ -1072,26 +1182,36 @@ const Competition = () => {
                                       </div>
                                     </foreignObject>
                                   )}
-                                  {/* Lock overlay for solo plan on hover */}
-                                  {isHovered && isStarter && (
-                                    <foreignObject x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} style={{ pointerEvents: 'none', overflow: 'visible' }}>
-                                      <div style={{
-                                        width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                      }}>
-                                        <div style={{
-                                          background: 'rgba(255,255,255,0.85)', borderRadius: 8, padding: '8px 14px',
-                                          display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                                        }}>
-                                          <Lock className="w-3.5 h-3.5 text-gray-500" />
-                                          <span style={{ fontSize: 11, fontWeight: 600, color: '#475569' }}>Plan supérieur requis</span>
-                                        </div>
-                                      </div>
-                                    </foreignObject>
-                                  )}
                                 </g>
                               );
                             })}
                           </svg>
+                        </div>
+                          </div>
+                          {isStarter && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                inset: 0,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(255,255,255,0.45)',
+                                borderRadius: 12,
+                                zIndex: 10,
+                                padding: 16,
+                              }}
+                            >
+                              <Lock size={32} style={{ color: '#6366F1', marginBottom: 12 }} />
+                              <p style={{ fontSize: 16, fontWeight: 600, color: '#1E293B', marginBottom: 4, textAlign: 'center' }}>
+                                Contenu réservé aux plans supérieurs
+                              </p>
+                              <p style={{ fontSize: 13, color: '#64748B', textAlign: 'center', maxWidth: 320 }}>
+                                Passez à un plan supérieur pour débloquer la matrice de matérialité
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </Card>
                     );
@@ -1164,8 +1284,8 @@ const Competition = () => {
                                 <SelectValue placeholder="Score Benchmark" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="score">Score Benchmark</SelectItem>
-                                <SelectItem value="raw_data">Analyse GEO</SelectItem>
+                                <SelectItem value="score">Score GEO</SelectItem>
+                                <SelectItem value="raw_data">Score Benchmark</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1176,10 +1296,10 @@ const Competition = () => {
                           <div className="w-full overflow-x-auto">
                             <div className="min-w-[500px]">
                               <div className="grid grid-cols-[60px_2fr_1fr_120px] gap-6 pb-3 border-b-2 border-gray-200 mb-3">
-                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rang</div>
+                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Position</div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Score</div>
-                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Position</div>
+                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Ordre</div>
                               </div>
 
                               {/* Liste scrollable en mode paysage */}
@@ -1263,7 +1383,7 @@ const Competition = () => {
                               <div className="w-full overflow-x-auto">
                                 <div className="min-w-[700px]">
                                   <div className="grid grid-cols-[60px_2fr_repeat(4,80px)_100px] gap-4 pb-3 border-b-2 border-gray-200 mb-3">
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rang</div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Position</div>
                                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
                                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Crédibilité</div>
                                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Structure</div>
