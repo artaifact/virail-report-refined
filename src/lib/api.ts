@@ -1138,8 +1138,17 @@ export async function getBulkProgress(jobId: string): Promise<BulkJobProgress | 
   }
 }
 
+/** Horodatage pour trier les jobs bulk (plus récent en premier). */
+function bulkJobTimeMs(j: BulkJobSummary): number {
+  const raw = j.started_at || j.completed_at;
+  if (!raw) return 0;
+  const t = Date.parse(raw);
+  return Number.isNaN(t) ? 0 : t;
+}
+
 /**
- * Liste les jobs bulk de l'utilisateur
+ * Liste les jobs bulk de l'utilisateur (triés du plus récent au plus ancien,
+ * pour que l’UI puisse utiliser jobs[0] comme dernière analyse).
  */
 export async function listBulkJobs(): Promise<BulkJobSummary[]> {
   try {
@@ -1149,7 +1158,9 @@ export async function listBulkJobs(): Promise<BulkJobSummary[]> {
       credentials: 'include',
     });
     if (!response.ok) return [];
-    return await response.json();
+    const jobs: BulkJobSummary[] = await response.json();
+    if (!Array.isArray(jobs)) return [];
+    return [...jobs].sort((a, b) => bulkJobTimeMs(b) - bulkJobTimeMs(a));
   } catch {
     return [];
   }
