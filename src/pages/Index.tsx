@@ -2067,10 +2067,17 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const [bulkJobsHistory, setBulkJobsHistory] = useState<BulkJobSummary[]>([]);
   const [bulkJobsLoaded, setBulkJobsLoaded] = useState(false);
 
-  // Domaine extrait du rapport
+  // Domaine du site analysé (URL du rapport)
   const reportUrl = reportData?.report?.url || '';
   let reportDomain = reportUrl;
   try { reportDomain = new URL(reportUrl).origin; } catch {}
+
+  let reportDomainHostname = '';
+  try {
+    reportDomainHostname = reportDomain ? new URL(reportDomain).hostname : '';
+  } catch {
+    reportDomainHostname = '';
+  }
 
   const reportId = reportData?.report?.id;
 
@@ -2641,6 +2648,12 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                 <div>
                   <div style={{ fontSize: '16px', fontWeight: 700, color: '#312E81' }}>Optimiser le site complet</div>
                   <div style={{ fontSize: '13px', color: '#6366F1', fontWeight: 500 }}>Optimiser toutes les pages de votre site</div>
+                  {reportDomainHostname && (
+                    <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
+                      Domaine crawlé : <span style={{ fontWeight: 600, color: '#334155' }}>{reportDomainHostname}</span>
+                      <span style={{ marginLeft: '6px', fontSize: '11px', color: '#94A3B8' }}>(celui du rapport)</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
