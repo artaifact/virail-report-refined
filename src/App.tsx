@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import * as React from "react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Separator } from "@/components/ui/separator";
@@ -41,6 +42,8 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import LLMODashboard from "./pages/LLMODashboard";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import AdminMessages from "./pages/AdminMessages";
+import AdminSubscriptionDocs from "./pages/AdminSubscriptionDocs";
+import { useReports, useReport } from "@/hooks/useReports";
 
 import { OnboardingLayout } from "./pages/onboarding/OnboardingLayout";
 import { SetupStep } from "./pages/onboarding/SetupStep";
@@ -52,6 +55,20 @@ import { PlanStep } from "./pages/onboarding/PlanStep";
 const queryClient = new QueryClient();
 
 function MainLayout() {
+  const { reports } = useReports();
+  const reportId = reports.length > 0 ? reports[reports.length - 1].id : null;
+  const { report: reportData } = useReport(reportId);
+
+  const domainName = React.useMemo(() => {
+    if (!reportData?.report?.url) return null;
+    try {
+      const url = new URL(reportData.report.url);
+      return url.hostname.replace('www.', '');
+    } catch {
+      return null;
+    }
+  }, [reportData]);
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -60,7 +77,7 @@ function MainLayout() {
           <header className="flex h-12 shrink-0 items-center gap-2 px-4 border-b border-border bg-background/95 backdrop-blur-sm md:hidden">
             <SidebarTrigger className="-ml-1 h-8 w-8 text-muted-foreground" />
             <Separator orientation="vertical" className="mr-1 h-4" />
-            <span className="text-sm font-medium text-foreground truncate">Virail Studio</span>
+            <span className="text-sm font-medium text-foreground truncate">{domainName || "Virail Studio"}</span>
           </header>
           <Routes>
             <Route path="/" element={<Index />} />
@@ -68,6 +85,7 @@ function MainLayout() {
             <Route path="/llmo-dashboard" element={<LLMODashboard />} />
             <Route path="/admin/waitlist" element={<AdminRoute><AdminWaitlist /></AdminRoute>} />
             <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
+            <Route path="/admin/subscriptions-docs" element={<AdminRoute><AdminSubscriptionDocs /></AdminRoute>} />
             <Route path="/competition" element={<Competition />} />
             <Route path="/sites-optimization" element={<SiteOptimization />} />
             <Route path="/optimisation/technique" element={<TechnicalOptimization />} />
