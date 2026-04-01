@@ -1097,24 +1097,6 @@ const Competition = () => {
 
                     if (dataPoints.length === 0) return null;
 
-                    // Limiter à 12 concurrents max pour éviter le parasitage
-                    const MAX_DISPLAY = 12;
-                    let displayPoints = dataPoints;
-                    if (dataPoints.length > MAX_DISPLAY) {
-                      const target = dataPoints.filter(d => d.isTarget);
-                      const others = dataPoints.filter(d => !d.isTarget)
-                        .sort((a, b) => b.totalScore - a.totalScore)
-                        .slice(0, MAX_DISPLAY - target.length);
-                      displayPoints = [...target, ...others];
-                    }
-
-                    const chartW = 1000;
-                    const chartH = 720;
-                    const pad = { top: 40, right: 40, bottom: 75, left: 75 };
-                    const plotW = chartW - pad.left - pad.right;
-                    const plotH = chartH - pad.top - pad.bottom;
-                    const xScale = (v: number) => pad.left + (v / 100) * plotW;
-                    const yScale = (s: number) => pad.top + plotH - s * plotH;
                     const getQuadrantInfo = (point: MatricePoint) => {
                       const normalizedName = normalizeBrandLabel(point.name);
                       const canonicalUrl = toCanonicalUrl(point.url);
@@ -1138,6 +1120,102 @@ const Competition = () => {
                           ? { label: 'Niche Player', desc: 'Bien perçu mais peu visible. Les IA en parlent positivement mais rarement.', color: '#6366F1' }
                           : { label: 'Lagger', desc: 'En retard. Faible visibilité et perception négative par les IA.', color: '#EF4444' });
                     };
+
+                    // Limiter à 12 concurrents max avec équilibre par quadrant
+                    const MAX_DISPLAY = 12;
+                    let displayPoints = dataPoints;
+                    if (dataPoints.length > MAX_DISPLAY) {
+                      const quadrantOrder = ['Leader', 'Controversial', 'Niche Player', 'Lagger'] as const;
+                      const targets = dataPoints.filter((d) => d.isTarget).sort((a, b) => b.totalScore - a.totalScore);
+                      const selected: MatricePoint[] = [];
+                      const selectedKeys = new Set<string>();
+                      const pointKey = (point: MatricePoint) => `${toCanonicalUrl(point.url)}|${normalizeBrandLabel(point.name)}`;
+                      const pushIfNew = (point: MatricePoint) => {
+                        const key = pointKey(point);
+                        if (selectedKeys.has(key) || selected.length >= MAX_DISPLAY) return false;
+                        selected.push(point);
+                        selectedKeys.add(key);
+                        return true;
+                      };
+
+                      // Garder au moins le site cible visible
+                      if (targets.length > 0) {
+                        pushIfNew(targets[0]);
+                      }
+
+                      const remaining = dataPoints
+                        .filter((d) => !d.isTarget)
+                        .sort((a, b) => b.totalScore - a.totalScore);
+
+                      const buckets: Record<(typeof quadrantOrder)[number], MatricePoint[]> = {
+                        Leader: [],
+                        Controversial: [],
+                        'Niche Player': [],
+                        Lagger: [],
+                      };
+
+                      remaining.forEach((point) => {
+                        const label = getQuadrantInfo(point).label as (typeof quadrantOrder)[number];
+                        buckets[label].push(point);
+                      });
+
+                      const slots = MAX_DISPLAY - selected.length;
+                      const baseQuota = Math.max(1, Math.floor(slots / quadrantOrder.length));
+                      let remainingSlots = slots;
+                      const perQuadrantUsed: Record<(typeof quadrantOrder)[number], number> = {
+                        Leader: 0,
+                        Controversial: 0,
+                        'Niche Player': 0,
+                        Lagger: 0,
+                      };
+
+                      // 1er passage: garantir une présence équilibrée par quadrant quand possible
+                      quadrantOrder.forEach((quadrant) => {
+                        while (
+                          remainingSlots > 0 &&
+                          perQuadrantUsed[quadrant] < baseQuota &&
+                          buckets[quadrant].length > 0
+                        ) {
+                          const candidate = buckets[quadrant].shift()!;
+                          if (pushIfNew(candidate)) {
+                            perQuadrantUsed[quadrant] += 1;
+                            remainingSlots -= 1;
+                          }
+                        }
+                      });
+
+                      // 2e passage: compléter en round-robin pour garder l'équilibre
+                      while (remainingSlots > 0) {
+                        let picked = false;
+                        quadrantOrder.forEach((quadrant) => {
+                          if (remainingSlots <= 0 || buckets[quadrant].length === 0) return;
+                          const candidate = buckets[quadrant].shift()!;
+                          if (pushIfNew(candidate)) {
+                            perQuadrantUsed[quadrant] += 1;
+                            remainingSlots -= 1;
+                            picked = true;
+                          }
+                        });
+                        if (!picked) break;
+                      }
+
+                      // 3e passage: fallback sécurité
+                      if (selected.length < MAX_DISPLAY) {
+                        remaining.forEach((point) => {
+                          if (selected.length < MAX_DISPLAY) pushIfNew(point);
+                        });
+                      }
+
+                      displayPoints = selected;
+                    }
+
+                    const chartW = 1000;
+                    const chartH = 720;
+                    const pad = { top: 40, right: 40, bottom: 75, left: 75 };
+                    const plotW = chartW - pad.left - pad.right;
+                    const plotH = chartH - pad.top - pad.bottom;
+                    const xScale = (v: number) => pad.left + (v / 100) * plotW;
+                    const yScale = (s: number) => pad.top + plotH - s * plotH;
 
                     // Legend pagination
                     const LEGEND_INITIAL = 5;
