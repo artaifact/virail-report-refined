@@ -948,8 +948,8 @@ const Competition = () => {
                     };
 
                     const dataPoints: MatricePoint[] = [];
-                    let visibilityMid = 50;
-                    let sentimentMid = 0.5;
+                    const visibilityMid = 50;
+                    const sentimentMid = 0.5;
 
                     if (useMateriality) {
                       // Nouvelle source : materiality_matrix
@@ -981,9 +981,6 @@ const Competition = () => {
                         ...dedupedByUrl.values(),
                         ...dedupedByName.values(),
                       ];
-
-                      visibilityMid = materialityMatrix?.quadrants?._thresholds?.visibility_mid ?? 50;
-                      sentimentMid = materialityMatrix?.quadrants?._thresholds?.sentiment_mid ?? 0.5;
 
                       dedupedBrands.forEach((b) => {
                         const domain = extractDomain(b.url);
@@ -1727,8 +1724,8 @@ const Competition = () => {
                       // Quadrant info
                       const vis = d.visibility ?? 0;
                       const sent = d.sentiment ?? 0;
-                      const visMid = materialityMatrix?.quadrants?._thresholds?.visibility_mid ?? 50;
-                      const sentMid = materialityMatrix?.quadrants?._thresholds?.sentiment_mid ?? 0.5;
+                      const visMid = 50;
+                      const sentMid = 0.5;
                       const quadrant = vis >= visMid
                         ? (sent >= sentMid
                           ? { label: 'Leader', color: '#22C55E', desc: 'Forte visibilité et perception positive par les IA.' }
