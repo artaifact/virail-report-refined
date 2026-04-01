@@ -96,6 +96,43 @@ const getOrdinalSuffix = (n: number): string => {
   if (j === 3 && k !== 13) return 'ème';
   return 'ème';
 };
+
+const normalizeBrandLabel = (value: string | null | undefined): string =>
+  (value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const toCanonicalUrl = (value: string | null | undefined): string => {
+  const raw = (value || '').trim().toLowerCase();
+  if (!raw) return '';
+  const withProtocol = /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
+  try {
+    const parsed = new URL(withProtocol);
+    const host = parsed.hostname.replace(/^www\./, '');
+    const path = parsed.pathname.replace(/\/+$/, '');
+    return `${host}${path}`;
+  } catch {
+    return raw
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/[?#].*$/, '')
+      .replace(/\/+$/, '');
+  }
+};
+
+const compareMaterialityEntries = (a: any, b: any): number => {
+  if (!!a?.is_target !== !!b?.is_target) return a?.is_target ? 1 : -1;
+  if (!!a?.audited !== !!b?.audited) return a?.audited ? 1 : -1;
+  const scoreA = typeof a?.total_score === 'number' ? a.total_score : -1;
+  const scoreB = typeof b?.total_score === 'number' ? b.total_score : -1;
+  if (scoreA !== scoreB) return scoreA > scoreB ? 1 : -1;
+  const visibilityA = typeof a?.visibility === 'number' ? a.visibility : -1;
+  const visibilityB = typeof b?.visibility === 'number' ? b.visibility : -1;
+  return visibilityA > visibilityB ? 1 : -1;
+};
 import CompetitiveAnalysisDisplay from "@/components/competitive-analysis/CompetitiveAnalysisDisplay";
 import DetailedCompetitiveAnalysis from "@/components/competitive-analysis/DetailedCompetitiveAnalysis";
 import MiniLLMAnalysis from "@/components/competitive-analysis/MiniLLMAnalysis";
@@ -174,7 +211,13 @@ const Competition = () => {
       pillars: Record<string, { score: number; max: number }>;
       gaps: string[];
     }>;
-    quadrants: { leaders: string[]; niche_players: string[]; controversial: string[]; laggers: string[] };
+    quadrants: {
+      leaders: string[];
+      niche_players: string[];
+      controversial: string[];
+      laggers: string[];
+      _thresholds?: { visibility_mid?: number; sentiment_mid?: number };
+    };
     stats: { total_brands: number; with_audit: number; without_audit: number; source: string };
   } | null | undefined;
 
@@ -905,10 +948,79 @@ const Competition = () => {
                     };
 
                     const dataPoints: MatricePoint[] = [];
+                    const quadrantNames = {
+                      leaders: new Set<string>(),
+                      nichePlayers: new Set<string>(),
+                      controversial: new Set<string>(),
+                      laggers: new Set<string>(),
+                    };
+                    const quadrantUrls = {
+                      leaders: new Set<string>(),
+                      nichePlayers: new Set<string>(),
+                      controversial: new Set<string>(),
+                      laggers: new Set<string>(),
+                    };
+                    let visibilityMid = 50;
+                    let sentimentMid = 0.5;
 
                     if (useMateriality) {
                       // Nouvelle source : materiality_matrix
-                      materialityMatrix!.brands.forEach(b => {
+                      const dedupedByUrl = new Map<string, any>();
+                      const dedupedByName = new Map<string, any>();
+
+                      materialityMatrix!.brands.forEach((b) => {
+                        const canonicalUrl = toCanonicalUrl(b.url);
+                        const normalizedName = normalizeBrandLabel(b.name);
+
+                        const urlKey = canonicalUrl || '';
+                        if (urlKey) {
+                          const existing = dedupedByUrl.get(urlKey);
+                          if (!existing || compareMaterialityEntries(b, existing) > 0) {
+                            dedupedByUrl.set(urlKey, b);
+                          }
+                          return;
+                        }
+
+                        if (normalizedName) {
+                          const existing = dedupedByName.get(normalizedName);
+                          if (!existing || compareMaterialityEntries(b, existing) > 0) {
+                            dedupedByName.set(normalizedName, b);
+                          }
+                        }
+                      });
+
+                      const dedupedBrands = [
+                        ...dedupedByUrl.values(),
+                        ...dedupedByName.values(),
+                      ];
+
+                      visibilityMid = materialityMatrix?.quadrants?._thresholds?.visibility_mid ?? 50;
+                      sentimentMid = materialityMatrix?.quadrants?._thresholds?.sentiment_mid ?? 0.5;
+
+                      const addQuadrant = (
+                        names: string[] | undefined,
+                        nameSet: Set<string>,
+                        urlSet: Set<string>
+                      ) => {
+                        (names || []).forEach((value) => {
+                          const normalized = normalizeBrandLabel(value);
+                          if (normalized) nameSet.add(normalized);
+                        });
+
+                        dedupedBrands.forEach((brand) => {
+                          const normalizedBrandName = normalizeBrandLabel(brand.name);
+                          if (!normalizedBrandName || !nameSet.has(normalizedBrandName)) return;
+                          const brandUrlKey = toCanonicalUrl(brand.url);
+                          if (brandUrlKey) urlSet.add(brandUrlKey);
+                        });
+                      };
+
+                      addQuadrant(materialityMatrix?.quadrants?.leaders, quadrantNames.leaders, quadrantUrls.leaders);
+                      addQuadrant(materialityMatrix?.quadrants?.niche_players, quadrantNames.nichePlayers, quadrantUrls.nichePlayers);
+                      addQuadrant(materialityMatrix?.quadrants?.controversial, quadrantNames.controversial, quadrantUrls.controversial);
+                      addQuadrant(materialityMatrix?.quadrants?.laggers, quadrantNames.laggers, quadrantUrls.laggers);
+
+                      dedupedBrands.forEach((b) => {
                         const domain = extractDomain(b.url);
                         dataPoints.push({
                           name: b.name,
@@ -1003,6 +1115,29 @@ const Competition = () => {
                     const plotH = chartH - pad.top - pad.bottom;
                     const xScale = (v: number) => pad.left + (v / 100) * plotW;
                     const yScale = (s: number) => pad.top + plotH - s * plotH;
+                    const getQuadrantInfo = (point: MatricePoint) => {
+                      const normalizedName = normalizeBrandLabel(point.name);
+                      const canonicalUrl = toCanonicalUrl(point.url);
+                      if (quadrantNames.laggers.has(normalizedName) || quadrantUrls.laggers.has(canonicalUrl)) {
+                        return { label: 'Lagger', desc: 'En retard. Faible visibilité et perception négative par les IA.', color: '#EF4444' };
+                      }
+                      if (quadrantNames.leaders.has(normalizedName) || quadrantUrls.leaders.has(canonicalUrl)) {
+                        return { label: 'Leader', desc: 'Très bien positionné. Forte visibilité et perception positive par les IA.', color: '#22C55E' };
+                      }
+                      if (quadrantNames.controversial.has(normalizedName) || quadrantUrls.controversial.has(canonicalUrl)) {
+                        return { label: 'Controversial', desc: 'Visible mais mal perçu. Les IA le mentionnent souvent mais avec un sentiment négatif.', color: '#F59E0B' };
+                      }
+                      if (quadrantNames.nichePlayers.has(normalizedName) || quadrantUrls.nichePlayers.has(canonicalUrl)) {
+                        return { label: 'Niche Player', desc: 'Bien perçu mais peu visible. Les IA en parlent positivement mais rarement.', color: '#6366F1' };
+                      }
+                      return point.visibility >= visibilityMid
+                        ? (point.sentiment >= sentimentMid
+                          ? { label: 'Leader', desc: 'Très bien positionné. Forte visibilité et perception positive par les IA.', color: '#22C55E' }
+                          : { label: 'Controversial', desc: 'Visible mais mal perçu. Les IA le mentionnent souvent mais avec un sentiment négatif.', color: '#F59E0B' })
+                        : (point.sentiment >= sentimentMid
+                          ? { label: 'Niche Player', desc: 'Bien perçu mais peu visible. Les IA en parlent positivement mais rarement.', color: '#6366F1' }
+                          : { label: 'Lagger', desc: 'En retard. Faible visibilité et perception négative par les IA.', color: '#EF4444' });
+                    };
 
                     // Legend pagination
                     const LEGEND_INITIAL = 5;
@@ -1107,8 +1242,8 @@ const Competition = () => {
                             ))}
 
                             {/* Center cross */}
-                            <line x1={xScale(50)} y1={pad.top} x2={xScale(50)} y2={pad.top + plotH} stroke="#CBD5E1" strokeWidth={1} />
-                            <line x1={pad.left} y1={yScale(0.5)} x2={pad.left + plotW} y2={yScale(0.5)} stroke="#CBD5E1" strokeWidth={1} />
+                            <line x1={xScale(visibilityMid)} y1={pad.top} x2={xScale(visibilityMid)} y2={pad.top + plotH} stroke="#CBD5E1" strokeWidth={1} />
+                            <line x1={pad.left} y1={yScale(sentimentMid)} x2={pad.left + plotW} y2={yScale(sentimentMid)} stroke="#CBD5E1" strokeWidth={1} />
 
                             {/* Axis labels */}
                             <text x={pad.left + plotW / 2} y={chartH - 10} textAnchor="middle" fontSize="13" fill="#6B7280" fontWeight="500">Visibility</text>
@@ -1118,13 +1253,7 @@ const Competition = () => {
                             {[...displayPoints].sort((a, b) => (a.url === hoveredMatricePoint ? 1 : 0) - (b.url === hoveredMatricePoint ? 1 : 0)).map((d, i) => {
                               const cx = xScale(d.visibility);
                               const cy = yScale(d.sentiment);
-                              const quadrantInfo = d.visibility >= 50
-                                ? (d.sentiment >= 0.5
-                                  ? { label: 'Leader', desc: 'Très bien positionné. Forte visibilité et perception positive par les IA.', color: '#22C55E' }
-                                  : { label: 'Controversial', desc: 'Visible mais mal perçu. Les IA le mentionnent souvent mais avec un sentiment négatif.', color: '#F59E0B' })
-                                : (d.sentiment >= 0.5
-                                  ? { label: 'Niche Player', desc: 'Bien perçu mais peu visible. Les IA en parlent positivement mais rarement.', color: '#6366F1' }
-                                  : { label: 'Lagger', desc: 'En retard. Faible visibilité et perception négative par les IA.', color: '#EF4444' });
+                              const quadrantInfo = getQuadrantInfo(d);
                               const isHovered = hoveredMatricePoint === d.url;
                               const tooltipW = 220;
                               const tooltipH = 130;
@@ -1548,13 +1677,26 @@ const Competition = () => {
                       // Quadrant info
                       const vis = d.visibility ?? 0;
                       const sent = d.sentiment ?? 0;
-                      const quadrant = vis >= 50
-                        ? (sent >= 0.5
-                          ? { label: 'Leader', color: '#22C55E', desc: 'Forte visibilité et perception positive par les IA.' }
-                          : { label: 'Controversial', color: '#F59E0B', desc: 'Visible mais mal perçu par les IA.' })
-                        : (sent >= 0.5
-                          ? { label: 'Niche Player', color: '#6366F1', desc: 'Bien perçu mais peu visible par les IA.' }
-                          : { label: 'Lagger', color: '#EF4444', desc: 'Faible visibilité et perception négative.' });
+                      const visMid = materialityMatrix?.quadrants?._thresholds?.visibility_mid ?? 50;
+                      const sentMid = materialityMatrix?.quadrants?._thresholds?.sentiment_mid ?? 0.5;
+                      const laggerNames = new Set((materialityMatrix?.quadrants?.laggers || []).map((v: string) => normalizeBrandLabel(v)));
+                      const selectedName = normalizeBrandLabel(brandName);
+                      const selectedUrl = toCanonicalUrl(selectedGeoEntry.url);
+                      const laggerByName = laggerNames.has(selectedName);
+                      const laggerByUrl = (materialityMatrix?.brands || []).some((brand) => {
+                        const normalizedBrandName = normalizeBrandLabel(brand.name);
+                        return laggerNames.has(normalizedBrandName) && toCanonicalUrl(brand.url) === selectedUrl;
+                      });
+                      const isApiLagger = laggerByName || laggerByUrl;
+                      const quadrant = isApiLagger
+                        ? { label: 'Lagger', color: '#EF4444', desc: 'Faible visibilité et perception négative.' }
+                        : vis >= visMid
+                          ? (sent >= sentMid
+                            ? { label: 'Leader', color: '#22C55E', desc: 'Forte visibilité et perception positive par les IA.' }
+                            : { label: 'Controversial', color: '#F59E0B', desc: 'Visible mais mal perçu par les IA.' })
+                          : (sent >= sentMid
+                            ? { label: 'Niche Player', color: '#6366F1', desc: 'Bien perçu mais peu visible par les IA.' }
+                            : { label: 'Lagger', color: '#EF4444', desc: 'Faible visibilité et perception négative.' });
 
                       // Gaps
                       const gaps = (d.gaps as string[]) || [];
