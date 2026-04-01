@@ -948,18 +948,6 @@ const Competition = () => {
                     };
 
                     const dataPoints: MatricePoint[] = [];
-                    const quadrantNames = {
-                      leaders: new Set<string>(),
-                      nichePlayers: new Set<string>(),
-                      controversial: new Set<string>(),
-                      laggers: new Set<string>(),
-                    };
-                    const quadrantUrls = {
-                      leaders: new Set<string>(),
-                      nichePlayers: new Set<string>(),
-                      controversial: new Set<string>(),
-                      laggers: new Set<string>(),
-                    };
                     let visibilityMid = 50;
                     let sentimentMid = 0.5;
 
@@ -996,29 +984,6 @@ const Competition = () => {
 
                       visibilityMid = materialityMatrix?.quadrants?._thresholds?.visibility_mid ?? 50;
                       sentimentMid = materialityMatrix?.quadrants?._thresholds?.sentiment_mid ?? 0.5;
-
-                      const addQuadrant = (
-                        names: string[] | undefined,
-                        nameSet: Set<string>,
-                        urlSet: Set<string>
-                      ) => {
-                        (names || []).forEach((value) => {
-                          const normalized = normalizeBrandLabel(value);
-                          if (normalized) nameSet.add(normalized);
-                        });
-
-                        dedupedBrands.forEach((brand) => {
-                          const normalizedBrandName = normalizeBrandLabel(brand.name);
-                          if (!normalizedBrandName || !nameSet.has(normalizedBrandName)) return;
-                          const brandUrlKey = toCanonicalUrl(brand.url);
-                          if (brandUrlKey) urlSet.add(brandUrlKey);
-                        });
-                      };
-
-                      addQuadrant(materialityMatrix?.quadrants?.leaders, quadrantNames.leaders, quadrantUrls.leaders);
-                      addQuadrant(materialityMatrix?.quadrants?.niche_players, quadrantNames.nichePlayers, quadrantUrls.nichePlayers);
-                      addQuadrant(materialityMatrix?.quadrants?.controversial, quadrantNames.controversial, quadrantUrls.controversial);
-                      addQuadrant(materialityMatrix?.quadrants?.laggers, quadrantNames.laggers, quadrantUrls.laggers);
 
                       dedupedBrands.forEach((b) => {
                         const domain = extractDomain(b.url);
@@ -1097,29 +1062,15 @@ const Competition = () => {
 
                     if (dataPoints.length === 0) return null;
 
-                    const getQuadrantInfo = (point: MatricePoint) => {
-                      const normalizedName = normalizeBrandLabel(point.name);
-                      const canonicalUrl = toCanonicalUrl(point.url);
-                      if (quadrantNames.laggers.has(normalizedName) || quadrantUrls.laggers.has(canonicalUrl)) {
-                        return { label: 'Lagger', desc: 'En retard. Faible visibilité et perception négative par les IA.', color: '#EF4444' };
-                      }
-                      if (quadrantNames.leaders.has(normalizedName) || quadrantUrls.leaders.has(canonicalUrl)) {
-                        return { label: 'Leader', desc: 'Très bien positionné. Forte visibilité et perception positive par les IA.', color: '#22C55E' };
-                      }
-                      if (quadrantNames.controversial.has(normalizedName) || quadrantUrls.controversial.has(canonicalUrl)) {
-                        return { label: 'Controversial', desc: 'Visible mais mal perçu. Les IA le mentionnent souvent mais avec un sentiment négatif.', color: '#F59E0B' };
-                      }
-                      if (quadrantNames.nichePlayers.has(normalizedName) || quadrantUrls.nichePlayers.has(canonicalUrl)) {
-                        return { label: 'Niche Player', desc: 'Bien perçu mais peu visible. Les IA en parlent positivement mais rarement.', color: '#6366F1' };
-                      }
-                      return point.visibility >= visibilityMid
+                    const getQuadrantInfo = (point: MatricePoint) => (
+                      point.visibility >= visibilityMid
                         ? (point.sentiment >= sentimentMid
                           ? { label: 'Leader', desc: 'Très bien positionné. Forte visibilité et perception positive par les IA.', color: '#22C55E' }
                           : { label: 'Controversial', desc: 'Visible mais mal perçu. Les IA le mentionnent souvent mais avec un sentiment négatif.', color: '#F59E0B' })
                         : (point.sentiment >= sentimentMid
                           ? { label: 'Niche Player', desc: 'Bien perçu mais peu visible. Les IA en parlent positivement mais rarement.', color: '#6366F1' }
-                          : { label: 'Lagger', desc: 'En retard. Faible visibilité et perception négative par les IA.', color: '#EF4444' });
-                    };
+                          : { label: 'Lagger', desc: 'En retard. Faible visibilité et perception négative par les IA.', color: '#EF4444' })
+                    );
 
                     // Limiter à 12 concurrents max avec équilibre par quadrant
                     const MAX_DISPLAY = 12;
@@ -1144,8 +1095,7 @@ const Competition = () => {
                       }
 
                       const remaining = dataPoints
-                        .filter((d) => !d.isTarget)
-                        .sort((a, b) => b.totalScore - a.totalScore);
+                        .filter((d) => !d.isTarget);
 
                       const buckets: Record<(typeof quadrantOrder)[number], MatricePoint[]> = {
                         Leader: [],
@@ -1157,6 +1107,28 @@ const Competition = () => {
                       remaining.forEach((point) => {
                         const label = getQuadrantInfo(point).label as (typeof quadrantOrder)[number];
                         buckets[label].push(point);
+                      });
+
+                      const quadrantCenters: Record<(typeof quadrantOrder)[number], { x: number; y: number }> = {
+                        Leader: { x: (visibilityMid + 100) / 2, y: (sentimentMid + 1) / 2 },
+                        Controversial: { x: (visibilityMid + 100) / 2, y: sentimentMid / 2 },
+                        'Niche Player': { x: visibilityMid / 2, y: (sentimentMid + 1) / 2 },
+                        Lagger: { x: visibilityMid / 2, y: sentimentMid / 2 },
+                      };
+                      const representativeness = (point: MatricePoint, quadrant: (typeof quadrantOrder)[number]) => {
+                        const center = quadrantCenters[quadrant];
+                        const dx = (point.visibility - center.x) / 100;
+                        const dy = point.sentiment - center.y;
+                        return Math.sqrt(dx * dx + dy * dy);
+                      };
+
+                      quadrantOrder.forEach((quadrant) => {
+                        buckets[quadrant].sort((a, b) => {
+                          const aDist = representativeness(a, quadrant);
+                          const bDist = representativeness(b, quadrant);
+                          if (aDist !== bDist) return aDist - bDist;
+                          return b.totalScore - a.totalScore;
+                        });
                       });
 
                       const slots = MAX_DISPLAY - selected.length;
@@ -1757,24 +1729,13 @@ const Competition = () => {
                       const sent = d.sentiment ?? 0;
                       const visMid = materialityMatrix?.quadrants?._thresholds?.visibility_mid ?? 50;
                       const sentMid = materialityMatrix?.quadrants?._thresholds?.sentiment_mid ?? 0.5;
-                      const laggerNames = new Set((materialityMatrix?.quadrants?.laggers || []).map((v: string) => normalizeBrandLabel(v)));
-                      const selectedName = normalizeBrandLabel(brandName);
-                      const selectedUrl = toCanonicalUrl(selectedGeoEntry.url);
-                      const laggerByName = laggerNames.has(selectedName);
-                      const laggerByUrl = (materialityMatrix?.brands || []).some((brand) => {
-                        const normalizedBrandName = normalizeBrandLabel(brand.name);
-                        return laggerNames.has(normalizedBrandName) && toCanonicalUrl(brand.url) === selectedUrl;
-                      });
-                      const isApiLagger = laggerByName || laggerByUrl;
-                      const quadrant = isApiLagger
-                        ? { label: 'Lagger', color: '#EF4444', desc: 'Faible visibilité et perception négative.' }
-                        : vis >= visMid
-                          ? (sent >= sentMid
-                            ? { label: 'Leader', color: '#22C55E', desc: 'Forte visibilité et perception positive par les IA.' }
-                            : { label: 'Controversial', color: '#F59E0B', desc: 'Visible mais mal perçu par les IA.' })
-                          : (sent >= sentMid
-                            ? { label: 'Niche Player', color: '#6366F1', desc: 'Bien perçu mais peu visible par les IA.' }
-                            : { label: 'Lagger', color: '#EF4444', desc: 'Faible visibilité et perception négative.' });
+                      const quadrant = vis >= visMid
+                        ? (sent >= sentMid
+                          ? { label: 'Leader', color: '#22C55E', desc: 'Forte visibilité et perception positive par les IA.' }
+                          : { label: 'Controversial', color: '#F59E0B', desc: 'Visible mais mal perçu par les IA.' })
+                        : (sent >= sentMid
+                          ? { label: 'Niche Player', color: '#6366F1', desc: 'Bien perçu mais peu visible par les IA.' }
+                          : { label: 'Lagger', color: '#EF4444', desc: 'Faible visibilité et perception négative.' });
 
                       // Gaps
                       const gaps = (d.gaps as string[]) || [];
