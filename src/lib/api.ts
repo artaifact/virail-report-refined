@@ -473,12 +473,30 @@ export interface StreamingContextInterface {
 }
 
 interface LlmoJobsCreateResponse {
-  task_id: string;
+  job_id?: string;
+  task_id?: string;
   analysis_id?: number | string;
+  llmo_report_id?: number | string;
+  report_id?: number | string;
   status?: string;
-  status_url?: string;
-  events_url?: string;
-  result_url?: string;
+  latest_event?: {
+    event?: string;
+    data?: Record<string, unknown>;
+    [key: string]: unknown;
+  } | null;
+  events?: Array<{
+    seq?: number;
+    event?: string;
+    timestamp?: string | null;
+    data?: Record<string, unknown>;
+    [key: string]: unknown;
+  }>;
+  error?: string | null;
+  llmo_report?: {
+    id?: number | string;
+    get_url?: string;
+    [key: string]: unknown;
+  } | null;
   [key: string]: unknown;
 }
 
@@ -494,13 +512,6 @@ const DEFAULT_CITATION_MODELS = [
   'grok-4',
 ];
 
-function toAbsoluteApiUrl(urlOrPath?: string): string | null {
-  if (!urlOrPath) return null;
-  if (/^https?:\/\//i.test(urlOrPath)) return urlOrPath;
-  if (urlOrPath.startsWith('/')) return `${API_BASE_URL}${urlOrPath}`;
-  return `${API_BASE_URL}/${urlOrPath}`;
-}
-
 function isCompletedStatus(status: unknown): boolean {
   if (typeof status !== 'string') return false;
   const s = status.toLowerCase();
@@ -513,15 +524,15 @@ function isFailedStatus(status: unknown): boolean {
   return s === 'failed' || s === 'error' || s === 'cancelled' || s === 'canceled';
 }
 
-function extractReportId(
-  data?: Record<string, unknown> | null,
+function extractReportIdFromJob(
+  job?: LlmoJobsCreateResponse | null,
   fallback?: unknown
 ): string | null {
   const value =
-    data?.report_id ??
-    data?.llmo_report_id ??
-    data?.analysis_id ??
-    data?.id ??
+    job?.llmo_report_id ??
+    job?.llmo_report?.id ??
+    job?.report_id ??
+    job?.analysis_id ??
     fallback;
   if (value === null || value === undefined || value === '') return null;
   return String(value);
@@ -535,6 +546,16 @@ function toPercentProgress(value: unknown): number | null {
 
 async function sleep(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getJobId(job: LlmoJobsCreateResponse): string {
+  const id = job.job_id ?? job.task_id;
+  if (!id) throw new Error('Réponse invalide: job_id/task_id manquant');
+  return String(id);
+}
+
+function buildJobDetailUrl(jobId: string): string {
+  return `${API_BASE_URL}/llmo/jobs/${encodeURIComponent(jobId)}?include_events=true&events_limit=50`;
 }
 
 async function getOnboardingAgencyName(): Promise<string> {
@@ -551,7 +572,7 @@ async function getOnboardingAgencyName(): Promise<string> {
   }
 }
 
-async function createLlmoJob(url: string): Promise<{ job: LlmoJobsCreateResponse; request: Record<string, unknown> }> {
+async function createLlmoJob(url: string): Promise<{ job: LlmoJobsCreateResponse; request: Record<string, unknown>; jobId: string }> {
   const citationBrandName = await getOnboardingAgencyName();
   const requestBody: Record<string, unknown> = {
     url,
@@ -586,123 +607,67 @@ async function createLlmoJob(url: string): Promise<{ job: LlmoJobsCreateResponse
   }
 
   const job = await response.json() as LlmoJobsCreateResponse;
-  if (!job?.task_id) {
-    throw new Error('Réponse invalide: task_id manquant');
-  }
-  return { job, request: requestBody };
+  const jobId = getJobId(job);
+  return { job, request: requestBody, jobId };
 }
 
-async function consumeJobEvents(
-  job: LlmoJobsCreateResponse,
-  onEvent: (event: string, data: Record<string, unknown>) => void
-): Promise<Record<string, unknown> | null> {
-  const eventsUrl = toAbsoluteApiUrl(job.events_url);
-  if (!eventsUrl) return null;
-
-  const response = await fetchWithAuth(eventsUrl, {
+async function fetchJobDetail(jobId: string): Promise<LlmoJobsCreateResponse> {
+  const response = await fetchWithAuth(buildJobDetailUrl(jobId), {
     method: 'GET',
     credentials: 'include',
-    headers: { Accept: 'text/event-stream' },
   });
-
   if (!response.ok) {
-    const message = await getAnalysisErrorMessage(response, `Erreur HTTP events: ${response.status}`);
+    const message = await getAnalysisErrorMessage(response, `Erreur HTTP job detail: ${response.status}`);
     throw new Error(message);
   }
-
-  const reader = response.body?.getReader();
-  if (!reader) {
-    throw new Error('Réponse sans corps (events stream)');
-  }
-
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n\n');
-    buffer = lines.pop() ?? '';
-
-    for (const chunk of lines) {
-      const eventMatch = chunk.match(/^event:\s*(.+)/m);
-      const dataMatch = chunk.match(/^data:\s*(.+)/ms);
-      const event = eventMatch ? eventMatch[1].trim() : 'message';
-      let data: Record<string, unknown> = {};
-      try {
-        if (dataMatch) data = JSON.parse(dataMatch[1].trim()) as Record<string, unknown>;
-      } catch {
-        /* ignorer lignes data invalides */
-      }
-
-      onEvent(event, data);
-
-      if (event === 'error' || isFailedStatus(data.status)) {
-        const message = (data.message as string) ?? 'Erreur lors de l\'analyse';
-        throw new Error(message);
-      }
-
-      if (
-        event === 'analysis_completed' ||
-        event === 'job_completed' ||
-        isCompletedStatus(data.status)
-      ) {
-        return data;
-      }
-    }
-  }
-
-  return null;
+  return await response.json() as LlmoJobsCreateResponse;
 }
 
-async function fetchJobResult(job: LlmoJobsCreateResponse): Promise<Record<string, unknown> | null> {
-  const resultUrl = toAbsoluteApiUrl(job.result_url);
-  if (!resultUrl) return null;
-  try {
-    const response = await fetchWithAuth(resultUrl, {
-      method: 'GET',
-      credentials: 'include',
-    });
-    if (!response.ok) return null;
-    return await response.json() as Record<string, unknown>;
-  } catch {
-    return null;
-  }
+function formatJobEventMessage(eventName: string): string {
+  const map: Record<string, string> = {
+    analysis_started: 'Demarrage de l’analyse',
+    content_fetched: 'Contenu recupere',
+    llms_loaded: 'Modeles charges',
+    module_completed: 'Un module LLM termine',
+    llm_completed: 'Un LLM termine',
+    competitor_analysis_started: 'Concurrence demarree',
+    competitor_v1_completed: 'Concurrence V1 terminee',
+    competitor_v3_completed: 'Concurrence V3 terminee',
+    citation_analysis_started: 'Citation demarree',
+    citation_analysis_completed: 'Citation terminee',
+    crawl_optimizer_started: 'Crawl optimizer demarre',
+    crawl_optimizer_progress: 'Crawl optimizer en cours',
+    crawl_optimizer_completed: 'Crawl optimizer termine',
+    audit_4_piliers_completed: 'Audit termine',
+    evolution_started: 'Evolution demarree',
+    evolution_completed: 'Evolution terminee',
+    analysis_completed: 'Job termine',
+    error: 'Echec du job',
+  };
+  return map[eventName] || eventName;
 }
 
 async function pollJobStatusUntilDone(
-  job: LlmoJobsCreateResponse,
-  options: { onStatus?: (data: Record<string, unknown>) => void; maxAttempts?: number; intervalMs?: number } = {}
-): Promise<{ statusData: Record<string, unknown>; resultData: Record<string, unknown> | null } | null> {
-  const statusUrl = toAbsoluteApiUrl(job.status_url);
-  if (!statusUrl) return null;
-  const { onStatus, maxAttempts = 240, intervalMs = 2000 } = options;
+  jobId: string,
+  options: { onStatus?: (data: LlmoJobsCreateResponse) => void; maxAttempts?: number } = {}
+): Promise<LlmoJobsCreateResponse> {
+  const { onStatus, maxAttempts = 240 } = options;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const response = await fetchWithAuth(statusUrl, {
-      method: 'GET',
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      await sleep(intervalMs);
-      continue;
-    }
-
-    const statusData = await response.json() as Record<string, unknown>;
+    const statusData = await fetchJobDetail(jobId);
     onStatus?.(statusData);
 
     if (isFailedStatus(statusData.status)) {
-      const message = (statusData.message as string) ?? 'Le job a échoué';
+      const message = (statusData.error as string) || 'Le job a echoue';
       throw new Error(message);
     }
 
     if (isCompletedStatus(statusData.status)) {
-      const resultData = await fetchJobResult(job);
-      return { statusData, resultData };
+      return statusData;
     }
 
+    // 2s pendant les 20 premieres secondes puis 5s
+    const intervalMs = attempt < 10 ? 2000 : 5000;
     await sleep(intervalMs);
   }
 
@@ -719,45 +684,38 @@ export async function startAnalysisStream(
   const { onProgress } = options;
 
   try {
-    const { job, request } = await createLlmoJob(url);
-    onProgress?.({ event: 'job_created', data: job as Record<string, unknown> });
+    const { job, request, jobId } = await createLlmoJob(url);
+    onProgress?.({ event: 'pending', data: job as Record<string, unknown> });
 
-    let completionData: Record<string, unknown> | null = null;
-    try {
-      completionData = await consumeJobEvents(job, (event, data) => onProgress?.({ event, data }));
-    } catch (eventsError) {
-      onProgress?.({
-        event: 'events_fallback_status_polling',
-        data: { message: eventsError instanceof Error ? eventsError.message : 'Erreur stream events' },
-      });
-    }
-
-    let statusData: Record<string, unknown> | null = null;
-    let resultData: Record<string, unknown> | null = null;
-
-    if (!completionData) {
-      const polled = await pollJobStatusUntilDone(job, {
-        onStatus: (data) => onProgress?.({ event: 'job_status', data }),
-      });
-      statusData = polled?.statusData ?? null;
-      resultData = polled?.resultData ?? null;
-    } else {
-      resultData = await fetchJobResult(job);
-    }
+    const finalJob = await pollJobStatusUntilDone(jobId, {
+      onStatus: (data) => {
+        const latestEvent = data.latest_event?.event;
+        if (latestEvent && typeof latestEvent === 'string') {
+          onProgress?.({
+            event: latestEvent,
+            data: (data.latest_event?.data as Record<string, unknown>) || {},
+          });
+        } else {
+          onProgress?.({
+            event: String(data.status || 'running'),
+            data: data as Record<string, unknown>,
+          });
+        }
+      },
+    });
 
     const reportId =
-      extractReportId(resultData, extractReportId(completionData, extractReportId(statusData, job.analysis_id ?? job.task_id))) ??
+      extractReportIdFromJob(finalJob, extractReportIdFromJob(job, jobId)) ??
       `job-${Date.now()}`;
 
     return {
       reportId,
       status: 'completed',
       metadata: {
-        job,
+        job_id: jobId,
+        job_created: job,
+        job_final: finalJob,
         request,
-        completionData,
-        statusData,
-        resultData,
       },
     };
   } catch (error) {
@@ -776,91 +734,70 @@ export async function startAnalysisStreamWithContext(
   const sessionId = streamingContext.startSession(url);
 
   try {
-    const { job, request } = await createLlmoJob(url);
-    streamingContext.updateSession(sessionId, { status: 'streaming', progress: 0 });
+    const { job, request, jobId } = await createLlmoJob(url);
+    streamingContext.updateSession(sessionId, { status: 'connecting', progress: 0 });
     streamingContext.addEvent(sessionId, {
       type: 'started',
-      message: `Analyse démarrée (job ${job.task_id})`,
+      message: `Analyse demarree (job ${jobId})`,
       data: job as Record<string, unknown>,
     });
 
-    const handleEvent = (event: string, data: Record<string, unknown>) => {
-      if (event === 'module_completed') {
-        const moduleIndex = (data.module_index as number) ?? 0;
-        const totalModules = (data.total_modules as number) ?? 0;
-        const llmName = (data.llm_name as string) || 'LLM';
+    let lastEventSeq: number | null = null;
+    const finalJob = await pollJobStatusUntilDone(jobId, {
+      onStatus: (data) => {
+        const status = String(data.status || 'running').toLowerCase();
+        if (status === 'pending') {
+          streamingContext.updateSession(sessionId, { status: 'connecting' });
+        } else {
+          streamingContext.updateSession(sessionId, { status: 'streaming' });
+        }
 
-        streamingContext.updateSession(sessionId, {
-          completedModules: moduleIndex + 1,
-          totalModules,
-          currentLLM: llmName,
-          progress: totalModules > 0 ? ((moduleIndex + 1) / totalModules) * 100 : 0,
-        });
+        const latestEventName = data.latest_event?.event;
+        const latestEventData = (data.latest_event?.data as Record<string, unknown>) || {};
+        const progressFromData = toPercentProgress((latestEventData as Record<string, unknown>)?.progress ?? (data as Record<string, unknown>)?.progress);
+        if (progressFromData !== null) {
+          streamingContext.updateSession(sessionId, { progress: progressFromData });
+        }
 
-        streamingContext.addEvent(sessionId, {
-          type: 'module_completed',
-          message: `${llmName} — ${Math.round(((moduleIndex + 1) / totalModules) * 100)}%`,
-          data,
-        });
-        return;
-      }
-
-      if (event === 'llm_completed') {
-        const llmName = (data.llm_name as string) || 'LLM';
-        const durationSec = data.duration_sec as number | undefined;
-        streamingContext.addEvent(sessionId, {
-          type: 'llm_completed',
-          message: durationSec
-            ? `${llmName} terminé en ${durationSec.toFixed(1)}s`
-            : `${llmName} terminé`,
-          data,
-        });
-        return;
-      }
-
-      const progress = toPercentProgress(data.progress);
-      if (progress !== null) {
-        streamingContext.updateSession(sessionId, { progress });
-      }
-    };
-
-    let completionData: Record<string, unknown> | null = null;
-    try {
-      completionData = await consumeJobEvents(job, handleEvent);
-    } catch (eventsError) {
-      streamingContext.addEvent(sessionId, {
-        type: 'error',
-        message: eventsError instanceof Error
-          ? `Flux events interrompu, fallback polling: ${eventsError.message}`
-          : 'Flux events interrompu, fallback polling',
-      });
-    }
-
-    let statusData: Record<string, unknown> | null = null;
-    let resultData: Record<string, unknown> | null = null;
-
-    if (!completionData) {
-      const polled = await pollJobStatusUntilDone(job, {
-        onStatus: (data) => {
-          const progress = toPercentProgress(data.progress);
-          if (progress !== null) {
-            streamingContext.updateSession(sessionId, { progress });
-          }
-          streamingContext.addEvent(sessionId, {
-            type: 'module_completed',
-            message: `Statut job: ${String(data.status ?? 'processing')}`,
-            data,
+        if (Array.isArray(data.events)) {
+          const freshEvents = data.events
+            .filter((evt) => typeof evt.seq === 'number' && (lastEventSeq === null || (evt.seq as number) > lastEventSeq))
+            .sort((a, b) => Number(a.seq ?? 0) - Number(b.seq ?? 0));
+          freshEvents.forEach((evt) => {
+            const evtName = String(evt.event || 'running');
+            const evtData = (evt.data as Record<string, unknown>) || {};
+            const evtType =
+              evtName === 'error' ? 'error' :
+              evtName === 'analysis_completed' ? 'analysis_completed' :
+              evtName === 'llm_completed' ? 'llm_completed' :
+              'module_completed';
+            const message = formatJobEventMessage(evtName);
+            streamingContext.addEvent(sessionId, { type: evtType, message, data: evtData });
           });
-        },
-      });
-      statusData = polled?.statusData ?? null;
-      resultData = polled?.resultData ?? null;
-    } else {
-      resultData = await fetchJobResult(job);
-    }
+          if (freshEvents.length > 0) {
+            lastEventSeq = Number(freshEvents[freshEvents.length - 1].seq ?? lastEventSeq ?? 0);
+          }
+        } else if (latestEventName && typeof latestEventName === 'string') {
+          const evtType =
+            latestEventName === 'error' ? 'error' :
+            latestEventName === 'analysis_completed' ? 'analysis_completed' :
+            latestEventName === 'llm_completed' ? 'llm_completed' :
+            'module_completed';
+          streamingContext.addEvent(sessionId, {
+            type: evtType,
+            message: formatJobEventMessage(latestEventName),
+            data: latestEventData,
+          });
+        }
+
+        if (isFailedStatus(data.status)) {
+          streamingContext.failSession(sessionId, String(data.error || 'Le job a echoue'));
+        }
+      },
+    });
 
     const reportId =
-      extractReportId(resultData, extractReportId(completionData, extractReportId(statusData, job.analysis_id ?? job.task_id))) ??
+      extractReportIdFromJob(finalJob, extractReportIdFromJob(job, jobId)) ??
       `job-${Date.now()}`;
 
     streamingContext.completeSession(sessionId, reportId);
@@ -868,11 +805,10 @@ export async function startAnalysisStreamWithContext(
       reportId,
       status: 'completed',
       metadata: {
-        job,
+        job_id: jobId,
+        job_created: job,
+        job_final: finalJob,
         request,
-        completionData,
-        statusData,
-        resultData,
       },
     };
   } catch (error) {
