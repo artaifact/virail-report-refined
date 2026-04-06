@@ -613,6 +613,21 @@ const Competition = () => {
                                   }}
                                 />
                               )}
+                              {targetRank > 0 && (
+                                <ReferenceLine
+                                  x={targetRank}
+                                  stroke="#6366f1"
+                                  strokeWidth={2}
+                                  strokeOpacity={0.75}
+                                  label={{
+                                    value: 'Vous',
+                                    position: 'insideTopRight',
+                                    fill: '#6366f1',
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                  }}
+                                />
+                              )}
                               <XAxis
                                 dataKey="rank"
                                 type="number"
