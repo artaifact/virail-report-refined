@@ -54,6 +54,14 @@ import { PlanStep } from "./pages/onboarding/PlanStep";
 
 const queryClient = new QueryClient();
 
+function getSidebarDefaultOpen(): boolean {
+  try {
+    const match = document.cookie.match(/(?:^|;\s*)sidebar:state=([^;]*)/);
+    if (match) return match[1] === 'true';
+  } catch {}
+  return true;
+}
+
 function MainLayout() {
   const { reports } = useReports();
   const reportId = reports.length > 0 ? reports[reports.length - 1].id : null;
@@ -70,7 +78,7 @@ function MainLayout() {
   }, [reportData]);
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={getSidebarDefaultOpen()}>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <SidebarInset className="flex-1 overflow-x-hidden">

@@ -36,7 +36,7 @@ export function useSessions(): UseSessionsReturn {
         user_agent: s.user_agent || 'Navigateur inconnu',
         created_at: s.created_at || new Date().toISOString(),
         last_seen_at: s.last_active_at || s.created_at || new Date().toISOString(),
-        revoked_at: (s as any).revoked_at,
+        revoked_at: (s as any).revoked_at ?? null,
         is_current: s.current || false,
         location: s.location,
       }));
@@ -55,15 +55,17 @@ export function useSessions(): UseSessionsReturn {
         (import.meta.env.PROD ? 'https://api.viraill.com' : 'http://localhost:8000');
 
       const response = await AuthService.makeAuthenticatedRequest(
-        `${API_BASE_URL}/auth/sessions/${sessionId}`,
-        { method: 'DELETE' }
+        `${API_BASE_URL}/auth/sessions/${sessionId}/revoke`,
+        { method: 'POST' }
       );
 
       if (!response.ok) {
         throw new Error('Erreur lors de la révocation de la session');
       }
 
-      setSessions((prev) => prev.filter((s) => s.session_id !== sessionId));
+      setSessions((prev) => prev.map((s) =>
+        s.session_id === sessionId ? { ...s, revoked_at: new Date().toISOString() } : s
+      ));
     } catch (err) {
       setError(getErrorMessage(err));
       throw err;
@@ -76,20 +78,21 @@ export function useSessions(): UseSessionsReturn {
         (import.meta.env.PROD ? 'https://api.viraill.com' : 'http://localhost:8000');
 
       const response = await AuthService.makeAuthenticatedRequest(
-        `${API_BASE_URL}/auth/sessions/all`,
-        { method: 'DELETE' }
+        `${API_BASE_URL}/auth/sessions/revoke-others`,
+        { method: 'POST' }
       );
 
       if (!response.ok) {
         throw new Error('Erreur lors de la révocation des sessions');
       }
 
-      setSessions((prev) => prev.filter((s) => s.is_current));
+      // Rafraîchir la liste depuis l'API (source de vérité)
+      await fetchSessions();
     } catch (err) {
       setError(getErrorMessage(err));
       throw err;
     }
-  }, []);
+  }, [fetchSessions]);
 
   useEffect(() => {
     fetchSessions();

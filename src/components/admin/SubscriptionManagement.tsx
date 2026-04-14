@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -128,6 +129,14 @@ export function SubscriptionManagement({ onSubscriptionSelect, className = '' }:
 
   return (
     <div className={className}>
+      <div className="mb-4 flex justify-end">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/admin/subscriptions-docs" className="gap-2">
+            <BookOpen className="h-4 w-4" />
+            Documentation API abonnements (admin)
+          </Link>
+        </Button>
+      </div>
       {/* Statistiques */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

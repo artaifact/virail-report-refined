@@ -672,7 +672,7 @@ export class AuthService {
         ip: s.ip || s.ip_address || undefined,
         user_agent: s.user_agent || s.ua || undefined,
         created_at: s.created_at || s.createdAt || undefined,
-        last_active_at: s.last_active_at || s.last_seen_at || s.lastSeenAt || undefined,
+        last_active_at: s.last_seen_at || s.last_active_at || s.lastSeenAt || undefined,
         revoked_at: s.revoked_at || s.revokedAt || undefined,
         current: Boolean(s.current),
         location: s.location || undefined,

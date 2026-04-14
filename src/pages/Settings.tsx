@@ -725,7 +725,7 @@ const Settings = () => {
                       value={editBrandName}
                       onChange={(e) => setEditBrandName(e.target.value)}
                       placeholder="Nom de votre marque"
-                      className="border-gray-300"
+                      className={onboardingCompleted ? "bg-gray-50 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300"}
                       disabled={onboardingCompleted}
                     />
                   </div>
@@ -737,7 +737,7 @@ const Settings = () => {
                       value={editBrandUrl}
                       onChange={(e) => setEditBrandUrl(e.target.value)}
                       placeholder="https://votre-marque.com"
-                      className="border-gray-300"
+                      className={onboardingCompleted ? "bg-gray-50 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300"}
                       disabled={onboardingCompleted}
                     />
                   </div>
@@ -751,7 +751,7 @@ const Settings = () => {
                           value={editAgencyName}
                           onChange={(e) => setEditAgencyName(e.target.value)}
                           placeholder="Nom de votre agence"
-                          className="border-gray-300"
+                          className={onboardingCompleted ? "bg-gray-50 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300"}
                           disabled={onboardingCompleted}
                         />
                       </div>
@@ -763,7 +763,7 @@ const Settings = () => {
                           value={editAgencyUrl}
                           onChange={(e) => setEditAgencyUrl(e.target.value)}
                           placeholder="https://votre-agence.com"
-                          className="border-gray-300"
+                          className={onboardingCompleted ? "bg-gray-50 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300"}
                           disabled={onboardingCompleted}
                         />
                       </div>

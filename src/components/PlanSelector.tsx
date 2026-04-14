@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePayment } from '@/hooks/usePayment';
-import { Crown, Star, Zap, Check, CreditCard, Users, BarChart3, Shield, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
+import { Crown, Star, Zap, Check, CreditCard, Users, BarChart3, Shield, Sparkles, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
 import { modelLogos } from '@/components/ModelLogosCarousel';
@@ -71,8 +71,20 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
   
   const { toast } = useToast();
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isDowngradeDialogOpen, setIsDowngradeDialogOpen] = useState(false);
+  const [pendingDowngradePlanId, setPendingDowngradePlanId] = useState<string>('');
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  const getPlanLevel = (planId: string): number => {
+    const config = AI_MODELS_CONFIG.find(c => c.ids.includes(planId.toLowerCase()));
+    return config ? config.level : -1;
+  };
+
+  const isDowngrade = (targetPlanId: string): boolean => {
+    if (!currentPlan) return false;
+    return getPlanLevel(targetPlanId) < getPlanLevel(currentPlan.id);
+  };
 
   // Charger les données au montage
   useEffect(() => {
@@ -84,15 +96,25 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
 
   const handlePlanSelection = (planId: string) => {
     if (planId === 'free') {
-      // Plan gratuit - pas de paiement nécessaire
-      if (onPlanSelected) {
-        onPlanSelected(planId);
-      }
+      if (onPlanSelected) onPlanSelected(planId);
+      return;
+    }
+
+    if (isDowngrade(planId)) {
+      setPendingDowngradePlanId(planId);
+      setIsDowngradeDialogOpen(true);
       return;
     }
 
     setSelectedPlanId(planId);
     try { localStorage.setItem('pending_plan_id', planId); } catch {}
+    setIsPaymentDialogOpen(true);
+  };
+
+  const confirmDowngrade = () => {
+    setIsDowngradeDialogOpen(false);
+    setSelectedPlanId(pendingDowngradePlanId);
+    try { localStorage.setItem('pending_plan_id', pendingDowngradePlanId); } catch {}
     setIsPaymentDialogOpen(true);
   };
 
@@ -281,7 +303,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         </p>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-8 w-full overflow-x-auto">
         {plans.map((plan) => (
           <Card 
             key={plan.id}
@@ -310,11 +332,11 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                 {(plan.id)}
               </div> */}
               <CardTitle className="text-xl font-bold text-neutral-900">{plan.name}</CardTitle>
-              <div className="mt-2">
-                <span className="text-3xl font-bold text-neutral-900">
+              <div className="mt-2 flex items-baseline justify-center gap-1 flex-wrap">
+                <span className="text-2xl font-bold text-neutral-900 whitespace-nowrap">
                   {formatPrice(plan.price)}
                 </span>
-                <span className="text-neutral-600 ml-1">
+                <span className="text-neutral-500 text-sm whitespace-nowrap">
                   /{plan.interval}
                 </span>
               </div>
@@ -402,17 +424,25 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
               {/* Bouton d'action - aligné en bas */}
               <Button 
                 className={`w-full mt-6 ${
-                  isCurrentPlan(plan.id) 
-                    ? 'bg-primary hover:bg-primary/90 text-primary-foreground' 
+                  isCurrentPlan(plan.id)
+                    ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                    : isDowngrade(plan.id)
+                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300'
                     : 'bg-primary hover:bg-primary/90 text-primary-foreground'
                 }`}
                 onClick={() => handlePlanSelection(plan.id)}
                 disabled={isCurrentPlan(plan.id) || isProcessing}
+                variant={isDowngrade(plan.id) ? 'outline' : 'default'}
               >
                 {isCurrentPlan(plan.id) ? (
                   <>
                     <Check className="h-4 w-4 mr-2" />
                     Plan actuel
+                  </>
+                ) : isDowngrade(plan.id) ? (
+                  <>
+                    <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
+                    Rétrograder
                   </>
                 ) : (
                   <>
@@ -425,6 +455,33 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
           </Card>
         ))}
       </div>
+
+      {/* Dialog de confirmation rétrogradation */}
+      <Dialog open={isDowngradeDialogOpen} onOpenChange={setIsDowngradeDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Confirmer la rétrogradation
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Vous êtes sur le point de passer à un plan inférieur.{' '}
+              <strong>Vous perdrez l'accès à certaines fonctionnalités avancées</strong> dès la prochaine période de facturation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 text-sm text-amber-800 mt-2">
+            Plan cible : <strong>{plans.find(p => p.id === pendingDowngradePlanId)?.name || pendingDowngradePlanId}</strong>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button variant="outline" onClick={() => setIsDowngradeDialogOpen(false)} className="flex-1">
+              Annuler
+            </Button>
+            <Button onClick={confirmDowngrade} className="flex-1 bg-amber-600 hover:bg-amber-700 text-white">
+              Confirmer la rétrogradation
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de paiement Stripe Checkout */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>

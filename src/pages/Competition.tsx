@@ -31,12 +31,26 @@ import {
   Trophy,
   Star,
   Lock,
-  Info
+  Info,
+  Download,
+  X as XIcon,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCompetitiveAnalysis } from "@/hooks/useCompetitiveAnalysis";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+
+// === UTILITAIRES ===
+function exportToCsvCompetition(filename: string, rows: string[][]): void {
+  const csv = rows.map(r =>
+    r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 // === CONSTANTES ===
 const modelLogos: Record<string, string> = {
@@ -174,6 +188,11 @@ const Competition = () => {
 
   // État pour le mode d'affichage benchmark
   const [benchmarkView, setBenchmarkView] = useState<'score' | 'raw_data'>('score');
+
+  // État pour la fiche détail d'un concurrent
+  const [selectedCompetitorDetail, setSelectedCompetitorDetail] = useState<{
+    name: string; domain: string; rank: number; score: number; url: string;
+  } | null>(null);
 
   // État pour le modal de détails GEO
   const [geoModalOpen, setGeoModalOpen] = useState(false);
@@ -636,8 +655,9 @@ const Competition = () => {
                                 tick={{ fontSize: 10, fill: '#94a3b8' }}
                                 tickLine={false}
                                 axisLine={{ stroke: '#e2e8f0' }}
+                                tickFormatter={(v) => v === 1 ? '1er' : `${v}`}
                                 label={{
-                                  value: 'Position',
+                                  value: 'Position (1 = meilleur)',
                                   position: 'bottom',
                                   offset: 10,
                                   style: { fill: '#94a3b8', fontSize: 10 },
@@ -1469,7 +1489,24 @@ const Competition = () => {
 
                         {/* Dropdown et tableau en mode paysage */}
                         <div className="w-full">
-                          <div className="flex justify-end mb-4">
+                          <div className="flex justify-between items-center mb-4 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const rows: string[][] = [['Position', 'Marque', 'Domaine', 'Score']];
+                                classement.forEach((entry: any, idx: number) => {
+                                  const d = extractDomain(entry.url);
+                                  const comp = (currentAnalysis as any).competitors?.find((c: any) => extractDomain(c.url) === d);
+                                  const name = d === yourSiteDomain ? 'Votre site' : (comp?.name || d);
+                                  rows.push([String(idx + 1), name, d, String(entry.score || 0)]);
+                                });
+                                exportToCsvCompetition('benchmark-classement.csv', rows);
+                              }}
+                              className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-1.5 transition-colors bg-white flex-shrink-0"
+                            >
+                              <Download size={13} />
+                              CSV
+                            </button>
                             <Select value={benchmarkView} onValueChange={(val) => setBenchmarkView(val as 'score' | 'raw_data')}>
                               <SelectTrigger className="w-full sm:w-[200px] h-9 text-sm border-gray-300 bg-white">
                                 <SelectValue placeholder="Score Benchmark" />
@@ -1486,11 +1523,10 @@ const Competition = () => {
                           {/* Table Header - Mode Paysage avec plus de colonnes - Pleine Largeur */}
                           <div className="w-full overflow-x-auto">
                             <div className="min-w-[500px]">
-                              <div className="grid grid-cols-[60px_2fr_1fr_120px] gap-6 pb-3 border-b-2 border-gray-200 mb-3">
+                              <div className="grid grid-cols-[60px_2fr_1fr] gap-6 pb-3 border-b-2 border-gray-200 mb-3">
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Position</div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
                                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Score</div>
-                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Ordre</div>
                               </div>
 
                               {/* Liste scrollable en mode paysage */}
@@ -1506,7 +1542,8 @@ const Competition = () => {
                                   return (
                                     <div
                                       key={idx}
-                                      className={`grid grid-cols-[60px_2fr_1fr_120px] gap-6 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors items-center ${isYourSite ? 'bg-blue-50/50' : ''}`}
+                                      onClick={() => !isYourSite && setSelectedCompetitorDetail({ name: brandName, domain, rank, score: entry.score || 0, url: entry.url })}
+                                      className={`grid grid-cols-[60px_2fr_1fr] gap-6 py-4 border-b border-gray-100 last:border-b-0 transition-colors items-center ${isYourSite ? 'bg-blue-50/50' : 'hover:bg-gray-50 cursor-pointer'}`}
                                     >
                                       <div className="flex items-center">
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${isYourSite ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
@@ -1522,16 +1559,9 @@ const Competition = () => {
                                           <div className="text-xs text-gray-500 truncate">{domain}</div>
                                         </div>
                                       </div>
-                                      <div>
+                                      <div className="flex items-center gap-2">
                                         <div className="text-base font-bold text-gray-900">{entry.score || 0}%</div>
-                                      </div>
-                                      <div className="text-right">
-                                        <Badge
-                                          variant="outline"
-                                          className={`${isYourSite ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-gray-100 border-gray-300 text-gray-700'}`}
-                                        >
-                                          {rank}{getOrdinalSuffix(rank)}
-                                        </Badge>
+                                        {!isYourSite && <ChevronRight size={14} className="text-gray-300 flex-shrink-0" />}
                                       </div>
                                     </div>
                                   );
@@ -1847,6 +1877,87 @@ const Competition = () => {
 
         </div>
       </div>
+
+      {/* Modal fiche détail concurrent */}
+      {selectedCompetitorDetail && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedCompetitorDetail(null)}>
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedCompetitorDetail(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors"
+            >
+              <XIcon size={18} />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-5">
+              <img
+                src={`https://www.google.com/s2/favicons?domain=${selectedCompetitorDetail.domain}&sz=64`}
+                alt={selectedCompetitorDetail.domain}
+                className="w-10 h-10 rounded-xl flex-shrink-0"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+              <div>
+                <h2 className="text-base font-bold text-gray-900">{selectedCompetitorDetail.name}</h2>
+                <a
+                  href={selectedCompetitorDetail.url.startsWith('http') ? selectedCompetitorDetail.url : `https://${selectedCompetitorDetail.url}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                >
+                  {selectedCompetitorDetail.domain}
+                  <ExternalLink size={10} />
+                </a>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="p-3 bg-gray-50 rounded-xl text-center">
+                <div className="text-2xl font-extrabold text-indigo-600">{selectedCompetitorDetail.rank}<sup className="text-sm font-semibold text-gray-400">e</sup></div>
+                <div className="text-xs text-gray-500 mt-0.5">Position</div>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl text-center">
+                <div className="text-2xl font-extrabold text-gray-900">{selectedCompetitorDetail.score}%</div>
+                <div className="text-xs text-gray-500 mt-0.5">Score GEO</div>
+              </div>
+            </div>
+
+            {/* Barre de score colorée */}
+            <div className="mb-4">
+              <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                <span>Score GEO</span>
+                <span style={{ color: selectedCompetitorDetail.score >= 70 ? '#10B981' : selectedCompetitorDetail.score >= 40 ? '#F97316' : '#EF4444' }}>
+                  {selectedCompetitorDetail.score >= 70 ? 'Bon' : selectedCompetitorDetail.score >= 40 ? 'Moyen' : 'Faible'}
+                </span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${selectedCompetitorDetail.score}%`,
+                    backgroundColor: selectedCompetitorDetail.score >= 70 ? '#10B981' : selectedCompetitorDetail.score >= 40 ? '#F97316' : '#EF4444',
+                  }}
+                />
+              </div>
+            </div>
+
+            <a
+              href={selectedCompetitorDetail.url.startsWith('http') ? selectedCompetitorDetail.url : `https://${selectedCompetitorDetail.url}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Visiter le site
+              <ExternalLink size={14} />
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

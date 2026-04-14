@@ -30,7 +30,8 @@ import {
   BadgeDollarSign,
   PlusCircle,
   Target,
-  TrendingUp
+  TrendingUp,
+  FileText,
 } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
 import { usePayment } from '@/contexts/PaymentContext'
@@ -106,7 +107,7 @@ export function AppSidebar() {
             badge: undefined as string | undefined,
           },
           {
-            title: "Concurentielle",
+            title: "Concurrentielle",
             url: "/competition",
             icon: Target,
             badge: undefined as string | undefined,
@@ -129,15 +130,25 @@ export function AppSidebar() {
             icon: CreditCard,
             badge: undefined as string | undefined,
           },
-          // Admin items only if admin
-          ...(isAdmin ? [{
-            title: "Admin • Waitlist",
+        ],
+      },
+      ...(isAdmin ? [{
+        title: "Administration",
+        items: [
+          {
+            title: "Waitlist",
             url: "/admin/waitlist",
             icon: ShieldCheck,
             badge: undefined as string | undefined,
-          }] : []),
+          },
+          {
+            title: "Doc abonnements",
+            url: "/admin/subscriptions-docs",
+            icon: FileText,
+            badge: undefined as string | undefined,
+          },
         ],
-      },
+      }] : []),
     ],
   }
 
@@ -150,6 +161,12 @@ export function AppSidebar() {
               size="lg"
               onClick={() => setIsReportsModalOpen(true)}
             >
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 flex-shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" fill="currentColor" className="text-primary" opacity="0.15" />
+                  <path d="M8 12l3 3 5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary" />
+                </svg>
+              </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{domainName || "Virail Studio"}</span>
                 <span className="truncate text-[11px] text-muted-foreground">Mes analyses</span>
@@ -188,23 +205,29 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
-                      isActive={location.pathname === item.url}
-                      tooltip={item.title}
-                    >
-                      <Link to={explicitReportId ? `${item.url}?reportId=${explicitReportId}` : item.url} onClick={handleNavigation}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                        {item.badge && (
-                           <span className="ml-auto text-xs font-medium text-muted-foreground">{item.badge}</span>
+                {group.items.map((item) => {
+                  const isActive = location.pathname === item.url;
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={isActive}
+                        tooltip={item.title}
+                        className={cn(
+                          isActive && "border-l-2 border-primary rounded-l-none font-semibold"
                         )}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                      >
+                        <Link to={explicitReportId ? `${item.url}?reportId=${explicitReportId}` : item.url} onClick={handleNavigation}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                          {item.badge && (
+                            <span className="ml-auto text-xs font-medium text-muted-foreground">{item.badge}</span>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

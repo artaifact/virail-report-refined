@@ -129,16 +129,14 @@ export const SessionList: React.FC<SessionListProps> = ({ className }) => {
     );
   }
 
-  // Filtrer pour afficher la session actuelle + les 3 dernières sessions
-  const currentSession = sessions.find((s) => s.is_current);
-  const otherSessions = sessions
-    .filter((s) => !s.is_current)
-    .sort((a, b) => new Date(b.last_seen_at).getTime() - new Date(a.last_seen_at).getTime())
-    .slice(0, 3);
+  // Sessions actives = revoked_at est null
+  const activeSessions = sessions
+    .filter((s) => !s.revoked_at)
+    .sort((a, b) => new Date(b.last_seen_at).getTime() - new Date(a.last_seen_at).getTime());
 
-  const displayedSessions = currentSession
-    ? [currentSession, ...otherSessions]
-    : otherSessions;
+  const currentSession = activeSessions.find((s) => s.is_current);
+  const otherSessions = activeSessions.filter((s) => !s.is_current);
+  const displayedSessions = currentSession ? [currentSession, ...otherSessions] : otherSessions;
 
   return (
     <div className={cn('space-y-6', className)}>

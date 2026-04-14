@@ -17,6 +17,7 @@ import { ScoreCard } from '@/components/dashboard/ScoreCard';
 import { HtmlDiffViewer } from '@/components/optimizer/HtmlDiffViewer';
 import { SchemaPreview } from '@/components/optimizer/SchemaPreview';
 import { SimulationTab } from '@/components/optimizer/SimulationTab';
+import { NewAnalysisModal } from '@/components/NewAnalysisModal';
 
 // === CONSTANTES ===
 /**
@@ -118,6 +119,15 @@ function CitationsChart({ reportData }: { reportData: FullReportData | null }) {
 
   const hoveredData = hoveredModel ? activeModels.find(m => m.name === hoveredModel) : null;
 
+  // Recalculate colors for legend (need to mirror segment logic)
+  let legendFallbackIdx = 0;
+  const modelColors = hasModels ? activeModels.map((model) => ({
+    name: model.name,
+    count: model.count,
+    color: MODEL_COLORS[model.name] || MODEL_COLORS_FALLBACK[legendFallbackIdx++ % MODEL_COLORS_FALLBACK.length],
+    pct: totalCitations > 0 ? Math.round((model.count / totalCitations) * 100) : 0,
+  })) : [];
+
   return (
     <div className="citations-chart">
       <div className="relative w-fit mx-auto">
@@ -168,12 +178,40 @@ function CitationsChart({ reportData }: { reportData: FullReportData | null }) {
                 {totalCitations}
               </text>
               <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
-                Tot Citations
+                Citations totales
               </text>
             </>
           )}
         </svg>
       </div>
+
+      {/* Légende des couleurs par modèle */}
+      {modelColors.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-x-3 gap-y-1.5 mt-2 px-2">
+          {modelColors.map((m) => (
+            <button
+              key={m.name}
+              type="button"
+              className="flex items-center gap-1.5 text-xs transition-opacity"
+              style={{ opacity: hoveredModel && hoveredModel !== m.name ? 0.35 : 1 }}
+              onMouseEnter={() => setHoveredModel(m.name)}
+              onMouseLeave={() => setHoveredModel(null)}
+            >
+              {getModelLogo(m.name) ? (
+                <img
+                  src={getModelLogo(m.name)!}
+                  alt={m.name}
+                  className="w-4 h-4 object-contain flex-shrink-0 rounded-sm"
+                />
+              ) : (
+                <span className="inline-block w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
+              )}
+              <span className="text-slate-600 font-medium">{m.name}</span>
+              <span className="text-slate-400">{m.pct}%</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -198,9 +236,14 @@ function NavigationButtons({ activeView, onViewChange }: { activeView: string, o
       </button>
 
       <button
-        className={`nav-btn ${activeView === 'ameliorer' ? 'nav-btn-primary' : ''}`}
         onClick={() => handleViewChange('ameliorer')}
+        className={`nav-btn flex items-center gap-1.5 font-semibold transition-all ${
+          activeView === 'ameliorer'
+            ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-200 border-transparent'
+            : 'bg-gradient-to-r from-violet-50 to-indigo-50 text-violet-700 border border-violet-200 hover:from-violet-100 hover:to-indigo-100'
+        }`}
       >
+        <Sparkles size={13} className={activeView === 'ameliorer' ? 'text-yellow-300' : 'text-violet-500'} />
         Améliorer
       </button>
     </div>
@@ -212,8 +255,30 @@ function NavigationButtons({ activeView, onViewChange }: { activeView: string, o
  * Contient le graphique de citations, le carrousel de logos et les boutons de navigation
  */
 function TopSection({ activeView, onViewChange, reportData, reports, onOpenReportsModal }: { activeView: string, onViewChange: (view: string) => void, reportData: FullReportData | null, reports: ReportResponse[], onOpenReportsModal: () => void }) {
+  const domainName = useMemo(() => {
+    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url;
+    if (!url) return null;
+    try { return new URL(url).hostname.replace('www.', ''); } catch { return null; }
+  }, [reportData]);
+
+  const lastUpdate = useMemo(() => {
+    const d = (reportData as any)?.report?.updated_at || (reportData as any)?.report?.created_at;
+    if (!d) return null;
+    const parsed = new Date(d);
+    if (isNaN(parsed.getTime())) return null;
+    return parsed.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  }, [reportData]);
+
   return (
     <div className="top-section">
+      <div className="px-1 mb-2">
+        <h1 className="text-lg font-bold text-slate-900 leading-tight">
+          {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
+        </h1>
+        {lastUpdate && (
+          <p className="text-xs text-slate-400 mt-0.5">Dernière mise à jour : {lastUpdate}</p>
+        )}
+      </div>
       <CitationsChart reportData={reportData} />
       <NavigationButtons activeView={activeView} onViewChange={onViewChange} />
     </div>
@@ -485,9 +550,18 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
                   <td className={`py-5 ${index === recommendations.length - 1 ? '' : 'border-b border-slate-100'}`}>
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
-                        <div className="h-full bg-slate-800 rounded-full transition-all duration-500" style={{ width: `${rec.score}%` }} />
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${rec.score}%`,
+                            backgroundColor: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444',
+                          }}
+                        />
                       </div>
-                      <span className="text-sm font-bold text-slate-900 min-w-[40px]">{rec.score}%</span>
+                      <span
+                        className="text-sm font-bold min-w-[40px]"
+                        style={{ color: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444' }}
+                      >{rec.score}%</span>
                     </div>
                   </td>
                 </tr>
@@ -511,9 +585,18 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
               <p className="text-xs text-slate-500 mb-3">{rec.description}</p>
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
-                  <div className="h-full bg-slate-800 rounded-full transition-all duration-500" style={{ width: `${rec.score}%` }} />
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${rec.score}%`,
+                      backgroundColor: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444',
+                    }}
+                  />
                 </div>
-                <span className="text-sm font-bold text-slate-900">{rec.score}%</span>
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444' }}
+                >{rec.score}%</span>
               </div>
             </div>
           ))}
@@ -1898,8 +1981,17 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
  * Section Audit GEO - Affiche le score global, les sous-scores, le résumé et le plan d'action
  * Avec sélecteur de modèle, inspiré du style CompetitorAnalysis
  */
+const PREFERRED_MODEL_KEY = 'preferred-ai-model';
+
 function AuditGeoSection({ reportData }: { reportData: FullReportData | null }) {
-  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    try { return localStorage.getItem(PREFERRED_MODEL_KEY) || ''; } catch { return ''; }
+  });
+
+  const handleSetSelectedModel = (model: string) => {
+    setSelectedModel(model);
+    try { localStorage.setItem(PREFERRED_MODEL_KEY, model); } catch {}
+  };
 
   // Modèles disponibles (ceux qui ont un audit_geo)
   const availableModels = useMemo(() => {
@@ -1909,12 +2001,11 @@ function AuditGeoSection({ reportData }: { reportData: FullReportData | null }) 
       .map((a) => a.llm_name || 'Modèle inconnu');
   }, [reportData?.analyses]);
 
-  // Sélectionner le premier modèle par défaut
+  // Sélectionner le modèle persisté ou le premier par défaut
   useEffect(() => {
-    if (availableModels.length > 0 && !selectedModel) {
-      setSelectedModel(availableModels[0]);
-    } else if (availableModels.length > 0 && !availableModels.includes(selectedModel)) {
-      setSelectedModel(availableModels[0]);
+    if (availableModels.length === 0) return;
+    if (!selectedModel || !availableModels.includes(selectedModel)) {
+      handleSetSelectedModel(availableModels[0]);
     }
   }, [availableModels]);
 
@@ -1960,7 +2051,7 @@ function AuditGeoSection({ reportData }: { reportData: FullReportData | null }) 
         <h3 className="text-xl font-bold text-slate-900">Audit GEO</h3>
         <div className="model-selector">
           <span className="selector-label">Modèle:</span>
-          <Select value={selectedModel} onValueChange={setSelectedModel}>
+          <Select value={selectedModel} onValueChange={handleSetSelectedModel}>
             <SelectTrigger className="w-[200px] h-9 bg-white border-slate-200">
               <SelectValue placeholder="Choisir un modèle" />
             </SelectTrigger>
@@ -3592,9 +3683,27 @@ const getCommercialModelName = (apiName: string): string => {
   return apiName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
+function exportToCsv(filename: string, rows: string[][]): void {
+  const csvContent = rows.map(r =>
+    r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
 function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sortCol, setSortCol] = useState<'name' | 'citations'>('citations');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const toggleSort = (col: 'name' | 'citations') => {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir(col === 'citations' ? 'desc' : 'asc'); }
+  };
   // TODO: Évolution citations - décommenter quand l'API renvoie evolution_citations
   // const [viewMode, setViewMode] = useState<'table' | 'evolution'>('table');
   // const evoData = (reportData?.evolution_citations as EvolutionCitations | null);
@@ -3661,8 +3770,15 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
     return Object.values(grouped).sort((a, b) => b.citations - a.citations);
   };
 
-  const data = getDataFromAPI();
-  
+  const rawData = getDataFromAPI();
+  const data = [...rawData].sort((a, b) => {
+    if (sortCol === 'name') {
+      const cmp = a.displayName.localeCompare(b.displayName, 'fr');
+      return sortDir === 'asc' ? cmp : -cmp;
+    }
+    return sortDir === 'asc' ? a.citations - b.citations : b.citations - a.citations;
+  });
+
   if (data.length === 0) {
     return (
       <div className="chart-card chart-card-wide" style={{ width: '100%' }}>
@@ -3683,10 +3799,26 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
   // Calculer le total des citations
   const totalCitations = data.reduce((sum, item) => sum + item.citations, 0);
 
+  const handleExportCsv = () => {
+    const rows: string[][] = [['Modèle', 'Citations']];
+    data.forEach(item => rows.push([item.displayName, String(item.citations)]));
+    exportToCsv('citations-par-modele.csv', rows);
+  };
+
   return (
     <div className="chart-card chart-card-wide" style={{ width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Citations par modèle</h3>
+        {data.length > 0 && (
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-1.5 transition-colors bg-white"
+          >
+            <Download size={13} />
+            CSV
+          </button>
+        )}
       </div>
 
       {allCitationsZero && isApiData && (
@@ -3790,8 +3922,16 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
         <table className="domains-table">
           <thead>
             <tr>
-              <th>Modèle</th>
-              <th>Citations</th>
+              <th>
+                <button type="button" onClick={() => toggleSort('name')} className="flex items-center gap-1 hover:text-slate-700 transition-colors font-semibold">
+                  Modèle {sortCol === 'name' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-slate-300">↕</span>}
+                </button>
+              </th>
+              <th>
+                <button type="button" onClick={() => toggleSort('citations')} className="flex items-center gap-1 hover:text-slate-700 transition-colors font-semibold">
+                  Citations {sortCol === 'citations' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-slate-300">↕</span>}
+                </button>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -3912,19 +4052,91 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
                         try {
                           const date = new Date(dateStr);
                           return date.toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
+                            day: 'numeric', month: 'long', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit'
                           });
-                        } catch {
-                          return dateStr;
-                        }
+                        } catch { return dateStr; }
                       })()}
                     </div>
                   </div>
                 </div>
+
+                {/* Requêtes détaillées depuis detailed_results */}
+                {(() => {
+                  const detailed = reportData?.analyse_citation?.detailed_results;
+                  if (!detailed || !Array.isArray(detailed)) return null;
+
+                  // Filtrer les résultats pour ce modèle
+                  const modelResults = detailed.filter((r: any) => {
+                    const name = (r.llm_model || '').toLowerCase();
+                    const sel = selectedModel.toLowerCase();
+                    return name.includes(sel) || sel.includes(name.split('-')[0]);
+                  });
+
+                  if (modelResults.length === 0) return null;
+
+                  const cited = modelResults.filter((r: any) => r.citation_detected);
+                  const notCited = modelResults.filter((r: any) => !r.citation_detected);
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
+                        Requêtes testées ({modelResults.length})
+                      </div>
+
+                      {cited.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 600, color: '#059669', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            ✓ Cité ({cited.length})
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {cited.slice(0, 5).map((r: any, i: number) => (
+                              <div key={i} style={{ padding: '10px 12px', background: '#F0FDF4', borderRadius: '8px', border: '1px solid #BBF7D0' }}>
+                                {r.query && (
+                                  <div style={{ fontSize: '13px', fontWeight: 500, color: '#166534', marginBottom: r.response_excerpt ? '6px' : 0 }}>
+                                    « {r.query} »
+                                  </div>
+                                )}
+                                {r.response_excerpt && (
+                                  <div style={{ fontSize: '12px', color: '#4B5563', lineHeight: '1.5', borderTop: '1px solid #BBF7D0', paddingTop: '6px' }}>
+                                    {r.response_excerpt.length > 200 ? r.response_excerpt.substring(0, 200) + '…' : r.response_excerpt}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                            {cited.length > 5 && (
+                              <div style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center' }}>
+                                +{cited.length - 5} autres requêtes avec citation
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {notCited.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 600, color: '#9CA3AF', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            ✗ Non cité ({notCited.length})
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {notCited.slice(0, 3).map((r: any, i: number) => (
+                              <div key={i} style={{ padding: '8px 12px', background: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                                <div style={{ fontSize: '13px', color: '#6B7280' }}>
+                                  « {r.query || 'Requête non disponible'} »
+                                </div>
+                              </div>
+                            ))}
+                            {notCited.length > 3 && (
+                              <div style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center' }}>
+                                +{notCited.length - 3} autres requêtes sans citation
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </>
             );
@@ -4821,16 +5033,47 @@ function PlanActionGeoOverview({ reportData }: { reportData: FullReportData | nu
 }
 
 function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const sections = [
+    { id: 'section-citations', label: 'Citations' },
+    { id: 'section-concurrents', label: 'Concurrents' },
+    { id: 'section-sources', label: 'Sources' },
+  ];
+
   return (
     <div className="view-content">
+      {/* Barre de navigation intra-page */}
+      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-slate-100 -mx-4 px-4 mb-4">
+        <div className="flex gap-1 overflow-x-auto py-2 scrollbar-none">
+          {sections.map(s => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => scrollTo(s.id)}
+              className="flex-shrink-0 text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Section avec les deux graphiques côte à côte */}
-      <div className="analytics-section">
+      <div id="section-citations" className="analytics-section scroll-mt-12">
         <GeoScoreChart reportData={reportData} />
-        <CompetitorAnalysis reportData={reportData} />
+        <div id="section-concurrents" className="scroll-mt-12">
+          <CompetitorAnalysis reportData={reportData} />
+        </div>
       </div>
 
       {/* Tableau des domaines */}
-      <DomainsTable reportData={reportData} />
+      <div id="section-sources" className="scroll-mt-12">
+        <DomainsTable reportData={reportData} />
+      </div>
     </div>
   );
 }
@@ -4843,10 +5086,10 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
  */
 const Index = () => {
   usePageTitle('Tableau de bord');
-  // État pour gérer la vue active ('details' ou 'ameliorer')
   const [activeView, setActiveView] = useState('details');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
+  const [isNewAnalysisModalOpen, setIsNewAnalysisModalOpen] = useState(false);
   const { subscription } = usePayment();
   const isStarter = subscription?.plan?.id === 'solo';
 
@@ -4872,6 +5115,69 @@ const Index = () => {
   const { report: reportData, loading: reportLoading, error } = useReport(reportId);
   
   const loading = reportsLoading || reportLoading;
+
+  // Empty state — aucun rapport
+  if (!reportsLoading && reports.length === 0) {
+    return (
+      <div className="ux-dashboard-body">
+        <div className="dashboard-container ux-dashboard">
+          <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+            {/* Illustration */}
+            <div className="relative mb-8">
+              <div className="w-24 h-24 rounded-3xl bg-indigo-50 flex items-center justify-center mx-auto shadow-inner">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="22" cy="22" r="14" stroke="#6366F1" strokeWidth="3" fill="none" />
+                  <path d="M32 32L40 40" stroke="#6366F1" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M18 22h8M22 18v8" stroke="#6366F1" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shadow">
+                <Sparkles size={14} className="text-amber-500" />
+              </div>
+            </div>
+
+            {/* Titre */}
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">
+              Bienvenue sur Virail Studio
+            </h1>
+            <p className="text-slate-500 text-sm max-w-md mb-8 leading-relaxed">
+              Vous n'avez pas encore d'analyse. Lancez votre première analyse GEO pour découvrir comment votre site est perçu par les IA génératives.
+            </p>
+
+            {/* CTA principal */}
+            <Button
+              onClick={() => setIsNewAnalysisModalOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-indigo-200 gap-2 h-auto"
+            >
+              <PlayCircle size={18} />
+              Lancer ma première analyse
+            </Button>
+
+            {/* Steps indicatifs */}
+            <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl w-full text-left">
+              {[
+                { icon: Globe, step: '1', title: 'Entrez votre URL', desc: 'Le domaine de votre site à analyser' },
+                { icon: Zap, step: '2', title: 'Analyse en cours', desc: 'Nos IA testent votre visibilité GEO' },
+                { icon: Award, step: '3', title: 'Vos résultats', desc: 'Score, citations et recommandations' },
+              ].map(({ icon: Icon, step, title, desc }) => (
+                <div key={step} className="flex gap-3 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                    <Icon size={15} className="text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">Étape {step}</p>
+                    <p className="text-sm font-semibold text-slate-800">{title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <NewAnalysisModal open={isNewAnalysisModalOpen} onOpenChange={setIsNewAnalysisModalOpen} />
+      </div>
+    );
+  }
 
   return (
     <div className="ux-dashboard-body">
@@ -5011,6 +5317,8 @@ const Index = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <NewAnalysisModal open={isNewAnalysisModalOpen} onOpenChange={setIsNewAnalysisModalOpen} />
     </div>
   );
 };
