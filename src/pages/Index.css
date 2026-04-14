@@ -953,14 +953,14 @@
     }
     
     .navigation-buttons {
-        flex-direction: column;
         gap: var(--spacing-xs);
     }
     
     .nav-btn {
-        width: 100%;
+        flex: 1;
         min-width: unset;
-        padding: 10px 16px;
+        padding: 10px 12px;
+        text-align: center;
     }
     
     .guide-header {
@@ -1008,6 +1008,13 @@
         width: 100%;
     }
 
+    .citations-chart {
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        margin: var(--spacing-md) 0;
+    }
+
     .bottom-section {
         min-height: auto;
     }
@@ -1044,6 +1051,22 @@
     .top-section {
         padding: 12px;
         margin-bottom: var(--spacing-sm);
+    }
+
+    .citations-chart {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        margin: 12px 0;
+    }
+
+    .navigation-buttons {
+        gap: 8px;
+    }
+
+    .nav-btn {
+        font-size: 13px;
+        padding: 9px 10px;
     }
 
     .chart-card,

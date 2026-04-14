@@ -161,6 +161,8 @@ import { useReports, useReport } from '@/hooks/useReports';
 import { useSearchParams } from 'react-router-dom';
 import type { AnalyseConcurrentielleV3, BenchmarkTechnique } from '@/lib/api';
 import {
+  LineChart,
+  Line,
   AreaChart,
   Area,
   XAxis,
@@ -169,7 +171,6 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
   ReferenceLine,
-  ReferenceDot,
   Customized,
 } from 'recharts';
 
@@ -495,18 +496,201 @@ const Competition = () => {
 
                 {/* Section Evo concurrentielle et Détails par Modèle côte à côte */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Votre positionnement concurrentiel */}
+                  {/* Votre positionnement - Evolution temporelle */}
                   {(() => {
+                    // --- Calcul de la position depuis les concurrents (snapshot actuel) ---
+                    let currentRank: number | null = null;
+                    let totalSites: number | null = null;
+                    if (competitorComparisons && competitorComparisons.length > 0) {
+                      const targetUrl = benchmarkTechData?.target?.url || currentAnalysis?.url || '';
+                      const targetDomain = extractDomain(targetUrl).toLowerCase().replace('www.', '');
+                      const targetScore = benchmarkTechData?.target?.score_global || 0;
+                      const dedupMap = new Map<string, number>();
+                      competitorComparisons.forEach((comp: any) => {
+                        const domain = extractDomain(comp.url).toLowerCase().replace('www.', '');
+                        const score = comp.score || 0;
+                        if (!dedupMap.has(domain) || score > dedupMap.get(domain)!) dedupMap.set(domain, score);
+                      });
+                      if (targetDomain && !dedupMap.has(targetDomain)) dedupMap.set(targetDomain, targetScore);
+                      const sorted = Array.from(dedupMap.entries()).sort((a, b) => b[1] - a[1]);
+                      totalSites = sorted.length;
+                      const rankIdx = sorted.findIndex(([d]) => d === targetDomain);
+                      currentRank = rankIdx >= 0 ? rankIdx + 1 : null;
+                    }
+
+                    // --- Série temporelle ---
+                    const timeSeriesRaw = reports
+                      .filter((r: any) => r.metadata?.score != null && r.status === 'completed')
+                      .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                      .map((r: any, idx: number) => {
+                        const d = new Date(r.createdAt);
+                        return {
+                          idx,
+                          date: d,
+                          score: Number(Number(r.metadata.score).toFixed(1)),
+                          label: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+                          labelFull: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+                        };
+                      });
+
+                    const hasTimeSeries = timeSeriesRaw.length >= 1;
+                    if (!hasTimeSeries && currentRank === null) return null;
+
+                    // --- MODE EVOLUTION TEMPORELLE ---
+                    if (hasTimeSeries) {
+                      const latest = timeSeriesRaw[timeSeriesRaw.length - 1];
+                      const previous = timeSeriesRaw.length >= 2 ? timeSeriesRaw[timeSeriesRaw.length - 2] : null;
+                      const trend = previous !== null ? Number((latest.score - previous.score).toFixed(1)) : null;
+                      const trendUp = trend !== null && trend > 0;
+                      const trendDown = trend !== null && trend < 0;
+
+                      const scores = timeSeriesRaw.map((d: any) => d.score);
+                      const minScore = Math.min(...scores);
+                      const maxScore = Math.max(...scores);
+                      const pad = Math.max((maxScore - minScore) * 0.18, maxScore * 0.05, 2);
+                      const yMin = Math.max(0, minScore - pad);
+                      const yMax = maxScore + pad;
+
+                      return (
+                        <Card
+                          className="p-5 md:p-7"
+                          style={{
+                            borderRadius: '18px',
+                            background: '#ffffff',
+                            boxShadow: '0 4px 24px rgba(15,23,42,0.07)',
+                            border: '1px solid #f1f5f9',
+                          }}
+                        >
+                          {/* En-tete */}
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.4px', color: '#94a3b8', fontFamily: 'Inter, sans-serif' }}>
+                                Votre positionnement
+                              </div>
+                              <div style={{ fontSize: 11, color: '#cbd5e1', marginTop: 2, fontFamily: 'Inter, sans-serif' }}>
+                                Evolution du score GEO sur {timeSeriesRaw.length} analyse{timeSeriesRaw.length > 1 ? 's' : ''}
+                              </div>
+                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button type="button" className="rounded-full p-0.5 text-slate-300 hover:text-slate-500 focus-visible:outline-none" aria-label="Aide">
+                                  <Info className="h-3.5 w-3.5" strokeWidth={2} />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-[260px] text-xs leading-snug">
+                                Evolution de votre score GEO dans le temps. Chaque point = une analyse.
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+
+                          {/* KPIs */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 14, marginBottom: 16 }}>
+                            <div>
+                              <div style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'Inter, sans-serif', marginBottom: 2 }}>Position actuelle</div>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                                <span style={{ fontSize: 36, fontWeight: 800, color: '#1e40af', letterSpacing: '-1.5px', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>
+                                  {currentRank ?? '—'}
+                                </span>
+                                {totalSites != null && (
+                                  <span style={{ fontSize: 16, fontWeight: 500, color: '#93c5fd', fontFamily: 'Inter, sans-serif' }}>
+                                    / {totalSites}
+                                  </span>
+                                )}
+                                {trend !== null && trend !== 0 && (
+                                  <span style={{ fontSize: 12, fontWeight: 600, fontFamily: 'Inter, sans-serif', color: trendUp ? '#16a34a' : '#dc2626', marginLeft: 4 }}>
+                                    {trendUp ? '▲' : '▼'} {Math.abs(trend).toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ borderLeft: '1px solid #f1f5f9', paddingLeft: 16 }}>
+                              <div style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'Inter, sans-serif', marginBottom: 2 }}>Score actuel</div>
+                              <div style={{ fontSize: 18, fontWeight: 700, color: '#94a3b8', letterSpacing: '-0.5px', fontFamily: 'Inter, sans-serif' }}>
+                                {latest.score.toFixed(1)}
+                              </div>
+                            </div>
+                            <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                              <div style={{ fontSize: 11, color: '#cbd5e1', fontFamily: 'Inter, sans-serif' }}>{latest.labelFull}</div>
+                            </div>
+                          </div>
+
+                          {/* Graphique evolution */}
+                          <div style={{ width: '100%', height: 210 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={timeSeriesRaw} margin={{ left: 8, right: 16, top: 10, bottom: 24 }}>
+                                <defs>
+                                  <linearGradient id="lineGlowBg" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.07} />
+                                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f8fafc" vertical={false} />
+                                <XAxis
+                                  dataKey="label"
+                                  tick={{ fontSize: 11, fill: '#94a3b8', fontFamily: 'Inter, sans-serif' }}
+                                  tickLine={false}
+                                  axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+                                  label={{ value: 'Date', position: 'bottom', offset: 6, style: { fill: '#94a3b8', fontSize: 10 } }}
+                                />
+                                <YAxis
+                                  domain={[yMin, yMax]}
+                                  tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}
+                                  tickFormatter={(v) => typeof v === 'number' ? v.toFixed(1) : String(v)}
+                                  axisLine={false}
+                                  tickLine={false}
+                                  width={46}
+                                  label={{ value: 'Score GEO', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8', fontSize: 10 } }}
+                                />
+                                <RechartsTooltip
+                                  content={({ active, payload }) => {
+                                    if (!active || !payload?.[0]) return null;
+                                    const d = payload[0].payload;
+                                    const isLatest = d.idx === timeSeriesRaw.length - 1;
+                                    return (
+                                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '7px 12px', boxShadow: '0 4px 16px rgba(15,23,42,0.10)', fontSize: 12, fontFamily: 'Inter, sans-serif' }}>
+                                        <div style={{ fontWeight: 700, color: isLatest ? '#1e40af' : '#64748b' }}>{d.labelFull}</div>
+                                        <div style={{ color: '#1e40af', fontSize: 16, fontWeight: 800, marginTop: 2 }}>{d.score.toFixed(1)}</div>
+                                      </div>
+                                    );
+                                  }}
+                                  cursor={{ stroke: '#dbeafe', strokeWidth: 1 }}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="score"
+                                  stroke="#1e40af"
+                                  strokeWidth={2}
+                                  dot={(props: any) => {
+                                    const { cx, cy, index } = props;
+                                    const isLatest = index === timeSeriesRaw.length - 1;
+                                    return (
+                                      <circle
+                                        key={'dot-' + index}
+                                        cx={cx} cy={cy}
+                                        r={isLatest ? 6 : 3.5}
+                                        fill="#1e40af"
+                                        stroke="#ffffff"
+                                        strokeWidth={isLatest ? 2.5 : 1.5}
+                                      />
+                                    );
+                                  }}
+                                  activeDot={{ r: 5, fill: '#1e40af', stroke: '#fff', strokeWidth: 2 }}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </Card>
+                      );
+                    }
+
+                    // --- FALLBACK : snapshot concurrentiel ---
                     if (!competitorComparisons || competitorComparisons.length === 0) return null;
 
-                    // Site cible
                     const targetUrl = benchmarkTechData?.target?.url || currentAnalysis?.url || '';
                     const targetDomain = extractDomain(targetUrl).toLowerCase().replace('www.', '');
                     const targetScore = benchmarkTechData?.target?.score_global || 0;
-
-                    // Dédupliquer par domaine
                     const dedupMap = new Map<string, { score: number; isTarget: boolean }>();
-                    competitorComparisons.forEach(comp => {
+                    competitorComparisons.forEach((comp: any) => {
                       const domain = extractDomain(comp.url).toLowerCase().replace('www.', '');
                       const score = comp.score || 0;
                       const isTarget = domain === targetDomain;
@@ -517,269 +701,69 @@ const Competition = () => {
                     if (targetDomain && !dedupMap.has(targetDomain)) {
                       dedupMap.set(targetDomain, { score: targetScore, isTarget: true });
                     }
-
-                    // Trier par score décroissant → courbe du marché
-                    const sorted = Array.from(dedupMap.entries())
-                      .sort((a, b) => b[1].score - a[1].score);
-
+                    const sorted = Array.from(dedupMap.entries()).sort((a, b) => b[1].score - a[1].score);
                     let targetRank = 0;
                     let targetScoreVal = 0;
                     const curveData = sorted.map(([, val], i) => {
-                      if (val.isTarget) {
-                        targetRank = i + 1;
-                        targetScoreVal = Number(val.score.toFixed(2));
-                      }
+                      if (val.isTarget) { targetRank = i + 1; targetScoreVal = Number(val.score.toFixed(2)); }
                       return { rank: i + 1, score: Number(val.score.toFixed(2)) };
                     });
-
                     const total = sorted.length;
-                    const isTop3 = targetRank <= 3 && total >= 3;
                     const medianRankX = total > 1 ? (total + 1) / 2 : 1;
-
-                    const scoresOnly = curveData.map((d) => d.score);
+                    const scoresOnly = curveData.map((d: any) => d.score);
                     const scoreMinPanel = Math.min(...scoresOnly);
                     const scoreMaxPanel = Math.max(...scoresOnly);
                     const yPad = Math.max((scoreMaxPanel - scoreMinPanel) * 0.12, scoreMaxPanel > 0 ? scoreMaxPanel * 0.02 : 0.5);
                     const yDomainMin = Math.max(0, scoreMinPanel - yPad);
                     const yDomainMax = scoreMaxPanel + yPad;
-
-                    const rankTicks = Array.from(
-                      new Set(
-                        [1, total, targetRank, Math.ceil(total / 2)].filter((r) => r >= 1 && r <= total)
-                      )
-                    ).sort((a, b) => a - b);
-
-                    const analysisDateIso =
-                      currentAnalysis?.created_at
-                      || v3Data?.created_at
-                      || reportData?.report?.created_at
-                      || reportData?.report?.updated_at;
+                    const rankTicks = Array.from(new Set([1, total, targetRank, Math.ceil(total / 2)].filter(r => r >= 1 && r <= total))).sort((a, b) => a - b);
+                    const analysisDateIso = currentAnalysis?.created_at || v3Data?.created_at || reportData?.report?.created_at || reportData?.report?.updated_at;
                     let analysisDateLabel: string | null = null;
-                    let analysisDateShort: string | null = null;
                     if (analysisDateIso) {
                       const d = new Date(analysisDateIso);
-                      if (!Number.isNaN(d.getTime())) {
-                        analysisDateLabel = d.toLocaleDateString('fr-FR', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        });
-                        analysisDateShort = d.toLocaleDateString('fr-FR', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        });
-                      }
+                      if (!Number.isNaN(d.getTime())) analysisDateLabel = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
                     }
+                    const isTop3 = targetRank <= 3 && total >= 3;
 
                     return (
-                      <Card className="bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider" style={{ letterSpacing: '1.2px' }}>
-                            Votre positionnement
+                      <Card className="p-5 md:p-7" style={{ borderRadius: '18px', background: '#ffffff', boxShadow: '0 4px 24px rgba(15,23,42,0.07)', border: '1px solid #f1f5f9' }}>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.4px', color: '#94a3b8' }}>Votre positionnement</div>
+                            {analysisDateLabel && <div style={{ fontSize: 11, color: '#cbd5e1', marginTop: 2 }}>Donnees issues de l&apos;analyse du {analysisDateLabel}</div>}
                           </div>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <button
-                                type="button"
-                                className="-m-0.5 rounded-full p-0.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-1"
-                                aria-label="Aide : lecture de votre position sur le graphique"
-                              >
+                              <button type="button" className="rounded-full p-0.5 text-slate-300 hover:text-slate-500 focus-visible:outline-none" aria-label="Aide">
                                 <Info className="h-3.5 w-3.5" strokeWidth={2} />
                               </button>
                             </TooltipTrigger>
-                            <TooltipContent side="bottom" className="max-w-[260px] text-xs leading-snug">
-                              Meilleurs scores à gauche, plus faibles à droite. Trait vertical = milieu du classement.
-                            </TooltipContent>
+                            <TooltipContent side="bottom" className="max-w-[260px] text-xs">Meilleurs scores a gauche.</TooltipContent>
                           </Tooltip>
                         </div>
-                        {analysisDateLabel && (
-                          <p className="text-[11px] text-gray-500 mb-3">
-                            Données issues de l’analyse du {analysisDateLabel}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-4">
-                          <span className="text-3xl md:text-4xl font-extrabold" style={{ color: '#6366f1' }}>
-                            {targetRank}<sup className="text-lg font-semibold text-gray-400">/{total}</sup>
-                          </span>
-                          {isTop3 && (
-                            <span className="text-[10px] font-semibold uppercase text-amber-700">Top 3</span>
-                          )}
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 14, marginBottom: 18 }}>
+                          <span style={{ fontSize: 38, fontWeight: 800, color: '#1e40af', letterSpacing: '-2px', lineHeight: 1 }}>{targetRank}</span>
+                          <span style={{ fontSize: 16, fontWeight: 500, color: '#93c5fd' }}>/ {total}</span>
+                          {isTop3 && <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#92400e', background: '#fef3c7', padding: '2px 7px', borderRadius: 4, marginLeft: 4 }}>Top 3</span>}
                         </div>
-
-                        {/* Courbe marché + légende statique « Votre position » sur le graphique */}
-                        <div className="w-full h-[240px] min-w-0">
+                        <div style={{ width: '100%', height: 230 }}>
                           <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={curveData} margin={{ left: 16, right: 14, top: 10, bottom: 28 }}>
+                            <AreaChart data={curveData} margin={{ left: 12, right: 16, top: 10, bottom: 26 }}>
                               <defs>
-                                <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor="#e0e7ff" stopOpacity={0.7} />
-                                  <stop offset="100%" stopColor="#e0e7ff" stopOpacity={0} />
+                                <linearGradient id="blueAreaFill2" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.08} />
+                                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
                                 </linearGradient>
                               </defs>
                               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                              {total > 1 && (
-                                <ReferenceLine
-                                  x={medianRankX}
-                                  stroke="#cbd5e1"
-                                  strokeDasharray="4 4"
-                                  strokeWidth={1}
-                                  label={{
-                                    value: '50%',
-                                    position: 'insideTopLeft',
-                                    fill: '#94a3b8',
-                                    fontSize: 9,
-                                  }}
-                                />
-                              )}
-                              {targetRank > 0 && (
-                                <ReferenceLine
-                                  x={targetRank}
-                                  stroke="#6366f1"
-                                  strokeWidth={2}
-                                  strokeOpacity={0.75}
-                                  label={{
-                                    value: 'Vous',
-                                    position: 'insideTopRight',
-                                    fill: '#6366f1',
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                  }}
-                                />
-                              )}
-                              <XAxis
-                                dataKey="rank"
-                                type="number"
-                                domain={[1, total]}
-                                ticks={rankTicks}
-                                tick={{ fontSize: 10, fill: '#94a3b8' }}
-                                tickLine={false}
-                                axisLine={{ stroke: '#e2e8f0' }}
-                                tickFormatter={(v) => v === 1 ? '1er' : `${v}`}
-                                label={{
-                                  value: 'Position (1 = meilleur)',
-                                  position: 'bottom',
-                                  offset: 10,
-                                  style: { fill: '#94a3b8', fontSize: 10 },
-                                }}
-                              />
-                              <YAxis
-                                domain={[yDomainMin, yDomainMax]}
-                                tick={{ fontSize: 12, fill: '#64748b', fontWeight: 500 }}
-                                tickFormatter={(v) =>
-                                  typeof v === 'number' ? v.toFixed(1) : String(v)
-                                }
-                                axisLine={false}
-                                tickLine={false}
-                                width={54}
-                                label={{
-                                  value: 'Score',
-                                  angle: -90,
-                                  position: 'insideLeft',
-                                  style: { fill: '#64748b', fontSize: 11, fontWeight: 600 },
-                                }}
-                              />
-                              <RechartsTooltip
-                                content={({ active, payload }) => {
-                                  if (!active || !payload?.[0]) return null;
-                                  const d = payload[0].payload;
-                                  const isMe = d.rank === targetRank;
-                                  return (
-                                    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-lg text-xs max-w-[220px]">
-                                      <div className="font-semibold" style={{ color: isMe ? '#6366f1' : '#64748b' }}>
-                                        {isMe ? 'Vous' : `#${d.rank}`}
-                                      </div>
-                                      <div className="text-gray-600 mt-0.5 text-sm font-medium tabular-nums">
-                                        {d.rank}/{total} · {d.score.toFixed(2)}
-                                      </div>
-                                    </div>
-                                  );
-                                }}
-                              />
-                              <Area
-                                type="monotone"
-                                dataKey="score"
-                                stroke="#c7d2fe"
-                                strokeWidth={2}
-                                fill="url(#scoreGrad)"
-                                dot={false}
-                                activeDot={{ r: 4, strokeWidth: 1, stroke: '#6366f1', fill: '#fff' }}
-                              />
-                              <ReferenceLine
-                                y={targetScoreVal}
-                                stroke="#6366f1"
-                                strokeDasharray="6 4"
-                                strokeWidth={1}
-                                strokeOpacity={0.5}
-                              />
-                              <Customized
-                                component={(chartProps: {
-                                  xAxisMap?: Record<string, { scale: (v: number) => number }>;
-                                  yAxisMap?: Record<string, { scale: (v: number) => number }>;
-                                  offset?: { left: number; top: number; width: number; height: number };
-                                }) => {
-                                  const { xAxisMap, yAxisMap, offset } = chartProps;
-                                  if (!xAxisMap || !yAxisMap || !offset) return null;
-                                  const xAxis = Object.values(xAxisMap)[0];
-                                  const yAxis = Object.values(yAxisMap)[0];
-                                  if (!xAxis?.scale || !yAxis?.scale) return null;
-                                  const cx = xAxis.scale(targetRank);
-                                  const cy = yAxis.scale(targetScoreVal);
-                                  const boxW = 132;
-                                  const boxH = analysisDateShort ? 62 : 44;
-                                  const dotR = 7;
-                                  const gap = 6;
-                                  const left = offset.left;
-                                  const top = offset.top;
-                                  const right = left + offset.width;
-                                  const bottom = top + offset.height;
-                                  const idealAboveY = cy - boxH - gap - dotR;
-                                  let fx = cx - boxW / 2;
-                                  let fy = idealAboveY >= top + 4 ? idealAboveY : cy + dotR + gap;
-                                  fx = Math.max(left + 4, Math.min(fx, right - boxW - 4));
-                                  fy = Math.max(top + 4, Math.min(fy, bottom - boxH - 4));
-                                  return (
-                                    <foreignObject
-                                      x={fx}
-                                      y={fy}
-                                      width={boxW}
-                                      height={boxH}
-                                      style={{ overflow: 'visible', pointerEvents: 'none' }}
-                                      aria-hidden
-                                    >
-                                      <div
-                                        className="rounded-md border border-indigo-100 bg-white/95 px-2 py-1.5 shadow-md"
-                                        style={{ boxSizing: 'border-box', width: boxW, height: boxH }}
-                                      >
-                                        <div className="text-[10px] font-semibold uppercase tracking-wide text-indigo-600 leading-tight">
-                                          Votre position
-                                        </div>
-                                        <div className="text-base font-bold tabular-nums text-gray-900 leading-tight tracking-tight">
-                                          {targetRank} / {total}
-                                        </div>
-                                        {analysisDateShort && (
-                                          <div className="mt-1.5 border-t border-indigo-200/80 pt-1.5 text-[11px] font-medium leading-snug tracking-wide text-gray-800 tabular-nums">
-                                            {analysisDateShort}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </foreignObject>
-                                  );
-                                }}
-                              />
-                              <ReferenceDot
-                                x={targetRank}
-                                y={targetScoreVal}
-                                r={7}
-                                fill="#6366f1"
-                                stroke="#fff"
-                                strokeWidth={3}
-                                isFront
-                              />
+                              {total > 1 && <ReferenceLine x={medianRankX} stroke="#e2e8f0" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: '50%', position: 'insideTopLeft', fill: '#cbd5e1', fontSize: 10, fontWeight: 600 }} />}
+                              <XAxis dataKey="rank" type="number" domain={[1, total]} ticks={rankTicks} tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }} tickFormatter={(v) => v === 1 ? '1er' : String(v)} label={{ value: 'Position', position: 'bottom', offset: 8, style: { fill: '#94a3b8', fontSize: 10 } }} />
+                              <YAxis domain={[yDomainMin, yDomainMax]} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} tickFormatter={(v) => typeof v === 'number' ? v.toFixed(1) : String(v)} axisLine={false} tickLine={false} width={48} label={{ value: 'Score', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8', fontSize: 10 } }} />
+                              <RechartsTooltip content={({ active, payload }) => { if (!active || !payload?.[0]) return null; const d = payload[0].payload; const isMe = d.rank === targetRank; return (<div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '7px 12px', boxShadow: '0 4px 16px rgba(15,23,42,0.10)', fontSize: 12 }}><div style={{ fontWeight: 700, color: isMe ? '#1e40af' : '#64748b' }}>{isMe ? 'Vous' : '#' + d.rank}</div><div style={{ color: '#94a3b8', marginTop: 2 }}>{d.rank}/{total} - {d.score.toFixed(2)}</div></div>); }} cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }} />
+                              <Area type="monotone" dataKey="score" stroke="#1e40af" strokeWidth={2} fill="url(#blueAreaFill2)" dot={(props: any) => { const { cx, cy, payload } = props; const isTarget = payload.rank === targetRank; return <circle key={'dot-' + payload.rank} cx={cx} cy={cy} r={isTarget ? 6 : 3.5} fill="#1e40af" stroke="#ffffff" strokeWidth={isTarget ? 2.5 : 1.5} />; }} activeDot={false} />
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
-
                       </Card>
                     );
                   })()}

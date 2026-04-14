@@ -105,6 +105,7 @@ export interface ReportResponse {
     totalAnalyses: number;
     completionRate: number;
     score?: number | null;
+    position?: number | null;
   };
 }
 
@@ -1119,7 +1120,8 @@ export async function listReports(): Promise<ReportResponse[]> {
         llmsUsed: report.metadata?.llmsUsed ?? [],
         totalAnalyses: report.metadata?.totalAnalyses ?? 0,
         completionRate: report.metadata?.completionRate ?? (report.status === 'success' ? 100 : 0),
-        score: report.score_produit_analyse
+        score: report.score_produit_analyse,
+        position: report.position_produit_analyse ?? null
       }
     }));
 

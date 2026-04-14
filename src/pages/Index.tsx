@@ -4,7 +4,7 @@ import './Index.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
-import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle } from 'lucide-react';
+import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle } from 'lucide-react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useReport, useReports } from '@/hooks/useReports';
 import { AuthService } from '@/services/authService';
@@ -186,32 +186,41 @@ function CitationsChart({ reportData }: { reportData: FullReportData | null }) {
       </div>
 
       {/* Légende des couleurs par modèle */}
-      {modelColors.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-x-3 gap-y-1.5 mt-2 px-2">
-          {modelColors.map((m) => (
-            <button
-              key={m.name}
-              type="button"
-              className="flex items-center gap-1.5 text-xs transition-opacity"
-              style={{ opacity: hoveredModel && hoveredModel !== m.name ? 0.35 : 1 }}
-              onMouseEnter={() => setHoveredModel(m.name)}
-              onMouseLeave={() => setHoveredModel(null)}
-            >
-              {getModelLogo(m.name) ? (
-                <img
-                  src={getModelLogo(m.name)!}
-                  alt={m.name}
-                  className="w-4 h-4 object-contain flex-shrink-0 rounded-sm"
-                />
-              ) : (
-                <span className="inline-block w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
-              )}
-              <span className="text-slate-600 font-medium">{m.name}</span>
-              <span className="text-slate-400">{m.pct}%</span>
-            </button>
-          ))}
-        </div>
-      )}
+      {modelColors.length > 0 && (() => {
+        const half = Math.ceil(modelColors.length / 2);
+        const rows = [modelColors.slice(0, half), modelColors.slice(half)].filter(r => r.length > 0);
+        const renderItem = (m: typeof modelColors[0]) => (
+          <button
+            key={m.name}
+            type="button"
+            className="flex items-center gap-1.5 text-xs transition-opacity"
+            style={{ opacity: hoveredModel && hoveredModel !== m.name ? 0.35 : 1 }}
+            onMouseEnter={() => setHoveredModel(m.name)}
+            onMouseLeave={() => setHoveredModel(null)}
+          >
+            {getModelLogo(m.name) ? (
+              <img
+                src={getModelLogo(m.name)!}
+                alt={m.name}
+                className="w-4 h-4 object-contain flex-shrink-0 rounded-sm"
+              />
+            ) : (
+              <span className="inline-block w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
+            )}
+            <span className="text-slate-600 font-medium">{m.name}</span>
+            <span className="text-slate-400">{m.pct}%</span>
+          </button>
+        );
+        return (
+          <div className="flex flex-col items-center gap-y-2 mt-1 px-2">
+            {rows.map((row, i) => (
+              <div key={i} className="flex justify-center gap-x-3">
+                {row.map(renderItem)}
+              </div>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -237,13 +246,8 @@ function NavigationButtons({ activeView, onViewChange }: { activeView: string, o
 
       <button
         onClick={() => handleViewChange('ameliorer')}
-        className={`nav-btn flex items-center gap-1.5 font-semibold transition-all ${
-          activeView === 'ameliorer'
-            ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-200 border-transparent'
-            : 'bg-gradient-to-r from-violet-50 to-indigo-50 text-violet-700 border border-violet-200 hover:from-violet-100 hover:to-indigo-100'
-        }`}
+        className={`nav-btn ${activeView === 'ameliorer' ? 'nav-btn-primary' : ''}`}
       >
-        <Sparkles size={13} className={activeView === 'ameliorer' ? 'text-yellow-300' : 'text-violet-500'} />
         Améliorer
       </button>
     </div>
