@@ -23,6 +23,16 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000');
+const API_TIMEOUT_ANALYSIS = 120 * 60 * 1000; // 2h pour les analyses longues
+
+const ANALYSIS_ENDPOINTS = [
+  '/llmo/analyze',
+  '/llmo/run',
+  '/competitor',
+  '/analysis',
+  '/optimize',
+  '/crawl',
+];
 
 // Types pour les réponses API
 export interface ApiResponse<T = any> {
@@ -127,8 +137,10 @@ class ApiService {
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<T> {
+    const isAnalysis = ANALYSIS_ENDPOINTS.some(p => endpoint.includes(p));
+    const timeout = isAnalysis ? API_TIMEOUT_ANALYSIS : this.timeout;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
       const method = (options.method || 'GET').toUpperCase();
