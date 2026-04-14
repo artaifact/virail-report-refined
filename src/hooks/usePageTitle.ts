@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const APP_NAME = 'Virail Studio';
+const APP_NAME = 'Viraill';
 
 /**
  * Met à jour le titre de l'onglet du navigateur.

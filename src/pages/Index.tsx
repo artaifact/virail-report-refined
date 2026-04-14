@@ -5135,7 +5135,7 @@ const Index = () => {
 
             {/* Titre */}
             <h1 className="text-2xl font-bold text-slate-900 mb-2">
-              Bienvenue sur Virail Studio
+              Bienvenue sur Viraill
             </h1>
             <p className="text-slate-500 text-sm max-w-lg mb-8 leading-relaxed">
               Vous n'avez pas encore d'analyse. Lancez votre première analyse GEO pour découvrir comment votre site est perçu par les IA génératives.
@@ -5146,7 +5146,7 @@ const Index = () => {
               onClick={() => setIsNewAnalysisModalOpen(true)}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-indigo-200 gap-2 h-auto"
             >
-              <PlayCircle size={18} />
+             
               Lancer ma première analyse
             </Button>
 
