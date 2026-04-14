@@ -5121,7 +5121,7 @@ const Index = () => {
     return (
       <div className="ux-dashboard-body">
         <div className="dashboard-container ux-dashboard">
-          <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+          <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center w-full max-w-3xl mx-auto">
             {/* Illustration */}
             <div className="relative mb-8">
               <div className="w-24 h-24 rounded-3xl bg-indigo-50 flex items-center justify-center mx-auto shadow-inner">
@@ -5131,16 +5131,13 @@ const Index = () => {
                   <path d="M18 22h8M22 18v8" stroke="#6366F1" strokeWidth="2.5" strokeLinecap="round" />
                 </svg>
               </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shadow">
-                <Sparkles size={14} className="text-amber-500" />
-              </div>
             </div>
 
             {/* Titre */}
             <h1 className="text-2xl font-bold text-slate-900 mb-2">
               Bienvenue sur Virail Studio
             </h1>
-            <p className="text-slate-500 text-sm max-w-md mb-8 leading-relaxed">
+            <p className="text-slate-500 text-sm max-w-lg mb-8 leading-relaxed">
               Vous n'avez pas encore d'analyse. Lancez votre première analyse GEO pour découvrir comment votre site est perçu par les IA génératives.
             </p>
 
@@ -5154,21 +5151,16 @@ const Index = () => {
             </Button>
 
             {/* Steps indicatifs */}
-            <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl w-full text-left">
+            <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full text-left">
               {[
-                { icon: Globe, step: '1', title: 'Entrez votre URL', desc: 'Le domaine de votre site à analyser' },
-                { icon: Zap, step: '2', title: 'Analyse en cours', desc: 'Nos IA testent votre visibilité GEO' },
-                { icon: Award, step: '3', title: 'Vos résultats', desc: 'Score, citations et recommandations' },
-              ].map(({ icon: Icon, step, title, desc }) => (
-                <div key={step} className="flex gap-3 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                    <Icon size={15} className="text-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">Étape {step}</p>
-                    <p className="text-sm font-semibold text-slate-800">{title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
-                  </div>
+                { step: '1', title: 'Entrez votre URL', desc: 'Le domaine de votre site à analyser' },
+                { step: '2', title: 'Analyse en cours', desc: 'Nos IA testent votre visibilité GEO' },
+                { step: '3', title: 'Vos résultats', desc: 'Score, citations et recommandations' },
+              ].map(({ step, title, desc }) => (
+                <div key={step} className="p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">Étape {step}</p>
+                  <p className="text-sm font-semibold text-slate-800">{title}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
                 </div>
               ))}
             </div>
