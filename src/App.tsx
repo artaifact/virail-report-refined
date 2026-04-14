@@ -85,7 +85,7 @@ function MainLayout() {
           <header className="flex h-12 shrink-0 items-center gap-2 px-4 border-b border-border bg-background/95 backdrop-blur-sm md:hidden">
             <SidebarTrigger className="-ml-1 h-8 w-8 text-muted-foreground" />
             <Separator orientation="vertical" className="mr-1 h-4" />
-            <span className="text-sm font-medium text-foreground truncate">{domainName || "Virail Studio"}</span>
+            <span className="text-sm font-medium text-foreground truncate">{domainName || "Viraill"}</span>
           </header>
           <Routes>
             <Route path="/" element={<Index />} />
