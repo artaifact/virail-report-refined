@@ -614,7 +614,33 @@ const Competition = () => {
                             </div>
                           </div>
 
-                          {/* Graphique evolution */}
+                          {/* Graphique evolution ou état 1re analyse */}
+                          {timeSeriesRaw.length === 1 ? (
+                            <div style={{ width: '100%', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                              {/* Barre de score */}
+                              <div style={{ background: '#f8fafc', borderRadius: 12, padding: '16px 20px', border: '1px solid #f1f5f9' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                                  <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'Inter, sans-serif', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Score GEO</span>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1e40af', fontFamily: 'Inter, sans-serif' }}>{latest.score.toFixed(1)} / 100</span>
+                                </div>
+                                <div style={{ height: 8, background: '#e2e8f0', borderRadius: 99, overflow: 'hidden' }}>
+                                  <div style={{ height: '100%', width: `${Math.min(100, latest.score)}%`, background: 'linear-gradient(90deg, #3b82f6, #1e40af)', borderRadius: 99, transition: 'width 0.6s ease' }} />
+                                </div>
+                              </div>
+                              {/* Message 1re analyse */}
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#eff6ff', borderRadius: 10, padding: '12px 16px', border: '1px solid #dbeafe' }}>
+                                <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v4M5 7.5v.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: 12, fontWeight: 600, color: '#1e40af', fontFamily: 'Inter, sans-serif', marginBottom: 2 }}>Première analyse enregistrée</div>
+                                  <div style={{ fontSize: 11, color: '#3b82f6', fontFamily: 'Inter, sans-serif', lineHeight: 1.5 }}>
+                                    Le graphique d'évolution s'affichera dès votre 2e analyse. Revenez après la prochaine.
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
                           <div style={{ width: '100%', height: 210 }}>
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={timeSeriesRaw} margin={{ left: 8, right: 16, top: 10, bottom: 24 }}>
@@ -679,6 +705,7 @@ const Competition = () => {
                               </LineChart>
                             </ResponsiveContainer>
                           </div>
+                          )}
                         </Card>
                       );
                     }

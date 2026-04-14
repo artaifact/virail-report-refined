@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePayment } from '@/hooks/usePayment';
-import { Crown, Star, Zap, Check, CreditCard, Users, BarChart3, Shield, Sparkles, ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
+import { Crown, Star, Zap, Check, CreditCard, Users, BarChart3, Shield, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
 import { modelLogos } from '@/components/ModelLogosCarousel';
@@ -303,12 +303,14 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         </p>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-8 w-full overflow-x-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-8 w-full overflow-x-auto pt-5">
         {plans.map((plan) => (
           <Card 
             key={plan.id}
-            className={`relative bg-white border border-primary rounded-xl transition-all duration-200 hover:shadow-sm flex flex-col h-full ${
-              isCurrentPlan(plan.id) ? 'ring-2 ring-primary' : ''
+            className={`relative bg-white rounded-xl transition-all duration-200 hover:shadow-md flex flex-col h-full ${
+              isCurrentPlan(plan.id)
+                ? 'border-2 border-primary shadow-md'
+                : 'border border-gray-200 shadow-sm'
             }`}
           >
             {/* Badge recommandé */}
@@ -320,9 +322,9 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
 
             {/* Badge plan actuel */}
             {isCurrentPlan(plan.id) && showCurrentPlan && (
-              <div className="absolute -top-3 right-4 z-10">
-                <Badge className="bg-primary text-primary-foreground px-3 py-1 shadow-md">
-                  Plan actuel
+              <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 z-10">
+                <Badge className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full shadow-sm whitespace-nowrap">
+                  ✓ Plan actuel
                 </Badge>
               </div>
             )}
@@ -440,10 +442,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                     Plan actuel
                   </>
                 ) : isDowngrade(plan.id) ? (
-                  <>
-                    <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
-                    Rétrograder
-                  </>
+                  'Changer de plan'
                 ) : (
                   <>
                     {plan.id === 'free' ? 'Commencer gratuitement' : 'Choisir ce plan'}
@@ -460,9 +459,8 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
       <Dialog open={isDowngradeDialogOpen} onOpenChange={setIsDowngradeDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-700">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Confirmer la rétrogradation
+            <DialogTitle className="text-gray-900">
+              Confirmer le changement de plan
             </DialogTitle>
             <DialogDescription className="pt-2">
               Vous êtes sur le point de passer à un plan inférieur.{' '}
@@ -476,8 +474,8 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
             <Button variant="outline" onClick={() => setIsDowngradeDialogOpen(false)} className="flex-1">
               Annuler
             </Button>
-            <Button onClick={confirmDowngrade} className="flex-1 bg-amber-600 hover:bg-amber-700 text-white">
-              Confirmer la rétrogradation
+            <Button onClick={confirmDowngrade} className="flex-1 bg-primary hover:bg-primary/90 text-white">
+              Confirmer
             </Button>
           </div>
         </DialogContent>

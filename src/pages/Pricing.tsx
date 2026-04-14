@@ -42,13 +42,15 @@ const Pricing: React.FC = () => {
       </div> */}
 
       {/* Gestionnaire d'erreurs */}
-      <div className="bg-card border border-border rounded-xl shadow-sm p-4">
-        <ErrorHandler
-          error={paymentError}
-          onDismiss={handleErrorDismiss}
-          onUpgrade={handleErrorUpgrade}
-        />
-      </div>
+      {paymentError && (
+        <div className="bg-card border border-border rounded-xl shadow-sm p-4 mb-4">
+          <ErrorHandler
+            error={paymentError}
+            onDismiss={handleErrorDismiss}
+            onUpgrade={handleErrorUpgrade}
+          />
+        </div>
+      )}
 
       {/* Sélecteur de plans */}
      
