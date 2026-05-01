@@ -300,68 +300,6 @@ const Competition = () => {
         
         <div className="space-y-6">
 
-            {/* Bouton de débogage temporaire */}
-            {/* <div className="mb-4 p-4 bg-muted rounded-lg">
-              <h3 className="text-sm font-semibold mb-2">🔧 Débogage Quotas</h3>
-              <div className="text-xs space-y-1">
-                <div>UsageLimits chargé: {usageLimits ? '✅' : '❌'}</div>
-                {usageLimits && (
-                  <div>Analyse concurrentielle: {usageLimits.can_use_competitor_analysis?.allowed ? '✅' : '❌'} ({usageLimits.can_use_competitor_analysis?.limit})</div>
-                )}
-                <div>Cookies présents: {document.cookie.length > 10 ? '✅' : '❌'}</div>
-                <div>Session valide: {document.cookie.length > 10 ? '✅' : '❌'}</div>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <Button
-                  onClick={async () => {
-                    const testResult = canUseFeature('competitor_analysis');
-                    const featureLimits = usageLimits?.can_use_competitor_analysis;
-                    alert(`canUseFeature: ${testResult}\nLimits: ${JSON.stringify(featureLimits, null, 2)}`);
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  Tester Quotas
-                </Button>
-                <Button
-                  onClick={async () => {
-                    // Forcer le rechargement
-                    window.location.reload();
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  Recharger
-                </Button>
-                <Button
-                  onClick={async () => {
-                    // Tester via une requête API pour voir si la session est valide
-                    try {
-                      const response = await fetch('/api/v1/usage/limits', {
-                        method: 'GET',
-                        credentials: 'include'
-                      });
-
-                      if (response.ok) {
-                        alert('✅ Session valide - Authentification réussie');
-                      } else if (response.status === 401) {
-                        alert('❌ Session expirée - Reconnexion nécessaire\nRedirection vers la page de connexion...');
-                        window.location.href = '/login';
-                      } else {
-                        alert(`❓ Erreur inconnue: ${response.status}`);
-                      }
-                    } catch (error) {
-                      alert('❌ Erreur de réseau - Vérifiez votre connexion');
-                    }
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  Tester Session
-                </Button>
-              </div>
-            </div> */}
-
             {/* Affichage des erreurs */}
             {error && (
               <Card className="border-gray-200 bg-gray-50 shadow-sm">
@@ -434,73 +372,12 @@ const Competition = () => {
             {currentAnalysis && (
               <div className="space-y-6 mb-6">
 
-                {/* Statistiques globales */}
-                {/* <Card className="bg-card border border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground">📈 Statistiques Globales</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-foreground">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-3 bg-muted rounded-lg">
-                        <div className="text-xl font-bold">{currentAnalysis.global_stats?.total_models_executed || 0}</div>
-                        <div className="text-sm text-muted-foreground">Modèles exécutés</div>
-                      </div>
-                      <div className="text-center p-3 bg-muted rounded-lg">
-                        <div className="text-xl font-bold">{currentAnalysis.global_stats?.total_competitors_found || 0}</div>
-                        <div className="text-sm text-muted-foreground">Concurrents trouvés</div>
-                      </div>
-                      <div className="text-center p-3 bg-muted rounded-lg">
-                        <div className="text-xl font-bold">{currentAnalysis.global_stats?.analysis_duration_ms || 0}ms</div>
-                        <div className="text-sm text-muted-foreground">Durée d'analyse</div>
-                      </div>
-                      <div className="text-center p-3 bg-muted rounded-lg">
-                        <div className="text-xl font-bold">{currentAnalysis.global_stats?.average_competitors_per_model || 0}</div>
-                        <div className="text-sm text-muted-foreground">Moyenne par modèle</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card> */}
-
-                {/* Métadonnées de l'analyse */}
-                {/* <Card className="bg-card border border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground">⚙️ Métadonnées de l'Analyse</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-foreground">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div><strong>Score minimum:</strong> {currentAnalysis.analysis_metadata?.min_score || 0}</div>
-                        <div><strong>Mentions minimum:</strong> {currentAnalysis.analysis_metadata?.min_mentions || 0}</div>
-                        <div><strong>Include raw:</strong> {currentAnalysis.analysis_metadata?.include_raw ? 'Oui' : 'Non'}</div>
-                        <div><strong>Include benchmark:</strong> {currentAnalysis.analysis_metadata?.include_benchmark ? 'Oui' : 'Non'}</div>
-                      </div>
-                      <div className="space-y-2">
-                        <div><strong>Benchmark competitors:</strong> {currentAnalysis.analysis_metadata?.benchmark_competitors_count || 0}</div>
-                        <div><strong>LLMO analysis:</strong> {currentAnalysis.analysis_metadata?.include_llmo_analysis ? 'Oui' : 'Non'}</div>
-                        <div><strong>LLMO count:</strong> {currentAnalysis.analysis_metadata?.llmo_analysis_count || 0}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4">
-                      <strong>Modèles demandés:</strong>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {currentAnalysis.analysis_metadata?.models_requested?.map((model, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs text-foreground">
-                            {model}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card> */}
-
                 {/* Section Evo concurrentielle et Détails par Modèle côte à côte */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Votre positionnement - Evolution temporelle */}
                   {(() => {
                     // --- Calcul de la position depuis les concurrents (snapshot actuel) ---
                     let currentRank: number | null = null;
-                    let totalSites: number | null = null;
                     if (competitorComparisons && competitorComparisons.length > 0) {
                       const targetUrl = benchmarkTechData?.target?.url || currentAnalysis?.url || '';
                       const targetDomain = extractDomain(targetUrl).toLowerCase().replace('www.', '');
@@ -513,7 +390,6 @@ const Competition = () => {
                       });
                       if (targetDomain && !dedupMap.has(targetDomain)) dedupMap.set(targetDomain, targetScore);
                       const sorted = Array.from(dedupMap.entries()).sort((a, b) => b[1] - a[1]);
-                      totalSites = sorted.length;
                       const rankIdx = sorted.findIndex(([d]) => d === targetDomain);
                       currentRank = rankIdx >= 0 ? rankIdx + 1 : null;
                     }
@@ -542,15 +418,15 @@ const Competition = () => {
                       const previous = timeSeriesRaw.length >= 2 ? timeSeriesRaw[timeSeriesRaw.length - 2] : null;
                       const trend = previous !== null ? Number((latest.score - previous.score).toFixed(1)) : null;
                       const trendUp = trend !== null && trend > 0;
-                      const trendDown = trend !== null && trend < 0;
 
                       const scores = timeSeriesRaw.map((d: any) => d.score);
                       const minScore = Math.min(...scores);
                       const maxScore = Math.max(...scores);
                       // Garantir un écart Y minimum de 40 pts pour atténuer les pics visuels
                       const dataRange = maxScore - minScore;
-                      const minRange = 40;
-                      const halfRange = Math.max(dataRange / 2 + Math.max(dataRange * 0.18, 3), minRange / 2);
+                      // Domaine Y avec écart minimum de 60 pts pour aplatir les pics visuels
+                      const minRange = 60;
+                      const halfRange = Math.max(dataRange / 2 + Math.max(dataRange * 0.15, 3), minRange / 2);
                       const midScore = (minScore + maxScore) / 2;
                       const yMin = Math.max(0, midScore - halfRange);
                       const yMax = Math.min(100, midScore + halfRange);
@@ -686,7 +562,7 @@ const Competition = () => {
                                   cursor={{ stroke: '#dbeafe', strokeWidth: 1 }}
                                 />
                                 <Line
-                                  type="monotone"
+                                  type="natural"
                                   dataKey="score"
                                   stroke="#1e40af"
                                   strokeWidth={2}
@@ -965,6 +841,23 @@ const Competition = () => {
                             </ul>
                           ) : (
                             <div className="text-sm text-gray-600">Aucun point fort listé</div>
+                          )}
+                        </div>
+
+                        {/* Axes d'amélioration */}
+                        <div className="p-4 rounded-lg bg-orange-50 border border-orange-200">
+                          <h4 className="text-sm font-semibold text-orange-700 mb-3 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4" />
+                            Axes d'amélioration
+                          </h4>
+                          {(currentAnalysis.target_positioning?.improvement_areas || []).length > 0 ? (
+                            <ul className="space-y-2 list-disc list-inside">
+                              {currentAnalysis.target_positioning!.improvement_areas.map((item, idx) => (
+                                <li key={idx} className="text-sm text-gray-900">{item}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div className="text-sm text-gray-600">Aucun axe d'amélioration listé</div>
                           )}
                         </div>
 
@@ -1443,27 +1336,6 @@ const Competition = () => {
                     );
                   })()}
 
-                  {/* Benchmark - depuis benchmark_results API */}
-                  {(() => {
-                    const br = v1BenchmarkResults || (currentAnalysis as any)?.benchmark_results;
-                    if (!br?.benchmark?.classement) return null;
-                    const rawList = br.benchmark.classement || [];
-                    const seen = new Set<string>();
-                    const dedupList = rawList.filter((e: any) => {
-                      const d = extractDomain(e.url);
-                      if (seen.has(d)) return false;
-                      seen.add(d);
-                      return true;
-                    });
-                    const clientDomain = extractDomain(currentAnalysis?.url || '');
-
-                    if (dedupList.length === 0) return null;
-
-                    return (
-                      <></>
-                    );
-                  })()}
-
                   {/* Données Benchmark - Mode Paysage - Pleine Largeur */}
                   {(() => {
                   const _br2 = v1BenchmarkResults || (currentAnalysis as any)?.benchmark_results;
@@ -1481,7 +1353,22 @@ const Competition = () => {
                   const yourSiteDomain = extractDomain(currentAnalysis.url || '');
                   const yourSiteIndex = classement.findIndex((e: any) => extractDomain(e.url) === yourSiteDomain);
                   const yourSiteRank = yourSiteIndex >= 0 ? yourSiteIndex + 1 : null;
-                  
+
+                  // Rang Score Benchmark (materialityMatrix trié par total_score)
+                  const matBrandsForRank = materialityMatrix?.brands;
+                  let benchmarkRank: number | null = null;
+                  let benchmarkTotal: number | null = null;
+                  if (matBrandsForRank && matBrandsForRank.length > 0) {
+                    const sorted = [...matBrandsForRank].sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
+                    benchmarkTotal = sorted.length;
+                    const idx = sorted.findIndex((b) => b.is_target);
+                    benchmarkRank = idx >= 0 ? idx + 1 : null;
+                  }
+
+                  const activeRank = benchmarkView === 'raw_data' ? benchmarkRank : yourSiteRank;
+                  const activeTotal = benchmarkView === 'raw_data' ? benchmarkTotal : classement.length;
+                  const activeLabel = benchmarkView === 'raw_data' ? 'Score Benchmark' : 'Score GEO';
+
                   return (
                     <Card className="w-full bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
                         {/* Header */}
@@ -1491,13 +1378,12 @@ const Competition = () => {
                               Analyse Benchmark
                             </h3>
                             <p className="text-sm text-gray-600">
-                              {`Comparaison entre ${currentAnalysis.url || ''} et ${classement.length - 1} concurrent${classement.length - 1 > 1 ? 's' : ''}${yourSiteRank ? `. Position du site cible : ${yourSiteRank} sur ${classement.length}` : ''}.`}
+                              {`Comparaison entre ${currentAnalysis.url || ''} et ${(activeTotal ?? 1) - 1} concurrent${(activeTotal ?? 1) - 1 > 1 ? 's' : ''} (${activeLabel})${activeRank ? `. Position du site cible : ${activeRank} sur ${activeTotal}` : ''}.`}
                             </p>
                           </div>
-                          {yourSiteRank && (
+                          {activeRank && (
                             <div className="text-right">
-                              <div className="text-2xl md:text-3xl font-bold text-gray-900">{yourSiteRank}{getOrdinalSuffix(yourSiteRank)}</div>
-                              <div className="text-sm font-medium text-orange-500">+0</div>
+                              <div className="text-2xl md:text-3xl font-bold text-gray-900">{activeRank}{getOrdinalSuffix(activeRank)}</div>
                             </div>
                           )}
                         </div>
@@ -1729,7 +1615,7 @@ const Competition = () => {
 
                       const categories = [
                         {
-                          label: 'Crédibilité & Autoridé',
+                          label: 'Crédibilité & Autorité',
                           score: d.credibility_authority?.score ?? p?.credibility_authority?.score ?? 0,
                           max: p?.credibility_authority?.max ?? 25,
                           details: d.credibility_authority?.details || {},
