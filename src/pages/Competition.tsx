@@ -547,9 +547,13 @@ const Competition = () => {
                       const scores = timeSeriesRaw.map((d: any) => d.score);
                       const minScore = Math.min(...scores);
                       const maxScore = Math.max(...scores);
-                      const pad = Math.max((maxScore - minScore) * 0.18, maxScore * 0.05, 2);
-                      const yMin = Math.max(0, minScore - pad);
-                      const yMax = maxScore + pad;
+                      // Garantir un écart Y minimum de 40 pts pour atténuer les pics visuels
+                      const dataRange = maxScore - minScore;
+                      const minRange = 40;
+                      const halfRange = Math.max(dataRange / 2 + Math.max(dataRange * 0.18, 3), minRange / 2);
+                      const midScore = (minScore + maxScore) / 2;
+                      const yMin = Math.max(0, midScore - halfRange);
+                      const yMax = Math.min(100, midScore + halfRange);
 
                       return (
                         <Card
@@ -591,9 +595,9 @@ const Competition = () => {
                                 <span style={{ fontSize: 36, fontWeight: 800, color: '#1e40af', letterSpacing: '-1.5px', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>
                                   {currentRank ?? '—'}
                                 </span>
-                                {totalSites != null && (
+                                {currentRank != null && (
                                   <span style={{ fontSize: 16, fontWeight: 500, color: '#93c5fd', fontFamily: 'Inter, sans-serif' }}>
-                                    / {totalSites}
+                                    / 10
                                   </span>
                                 )}
                                 {trend !== null && trend !== 0 && (
@@ -1487,7 +1491,7 @@ const Competition = () => {
                               Analyse Benchmark
                             </h3>
                             <p className="text-sm text-gray-600">
-                              {benchmarkData.comparaison || 'Comparaison de votre positionnement avec vos concurrents'}
+                              {`Comparaison entre ${currentAnalysis.url || ''} et ${classement.length - 1} concurrent${classement.length - 1 > 1 ? 's' : ''}${yourSiteRank ? `. Position du site cible : ${yourSiteRank} sur ${classement.length}` : ''}.`}
                             </p>
                           </div>
                           {yourSiteRank && (
