@@ -18,6 +18,9 @@ import { HtmlDiffViewer } from '@/components/optimizer/HtmlDiffViewer';
 import { SchemaPreview } from '@/components/optimizer/SchemaPreview';
 import { SimulationTab } from '@/components/optimizer/SimulationTab';
 import { NewAnalysisModal } from '@/components/NewAnalysisModal';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { HELP } from '@/lib/help-content';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 // === CONSTANTES ===
 /**
@@ -530,7 +533,9 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
           <table className="w-full border-separate" style={{ borderSpacing: '0' }}>
             <thead>
               <tr>
-                <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100">CATÉGORIE</th>
+                <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100">
+                  <div className="flex items-center gap-1.5">CATÉGORIE<InfoTooltip {...HELP.scoreGEO} side="right" /></div>
+                </th>
                 <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100">DESCRIPTION</th>
                 <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100 w-[35%]">SCORE</th>
               </tr>
@@ -2480,13 +2485,13 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const hasSimulationData = !!(co || scores.length > 0 || coSchemasAdded.length > 0 || coEnrichments.length > 0 || coRecommendations.length > 0);
 
   const tabs = [
-    { id: 'overview' as const, label: 'Overview' },
-    { id: 'schemas' as const, label: 'JSON-LD Schemas', has: !!schemaContent },
-    { id: 'meta' as const, label: 'Meta Tags & Enrichments', has: !!(metaTagsContent || openGraphContent || coEnrichments.length > 0) },
-    { id: 'llms' as const, label: 'llms.txt', has: !!(llmsContent || llmsFullContent) },
-    { id: 'robots' as const, label: 'robots.txt', has: !!robotsContent },
-    { id: 'htmldiff' as const, label: 'HTML Diff', has: !!optimizedHtmlContent },
-    { id: 'simulation' as const, label: 'AI Simulation', has: hasSimulationData },
+    { id: 'overview' as const, label: 'Overview', tooltip: HELP.overviewTab },
+    { id: 'schemas' as const, label: 'JSON-LD Schemas', has: !!schemaContent, tooltip: HELP.jsonLdSchemas },
+    { id: 'meta' as const, label: 'Meta Tags & Enrichments', has: !!(metaTagsContent || openGraphContent || coEnrichments.length > 0), tooltip: HELP.metaTags },
+    { id: 'llms' as const, label: 'llms.txt', has: !!(llmsContent || llmsFullContent), tooltip: HELP.llmsTxt },
+    { id: 'robots' as const, label: 'robots.txt', has: !!robotsContent, tooltip: HELP.robotsTxt },
+    { id: 'htmldiff' as const, label: 'HTML Diff', has: !!optimizedHtmlContent, tooltip: HELP.htmlDiff },
+    { id: 'simulation' as const, label: 'AI Simulation', has: hasSimulationData, tooltip: HELP.aiSimulation },
   ];
 
   // Composant réutilisable : carte fichier technique
@@ -2592,26 +2597,39 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
           const isActive = activeOptTab === tab.id;
           const hasContent = tab.id === 'overview' || tab.has;
           return (
-            <button
-              key={tab.id}
-              onClick={() => hasContent && setActiveOptTab(tab.id)}
-              className="shrink-0 px-3 sm:px-3.5 py-2 text-xs sm:text-[12.5px] rounded-[9px] transition-all whitespace-nowrap"
-              style={{
-                fontWeight: isActive ? 600 : 500,
-                color: isActive ? '#0F172A' : hasContent ? '#64748B' : '#CBD5E1',
-                background: isActive ? '#FFFFFF' : 'transparent',
-                border: isActive ? '1px solid #E2E8F0' : '1px solid transparent',
-                boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                cursor: hasContent ? 'pointer' : 'default',
-              }}
-            >
-              {tab.label}
-              {tab.id !== 'overview' && tab.has && (
-                <span className="inline-block w-[5px] h-[5px] rounded-full ml-1.5 align-middle"
-                  style={{ background: isActive ? '#0F172A' : '#CBD5E1' }}
-                />
+            <Tooltip key={tab.id}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => hasContent && setActiveOptTab(tab.id)}
+                  className="shrink-0 px-3 sm:px-3.5 py-2 text-xs sm:text-[12.5px] rounded-[9px] transition-all whitespace-nowrap"
+                  style={{
+                    fontWeight: isActive ? 600 : 500,
+                    color: isActive ? '#0F172A' : hasContent ? '#64748B' : '#CBD5E1',
+                    background: isActive ? '#FFFFFF' : 'transparent',
+                    border: isActive ? '1px solid #E2E8F0' : '1px solid transparent',
+                    boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
+                    cursor: hasContent ? 'pointer' : 'default',
+                  }}
+                >
+                  {tab.label}
+                  {tab.id !== 'overview' && tab.has && (
+                    <span className="inline-block w-[5px] h-[5px] rounded-full ml-1.5 align-middle"
+                      style={{ background: isActive ? '#0F172A' : '#CBD5E1' }}
+                    />
+                  )}
+                </button>
+              </TooltipTrigger>
+              {tab.tooltip && (
+                <TooltipContent side="bottom" sideOffset={8} className="max-w-[280px] p-0 overflow-hidden rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgba(15,23,42,0.12)] bg-white font-sans">
+                  <div className="px-4 pt-4 pb-2">
+                    <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#1A3AFF]">{tab.tooltip.title}</p>
+                  </div>
+                  <div className="px-4 pb-4">
+                    <p className="text-[13px] leading-relaxed text-slate-500">{tab.tooltip.description}</p>
+                  </div>
+                </TooltipContent>
               )}
-            </button>
+            </Tooltip>
           );
         })}
       </div>
@@ -3771,7 +3789,38 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
       }
     });
 
-    return Object.values(grouped).sort((a, b) => b.citations - a.citations);
+    // Compléter avec les modèles attendus non présents dans les données
+    // (non analysés lors de cette exécution spécifique)
+    const DEFAULT_EXPECTED_MODELS: { apiName: string; rawModel: string }[] = [
+      { apiName: 'gpt-4o',          rawModel: 'gpt-4o' },
+      { apiName: 'claude-4-sonnet', rawModel: 'claude-4-sonnet' },
+      { apiName: 'gemini-2.5-pro',  rawModel: 'gemini-2.5-pro' },
+      { apiName: 'mistral-large',   rawModel: 'mistral-large' },
+      { apiName: 'sonar-pro',       rawModel: 'sonar-pro' },
+      { apiName: 'deepseek-chat',   rawModel: 'deepseek-chat' },
+      { apiName: 'qwen-2.5-72b',    rawModel: 'qwen-2.5-72b' },
+      { apiName: 'llama-3.1-70b',   rawModel: 'llama-3.1-70b' },
+      { apiName: 'grok-4',          rawModel: 'grok-4' },
+    ];
+    DEFAULT_EXPECTED_MODELS.forEach(({ apiName, rawModel }) => {
+      const displayName = getCommercialModelName(apiName);
+      if (!grouped[displayName]) {
+        grouped[displayName] = {
+          displayName,
+          citations: -1, // -1 = non analysé (différent de 0 = analysé mais non cité)
+          lastUpdate: new Date().toISOString(),
+          details: 'Modèle non analysé lors de cette exécution.',
+          rawModel,
+        };
+      }
+    });
+
+    return Object.values(grouped).sort((a, b) => {
+      // Les modèles non analysés (-1) vont en bas
+      if (a.citations === -1 && b.citations !== -1) return 1;
+      if (b.citations === -1 && a.citations !== -1) return -1;
+      return b.citations - a.citations;
+    });
   };
 
   const rawData = getDataFromAPI();
@@ -3787,7 +3836,10 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
     return (
       <div className="chart-card chart-card-wide" style={{ width: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Citations par modèle</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Citations par modèle</h3>
+            <InfoTooltip {...HELP.citationsParModele} side="bottom" />
+          </div>
         </div>
         <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
           Aucune donnée d'analyse disponible pour ce rapport.
@@ -3796,12 +3848,13 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
     );
   }
 
-  // Vérifier si toutes les citations sont à 0 (données API)
-  const allCitationsZero = data.length > 0 && data.every(item => item.citations === 0);
-  const isApiData = data.length > 0;
-  
-  // Calculer le total des citations
-  const totalCitations = data.reduce((sum, item) => sum + item.citations, 0);
+  // Vérifier si toutes les citations sont à 0 (données API) — exclure les "non analysés" (-1)
+  const analyzedData = data.filter(item => item.citations !== -1);
+  const allCitationsZero = analyzedData.length > 0 && analyzedData.every(item => item.citations === 0);
+  const isApiData = analyzedData.length > 0;
+
+  // Calculer le total des citations (exclure les -1)
+  const totalCitations = analyzedData.reduce((sum, item) => sum + item.citations, 0);
 
   const handleExportCsv = () => {
     const rows: string[][] = [['Modèle', 'Citations']];
@@ -3812,7 +3865,10 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
   return (
     <div className="chart-card chart-card-wide" style={{ width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Citations par modèle</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Citations par modèle</h3>
+          <InfoTooltip {...HELP.citationsParModele} side="bottom" />
+        </div>
         {data.length > 0 && (
           <button
             type="button"
@@ -3961,7 +4017,11 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
                 </td>
                
                 <td>
-                  {item.citations === 0 && isApiData ? (
+                  {item.citations === -1 ? (
+                    <span style={{ fontSize: '13px', color: '#94A3B8', fontStyle: 'italic' }}>
+                      Non analysé
+                    </span>
+                  ) : item.citations === 0 && isApiData ? (
                     <span style={{ fontSize: '13px', color: '#F59E0B', fontStyle: 'italic' }}>
                       Non cité
                     </span>
@@ -3986,9 +4046,11 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
         <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
           {selectedModel && (() => {
             const selected = data.find(d => d.displayName === selectedModel);
-            const citations = selected?.citations || 0;
+            const citations = selected?.citations ?? 0;
 
-            const alertConfig = citations === 0
+            const alertConfig = citations === -1
+              ? { bg: '#F1F5F9', border: '#CBD5E1', iconColor: '#94A3B8', titleColor: '#475569', textColor: '#64748B', title: 'Non analysé', message: `${selectedModel} n'a pas été inclus dans cette analyse. Il sera pris en compte lors de la prochaine exécution.` }
+              : citations === 0
               ? { bg: '#FEE2E2', border: '#FCA5A5', iconColor: '#EF4444', titleColor: '#991B1B', textColor: '#7F1D1D', title: 'Aucune citation', message: `Votre site n'est pas du tout cité par ${selectedModel}. Ce moteur génératif ne vous mentionne dans aucune de ses réponses. Consultez les recommandations GEO pour y remédier.` }
               : citations <= 5
               ? { bg: '#FFF7ED', border: '#FED7AA', iconColor: '#F97316', titleColor: '#9A3412', textColor: '#7C2D12', title: 'Visibilité insuffisante', message: `Votre site n'est cité que ${citations} fois par ${selectedModel}. C'est insuffisant pour garantir une visibilité durable sur ce moteur. Optimisez votre contenu en suivant les recommandations GEO.` }
@@ -4395,7 +4457,10 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
   return (
     <div className="chart-card competitor-card">
       <div className="card-header-with-selector flex-col sm:flex-row gap-3">
-        <h3 className="text-lg sm:text-xl font-bold text-slate-900">Analyse concurrentielle</h3>
+        <div className="flex items-center gap-2">
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Analyse concurrentielle</h3>
+          <InfoTooltip {...HELP.analyseConcurrentielle} side="bottom" />
+        </div>
         <div className="model-selector">
           <span className="selector-label">Modèle:</span>
           <Select
@@ -4504,6 +4569,35 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
     // Récupérer l'URL du client depuis report ou llmo_report
     const clientUrl = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || '';
     const clientSiteName = reportData?.analyse_citation?.client_site_name || '';
+
+    // PRIORITÉ 1 : utiliser competitors_frequently_mentioned (calculé côté backend avec filtre domaine exact)
+    const cfm = reportData?.analyse_citation?.competitors_frequently_mentioned;
+    if (cfm && Array.isArray(cfm) && cfm.length > 0) {
+      return cfm.map((item: any) => {
+        const domain = extractDomain(item.url || '');
+        const isClientSite = clientUrl
+          ? domain.includes(extractDomain(clientUrl))
+          : clientSiteName
+            ? domain.toLowerCase().includes(clientSiteName.toLowerCase())
+            : false;
+        return {
+          icon: item.favicon_url || `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+          domain,
+          used: `${Math.round(item.percentage ?? 0)} %`,
+          citations: String(item.count ?? 0),
+          type: isClientSite ? 'you' : 'corporate',
+          label: isClientSite ? 'Votre Site' : 'Source',
+          pages: 1,
+          lastSeen: new Date().toLocaleDateString('fr-FR'),
+          description: isClientSite
+            ? `Votre site a été cité ${item.count} fois dans les réponses des modèles d'IA.`
+            : `Source citée ${item.count} fois.`,
+          highlight: isClientSite,
+          models: [],
+          sourceDetails: [{ url: item.url, title: item.name || domain }],
+        };
+      });
+    }
 
     // Si on a des detailed_results, les utiliser
     if (reportData?.analyse_citation?.detailed_results && Array.isArray(reportData.analyse_citation.detailed_results)) {
@@ -4639,7 +4733,10 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
     return (
       <div id="domaines-les-plus-cites" className="domains-table-card" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', padding: '0', overflow: 'hidden', background: '#FFFFFF', scrollMarginTop: '80px' }}>
         <div style={{ padding: '20px 26px', borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Domaines les plus cités</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Domaines les plus cités</h3>
+            <InfoTooltip {...HELP.domainesLesPlusCites} />
+          </div>
           <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', margin: 0 }}>Sources citées</p>
         </div>
         <div style={{ padding: '40px 26px', textAlign: 'center', background: '#FFFFFF' }}>
@@ -4652,7 +4749,10 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
   return (
     <div id="domaines-les-plus-cites" className="domains-table-card" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', padding: '0', overflow: 'hidden', background: '#FFFFFF', scrollMarginTop: '80px' }}>
       <div style={{ padding: '20px 26px', borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Domaines les plus cités</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Domaines les plus cités</h3>
+          <InfoTooltip {...HELP.domainesLesPlusCites} />
+        </div>
         <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', margin: 0 }}>Sources citées</p>
       </div>
       

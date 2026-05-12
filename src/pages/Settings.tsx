@@ -21,6 +21,8 @@ import {
   Eye,
   Shield,
   Info,
+  Pencil,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -262,6 +264,7 @@ const Settings = () => {
   const [editAgencyName, setEditAgencyName] = useState("");
   const [editAgencyUrl, setEditAgencyUrl] = useState("");
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [isEditingAccount, setIsEditingAccount] = useState(false);
 
   // API Hooks
   const { data: dashboard, isLoading: isDashboardLoading } = useAccountDashboard();
@@ -341,15 +344,11 @@ const Settings = () => {
   };
 
   const handleSaveAccountData = async () => {
-    if (!accountData || onboardingCompleted) return;
+    if (!accountData) return;
     setIsSavingAccount(true);
     try {
       const apiBase = import.meta.env.DEV ? "" : (import.meta.env.VITE_API_BASE_URL || "https://api.viraill.com");
       const payload: Record<string, string> = {
-        account_type: accountData.account_type || "in_house",
-        location_country: accountData.location_country || "",
-        location_country_code: accountData.location_country_code || "",
-        onboarding_step: accountData.onboarding_step || "setup",
         brand_name: editBrandName,
         brand_url: editBrandUrl,
       };
@@ -358,7 +357,7 @@ const Settings = () => {
         payload.agency_url = editAgencyUrl;
       }
       const res = await fetch(`${apiBase}/auth/user/onboarding/account-data`, {
-        method: "POST",
+        method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -374,18 +373,22 @@ const Settings = () => {
         agency_name: editAgencyName,
         agency_url: editAgencyUrl,
       } : prev);
+      setIsEditingAccount(false);
       toast({ title: "Informations mises à jour", description: "Vos informations ont été enregistrées." });
     } catch (err) {
-      let msg = err instanceof Error ? err.message : "Impossible de sauvegarder les informations";
-      if (/onboarding est déjà complété|onboarding.*complété|account.*ne peuvent plus/i.test(msg)) {
-        setOnboardingCompleted(true);
-        msg =
-          "L’onboarding est terminé : ces champs ne sont plus modifiables depuis cette page. Contactez le support pour toute modification.";
-      }
+      const msg = err instanceof Error ? err.message : "Impossible de sauvegarder les informations";
       toast({ title: "Erreur", description: msg, variant: "destructive" });
     } finally {
       setIsSavingAccount(false);
     }
+  };
+
+  const handleCancelEditAccount = () => {
+    setEditBrandName(accountData?.brand_name || "");
+    setEditBrandUrl(accountData?.brand_url || "");
+    setEditAgencyName(accountData?.agency_name || "");
+    setEditAgencyUrl(accountData?.agency_url || "");
+    setIsEditingAccount(false);
   };
 
   // Carte de paiement par défaut
@@ -671,7 +674,20 @@ const Settings = () => {
 
           {/* Informations du compte */}
           <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm lg:col-span-2">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Informations du compte</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Informations du compte</h2>
+              {accountData && !isEditingAccount && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingAccount(true)}
+                  className="gap-2 text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Modifier
+                </Button>
+              )}
+            </div>
 
             {isAccountDataLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -684,17 +700,6 @@ const Settings = () => {
               </div>
             ) : accountData ? (
               <div className="space-y-6">
-                {onboardingCompleted && (
-                  <Alert className="border-blue-200 bg-blue-50/80">
-                    <Info className="h-4 w-4 text-blue-600" />
-                    <AlertTitle className="text-blue-900">Onboarding terminé</AlertTitle>
-                    <AlertDescription className="text-blue-800">
-                      Les informations de marque et d’agence ne sont plus modifiables via ce formulaire une fois l’onboarding
-                      terminé. Pour toute mise à jour, contactez le support.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {accountData.account_type && (
                     <div className="space-y-2">
@@ -725,8 +730,8 @@ const Settings = () => {
                       value={editBrandName}
                       onChange={(e) => setEditBrandName(e.target.value)}
                       placeholder="Nom de votre marque"
-                      className={onboardingCompleted ? "bg-gray-50 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300"}
-                      disabled={onboardingCompleted}
+                      disabled={!isEditingAccount}
+                      className={!isEditingAccount ? "bg-gray-50 border-gray-200 text-gray-700" : "border-gray-300"}
                     />
                   </div>
 
@@ -737,8 +742,8 @@ const Settings = () => {
                       value={editBrandUrl}
                       onChange={(e) => setEditBrandUrl(e.target.value)}
                       placeholder="https://votre-marque.com"
-                      className={onboardingCompleted ? "bg-gray-50 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300"}
-                      disabled={onboardingCompleted}
+                      disabled={!isEditingAccount}
+                      className={!isEditingAccount ? "bg-gray-50 border-gray-200 text-gray-700" : "border-gray-300"}
                     />
                   </div>
 
@@ -751,38 +756,51 @@ const Settings = () => {
                           value={editAgencyName}
                           onChange={(e) => setEditAgencyName(e.target.value)}
                           placeholder="Nom de votre agence"
-                          className={onboardingCompleted ? "bg-gray-50 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300"}
-                          disabled={onboardingCompleted}
+                          disabled={!isEditingAccount}
+                          className={!isEditingAccount ? "bg-gray-50 border-gray-200 text-gray-700" : "border-gray-300"}
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="agencyUrl" className="text-sm font-medium text-gray-700">URL de l'agence</Label>
+                        <Label htmlFor="agencyUrl" className="text-sm font-medium text-gray-700">URL de l’agence</Label>
                         <Input
                           id="agencyUrl"
                           value={editAgencyUrl}
                           onChange={(e) => setEditAgencyUrl(e.target.value)}
                           placeholder="https://votre-agence.com"
-                          className={onboardingCompleted ? "bg-gray-50 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300"}
-                          disabled={onboardingCompleted}
+                          disabled={!isEditingAccount}
+                          className={!isEditingAccount ? "bg-gray-50 border-gray-200 text-gray-700" : "border-gray-300"}
                         />
                       </div>
                     </>
                   )}
                 </div>
 
-                <div className="flex justify-end pt-2">
-                  <Button
-                    onClick={handleSaveAccountData}
-                    disabled={isSavingAccount || onboardingCompleted}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {isSavingAccount ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : null}
-                    {isSavingAccount ? "Enregistrement..." : "Enregistrer"}
-                  </Button>
-                </div>
+                {isEditingAccount && (
+                  <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCancelEditAccount}
+                      disabled={isSavingAccount}
+                      className="gap-2 text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Annuler
+                    </Button>
+                    <Button
+                      onClick={handleSaveAccountData}
+                      disabled={isSavingAccount}
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 gap-2"
+                    >
+                      {isSavingAccount ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : null}
+                      {isSavingAccount ? "Enregistrement..." : "Enregistrer"}
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-sm text-gray-500">Aucune information de compte disponible.</p>

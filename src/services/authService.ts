@@ -798,6 +798,30 @@ export class AuthService {
   }
 
   /**
+   * Vérifier l'email avec le token reçu par email
+   */
+  static async verifyEmail(token: string): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ token }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (response.ok) {
+      return { success: true, message: data.message || 'Email vérifié avec succès' };
+    }
+
+    const errorMsg =
+      (typeof data.detail === 'string' ? data.detail : null) ||
+      data.message ||
+      `Lien invalide ou expiré (${response.status})`;
+    throw new Error(errorMsg);
+  }
+
+  /**
    * Demander la réinitialisation du mot de passe
    */
   static async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {

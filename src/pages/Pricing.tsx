@@ -53,14 +53,12 @@ const Pricing: React.FC = () => {
       )}
 
       {/* Sélecteur de plans */}
-     
-    
-        <div className="p-5">
-        <PlanSelector 
+      <div className="p-5">
+        <PlanSelector
           onPlanSelected={handlePlanSelected}
           showCurrentPlan={true}
         />
-        </div>
+      </div>
       
 
       {/* Quotas d'usage */}

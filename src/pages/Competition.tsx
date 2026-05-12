@@ -39,6 +39,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useCompetitiveAnalysis } from "@/hooks/useCompetitiveAnalysis";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { HELP } from '@/lib/help-content';
 
 // === UTILITAIRES ===
 function exportToCsvCompetition(filename: string, rows: string[][]): void {
@@ -103,12 +105,7 @@ const getCommercialModelName = (apiName: string): string => {
 
 // Fonction pour obtenir le suffixe ordinal (1st, 2nd, 3rd, etc.)
 const getOrdinalSuffix = (n: number): string => {
-  const j = n % 10;
-  const k = n % 100;
-  if (j === 1 && k !== 11) return 'er';
-  if (j === 2 && k !== 12) return 'ème';
-  if (j === 3 && k !== 13) return 'ème';
-  return 'ème';
+  return n === 1 ? 'er' : 'ème';
 };
 
 const normalizeBrandLabel = (value: string | null | undefined): string =>
@@ -463,44 +460,16 @@ const Competition = () => {
                             </Tooltip>
                           </div>
 
-                          {/* KPIs */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 14, marginBottom: 16 }}>
-                            <div>
-                              <div style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'Inter, sans-serif', marginBottom: 2 }}>Position actuelle</div>
-                              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                                <span style={{ fontSize: 36, fontWeight: 800, color: '#1e40af', letterSpacing: '-1.5px', lineHeight: 1, fontFamily: 'Inter, sans-serif' }}>
-                                  {currentRank ?? '—'}
-                                </span>
-                                {currentRank != null && (
-                                  <span style={{ fontSize: 16, fontWeight: 500, color: '#93c5fd', fontFamily: 'Inter, sans-serif' }}>
-                                    / 10
-                                  </span>
-                                )}
-                                {trend !== null && trend !== 0 && (
-                                  <span style={{ fontSize: 12, fontWeight: 600, fontFamily: 'Inter, sans-serif', color: trendUp ? '#16a34a' : '#dc2626', marginLeft: 4 }}>
-                                    {trendUp ? '▲' : '▼'} {Math.abs(trend).toFixed(1)}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div style={{ borderLeft: '1px solid #f1f5f9', paddingLeft: 16 }}>
-                              <div style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'Inter, sans-serif', marginBottom: 2 }}>Score actuel</div>
-                              <div style={{ fontSize: 18, fontWeight: 700, color: '#94a3b8', letterSpacing: '-0.5px', fontFamily: 'Inter, sans-serif' }}>
-                                {latest.score.toFixed(1)}
-                              </div>
-                            </div>
-                            <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-                              <div style={{ fontSize: 11, color: '#cbd5e1', fontFamily: 'Inter, sans-serif' }}>{latest.labelFull}</div>
-                            </div>
-                          </div>
-
                           {/* Graphique evolution ou état 1re analyse */}
                           {timeSeriesRaw.length === 1 ? (
                             <div style={{ width: '100%', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 12 }}>
                               {/* Barre de score */}
                               <div style={{ background: '#f8fafc', borderRadius: 12, padding: '16px 20px', border: '1px solid #f1f5f9' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                                  <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'Inter, sans-serif', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Score GEO</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'Inter, sans-serif', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Score GEO</span>
+                                    <InfoTooltip {...HELP.scoreGeoGlobal} side="right" />
+                                  </div>
                                   <span style={{ fontSize: 13, fontWeight: 700, color: '#1e40af', fontFamily: 'Inter, sans-serif' }}>{latest.score.toFixed(1)} / 100</span>
                                 </div>
                                 <div style={{ height: 8, background: '#e2e8f0', borderRadius: 99, overflow: 'hidden' }}>
@@ -521,7 +490,7 @@ const Competition = () => {
                               </div>
                             </div>
                           ) : (
-                          <div style={{ width: '100%', height: 210 }}>
+                          <div style={{ width: '100%', height: 320 }}>
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={timeSeriesRaw} margin={{ left: 8, right: 16, top: 10, bottom: 24 }}>
                                 <defs>
@@ -820,7 +789,7 @@ const Competition = () => {
                 {(currentAnalysis.target_positioning?.competitive_advantages?.length || 0) > 0 || (currentAnalysis.target_positioning?.improvement_areas?.length || 0) > 0 ? (
                   <Card className="bg-white border-gray-200 shadow-sm">
                     <CardHeader className="border-b border-gray-200">
-                      <CardTitle className="text-lg font-semibold text-gray-900">Analyse qualitative</CardTitle>
+                      <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">Analyse qualitative<InfoTooltip {...HELP.analyseQualitative} /></CardTitle>
                       <CardDescription className="text-gray-600">
                         Points forts identifiés et axes d'amélioration recommandés
                       </CardDescription>
@@ -832,6 +801,7 @@ const Competition = () => {
                           <h4 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
                             <CheckCircle className="w-4 h-4" />
                             Points forts
+                            <InfoTooltip {...HELP.pointsForts} side="right" />
                           </h4>
                           {(currentAnalysis.target_positioning?.competitive_advantages || []).length > 0 ? (
                             <ul className="space-y-2 list-disc list-inside">
@@ -849,6 +819,7 @@ const Competition = () => {
                           <h4 className="text-sm font-semibold text-orange-700 mb-3 flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4" />
                             Axes d'amélioration
+                            <InfoTooltip {...HELP.axesDamelioration} side="right" />
                           </h4>
                           {(currentAnalysis.target_positioning?.improvement_areas || []).length > 0 ? (
                             <ul className="space-y-2 list-disc list-inside">
@@ -1137,8 +1108,9 @@ const Competition = () => {
 
                     return (
                       <Card className="w-full bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2" style={{ textAlign: 'center' }}>
+                        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2 flex items-center justify-center gap-2" style={{ textAlign: 'center' }}>
                           Matrice de Matérialité
+                          <InfoTooltip {...HELP.matricePositionnement} />
                         </h3>
                         {dataPoints.length > MAX_DISPLAY && (
                           <p className="text-xs text-gray-400 mb-3" style={{ textAlign: 'center' }}>
@@ -1374,8 +1346,9 @@ const Competition = () => {
                         {/* Header */}
                         <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
                           <div className="flex-1">
-                            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1">
+                            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
                               Analyse Benchmark
+                              <InfoTooltip {...HELP.analyseBenchmark} />
                             </h3>
                             <p className="text-sm text-gray-600">
                               {`Comparaison entre ${currentAnalysis.url || ''} et ${(activeTotal ?? 1) - 1} concurrent${(activeTotal ?? 1) - 1 > 1 ? 's' : ''} (${activeLabel})${activeRank ? `. Position du site cible : ${activeRank} sur ${activeTotal}` : ''}.`}
@@ -1507,10 +1480,10 @@ const Competition = () => {
                                   <div className="grid grid-cols-[60px_2fr_repeat(4,80px)_100px] gap-4 pb-3 border-b-2 border-gray-200 mb-3">
                                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Position</div>
                                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Crédibilité</div>
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Structure</div>
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Pertinence</div>
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Technique</div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Crédibilité<InfoTooltip {...HELP.credibiliteAutorite} side="top" /></div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Structure<InfoTooltip {...HELP.structureListabilite} side="top" /></div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Pertinence<InfoTooltip {...HELP.pertinenceContextuelle} side="top" /></div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Technique<InfoTooltip {...HELP.compatibiliteTechnique} side="top" /></div>
                                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Total</div>
                                   </div>
 
@@ -1824,14 +1797,14 @@ const Competition = () => {
               </div>
               <div className="p-3 bg-gray-50 rounded-xl text-center">
                 <div className="text-2xl font-extrabold text-gray-900">{selectedCompetitorDetail.score}%</div>
-                <div className="text-xs text-gray-500 mt-0.5">Score GEO</div>
+                <div className="text-xs text-gray-500 mt-0.5 flex items-center justify-center gap-1">Score GEO<InfoTooltip {...HELP.scoreGeoGlobal} side="top" /></div>
               </div>
             </div>
 
             {/* Barre de score colorée */}
             <div className="mb-4">
               <div className="flex justify-between text-xs text-gray-500 mb-1.5">
-                <span>Score GEO</span>
+                <span className="flex items-center gap-1">Score GEO<InfoTooltip {...HELP.scoreGeoGlobal} side="top" /></span>
                 <span style={{ color: selectedCompetitorDetail.score >= 70 ? '#10B981' : selectedCompetitorDetail.score >= 40 ? '#F97316' : '#EF4444' }}>
                   {selectedCompetitorDetail.score >= 70 ? 'Bon' : selectedCompetitorDetail.score >= 40 ? 'Moyen' : 'Faible'}
                 </span>

@@ -10,6 +10,8 @@ import { useReport } from "@/hooks/useReports";
 import { mapApiDataToMatrix } from "@/services/matrixMapper";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 import { ChartTooltip } from '@/components/ui/chart';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { HELP } from '@/lib/help-content';
 
 const LLMODashboard = () => {
   usePageTitle('Dashboard LLMO');
@@ -862,14 +864,17 @@ const LLMODashboard = () => {
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">Schema.org</span>
+                        <InfoTooltip {...HELP.schemaOrg} side="right" />
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">HTML sémantique</span>
+                        <InfoTooltip {...HELP.htmlSemantique} side="right" />
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">Métadonnées</span>
+                        <InfoTooltip {...HELP.metadonnees} side="right" />
                       </div>
                     </div>
 
@@ -877,14 +882,17 @@ const LLMODashboard = () => {
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">Contenu</span>
+                        <InfoTooltip {...HELP.contenu} side="right" />
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">Accessibilité</span>
+                        <InfoTooltip {...HELP.accessibilite} side="right" />
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-blue-600 rounded-full" />
                         <span className="text-sm text-foreground">Performance</span>
+                        <InfoTooltip {...HELP.performance} side="right" />
                       </div>
                     </div>
                   </div>
@@ -894,8 +902,9 @@ const LLMODashboard = () => {
               {/* Checklist exécutable */}
               <Card className="bg-card border border-border shadow-lg">
                 <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-1 sm:space-y-0 pb-2">
-                  <CardTitle className="text-foreground text-xl">
+                  <CardTitle className="text-foreground text-xl flex items-center gap-2">
                     Checklist exécutable
+                    <InfoTooltip {...HELP.checklistExecutable} />
                   </CardTitle>
                   <span className="text-sm text-muted-foreground">{completedCount}/{checklistItems.length} complétées</span>
                 </CardHeader>
@@ -1523,7 +1532,7 @@ const LLMODashboard = () => {
             {/* Carte Analyses détaillées par LLM */}
             <Card className="bg-card border border-border shadow-lg">
               <CardHeader>
-                <CardTitle className="text-xl font-normal text-foreground">Analyses détaillées par LLM</CardTitle>
+                <CardTitle className="text-xl font-normal text-foreground flex items-center gap-2">Analyses détaillées par LLM<InfoTooltip {...HELP.analysesLLM} /></CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

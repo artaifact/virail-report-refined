@@ -326,6 +326,9 @@ export function PlanStep() {
         <p className="text-muted-foreground text-lg">
           Commencez gratuitement ou débloquez plus de fonctionnalités
         </p>
+        <p className="text-sm font-medium text-green-600">
+          7 jours d'essai gratuit sur tous les plans payants
+        </p>
       </div>
 
       <div className={cn("grid grid-cols-1 gap-6", plans.length <= 3 ? "sm:grid-cols-3" : plans.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3 lg:grid-cols-5")}>
@@ -367,6 +370,9 @@ export function PlanStep() {
                   </span>
                   {plan.price > 0 && (
                     <span className="text-sm text-muted-foreground">/mois</span>
+                  )}
+                  {plan.price > 0 && (
+                    <div className="text-xs font-medium text-green-600 mt-1">7 jours gratuits</div>
                   )}
                 </div>
               </div>
@@ -483,7 +489,7 @@ export function PlanStep() {
             </>
           ) : (
             <>
-              {selectedPlanId === 'free' ? 'Commencer gratuitement' : `Choisir ${plans.find(p => p.id === selectedPlanId)?.name}`}
+              {selectedPlanId === 'free' ? 'Commencer gratuitement' : `Essayer 7 jours gratuits`}
             </>
           )}
         </Button>
@@ -512,7 +518,10 @@ export function PlanStep() {
                   {formatPrice(plans.find(p => p.id === selectedPlanId)?.price || 0)}/mois
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <div className="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-xs font-semibold text-green-700">7 jours d'essai gratuit — aucun débit immédiat</p>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
                 Vous allez être redirigé vers la page de paiement sécurisée Stripe
               </p>
             </div>

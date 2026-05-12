@@ -502,7 +502,7 @@ interface LlmoJobsCreateResponse {
 }
 
 const DEFAULT_CITATION_MODELS = [
-  'gpt-5',
+  'gpt-4o',
   'claude-4-sonnet',
   'gemini-2.5-pro',
   'mistral-large',
@@ -974,7 +974,7 @@ export async function startAnalysisExtended(
     const {
       min_score = 0.3,
       min_mentions = 1,
-      models = ['gpt-5', 'claude-4-sonnet', 'gemini-2.5-pro'],
+      models = ['gpt-4o', 'claude-4-sonnet', 'gemini-2.5-pro'],
       include_raw = false
     } = options;
 

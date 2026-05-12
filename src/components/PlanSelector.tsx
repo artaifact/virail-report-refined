@@ -301,6 +301,9 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         <p className="text-lg text-gray-600">
           Sélectionnez le plan qui correspond le mieux à vos besoins
         </p>
+        <p className="text-sm font-medium text-green-600 mt-1">
+          7 jours d'essai gratuit sur tous les plans payants
+        </p>
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-8 w-full overflow-x-auto pt-5">
@@ -445,7 +448,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                   'Changer de plan'
                 ) : (
                   <>
-                    {plan.id === 'free' ? 'Commencer gratuitement' : 'Choisir ce plan'}
+                    {plan.id === 'free' ? 'Commencer gratuitement' : 'Essayer 7 jours gratuits'}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </>
                 )}
@@ -493,9 +496,17 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
               Vous vous abonnez au plan {plans.find(p => p.id === selectedPlanId)?.name}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="text-center space-y-4">
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-sm font-semibold text-green-700 mb-1">
+                  7 jours d'essai gratuit
+                </p>
+                <p className="text-xs text-green-600">
+                  Aucun débit pendant l'essai. Annulez à tout moment.
+                </p>
+              </div>
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600 mb-2">
                   Vous allez être redirigé vers la page de paiement sécurisée de Stripe

@@ -3,18 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  BarChart3, 
-  Shield, 
-  FileText, 
-  Target, 
-  Monitor, 
+import {
+  BarChart3,
+  Shield,
+  FileText,
+  Target,
+  Monitor,
   TrendingUp,
   Info,
   Eye,
   EyeOff
 } from "lucide-react";
 import { MetricComparisonData, getScoreColor, getAdvantageColor } from "@/lib/competitive-mapper";
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { HELP } from '@/lib/help-content';
 
 interface MetricsComparisonProps {
   data: MetricComparisonData[];
@@ -36,6 +38,16 @@ const MetricsComparison: React.FC<MetricsComparisonProps> = ({ data }) => {
         return <Monitor className="h-5 w-5" />;
       default:
         return <BarChart3 className="h-5 w-5" />;
+    }
+  };
+
+  const getMetricHelp = (metric: string) => {
+    switch (metric) {
+      case 'Crédibilité & Autorité': return HELP.credibiliteAutorite;
+      case 'Structure & Lisibilité': return HELP.structureListabilite;
+      case 'Pertinence Contextuelle': return HELP.pertinenceContextuelle;
+      case 'Compatibilité Technique': return HELP.compatibiliteTechnique;
+      default: return null;
     }
   };
 
@@ -70,8 +82,8 @@ const MetricsComparison: React.FC<MetricsComparisonProps> = ({ data }) => {
           <Tabs value={selectedMetric} onValueChange={setSelectedMetric}>
             <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
               {data.map((metric) => (
-                <TabsTrigger 
-                  key={metric.metric} 
+                <TabsTrigger
+                  key={metric.metric}
                   value={metric.metric}
                   className="flex items-center gap-2 text-xs"
                 >
@@ -81,8 +93,16 @@ const MetricsComparison: React.FC<MetricsComparisonProps> = ({ data }) => {
               ))}
             </TabsList>
             
-            {data.map((metric) => (
+            {data.map((metric) => {
+              const help = getMetricHelp(metric.metric);
+              return (
               <TabsContent key={metric.metric} value={metric.metric} className="space-y-4">
+                {/* Titre de la métrique avec tooltip */}
+                <div className="flex items-center gap-2 pt-2">
+                  {getMetricIcon(metric.metric)}
+                  <span className="font-semibold text-sm text-gray-800">{metric.metric}</span>
+                  {help && <InfoTooltip {...help} side="right" />}
+                </div>
                 {/* Graphique de comparaison */}
                 <div className="bg-gray-50 p-6 rounded-lg">
                   <div className="space-y-4">
@@ -167,7 +187,8 @@ const MetricsComparison: React.FC<MetricsComparisonProps> = ({ data }) => {
                   </Card>
                 </div>
               </TabsContent>
-            ))}
+              );
+            })}
           </Tabs>
         </CardContent>
       </Card>

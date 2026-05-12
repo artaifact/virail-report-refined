@@ -107,13 +107,8 @@ export default function Register() {
                     <CheckCircle className="h-8 w-8 text-green-600" />
                   </div>
                   <h2 className="text-2xl md:text-3xl font-semibold text-[#1b1b1f] mb-4">Compte créé avec succès</h2>
-                  <Alert className="bg-blue-50 border-blue-200">
-                    <AlertDescription className="text-blue-900">
-                      <p className="font-medium mb-2">Votre compte est en attente d'approbation par un administrateur.</p>
-                      <p className="text-sm">Vous recevrez un email lorsque votre compte sera approuvé.</p>
-                    </AlertDescription>
-                  </Alert>
-                  <div className="mt-6 p-4 bg-[#f7f8fc] rounded-lg">
+                  <p className="text-sm text-[#6e6e73] mb-4">Vérifiez votre email et cliquez sur le lien pour activer votre compte.</p>
+                  <div className="mt-2 p-4 bg-[#f7f8fc] rounded-lg">
                     <div className="flex items-center justify-center gap-2 text-[#6e6e73]">
                       <Clock className="h-4 w-4" />
                       <p className="text-sm">
