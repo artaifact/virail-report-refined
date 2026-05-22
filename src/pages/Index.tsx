@@ -2363,7 +2363,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const auditGeoScores = [
     { key: 'donnees_structurees', label: 'Données structurées', icon: Code, color: '#6366F1' },
     { key: 'html_semantique', label: 'HTML sémantique', icon: FileCode, color: '#8B5CF6' },
-    { key: 'accessibilite_crawlers', label: 'Accessibilité IA', icon: Globe, color: '#06B6D4' },
+    { key: 'accessibilite_crawlers', label: 'Accessibilité', icon: Globe, color: '#06B6D4' },
     { key: 'optimisation_contenu', label: 'Contenu', icon: FileText, color: '#F59E0B' },
     { key: 'metadonnees_techniques', label: 'Métadonnées', icon: Globe, color: '#10B981' },
     { key: 'conformite_standards', label: 'Standards', icon: Shield, color: '#EC4899' },
@@ -2485,13 +2485,13 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const hasSimulationData = !!(co || scores.length > 0 || coSchemasAdded.length > 0 || coEnrichments.length > 0 || coRecommendations.length > 0);
 
   const tabs = [
-    { id: 'overview' as const, label: 'Overview', tooltip: HELP.overviewTab },
-    { id: 'schemas' as const, label: 'JSON-LD Schemas', has: !!schemaContent, tooltip: HELP.jsonLdSchemas },
-    { id: 'meta' as const, label: 'Meta Tags & Enrichments', has: !!(metaTagsContent || openGraphContent || coEnrichments.length > 0), tooltip: HELP.metaTags },
+    { id: 'overview' as const, label: 'Vue d\'ensemble', tooltip: HELP.overviewTab },
+    { id: 'schemas' as const, label: 'Schémas JSON-LD', has: !!schemaContent, tooltip: HELP.jsonLdSchemas },
+    { id: 'meta' as const, label: 'Balises Meta & Enrichissements', has: !!(metaTagsContent || openGraphContent || coEnrichments.length > 0), tooltip: HELP.metaTags },
     { id: 'llms' as const, label: 'llms.txt', has: !!(llmsContent || llmsFullContent), tooltip: HELP.llmsTxt },
     { id: 'robots' as const, label: 'robots.txt', has: !!robotsContent, tooltip: HELP.robotsTxt },
-    { id: 'htmldiff' as const, label: 'HTML Diff', has: !!optimizedHtmlContent, tooltip: HELP.htmlDiff },
-    { id: 'simulation' as const, label: 'AI Simulation', has: hasSimulationData, tooltip: HELP.aiSimulation },
+    { id: 'htmldiff' as const, label: 'Comparaison HTML', has: !!optimizedHtmlContent, tooltip: HELP.htmlDiff },
+    { id: 'simulation' as const, label: 'Simulation', has: hasSimulationData, tooltip: HELP.aiSimulation, beta: true },
   ];
 
   // Composant réutilisable : carte fichier technique
@@ -2531,7 +2531,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                 background: '#334155', color: '#FFFFFF', transition: 'all 0.2s',
               }}
             >
-              <Download size={11} /> Telecharger
+              <Download size={11} /> Télécharger
             </button>
           </div>
         </div>
@@ -2612,6 +2612,20 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                   }}
                 >
                   {tab.label}
+                  {(tab as any).beta && (
+                    <span
+                      className="inline-block ml-1.5 align-middle"
+                      style={{
+                        fontSize: '9px', fontWeight: 700, letterSpacing: '0.6px',
+                        padding: '1px 5px', borderRadius: '4px',
+                        background: isActive ? '#EDE9FE' : '#F5F3FF',
+                        color: '#7C3AED',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Beta
+                    </span>
+                  )}
                   {tab.id !== 'overview' && tab.has && (
                     <span className="inline-block w-[5px] h-[5px] rounded-full ml-1.5 align-middle"
                       style={{ background: isActive ? '#0F172A' : '#CBD5E1' }}
@@ -2643,9 +2657,9 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
             <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-3 items-start">
               {/* Score global a gauche */}
               <ScoreCard
-                title="Score Global IA"
+                title="Score Global"
                 score={scoreGlobal}
-                description={`${scores.length} categories`}
+                description={`${scores.length} catégorie${scores.length > 1 ? 's' : ''}`}
               />
               {/* Sous-scores a droite */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -2673,7 +2687,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
               {coSchemasAdded.length > 0 && (
                 <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schemas ajoutes</span>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schémas ajoutés</span>
                     <span style={{ fontSize: '14px', fontWeight: 700, color: '#334155' }}>{coSchemasAdded.length}</span>
                   </div>
                   <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748B' }}>{coSchemasAdded.join(' | ')}</span>
@@ -3200,7 +3214,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
             <SchemaPreview schemas={parsedSchemas} title="Schema.org JSON-LD" />
             <FileCard
               title="Telecharger le Schema.org complet"
-              description="Donnees structurees pour ameliorer la comprehension de votre site par les crawlers IA"
+              description="Données structurées pour améliorer la compréhension de votre site par les crawlers IA"
               content={schemaContent}
               copyKey="schema"
               filename={tf?.schema_org_json?.filename || 'schema.json'}
@@ -3210,7 +3224,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
         ) : (
           <FileCard
             title="Schema.org JSON-LD"
-            description="Donnees structurees pour ameliorer la comprehension de votre site par les crawlers IA"
+            description="Données structurées pour améliorer la compréhension de votre site par les robots d'indexation"
             content={schemaContent}
             copyKey="schema"
             filename={tf?.schema_org_json?.filename || 'schema.json'}

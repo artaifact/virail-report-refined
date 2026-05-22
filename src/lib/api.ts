@@ -652,7 +652,7 @@ async function pollJobStatusUntilDone(
   jobId: string,
   options: { onStatus?: (data: LlmoJobsCreateResponse) => void; maxAttempts?: number } = {}
 ): Promise<LlmoJobsCreateResponse> {
-  const { onStatus, maxAttempts = 240 } = options;
+  const { onStatus, maxAttempts = 720 } = options;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const statusData = await fetchJobDetail(jobId);
@@ -823,143 +823,24 @@ export async function startAnalysisStreamWithContext(
 }
 
 /**
- * Lance une nouvelle analyse LLMO avec deux appels API en parallèle pour optimiser les performances
+ * Lance une nouvelle analyse LLMO via le système de jobs asynchrones.
  */
 export async function startAnalysis(url: string): Promise<{ reportId: string; status: string; metadata?: any } | null> {
-  try {
-
-    // Faire deux appels API en parallèle pour optimiser les performances
-    const [analysisResponse, metadataResponse] = await Promise.all([
-      // Premier appel : Lancer l'analyse principale
-      fetchWithAuth(`${API_BASE_URL}/analyze`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url, include_competitor_v1: true, include_competitor_v3: true, include_citation: true, citation_num_queries: 12, include_evolution: true, include_crawl_optimizer: true, include_analyses: false }),
-      }),
-
-      // Deuxième appel : Récupérer les métadonnées ou configurations
-      fetchWithAuth(`${API_BASE_URL}/analyze/config`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url,
-          get_metadata: true,
-          optimization_level: 'high'
-        }),
-      })
-    ]);
-
-    // Vérifier que les deux réponses sont OK
-    if (!analysisResponse.ok) {
-      const message = await getAnalysisErrorMessage(analysisResponse, `Erreur HTTP analyse: ${analysisResponse.status}`);
-      throw new Error(message);
-    }
-
-    if (!metadataResponse.ok) {
-    }
-
-    // Traiter les réponses
-    const analysisData = await analysisResponse.json();
-    const metadataData = metadataResponse.ok ? await metadataResponse.json() : null;
-
-    
-    // Adapter la réponse selon le format de votre API
-    const result = {
-      reportId: analysisData.id || analysisData.reportId || analysisData.analysis_id || `analysis-${Date.now()}`,
-      status: analysisData.status || 'processing',
-      metadata: metadataData || null
-    };
-
-    return result;
-    
-  } catch (error) {
-    return null;
-  }
+  return startAnalysisStream(url);
 }
 
 /**
- * Lance une nouvelle analyse LLMO avec deux appels API séquentiels 
- * (le deuxième appel dépend du premier)
+ * Lance une nouvelle analyse LLMO via le système de jobs asynchrones.
  */
 export async function startAnalysisSequential(
-  url: string, 
+  url: string,
   options: { model?: string } = {}
 ): Promise<{ reportId: string; status: string; optimizationResults?: any } | null> {
-  try {
-    const { model = 'gpt-4o' } = options;
-
-    // Premier appel : Lancer l'analyse principale
-    const analysisResponse = await fetchWithAuth(`${API_BASE_URL}/analyze`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url, include_competitor_v1: true, include_competitor_v3: true, include_citation: true, citation_num_queries: 12, include_evolution: true, include_crawl_optimizer: true, include_analyses: false }),
-    });
-
-    if (!analysisResponse.ok) {
-      const message = await getAnalysisErrorMessage(analysisResponse, `Erreur HTTP analyse: ${analysisResponse.status}`);
-      throw new Error(message);
-    }
-
-    const analysisData = await analysisResponse.json();
-
-    // Deuxième appel : Optimisation basée sur les résultats du premier
-    let optimizationData = null;
-    
-    // Essayer plusieurs endpoints d'optimisation
-    const optimizationEndpoints = [
-      `${API_BASE_URL}/optimize`,
-      `${API_BASE_URL}/analyze/optimize`, 
-      `${API_BASE_URL}/analyze/enhance`
-    ];
-    
-    for (const endpoint of optimizationEndpoints) {
-      try {
-        const optimizationResponse = await fetchWithAuth(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            url,
-            model,
-            analysis_id: analysisData.id || analysisData.reportId || analysisData.analysis_id
-          }),
-        });
-
-        if (optimizationResponse.ok) {
-          optimizationData = await optimizationResponse.json();
-          break;
-        } else {
-        }
-      } catch (error) {
-      }
-    }
-    
-    if (!optimizationData) {
-    }
-    
-    // Retourner les résultats combinés
-    const result = {
-      reportId: analysisData.id || analysisData.reportId || analysisData.analysis_id || `analysis-${Date.now()}`,
-      status: analysisData.status || 'processing',
-      optimizationResults: optimizationData
-    };
-
-    return result;
-    
-  } catch (error) {
-    return null;
-  }
+  return startAnalysisStream(url);
 }
 
 /**
- * Lance une nouvelle analyse sur le port 8001 avec les paramètres étendus
+ * Lance une nouvelle analyse LLMO via le système de jobs asynchrones.
  */
 export async function startAnalysisExtended(
   url: string,
@@ -970,94 +851,17 @@ export async function startAnalysisExtended(
     include_raw?: boolean;
   } = {}
 ): Promise<{ reportId: string; status: string; data?: any } | null> {
-  try {
-    const {
-      min_score = 0.3,
-      min_mentions = 1,
-      models = ['gpt-4o', 'claude-4-sonnet', 'gemini-2.5-pro'],
-      include_raw = false
-    } = options;
-
-
-    const analysisResponse = await fetchWithAuth(`${API_BASE_URL}/analyze`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url,
-        min_score,
-        min_mentions,
-        models,
-        include_raw,
-        include_competitor_v1: true,
-        include_citation: true
-      }),
-    });
-
-    if (!analysisResponse.ok) {
-      const message = await getAnalysisErrorMessage(analysisResponse, `Erreur HTTP analyse étendue: ${analysisResponse.status}`);
-      throw new Error(message);
-    }
-
-    const analysisData = await analysisResponse.json();
-    
-    const result = {
-      reportId: analysisData.id || analysisData.reportId || analysisData.analysis_id || `analysis-${Date.now()}`,
-      status: analysisData.status || 'processing',
-      data: analysisData
-    };
-
-    return result;
-    
-  } catch (error) {
-    return null;
-  }
+  return startAnalysisStream(url);
 }
 
 /**
- * Lance une nouvelle analyse LLMO simple (sans optimisation)
- * Version de fallback si l'optimisation n'est pas disponible
+ * Lance une nouvelle analyse LLMO via le système de jobs asynchrones.
  */
 export async function startAnalysisSimple(
-  url: string, 
+  url: string,
   options: { model?: string } = {}
 ): Promise<{ reportId: string; status: string } | null> {
-  try {
-    const { model = 'gpt-4o' } = options;
-
-    // Appel unique : Lancer l'analyse principale
-    const analysisResponse = await fetchWithAuth(`${API_BASE_URL}/analyze`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url,
-        model,
-        optimization_level: 'basic',
-        include_competitor_v1: true,
-        include_citation: true
-      }),
-    });
-
-    if (!analysisResponse.ok) {
-      const message = await getAnalysisErrorMessage(analysisResponse, `Erreur HTTP analyse: ${analysisResponse.status}`);
-      throw new Error(message);
-    }
-
-    const analysisData = await analysisResponse.json();
-    
-    const result = {
-      reportId: analysisData.id || analysisData.reportId || analysisData.analysis_id || `analysis-${Date.now()}`,
-      status: analysisData.status || 'processing'
-    };
-
-    return result;
-    
-  } catch (error) {
-    return null;
-  }
+  return startAnalysisStream(url);
 }
 
 /**
@@ -1131,7 +935,7 @@ export async function listReports(): Promise<ReportResponse[]> {
 }
 
 /**
- * Lance une analyse personnalisée avec les paramètres spécifiés par l'utilisateur
+ * Lance une analyse personnalisée via le système de jobs asynchrones.
  */
 export async function startCustomAnalysis(params: {
   url: string;
@@ -1140,40 +944,7 @@ export async function startCustomAnalysis(params: {
   include_raw?: boolean;
   include_competitor_analysis?: boolean;
 }): Promise<{ reportId: string; status: string; data?: any } | null> {
-  try {
-    const payload = {
-      url: params.url,
-      min_score: params.min_score ?? 0.3,
-      min_mentions: params.min_mentions ?? 1,
-      include_raw: params.include_raw ?? false,
-      include_competitor_analysis: params.include_competitor_analysis ?? true,
-      include_competitor_v1: true,
-      include_citation: true
-    };
-
-
-    const response = await fetchWithAuth(`${API_BASE_URL}/analyze`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const message = await getAnalysisErrorMessage(response, `Erreur HTTP: ${response.status}`);
-      throw new Error(message);
-    }
-
-    const data = await response.json();
-    return {
-      reportId: data.id || data.reportId || data.analysis_id || `analysis-${Date.now()}`,
-      status: data.status || 'processing',
-      data
-    };
-  } catch (error) {
-    return null;
-  }
+  return startAnalysisStream(params.url);
 }
 
 /**
@@ -1412,7 +1183,7 @@ export async function cancelBulkJob(jobId: string): Promise<boolean> {
 }
 
 export async function startOptimizedAnalysis(
-  url: string, 
+  url: string,
   options: {
     strategy?: 'parallel' | 'sequential' | 'auto';
     includeMetadata?: boolean;
@@ -1420,36 +1191,7 @@ export async function startOptimizedAnalysis(
     model?: string;
   } = {}
 ): Promise<{ reportId: string; status: string; metadata?: any; optimizationResults?: any } | null> {
-  const { strategy = 'auto', includeMetadata = true, optimizationLevel = 'medium', model } = options;
-  
-  
-  try {
-    // Auto-sélection de la stratégie
-    if (strategy === 'auto') {
-      // Utiliser parallèle par défaut pour de meilleures performances
-      // Sauf si on a besoin d'optimisations avancées
-      if (optimizationLevel === 'high') {
-        const result = await startAnalysisSequential(url, { model });
-        if (result) return result;
-        // Fallback vers simple si séquentiel échoue
-        return await startAnalysisSimple(url, { model });
-      } else {
-        return await startAnalysis(url);
-      }
-    }
-    
-    // Stratégie manuelle
-    if (strategy === 'sequential') {
-      const result = await startAnalysisSequential(url, { model });
-      if (result) return result;
-      // Fallback vers simple si séquentiel échoue
-      return await startAnalysisSimple(url, { model });
-    }
-    
-    return await startAnalysis(url);
-  } catch (error) {
-    return await startAnalysisSimple(url, { model });
-  }
+  return startAnalysisStream(url);
 }
 
 
