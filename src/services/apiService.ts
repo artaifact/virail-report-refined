@@ -183,17 +183,26 @@ class ApiService {
           );
         }
 
-        const errorText = await response.text();
+        let errorData: any = { detail: { message: `Erreur HTTP: ${response.status}` } };
+        try {
+          const errorText = await response.text();
+          errorData = JSON.parse(errorText);
+          // Log pour le debug (détail Pydantic visible dans la console)
+          console.error(`[API ${response.status}] ${endpoint}`, errorData);
+        } catch {
+          // ignore parse error
+        }
 
-        const errorData = await response.json().catch(() => ({
-          detail: { message: `Erreur HTTP: ${response.status}` }
-        }));
+        const detail = errorData?.detail;
+        const message =
+          typeof detail === 'string'
+            ? detail
+            : Array.isArray(detail)
+            ? detail.map((d: any) => `${d.loc?.join('.')} — ${d.msg}`).join(', ')
+            : detail?.message ||
+              `Erreur API: ${response.status}`;
 
-        throw new Error(
-          errorData.detail?.message ||
-          errorData.detail ||
-          `Erreur API: ${response.status}`
-        );
+        throw new Error(message);
       }
 
       const data = await response.json();
