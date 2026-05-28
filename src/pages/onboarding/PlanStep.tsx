@@ -327,7 +327,7 @@ export function PlanStep() {
           Commencez gratuitement ou débloquez plus de fonctionnalités
         </p>
         <p className="text-sm font-medium text-green-600">
-          7 jours d'essai gratuit sur tous les plans payants
+          7 jours d'essai gratuit sur le plan Starter
         </p>
       </div>
 
@@ -371,7 +371,7 @@ export function PlanStep() {
                   {plan.price > 0 && (
                     <span className="text-sm text-muted-foreground">/mois</span>
                   )}
-                  {plan.price > 0 && (
+                  {plan.id === 'solo' && (
                     <div className="text-xs font-medium text-green-600 mt-1">7 jours gratuits</div>
                   )}
                 </div>
@@ -489,7 +489,7 @@ export function PlanStep() {
             </>
           ) : (
             <>
-              {selectedPlanId === 'free' ? 'Commencer gratuitement' : `Essayer 7 jours gratuits`}
+              {selectedPlanId === 'free' ? 'Commencer gratuitement' : selectedPlanId === 'solo' ? 'Essayer 7 jours gratuits' : 'Souscrire maintenant'}
             </>
           )}
         </Button>
@@ -518,9 +518,11 @@ export function PlanStep() {
                   {formatPrice(plans.find(p => p.id === selectedPlanId)?.price || 0)}/mois
                 </span>
               </div>
-              <div className="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-xs font-semibold text-green-700">7 jours d'essai gratuit — aucun débit immédiat</p>
-              </div>
+              {selectedPlanId === 'solo' && (
+                <div className="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-xs font-semibold text-green-700">7 jours d'essai gratuit — aucun débit immédiat</p>
+                </div>
+              )}
               <p className="text-sm text-muted-foreground mt-2">
                 Vous allez être redirigé vers la page de paiement sécurisée Stripe
               </p>
