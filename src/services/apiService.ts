@@ -365,19 +365,11 @@ class ApiService {
   }> {
     return this.request('/api/v1/subscriptions/', {
       method: 'POST',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         plan_id: planId,
         success_url: successUrl,
         cancel_url: cancelUrl,
         auto_renew: true,
-        payment_method: {
-          type: "card",
-          card_number: "4242424242424242",
-          exp_month: "12",
-          exp_year: "2030",
-          cvc: "123",
-          name: "Test User"
-        }
       }),
     });
   }
