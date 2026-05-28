@@ -22,7 +22,7 @@ const AI_MODELS_CONFIG = [
   },
   {
     level: 1, // Starter
-    ids: ['starter', 'standard'],
+    ids: ['solo', 'starter', 'standard'],
     web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'],
     api: [],
   },
@@ -140,6 +140,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
       // Extraire l'URL de checkout de la réponse
       const checkoutUrl = response.subscription?.checkout_url;
       const subscriptionId = response.subscription?.subscription?.id;
+      const planChanged = response.subscription?.plan_changed;
 
       // Valider que l'URL de checkout pointe bien vers Stripe
       const isValidStripeUrl = (url: string): boolean => {
@@ -159,6 +160,17 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
 
         // Rediriger vers Stripe pour le paiement
         window.location.href = checkoutUrl;
+      } else if (planChanged) {
+        // Changement de plan immédiat (upgrade/downgrade sans nouveau paiement)
+        await loadPaymentData();
+        setIsPaymentDialogOpen(false);
+        toast({
+          title: "Plan modifié ! 🎉",
+          description: `Votre abonnement a été mis à jour vers le plan ${selectedPlan.name}.`,
+        });
+        if (onPlanSelected) {
+          onPlanSelected(selectedPlanId);
+        }
       } else {
 
         // Fallback: créer l'abonnement directement si pas d'URL Stripe
@@ -302,7 +314,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
           Sélectionnez le plan qui correspond le mieux à vos besoins
         </p>
         <p className="text-sm font-medium text-green-600 mt-1">
-          7 jours d'essai gratuit sur tous les plans payants
+          7 jours d'essai gratuit inclus avec le plan Starter
         </p>
       </div>
       
@@ -448,7 +460,11 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                   'Changer de plan'
                 ) : (
                   <>
-                    {plan.id === 'free' ? 'Commencer gratuitement' : 'Essayer 7 jours gratuits'}
+                    {plan.id === 'free'
+                    ? 'Commencer gratuitement'
+                    : plan.id === 'solo'
+                    ? 'Essayer 7 jours gratuits'
+                    : "S'abonner"}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </>
                 )}
@@ -499,14 +515,16 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
 
           <div className="space-y-4">
             <div className="text-center space-y-4">
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-sm font-semibold text-green-700 mb-1">
-                  7 jours d'essai gratuit
-                </p>
-                <p className="text-xs text-green-600">
-                  Aucun débit pendant l'essai. Annulez à tout moment.
-                </p>
-              </div>
+              {selectedPlanId === 'solo' && (
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm font-semibold text-green-700 mb-1">
+                    7 jours d'essai gratuit
+                  </p>
+                  <p className="text-xs text-green-600">
+                    Aucun débit pendant l'essai. Annulez à tout moment.
+                  </p>
+                </div>
+              )}
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600 mb-2">
                   Vous allez être redirigé vers la page de paiement sécurisée de Stripe

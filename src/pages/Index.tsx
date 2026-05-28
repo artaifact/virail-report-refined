@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle } from 'lucide-react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useReport, useReports } from '@/hooks/useReports';
+import { useSelectedReport } from '@/contexts/SelectedReportContext';
 import { AuthService } from '@/services/authService';
 import type { FullReportData, ReportResponse, BulkJobProgress, BulkPageResult, BulkResultsResponse, BulkJobSummary } from '@/lib/api';
 import { startBulkOptimization, getBulkProgress, getBulkPages, getBulkResults, cancelBulkJob, fetchPageOptimization, listBulkJobs } from '@/lib/api';
@@ -215,13 +216,20 @@ function CitationsChart({ reportData }: { reportData: FullReportData | null }) {
           </button>
         );
         return (
-          <div className="flex flex-col items-center gap-y-2 mt-1 px-2">
-            {rows.map((row, i) => (
-              <div key={i} className="flex justify-center gap-x-3">
-                {row.map(renderItem)}
-              </div>
-            ))}
-          </div>
+          <>
+            {/* Mobile : 2 items par ligne */}
+            <div className="sm:hidden grid grid-cols-2 gap-x-4 gap-y-2 mt-1 px-2 w-full">
+              {modelColors.map(renderItem)}
+            </div>
+            {/* Desktop : layout en 2 lignes inchangé */}
+            <div className="hidden sm:flex flex-col items-center gap-y-2 mt-1 px-2">
+              {rows.map((row, i) => (
+                <div key={i} className="flex justify-center gap-x-3">
+                  {row.map(renderItem)}
+                </div>
+              ))}
+            </div>
+          </>
         );
       })()}
     </div>
@@ -5221,6 +5229,11 @@ const Index = () => {
 
   // Déterminer l'ID final à utiliser : sélection manuelle > URL explicite > dernier rapport
   const reportId = selectedReportId || explicitReportId || (reports.length > 0 ? reports[reports.length - 1].id : null);
+
+  const { setSelectedReportId: setGlobalSelectedReportId } = useSelectedReport();
+  useEffect(() => {
+    setGlobalSelectedReportId(reportId);
+  }, [reportId, setGlobalSelectedReportId]);
 
   const handleSelectReport = (id: string) => {
     setSelectedReportId(id);

@@ -18,6 +18,7 @@ import ReportModules from "@/components/reports/ReportModules";
 import ReportDetails from "@/components/reports/ReportDetails";
 import { LLMOReportDisplay } from "@/components/llmo-report";
 import { useReports, useReport } from "@/hooks/useReports";
+import { useSelectedReport } from "@/contexts/SelectedReportContext";
 import type { ReportResponse } from "@/lib/api";
 import { mapLLMOReportData } from '@/lib/llmo-mapper';
 import { ModelLogosCarousel } from "@/components/ModelLogosCarousel";
@@ -26,6 +27,11 @@ const Analyses = () => {
   usePageTitle('Analyses');
   const navigate = useNavigate();
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const { setSelectedReportId: setGlobalSelectedReportId } = useSelectedReport();
+
+  useEffect(() => {
+    setGlobalSelectedReportId(selectedReportId);
+  }, [selectedReportId, setGlobalSelectedReportId]);
   const [newAnalysisUrl, setNewAnalysisUrl] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);

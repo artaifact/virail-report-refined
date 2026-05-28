@@ -45,6 +45,7 @@ import AdminWaitlist from "./pages/AdminWaitlist";
 import AdminMessages from "./pages/AdminMessages";
 import AdminSubscriptionDocs from "./pages/AdminSubscriptionDocs";
 import { useReports, useReport } from "@/hooks/useReports";
+import { SelectedReportProvider, useSelectedReport } from "@/contexts/SelectedReportContext";
 
 import { OnboardingLayout } from "./pages/onboarding/OnboardingLayout";
 import { SetupStep } from "./pages/onboarding/SetupStep";
@@ -65,7 +66,9 @@ function getSidebarDefaultOpen(): boolean {
 
 function MainLayout() {
   const { reports } = useReports();
-  const reportId = reports.length > 0 ? reports[reports.length - 1].id : null;
+  const { selectedReportId } = useSelectedReport();
+  const fallbackReportId = reports.length > 0 ? reports[reports.length - 1].id : null;
+  const reportId = selectedReportId ?? fallbackReportId;
   const { report: reportData } = useReport(reportId);
 
   const domainName = React.useMemo(() => {
@@ -158,7 +161,9 @@ const App = () => (
               <Route path="/*" element={
                 <ProtectedRoute>
                   <NotificationProvider>
+                    <SelectedReportProvider>
                       <MainLayout />
+                    </SelectedReportProvider>
                   </NotificationProvider>
                 </ProtectedRoute>
               } />
