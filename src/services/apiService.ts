@@ -379,6 +379,7 @@ class ApiService {
         success_url: successUrl,
         cancel_url: cancelUrl,
         auto_renew: true,
+        payment_method: null,
       }),
     });
   }
