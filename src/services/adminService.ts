@@ -1,4 +1,4 @@
-import { AdminUser, AdminUsersResponse, AdminUserStats, AdminUserSearchParams, AdminUserFilters, AdminMessage, AdminMessagesResponse, AdminMessagesQuery, AdminMessagesStats, AdminMessagesSearchQuery, AdminMessageUpdateRequest, AdminSubscription, AdminSubscriptionsResponse, AdminSubscriptionsStats, AdminSubscriptionsQuery } from '@/types/admin';
+import { AdminUser, AdminUsersResponse, AdminUserStats, AdminUserSearchParams, AdminUserFilters, AdminMessage, AdminMessagesResponse, AdminMessagesQuery, AdminMessagesStats, AdminMessagesSearchQuery, AdminMessageUpdateRequest, AdminSubscription, AdminSubscriptionsResponse, AdminSubscriptionsStats, AdminSubscriptionsQuery, AdminPlan } from '@/types/admin';
 import { AuthService } from './authService';
 import { apiService } from './apiService';
 
@@ -875,6 +875,28 @@ export class AdminService {
         success: false,
         message: error instanceof Error ? error.message : 'Erreur lors du retrait des droits'
       };
+    }
+  }
+
+  // ===== GESTION DES PLANS =====
+
+  static async getPlans(): Promise<AdminPlan[]> {
+    const response = await this.makeAdminRequest<{ plans: AdminPlan[] }>('/api/v1/plans/?active_only=false');
+    return response.plans;
+  }
+
+  static async updatePlan(
+    planId: string,
+    data: { name?: string; price?: number; features?: string[]; stripe_price_id?: string; is_active?: boolean }
+  ): Promise<{ success: boolean; message: string; plan?: AdminPlan }> {
+    try {
+      const plan = await this.makeAdminRequest<AdminPlan>(`/api/v1/plans/${planId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      return { success: true, message: 'Plan mis à jour', plan };
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : 'Erreur' };
     }
   }
 }

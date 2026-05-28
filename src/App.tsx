@@ -44,6 +44,7 @@ import LLMODashboard from "./pages/LLMODashboard";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import AdminMessages from "./pages/AdminMessages";
 import AdminSubscriptionDocs from "./pages/AdminSubscriptionDocs";
+import AdminPlans from "./pages/AdminPlans";
 import { useReports, useReport } from "@/hooks/useReports";
 import { SelectedReportProvider, useSelectedReport } from "@/contexts/SelectedReportContext";
 
@@ -98,6 +99,7 @@ function MainLayout() {
             <Route path="/admin/waitlist" element={<AdminRoute><AdminWaitlist /></AdminRoute>} />
             <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
             <Route path="/admin/subscriptions-docs" element={<AdminRoute><AdminSubscriptionDocs /></AdminRoute>} />
+            <Route path="/admin/plans" element={<AdminRoute><AdminPlans /></AdminRoute>} />
             <Route path="/competition" element={<Competition />} />
             <Route path="/sites-optimization" element={<SiteOptimization />} />
             <Route path="/optimisation/technique" element={<TechnicalOptimization />} />
