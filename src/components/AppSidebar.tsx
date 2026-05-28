@@ -32,6 +32,7 @@ import {
   Target,
   TrendingUp,
   FileText,
+  LayoutGrid,
 } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
 import { usePayment } from '@/contexts/PaymentContext'
@@ -139,6 +140,12 @@ export function AppSidebar() {
             title: "Waitlist",
             url: "/admin/waitlist",
             icon: ShieldCheck,
+            badge: undefined as string | undefined,
+          },
+          {
+            title: "Plans",
+            url: "/admin/plans",
+            icon: LayoutGrid,
             badge: undefined as string | undefined,
           },
           {
