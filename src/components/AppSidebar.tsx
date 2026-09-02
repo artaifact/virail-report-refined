@@ -40,7 +40,7 @@ import { useLocation, Link, useNavigate, useSearchParams } from "react-router-do
 import { cn } from "@/lib/utils"
 import { useAuthContext } from "@/contexts/AuthContext"
 import { AuthService } from "@/services/authService"
-import { useReports, useReport } from "@/hooks/useReports"
+import { useReports, useReport, getLatestReportId } from "@/hooks/useReports"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { NewAnalysisModal } from "./NewAnalysisModal"
@@ -70,7 +70,7 @@ export function AppSidebar() {
   // Récupérer le nom de domaine pour l'afficher à la place de "Virail Studio"
   const explicitReportId = location.state?.selectedReportId || searchParams.get('reportId');
   const { reports } = useReports();
-  const reportId = explicitReportId || (reports.length > 0 ? reports[reports.length - 1].id : null);
+  const reportId = explicitReportId || getLatestReportId(reports);
   const { report: reportData } = useReport(reportId);
 
   const domainName = React.useMemo(() => {

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from '@/components/ui/button';
 import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle } from 'lucide-react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { useReport, useReports } from '@/hooks/useReports';
+import { useReport, useReports, getLatestReportId } from '@/hooks/useReports';
 import { useSelectedReport } from '@/contexts/SelectedReportContext';
 import { AuthService } from '@/services/authService';
 import type { FullReportData, ReportResponse, BulkJobProgress, BulkPageResult, BulkResultsResponse, BulkJobSummary } from '@/lib/api';
@@ -5227,8 +5227,8 @@ const Index = () => {
   // Récupérer la liste des rapports pour le fallback si aucun ID n'est fourni
   const { reports, loading: reportsLoading } = useReports();
 
-  // Déterminer l'ID final à utiliser : sélection manuelle > URL explicite > dernier rapport
-  const reportId = selectedReportId || explicitReportId || (reports.length > 0 ? reports[reports.length - 1].id : null);
+  // Déterminer l'ID final à utiliser : sélection manuelle > URL explicite > rapport le plus récent
+  const reportId = selectedReportId || explicitReportId || getLatestReportId(reports);
 
   const { setSelectedReportId: setGlobalSelectedReportId } = useSelectedReport();
   useEffect(() => {

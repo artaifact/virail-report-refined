@@ -3,6 +3,31 @@ import { fetchReport, listReports, startAnalysisStream, checkAnalysisStatus, typ
 import { usePayment } from '@/contexts/PaymentContext';
 
 /**
+ * Retourne l'ID du rapport le plus récent (priorité à la date la plus récente ou au plus grand ID numérique)
+ */
+export function getLatestReportId(reportsList: ReportResponse[] | null | undefined): string | null {
+  if (!reportsList || reportsList.length === 0) return null;
+
+  const sorted = [...reportsList].sort((a, b) => {
+    // 1. Priorité à la date de création la plus récente
+    if (a.createdAt && b.createdAt) {
+      const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (!isNaN(timeDiff) && timeDiff !== 0) return timeDiff;
+    }
+    // 2. Si pas de date ou dates identiques, priorité à l'ID numérique le plus grand
+    const numA = Number(a.id);
+    const numB = Number(b.id);
+    if (!isNaN(numA) && !isNaN(numB)) {
+      return numB - numA;
+    }
+    // 3. Fallback comparaison alphabétique inverse
+    return String(b.id).localeCompare(String(a.id));
+  });
+
+  return sorted[0]?.id ?? null;
+}
+
+/**
  * Hook pour gérer les rapports LLMO - NOTE: Ce hook est conservé pour la liste mais getReport est déprécié
  */
 export function useReports() {

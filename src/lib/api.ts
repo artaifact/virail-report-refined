@@ -913,21 +913,46 @@ export async function listReports(): Promise<ReportResponse[]> {
     }
 
     // Mapper la réponse du backend au format ReportResponse
-    return data.reports.map((report: any) => ({
-      id: report.id.toString(),
-      url: report.url,
-      status: report.status === 'success' ? 'completed' : 'failed',
-      createdAt: report.created_at,
-      duration: report.duration ?? 0,
-      rawData: '',
-      metadata: {
-        llmsUsed: report.metadata?.llmsUsed ?? [],
-        totalAnalyses: report.metadata?.totalAnalyses ?? 0,
-        completionRate: report.metadata?.completionRate ?? (report.status === 'success' ? 100 : 0),
-        score: report.score_produit_analyse,
-        position: report.position_produit_analyse ?? null
+    const mappedReports: ReportResponse[] = data.reports.map((report: any) => {
+      const rawStatus = String(report.status || '').toLowerCase();
+      const isCompleted = rawStatus === 'success' || rawStatus === 'completed' || rawStatus === 'done' || rawStatus === 'finished';
+      const isProcessing = rawStatus === 'processing' || rawStatus === 'running' || rawStatus === 'pending' || rawStatus === 'in_progress';
+      const statusValue: 'completed' | 'processing' | 'failed' = isCompleted
+        ? 'completed'
+        : isProcessing
+        ? 'processing'
+        : 'failed';
+
+      return {
+        id: report.id.toString(),
+        url: report.url,
+        status: statusValue,
+        createdAt: report.created_at,
+        duration: report.duration ?? 0,
+        rawData: '',
+        metadata: {
+          llmsUsed: report.metadata?.llmsUsed ?? [],
+          totalAnalyses: report.metadata?.totalAnalyses ?? 0,
+          completionRate: report.metadata?.completionRate ?? (isCompleted ? 100 : 0),
+          score: report.score_produit_analyse,
+          position: report.position_produit_analyse ?? null
+        }
+      };
+    });
+
+    // Trier les rapports du plus récent au plus ancien
+    return mappedReports.sort((a, b) => {
+      if (a.createdAt && b.createdAt) {
+        const timeDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (!isNaN(timeDiff) && timeDiff !== 0) return timeDiff;
       }
-    }));
+      const numA = Number(a.id);
+      const numB = Number(b.id);
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return numB - numA;
+      }
+      return String(b.id).localeCompare(String(a.id));
+    });
 
   } catch (error) {
     throw error;

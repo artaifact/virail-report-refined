@@ -45,7 +45,7 @@ import AdminWaitlist from "./pages/AdminWaitlist";
 import AdminMessages from "./pages/AdminMessages";
 import AdminSubscriptionDocs from "./pages/AdminSubscriptionDocs";
 import AdminPlans from "./pages/AdminPlans";
-import { useReports, useReport } from "@/hooks/useReports";
+import { useReports, useReport, getLatestReportId } from "@/hooks/useReports";
 import { SelectedReportProvider, useSelectedReport } from "@/contexts/SelectedReportContext";
 
 import { OnboardingLayout } from "./pages/onboarding/OnboardingLayout";
@@ -68,7 +68,7 @@ function getSidebarDefaultOpen(): boolean {
 function MainLayout() {
   const { reports } = useReports();
   const { selectedReportId } = useSelectedReport();
-  const fallbackReportId = reports.length > 0 ? reports[reports.length - 1].id : null;
+  const fallbackReportId = getLatestReportId(reports);
   const reportId = selectedReportId ?? fallbackReportId;
   const { report: reportData } = useReport(reportId);
 

@@ -154,7 +154,7 @@ import {
   MiniLLMResult,
   getCompetitorAnalysisFromReport,
 } from '@/services/competitorAnalysisService';
-import { useReports, useReport } from '@/hooks/useReports';
+import { useReports, useReport, getLatestReportId } from '@/hooks/useReports';
 import { useSearchParams } from 'react-router-dom';
 import type { AnalyseConcurrentielleV3, BenchmarkTechnique } from '@/lib/api';
 import {
@@ -207,8 +207,8 @@ const Competition = () => {
   const { reports, loading: reportsLoading } = useReports();
   const [searchParams] = useSearchParams();
   const explicitReportId = searchParams.get('reportId');
-  // Priorité : reportId de l'URL > dernier rapport de la liste
-  const latestReportId = explicitReportId || (reports.length > 0 ? reports[reports.length - 1].id : null);
+  // Priorité : reportId de l'URL > rapport le plus récent
+  const latestReportId = explicitReportId || getLatestReportId(reports);
 
   // Charger le rapport complet pour accéder à analyse_concurrentielle_v3 et materiality_matrix
   const { report: reportData } = useReport(latestReportId);
