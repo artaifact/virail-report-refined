@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ type WaitlistEntry = {
 };
 
 export default function AdminWaitlist() {
+  usePageTitle('Admin - Waitlist');
   // États pour la waitlist
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);
@@ -116,7 +118,6 @@ export default function AdminWaitlist() {
           setSummary(stats);
         }
       } catch (e) {
-        console.error(e);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -135,7 +136,6 @@ export default function AdminWaitlist() {
         const isAdmin = await AdminService.checkAdminPrivileges();
         setHasAdminAccess(isAdmin);
       } catch (error) {
-        console.error('❌ Erreur lors de la vérification des privilèges admin:', error);
         setHasAdminAccess(false);
       } finally {
         setAdminLoading(false);
@@ -182,10 +182,10 @@ export default function AdminWaitlist() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-950 dark:to-slate-900">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-3 py-4 sm:px-4 md:px-6 md:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             Administration
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
@@ -194,7 +194,7 @@ export default function AdminWaitlist() {
         </div>
 
         {/* Onglets de navigation */}
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="flex flex-wrap gap-2 mb-6 md:mb-8">
           <button
             onClick={() => setActiveTab('waitlist')}
             className={`group relative px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -368,9 +368,9 @@ export default function AdminWaitlist() {
           {/* Tableau de la waitlist */}
           <Card>
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <CardTitle className="text-sm font-medium">Entrées de la liste d'attente</CardTitle>
-                <div className="w-64">
+                <div className="w-full sm:w-64">
                   <Input placeholder="Rechercher nom, email, statut…" value={query} onChange={(e) => setQuery(e.target.value)} />
                 </div>
               </div>
@@ -378,11 +378,11 @@ export default function AdminWaitlist() {
             <CardContent>
               {loading ? (
                 <div className="py-12 flex items-center justify-center text-neutral-500">
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin"/> Chargement…
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin text-blue-600"/> Chargement…
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
+                  <table className="min-w-[600px] w-full text-sm">
                     <thead>
                       <tr className="text-left text-neutral-500">
                         <th className="py-2 pr-4">ID</th>
@@ -507,7 +507,7 @@ export default function AdminWaitlist() {
               >
                 {createAdminLoading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
                     Création en cours...
                   </>
                 ) : (
@@ -543,7 +543,7 @@ export default function AdminWaitlist() {
             <Card>
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
                   <p className="text-muted-foreground">Chargement des messages...</p>
                 </div>
               </CardContent>
@@ -570,7 +570,7 @@ export default function AdminWaitlist() {
             <Card>
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
                   <p className="text-muted-foreground">Chargement des abonnements...</p>
                 </div>
               </CardContent>

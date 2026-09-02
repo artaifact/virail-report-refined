@@ -10,6 +10,8 @@ import { StrategicSection } from './StrategicSection';
 import { Globe, Clock, Brain, Target, TrendingUp, Users, Sparkles, Star, Zap } from 'lucide-react';
 import { FullReportData } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { HELP } from '@/lib/help-content';
 
 interface LLMOReportDisplayProps {
   reportData: FullReportData | null;
@@ -81,7 +83,10 @@ export const LLMOReportDisplay: React.FC<LLMOReportDisplayProps> = ({
                   <div className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-1">
                     {Math.round((mappedData.overview.averageSemanticScore + mappedData.overview.averageRecommendationScore) / 2)}
                   </div>
-                  <div className="text-sm text-gray-600 font-medium">Score Global</div>
+                  <div className="flex items-center justify-center gap-1 text-sm text-gray-600 font-medium">
+                    Score Global
+                    <InfoTooltip {...HELP.scoreGlobal} side="left" />
+                  </div>
                   <div className="flex items-center justify-center gap-1 mt-2">
                     <Star className="w-4 h-4 text-yellow-500" />
                     <span className="text-yellow-600 text-sm font-semibold">Premium</span>
@@ -120,7 +125,10 @@ export const LLMOReportDisplay: React.FC<LLMOReportDisplayProps> = ({
                 <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
                   <Target className="w-4 h-4 text-white" />
                 </div>
-                <div className="font-bold text-gray-900 text-xs mb-1">Score Rec.</div>
+                <div className="flex items-center justify-center gap-1 font-bold text-gray-900 text-xs mb-1">
+                  Score Rec.
+                  <InfoTooltip {...HELP.scoreRecommandation} side="top" />
+                </div>
                 <div className="text-2xl font-bold text-purple-600 mb-1">{mappedData.overview.averageRecommendationScore}/100</div>
                 <div className="text-xs text-gray-600">recommandation</div>
               </div>
@@ -131,7 +139,10 @@ export const LLMOReportDisplay: React.FC<LLMOReportDisplayProps> = ({
                 <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
                   <Brain className="w-4 h-4 text-white" />
                 </div>
-                <div className="font-bold text-gray-900 text-xs mb-1">Score Sém.</div>
+                <div className="flex items-center justify-center gap-1 font-bold text-gray-900 text-xs mb-1">
+                  Score Sém.
+                  <InfoTooltip {...HELP.scoreSemantique} side="top" />
+                </div>
                 <div className="text-2xl font-bold text-indigo-600 mb-1">{mappedData.overview.averageSemanticScore}/100</div>
                 <div className="text-xs text-gray-600">sémantique</div>
               </div>
@@ -142,7 +153,10 @@ export const LLMOReportDisplay: React.FC<LLMOReportDisplayProps> = ({
                 <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform">
                   <Users className="w-4 h-4 text-white" />
                 </div>
-                <div className="font-bold text-gray-900 text-xs mb-1">LLMs</div>
+                <div className="flex items-center justify-center gap-1 font-bold text-gray-900 text-xs mb-1">
+                  LLMs
+                  <InfoTooltip {...HELP.llmsAnalyses} side="top" />
+                </div>
                 <div className="text-2xl font-bold text-teal-600 mb-1">{mappedData.overview.llmNames.length}</div>
                 <div className="text-xs text-gray-600">modèles utilisés</div>
               </div>

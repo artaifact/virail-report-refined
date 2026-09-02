@@ -1,4 +1,5 @@
 import React from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import PlanSelector from '@/components/PlanSelector';
 import UsageQuota from '@/components/UsageQuota';
 import ErrorHandler, { createPaymentError } from '@/components/ErrorHandler';
@@ -9,12 +10,12 @@ import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
 
 const Pricing: React.FC = () => {
+  usePageTitle('Tarifs');
   const { error: paymentCtxError, loadPaymentData } = usePayment() as any;
   const [paymentError, setPaymentError] = useState<any>(null);
   const { toast } = useToast();
 
   const handlePlanSelected = (planId: string) => {
-   //console.log('Plan sélectionné:', planId);
     // Ici vous pouvez ajouter une logique supplémentaire si nécessaire
   };
 
@@ -29,7 +30,7 @@ const Pricing: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen bg-background text-foreground">
+    <div className="container mx-auto px-3 py-4 sm:px-4 md:py-8 min-h-screen bg-background text-foreground">
       
       {/* <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -41,23 +42,23 @@ const Pricing: React.FC = () => {
       </div> */}
 
       {/* Gestionnaire d'erreurs */}
-      <div className="bg-card border border-border rounded-xl shadow-sm p-4">
-        <ErrorHandler
-          error={paymentError}
-          onDismiss={handleErrorDismiss}
-          onUpgrade={handleErrorUpgrade}
-        />
-      </div>
+      {paymentError && (
+        <div className="bg-card border border-border rounded-xl shadow-sm p-4 mb-4">
+          <ErrorHandler
+            error={paymentError}
+            onDismiss={handleErrorDismiss}
+            onUpgrade={handleErrorUpgrade}
+          />
+        </div>
+      )}
 
       {/* Sélecteur de plans */}
-     
-    
-        <div className="p-5">
-        <PlanSelector 
+      <div className="p-5">
+        <PlanSelector
           onPlanSelected={handlePlanSelected}
           showCurrentPlan={true}
         />
-        </div>
+      </div>
       
 
       {/* Quotas d'usage */}
@@ -85,7 +86,6 @@ const Pricing: React.FC = () => {
           className="border-neutral-200 text-neutral-700 hover:bg-neutral-50"
           onClick={async () => {
             try {
-             //console.log('🧪 Test d\'activation manuelle...');
               const testSubscriptionId = 'sub_1e325deb_1756402111';
               
               toast({
@@ -104,7 +104,6 @@ const Pricing: React.FC = () => {
               await loadPaymentData();
               
             } catch (error) {
-              console.error('❌ Erreur lors du test d\'activation:', error);
               toast({
                 title: "❌ Erreur d'activation",
                 description: error instanceof Error ? error.message : "Erreur inattendue",

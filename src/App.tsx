@@ -3,13 +3,18 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import * as React from "react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { Separator } from "@/components/ui/separator";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PaymentProvider } from "@/contexts/PaymentContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { StreamingProvider } from "@/contexts/StreamingContext";
+import { StreamingNotification } from "@/components/StreamingNotification";
 import { ProtectedRoute, AdminRoute } from "@/components/ProtectedRoute";
-import { OnboardingProvider } from "@/components/OnboardingProvider";
+
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import Index from "./pages/Index";
 import Analyses from "./pages/Analyses";
 import Audience from "./pages/Audience";
@@ -23,6 +28,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 import GoogleCallback from "./pages/GoogleCallback";
 import Diagnostic from "./pages/Diagnostic";
 import GlobalSearch from "./components/GlobalSearch";
@@ -37,33 +43,63 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import LLMODashboard from "./pages/LLMODashboard";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import AdminMessages from "./pages/AdminMessages";
-import ProjectOnboardingDemo from "./pages/ProjectOnboardingDemo";
+import AdminSubscriptionDocs from "./pages/AdminSubscriptionDocs";
+import AdminPlans from "./pages/AdminPlans";
+import { useReports, useReport, getLatestReportId } from "@/hooks/useReports";
+import { SelectedReportProvider, useSelectedReport } from "@/contexts/SelectedReportContext";
+
+import { OnboardingLayout } from "./pages/onboarding/OnboardingLayout";
+import { SetupStep } from "./pages/onboarding/SetupStep";
+import { ProjectStep } from "./pages/onboarding/ProjectStep";
+import { TopicsStep } from "./pages/onboarding/TopicsStep";
+import { ResultsStep } from "./pages/onboarding/ResultsStep";
+import { PlanStep } from "./pages/onboarding/PlanStep";
 
 const queryClient = new QueryClient();
 
-// Composant Header simplifié
-function AppHeader() {
-  return (
-    <header className="flex h-10 sm:h-12 shrink-0 items-center gap-4 px-4 sm:px-6 supports-[backdrop-filter]:bg-background/80 bg-background/90 backdrop-blur-sm border-b border-border">
-      <SidebarTrigger className="-ml-1 text-muted-foreground h-8 w-8 sm:h-7 sm:w-7" />
-    </header>
-  );
+function getSidebarDefaultOpen(): boolean {
+  try {
+    const match = document.cookie.match(/(?:^|;\s*)sidebar:state=([^;]*)/);
+    if (match) return match[1] === 'true';
+  } catch {}
+  return true;
 }
 
-// Layout principal avec authentification
 function MainLayout() {
+  const { reports } = useReports();
+  const { selectedReportId } = useSelectedReport();
+  const fallbackReportId = getLatestReportId(reports);
+  const reportId = selectedReportId ?? fallbackReportId;
+  const { report: reportData } = useReport(reportId);
+
+  const domainName = React.useMemo(() => {
+    if (!reportData?.report?.url) return null;
+    try {
+      const url = new URL(reportData.report.url);
+      return url.hostname.replace('www.', '');
+    } catch {
+      return null;
+    }
+  }, [reportData]);
+
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={getSidebarDefaultOpen()}>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
-        <SidebarInset className="flex-1">
-          <AppHeader />
+        <SidebarInset className="flex-1 overflow-x-hidden">
+          <header className="flex h-12 shrink-0 items-center gap-2 px-4 border-b border-border bg-background/95 backdrop-blur-sm md:hidden">
+            <SidebarTrigger className="-ml-1 h-8 w-8 text-muted-foreground" />
+            <Separator orientation="vertical" className="mr-1 h-4" />
+            <span className="text-sm font-medium text-foreground truncate">{domainName || "Viraill"}</span>
+          </header>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/analyses" element={<Analyses />} />
             <Route path="/llmo-dashboard" element={<LLMODashboard />} />
             <Route path="/admin/waitlist" element={<AdminRoute><AdminWaitlist /></AdminRoute>} />
             <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
+            <Route path="/admin/subscriptions-docs" element={<AdminRoute><AdminSubscriptionDocs /></AdminRoute>} />
+            <Route path="/admin/plans" element={<AdminRoute><AdminPlans /></AdminRoute>} />
             <Route path="/competition" element={<Competition />} />
             <Route path="/sites-optimization" element={<SiteOptimization />} />
             <Route path="/optimisation/technique" element={<TechnicalOptimization />} />
@@ -82,6 +118,7 @@ function MainLayout() {
           </Routes>
         </SidebarInset>
         <GlobalSearch />
+        <StreamingNotification />
       </div>
     </SidebarProvider>
   );
@@ -96,25 +133,44 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <PaymentProvider>
+            <StreamingProvider>
             <Routes>
               {/* Routes publiques */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/auth/google/callback" element={<GoogleCallback />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              {/* <Route path="/auth/google/callback" element={<GoogleCallback />} /> */}
               <Route path="/diagnostic" element={<Diagnostic />} />
-              <Route path="/project-onboarding-demo" element={<ProjectOnboardingDemo />} />
+              {/* <Route path="/project-onboarding-demo" element={<ProjectOnboardingDemo />} /> */}
+              
+              {/* Routes d'onboarding (protégées) */}
+              <Route path="/onboarding" element={
+                <ProtectedRoute>
+                  <OnboardingLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<SetupStep />} />
+                <Route path="setup" element={<SetupStep />} />
+                <Route path="project" element={<ProjectStep />} />
+                <Route path="topics" element={<TopicsStep />} />
+                <Route path="results" element={<ResultsStep />} />
+                <Route path="plan" element={<PlanStep />} />
+              </Route>
               
               {/* Routes protégées */}
               <Route path="/*" element={
                 <ProtectedRoute>
-                  <OnboardingProvider>
-                    <MainLayout />
-                  </OnboardingProvider>
+                  <NotificationProvider>
+                    <SelectedReportProvider>
+                      <MainLayout />
+                    </SelectedReportProvider>
+                  </NotificationProvider>
                 </ProtectedRoute>
               } />
             </Routes>
+            </StreamingProvider>
             </PaymentProvider>
           </AuthProvider>
         </BrowserRouter>

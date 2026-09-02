@@ -10,6 +10,42 @@ import { usePayment } from '@/hooks/usePayment';
 import { Crown, Star, Zap, Check, CreditCard, Users, BarChart3, Shield, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
+import { modelLogos } from '@/components/ModelLogosCarousel';
+
+// Configuration des modèles AI par plan (niveau : starter → intermédiaire → avancé)
+const AI_MODELS_CONFIG = [
+  {
+    level: 0, // Free / Gratuit
+    ids: ['free'],
+    web: ['openai', 'perplexity', 'gemini'],
+    api: [],
+  },
+  {
+    level: 1, // Starter
+    ids: ['solo', 'starter', 'standard'],
+    web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'],
+    api: [],
+  },
+  {
+    level: 2, // Intermédiaire / Pro
+    ids: ['intermediaire', 'pro', 'premium'],
+    web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'],
+    api: ['openai', 'perplexity'],
+  },
+  {
+    level: 3, // Avancé / Enterprise
+    ids: ['advanced', 'enterprise'],
+    web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'],
+    api: ['openai', 'perplexity', 'claude'],
+  },
+];
+
+function getAiModelsForPlan(planId: string): { web: string[]; api: string[] } | null {
+  const config = AI_MODELS_CONFIG.find(c => c.ids.includes(planId.toLowerCase()));
+  if (config) return { web: config.web, api: config.api };
+  // Fallback par index de plan (1er = starter, 2e = intermédiaire, etc.)
+  return null;
+};
 
 interface PlanSelectorProps {
   className?: string;
@@ -35,8 +71,20 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
   
   const { toast } = useToast();
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isDowngradeDialogOpen, setIsDowngradeDialogOpen] = useState(false);
+  const [pendingDowngradePlanId, setPendingDowngradePlanId] = useState<string>('');
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  const getPlanLevel = (planId: string): number => {
+    const config = AI_MODELS_CONFIG.find(c => c.ids.includes(planId.toLowerCase()));
+    return config ? config.level : -1;
+  };
+
+  const isDowngrade = (targetPlanId: string): boolean => {
+    if (!currentPlan) return false;
+    return getPlanLevel(targetPlanId) < getPlanLevel(currentPlan.id);
+  };
 
   // Charger les données au montage
   useEffect(() => {
@@ -48,15 +96,25 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
 
   const handlePlanSelection = (planId: string) => {
     if (planId === 'free') {
-      // Plan gratuit - pas de paiement nécessaire
-      if (onPlanSelected) {
-        onPlanSelected(planId);
-      }
+      if (onPlanSelected) onPlanSelected(planId);
+      return;
+    }
+
+    if (isDowngrade(planId)) {
+      setPendingDowngradePlanId(planId);
+      setIsDowngradeDialogOpen(true);
       return;
     }
 
     setSelectedPlanId(planId);
     try { localStorage.setItem('pending_plan_id', planId); } catch {}
+    setIsPaymentDialogOpen(true);
+  };
+
+  const confirmDowngrade = () => {
+    setIsDowngradeDialogOpen(false);
+    setSelectedPlanId(pendingDowngradePlanId);
+    try { localStorage.setItem('pending_plan_id', pendingDowngradePlanId); } catch {}
     setIsPaymentDialogOpen(true);
   };
 
@@ -70,34 +128,50 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         throw new Error('Plan non trouvé');
       }
 
-     //console.log('💳 Création de la session de paiement Stripe pour le plan:', selectedPlanId);
 
       // Créer la Checkout Session côté backend
       const response = await apiService.createCheckoutSession(
         selectedPlanId,
-        `${window.location.origin}/success?success=true&plan_id=${selectedPlanId}&subscription_id={subscription_id}`,
+        `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
         `${window.location.origin}/pricing?canceled=true`
       );
 
-     //console.log('📡 Réponse de l\'API:', response);
 
       // Extraire l'URL de checkout de la réponse
       const checkoutUrl = response.subscription?.checkout_url;
       const subscriptionId = response.subscription?.subscription?.id;
+      const planChanged = response.subscription?.plan_changed;
 
-      if (checkoutUrl && checkoutUrl.startsWith('http')) {
-       //console.log('🔗 Redirection vers Stripe:', checkoutUrl);
+      // Valider que l'URL de checkout pointe bien vers Stripe
+      const isValidStripeUrl = (url: string): boolean => {
+        try {
+          const parsed = new URL(url);
+          return parsed.hostname.endsWith('stripe.com');
+        } catch {
+          return false;
+        }
+      };
 
+      if (checkoutUrl && isValidStripeUrl(checkoutUrl)) {
         // Sauvegarder l'ID d'abonnement pour l'activation
         if (subscriptionId) {
-         //console.log('🔧 ID d\'abonnement sauvegardé:', subscriptionId);
           try { localStorage.setItem('pending_subscription_id', subscriptionId); } catch {}
         }
 
         // Rediriger vers Stripe pour le paiement
         window.location.href = checkoutUrl;
+      } else if (planChanged) {
+        // Changement de plan immédiat (upgrade/downgrade sans nouveau paiement)
+        await loadPaymentData();
+        setIsPaymentDialogOpen(false);
+        toast({
+          title: "Plan modifié ! 🎉",
+          description: `Votre abonnement a été mis à jour vers le plan ${selectedPlan.name}.`,
+        });
+        if (onPlanSelected) {
+          onPlanSelected(selectedPlanId);
+        }
       } else {
-       //console.log('⚠️ Pas d\'URL de redirection, tentative de création directe');
 
         // Fallback: créer l'abonnement directement si pas d'URL Stripe
         const subscriptionResponse = await apiService.createSubscription({
@@ -116,7 +190,6 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         const subId = (subscriptionResponse as any)?.subscription?.id || (subscriptionResponse as any)?.subscription?.subscription?.id;
 
         if (subId) {
-         //console.log('🔧 Abonnement créé en fallback:', subId);
           try { localStorage.setItem('pending_subscription_id', subId); } catch {}
 
           // Activer immédiatement en fallback
@@ -138,7 +211,6 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
       }
 
     } catch (error) {
-      console.error('❌ Erreur lors de la création de la session de paiement:', error);
       toast({
         title: "Erreur de paiement",
         description: error instanceof Error ? error.message : "Erreur inattendue",
@@ -241,14 +313,19 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         <p className="text-lg text-gray-600">
           Sélectionnez le plan qui correspond le mieux à vos besoins
         </p>
+        <p className="text-sm font-medium text-green-600 mt-1">
+          7 jours d'essai gratuit inclus avec le plan Starter
+        </p>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-8 w-full overflow-x-auto pt-5">
         {plans.map((plan) => (
           <Card 
             key={plan.id}
-            className={`relative bg-white border border-primary rounded-xl transition-all duration-200 hover:shadow-sm flex flex-col h-full ${
-              isCurrentPlan(plan.id) ? 'ring-2 ring-primary' : ''
+            className={`relative bg-white rounded-xl transition-all duration-200 hover:shadow-md flex flex-col h-full ${
+              isCurrentPlan(plan.id)
+                ? 'border-2 border-primary shadow-md'
+                : 'border border-gray-200 shadow-sm'
             }`}
           >
             {/* Badge recommandé */}
@@ -260,9 +337,9 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
 
             {/* Badge plan actuel */}
             {isCurrentPlan(plan.id) && showCurrentPlan && (
-              <div className="absolute -top-3 right-4 z-10">
-                <Badge className="bg-primary text-primary-foreground px-3 py-1 shadow-md">
-                  Plan actuel
+              <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 z-10">
+                <Badge className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full shadow-sm whitespace-nowrap">
+                  ✓ Plan actuel
                 </Badge>
               </div>
             )}
@@ -272,11 +349,11 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                 {(plan.id)}
               </div> */}
               <CardTitle className="text-xl font-bold text-neutral-900">{plan.name}</CardTitle>
-              <div className="mt-2">
-                <span className="text-3xl font-bold text-neutral-900">
+              <div className="mt-2 flex items-baseline justify-center gap-1 flex-wrap">
+                <span className="text-2xl font-bold text-neutral-900 whitespace-nowrap">
                   {formatPrice(plan.price)}
                 </span>
-                <span className="text-neutral-600 ml-1">
+                <span className="text-neutral-500 text-sm whitespace-nowrap">
                   /{plan.interval}
                 </span>
               </div>
@@ -298,6 +375,58 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                   
                 </div>
 
+                {/* AI Models */}
+                {(() => {
+                  const planIndex = plans.indexOf(plan);
+                  const aiModels = getAiModelsForPlan(plan.id) || (AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)] ? { web: AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)].web, api: AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)].api } : null);
+                  if (!aiModels) return null;
+                  return (
+                    <div className="pt-4 border-t border-primary space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">AI Models</span>
+                      </div>
+
+                      {/* Web UI scraping */}
+                      {aiModels.web.length > 0 && (
+                        <div className="space-y-1.5">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium">Web UI</Badge>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {aiModels.web.map((model) => (
+                              <img
+                                key={model}
+                                src={modelLogos[model]}
+                                alt={model}
+                                className="h-6 w-6 object-contain"
+                                title={model.charAt(0).toUpperCase() + model.slice(1)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* API */}
+                      <div className="space-y-1.5">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium">+ API</Badge>
+                        {aiModels.api.length > 0 ? (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {aiModels.api.map((model) => (
+                              <img
+                                key={model}
+                                src={modelLogos[model]}
+                                alt={model}
+                                className="h-6 w-6 object-contain"
+                                title={model.charAt(0).toUpperCase() + model.slice(1)}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-neutral-400 italic">Plan supérieur</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Liste des fonctionnalités */}
                 <div className="space-y-2 pt-4 border-t border-primary">
                   {plan.features.map((feature, index) => (
@@ -312,21 +441,30 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
               {/* Bouton d'action - aligné en bas */}
               <Button 
                 className={`w-full mt-6 ${
-                  isCurrentPlan(plan.id) 
-                    ? 'bg-primary hover:bg-primary/90 text-primary-foreground' 
+                  isCurrentPlan(plan.id)
+                    ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                    : isDowngrade(plan.id)
+                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300'
                     : 'bg-primary hover:bg-primary/90 text-primary-foreground'
                 }`}
                 onClick={() => handlePlanSelection(plan.id)}
                 disabled={isCurrentPlan(plan.id) || isProcessing}
+                variant={isDowngrade(plan.id) ? 'outline' : 'default'}
               >
                 {isCurrentPlan(plan.id) ? (
                   <>
                     <Check className="h-4 w-4 mr-2" />
                     Plan actuel
                   </>
+                ) : isDowngrade(plan.id) ? (
+                  'Changer de plan'
                 ) : (
                   <>
-                    {plan.id === 'free' ? 'Commencer gratuitement' : 'Choisir ce plan'}
+                    {plan.id === 'free'
+                    ? 'Commencer gratuitement'
+                    : plan.id === 'solo'
+                    ? 'Essayer 7 jours gratuits'
+                    : "S'abonner"}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </>
                 )}
@@ -335,6 +473,32 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
           </Card>
         ))}
       </div>
+
+      {/* Dialog de confirmation rétrogradation */}
+      <Dialog open={isDowngradeDialogOpen} onOpenChange={setIsDowngradeDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">
+              Confirmer le changement de plan
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Vous êtes sur le point de passer à un plan inférieur.{' '}
+              <strong>Vous perdrez l'accès à certaines fonctionnalités avancées</strong> dès la prochaine période de facturation.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 text-sm text-amber-800 mt-2">
+            Plan cible : <strong>{plans.find(p => p.id === pendingDowngradePlanId)?.name || pendingDowngradePlanId}</strong>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button variant="outline" onClick={() => setIsDowngradeDialogOpen(false)} className="flex-1">
+              Annuler
+            </Button>
+            <Button onClick={confirmDowngrade} className="flex-1 bg-primary hover:bg-primary/90 text-white">
+              Confirmer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de paiement Stripe Checkout */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
@@ -348,9 +512,19 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
               Vous vous abonnez au plan {plans.find(p => p.id === selectedPlanId)?.name}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="text-center space-y-4">
+              {selectedPlanId === 'solo' && (
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm font-semibold text-green-700 mb-1">
+                    7 jours d'essai gratuit
+                  </p>
+                  <p className="text-xs text-green-600">
+                    Aucun débit pendant l'essai. Annulez à tout moment.
+                  </p>
+                </div>
+              )}
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600 mb-2">
                   Vous allez être redirigé vers la page de paiement sécurisée de Stripe
@@ -377,7 +551,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
               >
                 {isProcessingPayment ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
                     Redirection...
                   </>
                 ) : (

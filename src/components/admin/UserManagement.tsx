@@ -37,7 +37,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ className, onUse
           await loadUsers();
         }
       } catch (error) {
-        console.error('Erreur lors de la vérification des privilèges:', error);
         toast({
           title: "Erreur d'accès",
           description: "Impossible de vérifier vos privilèges administrateur",
@@ -56,7 +55,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ className, onUse
       const statsData = await AdminService.getUserStats();
       setStats(statsData);
     } catch (error) {
-      console.error('Erreur lors du chargement des statistiques:', error);
     }
   };
 
@@ -67,7 +65,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ className, onUse
       setUsers(response.users);
       setTotalPages(response.total_pages);
     } catch (error) {
-      console.error('Erreur lors du chargement des utilisateurs:', error);
       toast({
         title: "Erreur de chargement",
         description: "Impossible de charger la liste des utilisateurs",
@@ -95,7 +92,6 @@ export const UserManagement: React.FC<UserManagementProps> = ({ className, onUse
       setUsers(response.users);
       setTotalPages(response.total_pages);
     } catch (error) {
-      console.error('Erreur lors de la recherche:', error);
       toast({
         title: "Erreur de recherche",
         description: "Impossible d'effectuer la recherche",

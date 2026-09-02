@@ -45,7 +45,6 @@ export function SubscriptionDetails({ subscriptionId, onBack, className = '' }: 
       const data = await AdminService.getSubscriptionById(subscriptionId);
       setSubscription(data);
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'abonnement:', error);
     } finally {
       setLoading(false);
     }
@@ -153,7 +152,7 @@ export function SubscriptionDetails({ subscriptionId, onBack, className = '' }: 
       <div className={className}>
         <Card>
           <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           </CardContent>
         </Card>
       </div>
@@ -365,7 +364,7 @@ export function SubscriptionDetails({ subscriptionId, onBack, className = '' }: 
                 className="w-full h-9 text-sm bg-emerald-600 hover:bg-emerald-700"
               >
                 {actionLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                 ) : (
                   <>
                     <Zap className="h-4 w-4 mr-2" />
@@ -393,7 +392,7 @@ export function SubscriptionDetails({ subscriptionId, onBack, className = '' }: 
                 className="w-full h-9 text-sm"
               >
                 {actionLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                 ) : (
                   <>
                     <Ban className="h-4 w-4 mr-2" />
@@ -431,7 +430,7 @@ export function SubscriptionDetails({ subscriptionId, onBack, className = '' }: 
                 className="whitespace-nowrap h-9 text-sm bg-blue-600 hover:bg-blue-700"
               >
                 {actionLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                 ) : (
                   <>
                     <Plus className="h-4 w-4 mr-2" />

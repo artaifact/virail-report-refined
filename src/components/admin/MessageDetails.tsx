@@ -57,7 +57,6 @@ export function MessageDetails({ messageId, onBack, className = '' }: MessageDet
       setAdminResponse(data.admin_response || '');
       setTags(data.tags?.join(', ') || '');
     } catch (error) {
-      console.error('Erreur lors du chargement du message:', error);
     } finally {
       setLoading(false);
     }
@@ -161,7 +160,7 @@ export function MessageDetails({ messageId, onBack, className = '' }: MessageDet
       <div className={className}>
         <Card>
           <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           </CardContent>
         </Card>
       </div>
@@ -356,7 +355,7 @@ export function MessageDetails({ messageId, onBack, className = '' }: MessageDet
             >
               {saving ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
                   Enregistrement...
                 </>
               ) : (
@@ -409,7 +408,7 @@ export function MessageDetails({ messageId, onBack, className = '' }: MessageDet
               >
                 {deleting ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
                     Suppression...
                   </>
                 ) : (

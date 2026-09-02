@@ -1,17 +1,15 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Home, ArrowLeft, Search, Users, AlertTriangle, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 const NotFound = () => {
+  usePageTitle('Page non trouv\u00e9e');
   const location = useLocation();
 
   useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
   }, [location.pathname]);
 
   return (

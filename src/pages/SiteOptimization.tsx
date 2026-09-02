@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Globe, Zap, Target, Loader2, BarChart3, Sparkles, Rocket, Settings, TrendingUp, Star, Brain, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ interface OptimizationStats {
 }
 
 const SiteOptimization: React.FC = () => {
+  usePageTitle('Optimisation des sites');
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -49,12 +51,10 @@ const SiteOptimization: React.FC = () => {
 
       // Récupérer les données depuis /optimize
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
-     //console.log('🔄 Chargement des statistiques depuis:', `${API_BASE_URL}/optimize`);
       const optimizeResponse = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/optimize`);
       
       if (optimizeResponse.ok) {
         const optimizeData = await optimizeResponse.json();
-       //console.log('✅ Données récupérées depuis /optimize:', optimizeData);
         
         // Adapter selon la structure des données
         let sitesData = [];
@@ -88,12 +88,9 @@ const SiteOptimization: React.FC = () => {
           averageScore,
           sitesWithOptimization
         };
-       //console.log('📊 Statistiques calculées:', finalStats);
         setStats(finalStats);
 
       } else {
-        console.warn('⚠️ Erreur API /optimize, tentative avec l\'endpoint textual-optimizations...');
-        
         // Tentative avec l'endpoint des optimisations textuelles
         try {
           const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
@@ -131,13 +128,11 @@ const SiteOptimization: React.FC = () => {
             throw new Error('Échec de récupération des optimisations textuelles');
           }
         } catch (fallbackError) {
-          console.error('❌ Erreur fallback:', fallbackError);
           setStatsError('Impossible de récupérer les données des optimisations');
         }
       }
 
     } catch (error) {
-      console.error('❌ Erreur lors du chargement des statistiques:', error);
       setStatsError(error instanceof Error ? error.message : 'Erreur lors du chargement');
     } finally {
       setIsLoadingStats(false);
@@ -192,7 +187,6 @@ const SiteOptimization: React.FC = () => {
       }
 
       const data = await response.json();
-     //console.log('✅ Réponse /optimize:', data);
       
       clearInterval(progressInterval);
       setAnalysisProgress(100);
@@ -213,7 +207,6 @@ const SiteOptimization: React.FC = () => {
       }, 1000);
 
     } catch (error) {
-      console.error("Erreur lors de l'optimisation:", error);
       setIsAnalyzing(false);
       setAnalysisProgress(0);
       
@@ -249,7 +242,7 @@ const SiteOptimization: React.FC = () => {
     <div className="flex-1 min-h-screen bg-background">
       <div className="max-w-6xl mx-auto">
         {/* Hero Header Section */}
-        <div className="relative overflow-hidden bg-card px-8 py-12 border-b border-border">
+        <div className="relative overflow-hidden bg-card px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 border-b border-border">
         {/* Background decorative elements */}
         <div className="absolute inset-0 bg-neutral-50/50"></div>
         
@@ -264,20 +257,20 @@ const SiteOptimization: React.FC = () => {
                   🚀 Optimisation IA
                 </Badge>
               </div> */}
-              <h1 className="text-4xl font-bold text-foreground mb-3">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3">
                 Optimisation de Sites
               </h1>
-              <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 leading-relaxed">
                 Optimisez vos contenus avec l'intelligence artificielle et boostez vos performances.
               </p>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                 <Dialog open={isAnalysisDialogOpen} onOpenChange={setIsAnalysisDialogOpen}>
                   <DialogTrigger asChild>
                     <Button 
                       className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-semibold px-6 py-3 h-auto"
                       disabled={isAnalyzing}
                     >
-                      {isAnalyzing ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <BarChart3 className="h-5 w-5 mr-2" />}
+                      {isAnalyzing ? <Loader2 className="h-5 w-5 mr-2 animate-spin text-blue-600" /> : <BarChart3 className="h-5 w-5 mr-2" />}
                       {isAnalyzing ? "Analyse en cours..." : "Nouvelle Optimisation"}
                     </Button>
                   </DialogTrigger>
@@ -298,7 +291,7 @@ const SiteOptimization: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="px-8 py-8 space-y-8">
+      <div className="px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 space-y-8">
         {/* Dialog */}
         <Dialog open={isAnalysisDialogOpen} onOpenChange={setIsAnalysisDialogOpen}>
           <DialogContent className="sm:max-w-md bg-card text-foreground border border-border">
@@ -361,7 +354,7 @@ const SiteOptimization: React.FC = () => {
                   disabled={!newAnalysisUrl.trim() || isAnalyzing}
                   className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
-                  {isAnalyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Rocket className="h-4 w-4 mr-2" />}
+                  {isAnalyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" /> : <Rocket className="h-4 w-4 mr-2" />}
                   {isAnalyzing ? 'Optimisation en cours...' : 'Lancer l\'Optimisation'}
                 </Button>
                 <Button 
@@ -403,7 +396,7 @@ const SiteOptimization: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
               <div className="group space-y-4">
                 <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                   <span className="text-primary-foreground font-bold text-lg">1</span>

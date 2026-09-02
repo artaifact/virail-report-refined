@@ -184,12 +184,12 @@ const ContentAnalysis = ({ data }: ContentAnalysisProps) => {
         <CardContent className="space-y-4">
           {contentIssues.map((issue: any, index: number) => (
             <div key={index} className="border border-gray-200 rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
-              <div className="flex items-start justify-between mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
                   {getSeverityIcon(issue.severity)}
                   <h4 className="font-semibold text-gray-900">{issue.title}</h4>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {getSeverityBadge(issue.severity)}
                   <Badge variant="outline" className="border-gray-300 text-gray-600">{issue.type}</Badge>
                 </div>

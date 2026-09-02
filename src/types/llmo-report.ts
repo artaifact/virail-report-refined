@@ -113,6 +113,31 @@ export interface MappedReportData {
   valueProps: ValuePropData[];
   semanticAnalyses: SemanticAnalysisData[];
   strategicSyntheses: StrategicSynthesisData[];
+  analyseCitation?: CitationAnalysisData;
+  competitiveAnalysis?: CompetitiveAnalysisData;
+}
+
+export interface CitationAnalysisData {
+  client_site_url: string;
+  client_site_name: string;
+  total_queries: number;
+  total_llm_calls: number;
+  global_probability: number;
+  probability_by_model: Record<string, number>;
+  total_citations: number;
+  citations_by_model: Record<string, number>;
+  average_position: number;
+  detailed_results: DetailedCitationResult[];
+}
+
+export interface DetailedCitationResult {
+  query: string;
+  llm_model: string;
+  citation_detected: boolean;
+  citation_text: string | null;
+  position_in_response: number | null;
+  confidence_score: number;
+  mentions: number;
 }
 
 export interface OverviewData {
@@ -179,4 +204,88 @@ export interface StrategicSynthesisData {
   quickWins: string[];
   strategicActions: string[];
   conclusion?: string;
+}
+
+// Types pour l'analyse concurrentielle
+export interface CompetitorData {
+  name: string;
+  url: string;
+  urls: string[];
+  average_score: number;
+  mentions: number;
+  sources: string[];
+  score_details: Record<string, number>;
+}
+
+export interface MiniLLMResultData {
+  competitor_name: string;
+  competitor_url: string;
+  llm_analysis: {
+    analyse_resume: string;
+    score_menace: number;
+    status: string;
+  };
+  status: string;
+}
+
+export interface UrlScoreDetailsData {
+  credibility_authority: {
+    score: number;
+    details: {
+      domain_reputation: string;
+      content_expertise: string;
+      citation_potential: string;
+    };
+  };
+  structure_readability: {
+    score: number;
+    details: {
+      semantic_structure: string;
+      content_clarity: string;
+      information_hierarchy: string;
+    };
+  };
+  contextual_relevance: {
+    score: number;
+    details: {
+      topic_alignment: string;
+      query_matching: string;
+      intent_coverage: string;
+    };
+  };
+  technical_compatibility: {
+    score: number;
+    details: {
+      crawlability: string;
+      content_accessibility: string;
+      structured_data: string;
+    };
+  };
+  total_score: number;
+  grade: string;
+  primary_recommendations: string[];
+}
+
+export interface BenchmarkResultsData {
+  benchmark: {
+    classement: Array<{ url: string; score: number }>;
+    position_cible: number;
+    ecarts_vs_cible: Array<{ url: string; score: number; ecart_vs_cible: number }>;
+  };
+  url_scores: Record<string, UrlScoreDetailsData | { url: string; error: string }>;
+}
+
+export interface CompetitiveAnalysisData {
+  version: string;
+  session_id: string | null;
+  url: string;
+  competitors: CompetitorData[];
+  mini_llm_results: MiniLLMResultData[];
+  benchmark_results: BenchmarkResultsData;
+  stats: {
+    total_mentions: number;
+    unique_competitors: number;
+    models_used: string[];
+  };
+  created_at: string;
 } 

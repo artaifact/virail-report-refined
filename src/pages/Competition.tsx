@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePayment } from '@/hooks/usePayment';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Search,
-  Plus,
   Target,
   Eye,
   ExternalLink,
@@ -22,175 +22,259 @@ import {
   AlertCircle,
   CheckCircle,
   Loader2,
-  Info,
   ChevronRight,
   Award,
   Users,
   Clock,
   Lightbulb,
-  History,
-  Trash2,
   Calendar,
-  Sparkles,
   Trophy,
-  Rocket,
   Star,
-  Zap,
-  Brain
+  Lock,
+  Info,
+  Download,
+  X as XIcon,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useCompetitiveAnalysis } from "@/hooks/useCompetitiveAnalysis";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { HELP } from '@/lib/help-content';
+
+// === UTILITAIRES ===
+function exportToCsvCompetition(filename: string, rows: string[][]): void {
+  const csv = rows.map(r =>
+    r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// === CONSTANTES ===
+const modelLogos: Record<string, string> = {
+  'openai': '/prompt-model-openai-for-light.svg',
+  'chatgpt': '/prompt-model-openai-for-light.svg',
+  'gpt': '/prompt-model-openai-for-light.svg',
+  'perplexity': '/prompt-model-perplexity.svg',
+  'gemini': '/prompt-model-gemini.svg',
+  'google': '/prompt-model-gemini.svg',
+  'ai overview': '/prompt-model-gemini.svg',
+  'claude': '/prompt-model-claude.svg',
+  'anthropic': '/prompt-model-claude.svg',
+  'mistral': '/Mistral.png',
+  'mixtral': '/Mistral.png',
+  'sonar': '/prompt-model-perplexity.svg',
+  'deepseek': '/prompt-model-deepseek.svg',
+  'qwen': '/prompt-model-qwen.svg',
+  'llama': '/prompt-model-llama.svg',
+  'meta': '/prompt-model-llama.svg',
+  'grok': '/prompt-model-grok.svg',
+};
+
+/**
+ * Récupère le logo d'un modèle avec une recherche par mot-clé
+ */
+const getModelLogo = (modelName: string): string | null => {
+  if (!modelName) return null;
+  const name = modelName.toLowerCase();
+
+  for (const [key, path] of Object.entries(modelLogos)) {
+    if (name.includes(key)) return path;
+  }
+  return null;
+};
+
+// Mapper les noms techniques API vers des noms commerciaux (marque uniquement)
+const getCommercialModelName = (apiName: string): string => {
+  const n = apiName.toLowerCase().trim();
+  if (n.includes('sonar')) return 'Perplexity';
+  if (n.includes('claude')) return 'Claude';
+  if (n.startsWith('gpt') || n === 'chatgpt') return 'ChatGPT';
+  if (n.includes('gemini') || n === 'ai overview' || n === 'ai-overview') return 'Gemini';
+  if (n.includes('mistral') || n.includes('mixtral')) return 'Mistral';
+  if (n.includes('deepseek')) return 'DeepSeek';
+  if (n.includes('llama')) return 'Meta AI';
+  if (n.includes('qwen')) return 'Qwen';
+  if (n.includes('grok')) return 'Grok';
+  return apiName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+// Fonction pour obtenir le suffixe ordinal (1st, 2nd, 3rd, etc.)
+const getOrdinalSuffix = (n: number): string => {
+  return n === 1 ? 'er' : 'ème';
+};
+
+const normalizeBrandLabel = (value: string | null | undefined): string =>
+  (value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const toCanonicalUrl = (value: string | null | undefined): string => {
+  const raw = (value || '').trim().toLowerCase();
+  if (!raw) return '';
+  const withProtocol = /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
+  try {
+    const parsed = new URL(withProtocol);
+    const host = parsed.hostname.replace(/^www\./, '');
+    const path = parsed.pathname.replace(/\/+$/, '');
+    return `${host}${path}`;
+  } catch {
+    return raw
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/[?#].*$/, '')
+      .replace(/\/+$/, '');
+  }
+};
+
+const compareMaterialityEntries = (a: any, b: any): number => {
+  if (!!a?.is_target !== !!b?.is_target) return a?.is_target ? 1 : -1;
+  if (!!a?.audited !== !!b?.audited) return a?.audited ? 1 : -1;
+  const scoreA = typeof a?.total_score === 'number' ? a.total_score : -1;
+  const scoreB = typeof b?.total_score === 'number' ? b.total_score : -1;
+  if (scoreA !== scoreB) return scoreA > scoreB ? 1 : -1;
+  const visibilityA = typeof a?.visibility === 'number' ? a.visibility : -1;
+  const visibilityB = typeof b?.visibility === 'number' ? b.visibility : -1;
+  return visibilityA > visibilityB ? 1 : -1;
+};
 import CompetitiveAnalysisDisplay from "@/components/competitive-analysis/CompetitiveAnalysisDisplay";
 import DetailedCompetitiveAnalysis from "@/components/competitive-analysis/DetailedCompetitiveAnalysis";
 import MiniLLMAnalysis from "@/components/competitive-analysis/MiniLLMAnalysis";
-import { listCompetitorAnalyses, getCompetitorAnalysisById, startCompetitorAnalysis, extractDomain, CompetitorAnalysisResponse, CompetitorAnalysisSummary, MiniLLMResult } from '@/services/competitorAnalysisService';
+import {
+  getCompetitorAnalysisById,
+  extractDomain,
+  CompetitorAnalysisResponse,
+  MiniLLMResult,
+  getCompetitorAnalysisFromReport,
+} from '@/services/competitorAnalysisService';
+import { useReports, useReport, getLatestReportId } from '@/hooks/useReports';
+import { useSearchParams } from 'react-router-dom';
+import type { AnalyseConcurrentielleV3, BenchmarkTechnique } from '@/lib/api';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+  Customized,
+} from 'recharts';
 
 const Competition = () => {
-  const [userUrl, setUserUrl] = useState("");
-  const [selectedTab, setSelectedTab] = useState("saved");
+  usePageTitle('Veille concurrentielle');
+  const [selectedModel, setSelectedModel] = useState<string>('');
   const { toast } = useToast();
-  
+
   // États pour la nouvelle API
-  const [competitorAnalyses, setCompetitorAnalyses] = useState<CompetitorAnalysisSummary[]>([]);
   const [currentAnalysis, setCurrentAnalysis] = useState<CompetitorAnalysisResponse | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [loadingSavedAnalyses, setLoadingSavedAnalyses] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // État pour les analyses LLM détaillées
   const [miniLLMResults, setMiniLLMResults] = useState<MiniLLMResult[]>([]);
   const [loadingMiniLLM, setLoadingMiniLLM] = useState(false);
 
-  const { usageLimits, canUseFeature } = usePayment() as any;
+  // État pour le mode d'affichage benchmark
+  const [benchmarkView, setBenchmarkView] = useState<'score' | 'raw_data'>('score');
 
-  // Charger l'URL depuis sessionStorage si elle provient de l'onboarding
-  useEffect(() => {
-    const onboardingUrl = sessionStorage.getItem('onboarding-site-url');
-    if (onboardingUrl && !userUrl) {
-      setUserUrl(onboardingUrl);
-      // Passer automatiquement à l'onglet "Nouvelle analyse" si l'URL provient de l'onboarding
-      setSelectedTab("new");
-      // Nettoyer sessionStorage après utilisation (c'est la dernière étape qui l'utilise)
-      sessionStorage.removeItem('onboarding-site-url');
-    }
-  }, []);
+  // État pour la fiche détail d'un concurrent
+  const [selectedCompetitorDetail, setSelectedCompetitorDetail] = useState<{
+    name: string; domain: string; rank: number; score: number; url: string;
+  } | null>(null);
 
-  // Charger les analyses sauvegardées
-  useEffect(() => {
-    const loadAnalyses = async () => {
-      try {
-        setLoadingSavedAnalyses(true);
-        const analyses = await listCompetitorAnalyses();
-        setCompetitorAnalyses(analyses);
-      } catch (error) {
-        console.error('Erreur lors du chargement des analyses:', error);
-      } finally {
-        setLoadingSavedAnalyses(false);
-      }
+  // État pour le modal de détails GEO
+  const [geoModalOpen, setGeoModalOpen] = useState(false);
+  const [selectedGeoEntry, setSelectedGeoEntry] = useState<{ url: string; domain: string; data: any } | null>(null);
+
+  // État pour le tooltip hover de la matrice
+  const [hoveredMatricePoint, setHoveredMatricePoint] = useState<string | null>(null);
+  const [showAllLegend, setShowAllLegend] = useState(false);
+
+  const { usageLimits, canUseFeature, subscription } = usePayment() as any;
+  const isStarter = subscription?.plan?.id === 'solo';
+
+  // Récupérer la liste des rapports comme dans la home page (useReports -> /llmo/reports)
+  const { reports, loading: reportsLoading } = useReports();
+  const [searchParams] = useSearchParams();
+  const explicitReportId = searchParams.get('reportId');
+  // Priorité : reportId de l'URL > rapport le plus récent
+  const latestReportId = explicitReportId || getLatestReportId(reports);
+
+  // Charger le rapport complet pour accéder à analyse_concurrentielle_v3 et materiality_matrix
+  const { report: reportData } = useReport(latestReportId);
+
+  // Données v3, materiality_matrix et benchmark depuis le rapport
+  const v3Data = reportData?.analyse_concurrentielle_v3 as AnalyseConcurrentielleV3 | null | undefined;
+  const v1BenchmarkResults = (reportData?.analyse_concurrentielle_v1 as any)?.benchmark_results || null;
+  const materialityMatrix = (reportData as any)?.materiality_matrix as {
+    brands: Array<{
+      name: string;
+      url: string;
+      is_target: boolean;
+      audited: boolean;
+      visibility: number;
+      sentiment: number;
+      total_score: number;
+      pillars: Record<string, { score: number; max: number }>;
+      gaps: string[];
+    }>;
+    quadrants: {
+      leaders: string[];
+      niche_players: string[];
+      controversial: string[];
+      laggers: string[];
+      _thresholds?: { visibility_mid?: number; sentiment_mid?: number };
     };
+    stats: { total_brands: number; with_audit: number; without_audit: number; source: string };
+  } | null | undefined;
 
-    loadAnalyses();
-  }, []);
-
-  const handleStartAnalysis = async () => {
-    if (!userUrl.trim()) return;
-
+  // Fonction pour charger une analyse par ID
+  const loadAnalysisById = async (analysisId: number) => {
     try {
-      setIsAnalyzing(true);
-      setError(null);
-      
-      // Normaliser l'URL (préfixe https:// si absent)
-      const normalizedUrl = userUrl.startsWith('http://') || userUrl.startsWith('https://')
-        ? userUrl
-        : `https://${userUrl}`;
-      setUserUrl(normalizedUrl);
+      setMiniLLMResults([]);
 
-      // Toast d'information immédiat
-      toast({
-        title: "Analyse lancée",
-        description: "Veuillez patienter, votre analyse sera prête dans quelques instants.",
-      });
+      let analysis: CompetitorAnalysisResponse | null = null;
 
-      const analysis = await startCompetitorAnalysis({
-        url: normalizedUrl
-      });
-
-      setCurrentAnalysis(analysis);
-      
-      // Charger les données mini_llm_results si disponibles
-      if (analysis.mini_llm_results && analysis.mini_llm_results.length > 0) {
-        setMiniLLMResults(analysis.mini_llm_results);
+      try {
+        analysis = await getCompetitorAnalysisFromReport(analysisId);
+      } catch (reportError) {
       }
-      
-      // Recharger la liste des analyses
-      const updatedAnalyses = await listCompetitorAnalyses();
-      setCompetitorAnalyses(updatedAnalyses);
 
-      // Passer à l'onglet résultats seulement en cas de succès
-      setSelectedTab("results");
-      toast({
-        title: "Analyse terminée",
-        description: "Votre analyse concurrentielle est prête !"
-      });
+      if (!analysis) {
+        analysis = await getCompetitorAnalysisById(analysisId);
+      }
+
+      if (analysis) {
+        setCurrentAnalysis(analysis);
+        if (analysis.mini_llm_results && analysis.mini_llm_results.length > 0) {
+          setMiniLLMResults(analysis.mini_llm_results);
+        }
+      }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Une erreur inconnue est survenue';
-
-      console.error('❌ Erreur dans handleStartAnalysis:', error);
-      setError(errorMessage);
-
-      toast({
-        title: "Erreur d'analyse",
-        description: errorMessage,
-        variant: "destructive"
-      });
-
-      // En cas d'erreur, rester/retourner sur Analyses sauvegardées
-      setSelectedTab("saved");
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
-  const handleLoadSavedAnalysis = async (analysisId: number) => {
-    try {
-      // Passer à l'onglet résultats immédiatement pour un feedback visuel
-      setSelectedTab("results");
-      
-      // Charger l'analyse depuis l'API
-      const analysis = await getCompetitorAnalysisById(analysisId);
-      setCurrentAnalysis(analysis);
-      
-      // Charger les données mini_llm_results si disponibles
-      if (analysis.mini_llm_results && analysis.mini_llm_results.length > 0) {
-        setMiniLLMResults(analysis.mini_llm_results);
-      }
-      
-      toast({
-        title: "Analyse chargée",
-        description: `Analyse de ${extractDomain(analysis.url)} chargée avec succès`
-      });
-    } catch (error) {
-      console.error('Erreur lors du chargement de l\'analyse:', error);
-      toast({
-        title: "Erreur de chargement",
-        description: "Une erreur est survenue lors du chargement",
-        variant: "destructive"
-      });
-      setSelectedTab("saved");
+  // Fonction pour charger la liste des analyses depuis l'API
+  // Charger automatiquement la dernière analyse via le dernier report ID
+  useEffect(() => {
+    if (latestReportId && !reportsLoading) {
+      loadAnalysisById(Number(latestReportId));
     }
-  };
+  }, [latestReportId, reportsLoading]);
 
-  const handleDeleteAnalysis = async (analysisId: number, event: React.MouseEvent) => {
-    event.stopPropagation();
-    // TODO: Implémenter la suppression via API quand disponible
-    toast({
-      title: "Fonction non disponible",
-      description: "La suppression d'analyses n'est pas encore implémentée",
-      variant: "destructive"
-    });
-  };
+  // Données competitor_comparisons depuis benchmark_technique
+  const benchmarkTechData = reportData?.benchmark_technique as BenchmarkTechnique | null;
+  const competitorComparisons = (benchmarkTechData as any)?.competitor_comparisons as Array<{ url: string; score: number; [key: string]: any }> | null;
 
   // Fonction extractDomain déjà importée du service
 
@@ -207,488 +291,74 @@ const Competition = () => {
   };
 
   return (
-    <div className="flex-1 min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto">
-        {/* Hero Header Section */}
-        <div className="relative overflow-hidden bg-card px-8 py-12 border-b border-border">
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 bg-muted/50"></div>
-        <div className="absolute top-0 left-1/3 w-96 h-96 bg-muted/50 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-1/3 w-96 h-96 bg-muted/50 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-[#F5F6F7] p-3 md:p-6">
+      <div className="w-full space-y-6">
+        {/* Header avec titre et filtres */}
         
-        <div className="relative z-10">
-          <div className="flex items-center justify-between">
-            <div className="max-w-3xl">
-              <div className="flex items-center gap-3 mb-4">
-                {/* <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center">
-                  <Trophy className="w-6 h-6 text-white" />
-                </div> */}
-                {/* <Badge className="bg-neutral-900 text-white border-neutral-900">
-                  ⚔️ Analyse Concurrentielle
-                </Badge> */}
-              </div>
-              <h1 className="text-4xl font-bold text-foreground mb-3">
-                Analyse Concurrentielle GEO
-              </h1>
-              <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
-                Comparez votre positionnement avec vos concurrents et dominez votre marché.
-              </p>
-              <div className="flex items-center gap-4">
-                <Button 
-                  onClick={() => setSelectedTab("setup")}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg font-semibold px-6 py-3 h-auto"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Nouvelle Analyse
-                </Button>
-                <Button 
-                  onClick={() => setSelectedTab("saved")}
-                  className="bg-card text-foreground hover:bg-muted shadow-lg font-semibold px-6 py-3 h-auto transition-all duration-300 border border-border"
-                >
-                  <History className="h-5 w-5 mr-2" />
-                  Mes Analyses
-                </Button>
-              </div>
-            </div>
-            
-            {/* Stats preview */}
-            <div className="hidden lg:block">
-              <div className="bg-primary rounded-2xl p-6 border border-primary">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-primary-foreground mb-1">{competitorAnalyses.length}</div>
-                  <div className="text-primary-foreground/80 text-sm font-medium">Analyses Sauvées</div>
-                  <div className="flex items-center justify-center gap-1 mt-2">
-                    <Star className="w-4 h-4 text-yellow-300" />
-                    <span className="text-primary-foreground text-sm">Premium</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="px-8 py-8 space-y-8">
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-          <div className="bg-card rounded-2xl p-2 shadow-sm border border-border">
-            <TabsList className="grid w-full grid-cols-3 bg-muted p-1 h-auto rounded-xl">
-              <TabsTrigger 
-                value="saved" 
-                className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg h-12 font-semibold transition-all duration-300 text-muted-foreground"
-              >
-                <History className="h-4 w-4 mr-2" />
-                Analyses sauvegardées
-              </TabsTrigger>
-              <TabsTrigger 
-                value="setup" 
-                className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg h-12 font-semibold transition-all duration-300 text-muted-foreground"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nouvelle analyse
-              </TabsTrigger>
-              <TabsTrigger 
-                value="results" 
-                disabled={!currentAnalysis && !isAnalyzing} 
-                className="data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg h-12 font-semibold transition-all duration-300 disabled:opacity-50 text-muted-foreground"
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Résultats
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="saved" className="space-y-6 mt-8">
-            <Card className="border border-border shadow-sm bg-card overflow-hidden">
-              <CardHeader className="bg-muted">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
-                        <History className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      Analyses Concurrentielles
-                    </CardTitle>
-                    <CardDescription className="mt-2 text-muted-foreground">
-                      Accédez à vos analyses et comparez l'évolution de votre positionnement
-                    </CardDescription>
-                  </div>
-                  <Badge className="bg-primary/10 text-primary">
-                    {competitorAnalyses.length} analyse{competitorAnalyses.length > 1 ? 's' : ''}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {loadingSavedAnalyses ? (
-                  <div className="text-center py-16">
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                      <span className="text-muted-foreground">Chargement des analyses...</span>
-                    </div>
-                  </div>
-                ) : competitorAnalyses.length === 0 ? (
-                  <div className="text-center py-16">
-                    <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-3">Aucune analyse sauvegardée</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                      Commencez votre première analyse concurrentielle et découvrez comment vous vous positionnez face à vos concurrents.
-                    </p>
-                    <Button 
-                      onClick={() => setSelectedTab("setup")} 
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm font-semibold px-8 py-3 h-auto"
-                    >
-                      <Rocket className="h-5 w-5 mr-2" />
-                      Lancer ma première analyse
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {competitorAnalyses.map((analysis, index) => (
-                      <div 
-                        key={analysis.analysis_id} 
-                        className="group p-6 hover:bg-muted/40 cursor-pointer transition-all duration-300 hover:shadow-sm relative overflow-hidden"
-                        onClick={() => handleLoadSavedAnalysis(analysis.analysis_id)}
-                      >
-                        {/* Decorative line */}
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-muted opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-4 mb-4">
-                              
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <h4 className="text-lg font-bold text-foreground group-hover:text-foreground transition-colors">
-                                    {extractDomain(analysis.url)}
-                                  </h4>
-                                  <Badge className="bg-muted text-foreground font-semibold shadow-sm">
-                                    #{index + 1}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  <Badge className="bg-muted text-foreground font-medium">
-                                    {analysis.status === 'completed' ? 'Terminée' : 'En cours'}
-                                  </Badge>
-                                  <Badge variant="outline" className="bg-muted text-muted-foreground border-border">
-                                    {analysis.total_competitors_found} concurrent{analysis.total_competitors_found > 1 ? 's' : ''}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="grid md:grid-cols-2 gap-4 mb-4">
-                              {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                <span>Analysé {formatDistanceToNow(new Date(analysis.created_at), { 
-                                  addSuffix: true, 
-                                  locale: fr 
-                                })}</span>
-                              </div> */}
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                                <span>{analysis.total_competitors_found} concurrent{analysis.total_competitors_found > 1 ? 's' : ''} analysé{analysis.total_competitors_found > 1 ? 's' : ''}</span>
-                              </div>
-                            </div>
-
-                            {/* Enhanced insights preview */}
-                           
-                          </div>
-                          
-                          <div className="flex items-center gap-3 ml-6">
-                
-                            <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
-                              <span className="text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                                Voir l'analyse
-                              </span>
-                              <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="setup" className="space-y-6 mt-8">
-            <Card className="border-0 shadow-xl bg-card backdrop-blur-sm overflow-hidden">
-              <CardHeader className="bg-muted">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-3 text-xl">
-                      <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                        <Search className="h-5 w-5 text-primary-foreground" />
-                      </div>
-                      Nouvelle Analyse Concurrentielle
-                    </CardTitle>
-                    <CardDescription className="mt-2 text-muted-foreground">
-                      Entrez l'URL de votre site pour commencer l'analyse GEO
-                    </CardDescription>
-                  </div>
-                  <Badge className="bg-primary text-primary-foreground">
-                    <Zap className="w-3 h-3 mr-1" />
-                    IA Powered
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-8">
-                <div className="max-w-2xl mx-auto space-y-6">
-                  <div className="flex gap-4">
-                    <div className="flex-1">
-                      <Input
-                        placeholder="votre-site.com"
-                        value={userUrl}
-                        onChange={(e) => setUserUrl(e.target.value)}
-                        onBlur={() => {
-                          if (userUrl && !userUrl.startsWith('http://') && !userUrl.startsWith('https://')) {
-                            setUserUrl(`https://${userUrl}`)
-                          }
-                        }}
-                        className="h-14 text-lg border border-border focus:border-primary rounded-xl shadow-sm"
-                      />
-                    </div>
-                    <Button 
-                      onClick={handleStartAnalysis}
-                      disabled={!userUrl.trim() || isAnalyzing}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg h-14 px-8 font-semibold text-lg rounded-xl"
-                    >
-                      {isAnalyzing ? (
-                        <>
-                          <Loader2 className="h-5 w-5 mr-3 animate-spin" />
-                          Analyse...
-                        </>
-                      ) : (
-                        <>
-                          <Rocket className="h-5 w-5 mr-3" />
-                          Lancer l'analyse
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  
-                  <div className="bg-muted rounded-2xl p-6 border border-border">
-                    <h3 className="font-bold text-foreground mb-4 flex items-center gap-3 text-lg">
-                      <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                        <Info className="h-4 w-4 text-primary-foreground" />
-                      </div>
-                      Comment ça fonctionne ?
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">1</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">Analyse GEO complète de votre site</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">2</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">Identification des concurrents par IA</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">3</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">Analyse GEO de chaque concurrent</span>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">4</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">Comparaison détaillée et insights</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">5</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">Recommandations personnalisées</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary-foreground text-xs font-bold">6</span>
-                          </div>
-                          <span className="text-sm text-muted-foreground">Sauvegarde pour suivi temporel</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="results" className="space-y-6 mt-8">
-            {/* Enhanced Header avec informations sur l'analyse chargée */}
-            {currentAnalysis && (
-              <Card className="border border-border shadow-sm bg-card overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse"></div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-foreground tracking-tight">
-                          Analyse de {extractDomain(currentAnalysis.url)}
-                        </h3>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                          <span className="px-2 py-0.5 rounded-full bg-card border border-border text-muted-foreground">
-                            {formatDistanceToNow(new Date(currentAnalysis.created_at), { addSuffix: true, locale: fr })}
-                          </span>
-                          {currentAnalysis.target_positioning ? (
-                            <span className="px-2 py-0.5 rounded-full bg-card border border-border text-muted-foreground">
-                              Rang {currentAnalysis.target_positioning.overall_rank}/{currentAnalysis.target_positioning.total_competitors}
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-card border border-border text-muted-foreground">
-                              {currentAnalysis.consolidated_competitors?.length || 0} concurrents
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge className="bg-primary text-primary-foreground font-semibold px-3 py-1.5 rounded-md">
-                        {currentAnalysis.target_positioning?.market_position || 'En cours d\'analyse'}
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedTab("saved")}
-                        className="text-muted-foreground hover:text-foreground border border-transparent hover:border-border bg-transparent hover:bg-muted/40 rounded-md"
-                      >
-                        Retour aux analyses
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Bouton de débogage temporaire */}
-            {/* <div className="mb-4 p-4 bg-muted rounded-lg">
-              <h3 className="text-sm font-semibold mb-2">🔧 Débogage Quotas</h3>
-              <div className="text-xs space-y-1">
-                <div>UsageLimits chargé: {usageLimits ? '✅' : '❌'}</div>
-                {usageLimits && (
-                  <div>Analyse concurrentielle: {usageLimits.can_use_competitor_analysis?.allowed ? '✅' : '❌'} ({usageLimits.can_use_competitor_analysis?.limit})</div>
-                )}
-                <div>Cookies présents: {document.cookie.length > 10 ? '✅' : '❌'}</div>
-                <div>Session valide: {document.cookie.length > 10 ? '✅' : '❌'}</div>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <Button
-                  onClick={async () => {
-                   //console.log('🔄 Test manuel des quotas...');
-                    const testResult = canUseFeature('competitor_analysis');
-                    const featureLimits = usageLimits?.can_use_competitor_analysis;
-                   //console.log('📊 Résultat test:', testResult);
-                   //console.log('📋 Détails complets:', {
-                      canUseFeature: testResult,
-                      featureLimits,
-                      usageLimits: usageLimits
-                    });
-                    alert(`canUseFeature: ${testResult}\nLimits: ${JSON.stringify(featureLimits, null, 2)}`);
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  Tester Quotas
-                </Button>
-                <Button
-                  onClick={async () => {
-                   //console.log('🔄 Rechargement manuel des quotas...');
-                    // Forcer le rechargement
-                    window.location.reload();
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  Recharger
-                </Button>
-                <Button
-                  onClick={async () => {
-                   //console.log('🔐 Test de session...');
-
-                    // Tester via une requête API pour voir si la session est valide
-                    try {
-                      const response = await fetch('/api/v1/usage/limits', {
-                        method: 'GET',
-                        credentials: 'include'
-                      });
-
-                      if (response.ok) {
-                        alert('✅ Session valide - Authentification réussie');
-                       //console.log('✅ Session valide');
-                      } else if (response.status === 401) {
-                        alert('❌ Session expirée - Reconnexion nécessaire\nRedirection vers la page de connexion...');
-                       //console.log('❌ Session expirée');
-                        window.location.href = '/login';
-                      } else {
-                        alert(`❓ Erreur inconnue: ${response.status}`);
-                       //console.log('❓ Erreur inconnue:', response.status);
-                      }
-                    } catch (error) {
-                      alert('❌ Erreur de réseau - Vérifiez votre connexion');
-                      console.error('❌ Erreur de test de session:', error);
-                    }
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  Tester Session
-                </Button>
-              </div>
-            </div> */}
+        <div className="space-y-6">
 
             {/* Affichage des erreurs */}
-            {error && !isAnalyzing && (
-              <Card className="border-border bg-muted shadow-sm">
+            {error && (
+              <Card className="border-gray-200 bg-gray-50 shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                      <Loader2 className="h-5 w-5 text-foreground animate-spin" />
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground">Veuillez patienter</h3>
-                      <p className="text-muted-foreground mt-1">Votre analyse est en cours de finalisation. Les résultats vont s'afficher dès qu'ils sont prêts.</p>
+                      <h3 className="text-lg font-semibold text-gray-900">Veuillez patienter</h3>
+                      <p className="text-gray-600 mt-1">Votre analyse est en cours de finalisation. Les résultats vont s'afficher dès qu'ils sont prêts.</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Enhanced État de chargement */}
-            {isAnalyzing && (
-              <Card className="border-0 shadow-xl bg-muted overflow-hidden">
-                <CardContent className="p-12 text-center">
-                  <div className="flex flex-col items-center gap-6">
-                    <div className="relative">
-                      <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center shadow-xl">
-                        <Loader2 className="h-10 w-10 text-primary-foreground animate-spin" />
+            {/* État vide - Squelette */}
+            {!currentAnalysis && !error && (
+              <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                <CardContent className="p-4 md:p-8">
+                  <div className="space-y-6">
+                    {/* Squelette header */}
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-gray-100 animate-pulse" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-5 w-48 bg-gray-100 rounded-lg animate-pulse" />
+                        <div className="h-3 w-32 bg-gray-50 rounded-lg animate-pulse" />
                       </div>
-                      <div className="absolute inset-0 rounded-full border-4 border-border border-t-primary animate-spin"></div>
                     </div>
-                    <div className="max-w-md">
-                      <h3 className="text-2xl font-bold text-foreground mb-3">
-                        Analyse concurrentielle en cours...
-                      </h3>
-                      <p className="text-muted-foreground mb-6 text-lg">
-                        Notre IA analyse votre site et identifie vos concurrents avec 3 modèles différents
+
+                    {/* Squelette cards concurrents */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="p-5 rounded-xl border border-gray-100 bg-gray-50/50">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-gray-200 animate-pulse" />
+                            <div className="flex-1 space-y-2">
+                              <div className="h-4 w-36 bg-gray-200 rounded animate-pulse" />
+                              <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
+                            </div>
+                            <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse" />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="h-2 w-full bg-gray-100 rounded-full animate-pulse" />
+                            <div className="h-2 w-3/4 bg-gray-100 rounded-full animate-pulse" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Squelette graphique */}
+                    <div className="p-6 rounded-xl border border-gray-100 bg-gray-50/50">
+                      <div className="h-4 w-40 bg-gray-200 rounded animate-pulse mb-4 mx-auto" />
+                      <div className="h-48 w-full bg-gray-100 rounded-lg animate-pulse" />
+                    </div>
+
+                    {/* Message */}
+                    <div className="text-center py-4">
+                      <p className="text-gray-400 text-sm">
+                        Aucune analyse disponible
                       </p>
-                      <div className="w-80 bg-muted rounded-full h-3 mx-auto shadow-inner">
-                        <div 
-                          className="bg-primary h-3 rounded-full transition-all duration-1000 shadow-sm animate-pulse"
-                          style={{ width: `75%` }}
-                        ></div>
-                      </div>
-                      <p className="text-muted-foreground mt-3 font-semibold">Analyse en cours...</p>
                     </div>
                   </div>
                 </CardContent>
@@ -696,712 +366,1472 @@ const Competition = () => {
             )}
 
             {/* Affichage complet de toutes les données */}
-            {!isAnalyzing && currentAnalysis && (
+            {currentAnalysis && (
               <div className="space-y-6 mb-6">
-                {/* Informations générales de l'analyse */}
-                <Card className="bg-card border border-border">
-                  <CardContent className="space-y-6 text-foreground p-6">
-                    {/* Métriques principales */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl border border-primary/20">
-                        <div className="text-2xl font-bold text-foreground">{currentAnalysis.models_analysis?.length || 0}</div>
-                        <div className="text-sm text-muted-foreground">Modèles IA</div>
-                      </div>
-                      <div className="text-center p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-xl border border-green-500/20">
-                        <div className="text-2xl font-bold text-foreground">
-                          {currentAnalysis.models_analysis?.reduce((total, model) => total + (model.competitors?.length || 0), 0) || 0}
-                        </div>
-                        <div className="text-sm text-muted-foreground">Concurrents Trouvés</div>
-                      </div>
-                      <div className="text-center p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-xl border border-blue-500/20">
-                        <div className="text-2xl font-bold text-foreground">
-                          {new Date(currentAnalysis.created_at).toLocaleDateString('fr-FR', { 
-                            day: '2-digit', 
-                            month: '2-digit' 
-                          })}
-                        </div>
-                        <div className="text-sm text-muted-foreground">Date d'Analyse</div>
-                      </div>
-                    </div>
-                    
-                    {/* Détails de l'analyse */}
-                    <div className="space-y-4">
-                      <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
-                        <div className="text-sm font-medium text-muted-foreground mb-2">URL Analysée</div>
-                        <a 
-                          href={currentAnalysis.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-primary hover:underline break-all"
+
+                {/* Section Evo concurrentielle et Détails par Modèle côte à côte */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Votre positionnement - Evolution temporelle */}
+                  {(() => {
+                    // --- Calcul de la position depuis les concurrents (snapshot actuel) ---
+                    let currentRank: number | null = null;
+                    if (competitorComparisons && competitorComparisons.length > 0) {
+                      const targetUrl = benchmarkTechData?.target?.url || currentAnalysis?.url || '';
+                      const targetDomain = extractDomain(targetUrl).toLowerCase().replace('www.', '');
+                      const targetScore = benchmarkTechData?.target?.score_global || 0;
+                      const dedupMap = new Map<string, number>();
+                      competitorComparisons.forEach((comp: any) => {
+                        const domain = extractDomain(comp.url).toLowerCase().replace('www.', '');
+                        const score = comp.score || 0;
+                        if (!dedupMap.has(domain) || score > dedupMap.get(domain)!) dedupMap.set(domain, score);
+                      });
+                      if (targetDomain && !dedupMap.has(targetDomain)) dedupMap.set(targetDomain, targetScore);
+                      const sorted = Array.from(dedupMap.entries()).sort((a, b) => b[1] - a[1]);
+                      const rankIdx = sorted.findIndex(([d]) => d === targetDomain);
+                      currentRank = rankIdx >= 0 ? rankIdx + 1 : null;
+                    }
+
+                    // --- Série temporelle ---
+                    const timeSeriesRaw = reports
+                      .filter((r: any) => r.metadata?.score != null && r.status === 'completed')
+                      .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                      .map((r: any, idx: number) => {
+                        const d = new Date(r.createdAt);
+                        return {
+                          idx,
+                          date: d,
+                          score: Number(Number(r.metadata.score).toFixed(1)),
+                          label: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+                          labelFull: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+                        };
+                      });
+
+                    const hasTimeSeries = timeSeriesRaw.length >= 1;
+                    if (!hasTimeSeries && currentRank === null) return null;
+
+                    // --- MODE EVOLUTION TEMPORELLE ---
+                    if (hasTimeSeries) {
+                      const latest = timeSeriesRaw[timeSeriesRaw.length - 1];
+                      const previous = timeSeriesRaw.length >= 2 ? timeSeriesRaw[timeSeriesRaw.length - 2] : null;
+                      const trend = previous !== null ? Number((latest.score - previous.score).toFixed(1)) : null;
+                      const trendUp = trend !== null && trend > 0;
+
+                      const scores = timeSeriesRaw.map((d: any) => d.score);
+                      const minScore = Math.min(...scores);
+                      const maxScore = Math.max(...scores);
+                      // Garantir un écart Y minimum de 40 pts pour atténuer les pics visuels
+                      const dataRange = maxScore - minScore;
+                      // Domaine Y avec écart minimum de 60 pts pour aplatir les pics visuels
+                      const minRange = 60;
+                      const halfRange = Math.max(dataRange / 2 + Math.max(dataRange * 0.15, 3), minRange / 2);
+                      const midScore = (minScore + maxScore) / 2;
+                      const yMin = Math.max(0, midScore - halfRange);
+                      const yMax = Math.min(100, midScore + halfRange);
+
+                      return (
+                        <Card
+                          className="p-5 md:p-7"
+                          style={{
+                            borderRadius: '18px',
+                            background: '#ffffff',
+                            boxShadow: '0 4px 24px rgba(15,23,42,0.07)',
+                            border: '1px solid #f1f5f9',
+                          }}
                         >
-                          {currentAnalysis.url}
-                        </a>
-                      </div>
-                      
-                      <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
-                        <div className="text-sm font-medium text-muted-foreground mb-2">Titre</div>
-                        <div className="text-foreground">{currentAnalysis.title}</div>
-                      </div>
-                      
-                      {currentAnalysis.description && (
-                        <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
-                          <div className="text-sm font-medium text-muted-foreground mb-2">Description</div>
-                          <div className="text-foreground">{currentAnalysis.description}</div>
+                          {/* En-tete */}
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.4px', color: '#94a3b8', fontFamily: 'Inter, sans-serif' }}>
+                                Votre positionnement
+                              </div>
+                              <div style={{ fontSize: 11, color: '#cbd5e1', marginTop: 2, fontFamily: 'Inter, sans-serif' }}>
+                                Evolution du score GEO sur {timeSeriesRaw.length} analyse{timeSeriesRaw.length > 1 ? 's' : ''}
+                              </div>
+                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button type="button" className="rounded-full p-0.5 text-slate-300 hover:text-slate-500 focus-visible:outline-none" aria-label="Aide">
+                                  <Info className="h-3.5 w-3.5" strokeWidth={2} />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-[260px] text-xs leading-snug">
+                                Evolution de votre score GEO dans le temps. Chaque point = une analyse.
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+
+                          {/* Graphique evolution ou état 1re analyse */}
+                          {timeSeriesRaw.length === 1 ? (
+                            <div style={{ width: '100%', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                              {/* Barre de score */}
+                              <div style={{ background: '#f8fafc', borderRadius: 12, padding: '16px 20px', border: '1px solid #f1f5f9' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'Inter, sans-serif', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Score GEO</span>
+                                    <InfoTooltip {...HELP.scoreGeoGlobal} side="right" />
+                                  </div>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1e40af', fontFamily: 'Inter, sans-serif' }}>{latest.score.toFixed(1)} / 100</span>
+                                </div>
+                                <div style={{ height: 8, background: '#e2e8f0', borderRadius: 99, overflow: 'hidden' }}>
+                                  <div style={{ height: '100%', width: `${Math.min(100, latest.score)}%`, background: 'linear-gradient(90deg, #3b82f6, #1e40af)', borderRadius: 99, transition: 'width 0.6s ease' }} />
+                                </div>
+                              </div>
+                              {/* Message 1re analyse */}
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#eff6ff', borderRadius: 10, padding: '12px 16px', border: '1px solid #dbeafe' }}>
+                                <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v4M5 7.5v.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: 12, fontWeight: 600, color: '#1e40af', fontFamily: 'Inter, sans-serif', marginBottom: 2 }}>Première analyse enregistrée</div>
+                                  <div style={{ fontSize: 11, color: '#3b82f6', fontFamily: 'Inter, sans-serif', lineHeight: 1.5 }}>
+                                    Le graphique d'évolution s'affichera dès votre 2e analyse. Revenez après la prochaine.
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                          <div style={{ width: '100%', height: 320 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={timeSeriesRaw} margin={{ left: 8, right: 16, top: 10, bottom: 24 }}>
+                                <defs>
+                                  <linearGradient id="lineGlowBg" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.07} />
+                                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#f8fafc" vertical={false} />
+                                <XAxis
+                                  dataKey="label"
+                                  tick={{ fontSize: 11, fill: '#94a3b8', fontFamily: 'Inter, sans-serif' }}
+                                  tickLine={false}
+                                  axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+                                  label={{ value: 'Date', position: 'bottom', offset: 6, style: { fill: '#94a3b8', fontSize: 10 } }}
+                                />
+                                <YAxis
+                                  domain={[yMin, yMax]}
+                                  tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}
+                                  tickFormatter={(v) => typeof v === 'number' ? v.toFixed(1) : String(v)}
+                                  axisLine={false}
+                                  tickLine={false}
+                                  width={46}
+                                  label={{ value: 'Score GEO', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8', fontSize: 10 } }}
+                                />
+                                <RechartsTooltip
+                                  content={({ active, payload }) => {
+                                    if (!active || !payload?.[0]) return null;
+                                    const d = payload[0].payload;
+                                    const isLatest = d.idx === timeSeriesRaw.length - 1;
+                                    return (
+                                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '7px 12px', boxShadow: '0 4px 16px rgba(15,23,42,0.10)', fontSize: 12, fontFamily: 'Inter, sans-serif' }}>
+                                        <div style={{ fontWeight: 700, color: isLatest ? '#1e40af' : '#64748b' }}>{d.labelFull}</div>
+                                        <div style={{ color: '#1e40af', fontSize: 16, fontWeight: 800, marginTop: 2 }}>{d.score.toFixed(1)}</div>
+                                      </div>
+                                    );
+                                  }}
+                                  cursor={{ stroke: '#dbeafe', strokeWidth: 1 }}
+                                />
+                                <Line
+                                  type="natural"
+                                  dataKey="score"
+                                  stroke="#1e40af"
+                                  strokeWidth={2}
+                                  dot={(props: any) => {
+                                    const { cx, cy, index } = props;
+                                    const isLatest = index === timeSeriesRaw.length - 1;
+                                    return (
+                                      <circle
+                                        key={'dot-' + index}
+                                        cx={cx} cy={cy}
+                                        r={isLatest ? 6 : 3.5}
+                                        fill="#1e40af"
+                                        stroke="#ffffff"
+                                        strokeWidth={isLatest ? 2.5 : 1.5}
+                                      />
+                                    );
+                                  }}
+                                  activeDot={{ r: 5, fill: '#1e40af', stroke: '#fff', strokeWidth: 2 }}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                          )}
+                        </Card>
+                      );
+                    }
+
+                    // --- FALLBACK : snapshot concurrentiel ---
+                    if (!competitorComparisons || competitorComparisons.length === 0) return null;
+
+                    const targetUrl = benchmarkTechData?.target?.url || currentAnalysis?.url || '';
+                    const targetDomain = extractDomain(targetUrl).toLowerCase().replace('www.', '');
+                    const targetScore = benchmarkTechData?.target?.score_global || 0;
+                    const dedupMap = new Map<string, { score: number; isTarget: boolean }>();
+                    competitorComparisons.forEach((comp: any) => {
+                      const domain = extractDomain(comp.url).toLowerCase().replace('www.', '');
+                      const score = comp.score || 0;
+                      const isTarget = domain === targetDomain;
+                      if (!dedupMap.has(domain) || score > (dedupMap.get(domain)!.score)) {
+                        dedupMap.set(domain, { score, isTarget });
+                      }
+                    });
+                    if (targetDomain && !dedupMap.has(targetDomain)) {
+                      dedupMap.set(targetDomain, { score: targetScore, isTarget: true });
+                    }
+                    const sorted = Array.from(dedupMap.entries()).sort((a, b) => b[1].score - a[1].score);
+                    let targetRank = 0;
+                    let targetScoreVal = 0;
+                    const curveData = sorted.map(([, val], i) => {
+                      if (val.isTarget) { targetRank = i + 1; targetScoreVal = Number(val.score.toFixed(2)); }
+                      return { rank: i + 1, score: Number(val.score.toFixed(2)) };
+                    });
+                    const total = sorted.length;
+                    const medianRankX = total > 1 ? (total + 1) / 2 : 1;
+                    const scoresOnly = curveData.map((d: any) => d.score);
+                    const scoreMinPanel = Math.min(...scoresOnly);
+                    const scoreMaxPanel = Math.max(...scoresOnly);
+                    const yPad = Math.max((scoreMaxPanel - scoreMinPanel) * 0.12, scoreMaxPanel > 0 ? scoreMaxPanel * 0.02 : 0.5);
+                    const yDomainMin = Math.max(0, scoreMinPanel - yPad);
+                    const yDomainMax = scoreMaxPanel + yPad;
+                    const rankTicks = Array.from(new Set([1, total, targetRank, Math.ceil(total / 2)].filter(r => r >= 1 && r <= total))).sort((a, b) => a - b);
+                    const analysisDateIso = currentAnalysis?.created_at || v3Data?.created_at || reportData?.report?.created_at || reportData?.report?.updated_at;
+                    let analysisDateLabel: string | null = null;
+                    if (analysisDateIso) {
+                      const d = new Date(analysisDateIso);
+                      if (!Number.isNaN(d.getTime())) analysisDateLabel = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                    }
+                    const isTop3 = targetRank <= 3 && total >= 3;
+
+                    return (
+                      <Card className="p-5 md:p-7" style={{ borderRadius: '18px', background: '#ffffff', boxShadow: '0 4px 24px rgba(15,23,42,0.07)', border: '1px solid #f1f5f9' }}>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.4px', color: '#94a3b8' }}>Votre positionnement</div>
+                            {analysisDateLabel && <div style={{ fontSize: 11, color: '#cbd5e1', marginTop: 2 }}>Donnees issues de l&apos;analyse du {analysisDateLabel}</div>}
+                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button type="button" className="rounded-full p-0.5 text-slate-300 hover:text-slate-500 focus-visible:outline-none" aria-label="Aide">
+                                <Info className="h-3.5 w-3.5" strokeWidth={2} />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="max-w-[260px] text-xs">Meilleurs scores a gauche.</TooltipContent>
+                          </Tooltip>
                         </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 14, marginBottom: 18 }}>
+                          <span style={{ fontSize: 38, fontWeight: 800, color: '#1e40af', letterSpacing: '-2px', lineHeight: 1 }}>{targetRank}</span>
+                          <span style={{ fontSize: 16, fontWeight: 500, color: '#93c5fd' }}>/ {total}</span>
+                          {isTop3 && <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#92400e', background: '#fef3c7', padding: '2px 7px', borderRadius: 4, marginLeft: 4 }}>Top 3</span>}
+                        </div>
+                        <div style={{ width: '100%', height: 230 }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={curveData} margin={{ left: 12, right: 16, top: 10, bottom: 26 }}>
+                              <defs>
+                                <linearGradient id="blueAreaFill2" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.08} />
+                                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                              {total > 1 && <ReferenceLine x={medianRankX} stroke="#e2e8f0" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: '50%', position: 'insideTopLeft', fill: '#cbd5e1', fontSize: 10, fontWeight: 600 }} />}
+                              <XAxis dataKey="rank" type="number" domain={[1, total]} ticks={rankTicks} tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }} tickFormatter={(v) => v === 1 ? '1er' : String(v)} label={{ value: 'Position', position: 'bottom', offset: 8, style: { fill: '#94a3b8', fontSize: 10 } }} />
+                              <YAxis domain={[yDomainMin, yDomainMax]} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} tickFormatter={(v) => typeof v === 'number' ? v.toFixed(1) : String(v)} axisLine={false} tickLine={false} width={48} label={{ value: 'Score', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8', fontSize: 10 } }} />
+                              <RechartsTooltip content={({ active, payload }) => { if (!active || !payload?.[0]) return null; const d = payload[0].payload; const isMe = d.rank === targetRank; return (<div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '7px 12px', boxShadow: '0 4px 16px rgba(15,23,42,0.10)', fontSize: 12 }}><div style={{ fontWeight: 700, color: isMe ? '#1e40af' : '#64748b' }}>{isMe ? 'Vous' : '#' + d.rank}</div><div style={{ color: '#94a3b8', marginTop: 2 }}>{d.rank}/{total} - {d.score.toFixed(2)}</div></div>); }} cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }} />
+                              <Area type="monotone" dataKey="score" stroke="#1e40af" strokeWidth={2} fill="url(#blueAreaFill2)" dot={(props: any) => { const { cx, cy, payload } = props; const isTarget = payload.rank === targetRank; return <circle key={'dot-' + payload.rank} cx={cx} cy={cy} r={isTarget ? 6 : 3.5} fill="#1e40af" stroke="#ffffff" strokeWidth={isTarget ? 2.5 : 1.5} />; }} activeDot={false} />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </Card>
+                    );
+                  })()}
 
-                {/* Statistiques globales */}
-                {/* <Card className="bg-card border border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground">📈 Statistiques Globales</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-foreground">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-3 bg-muted rounded-lg">
-                        <div className="text-xl font-bold">{currentAnalysis.global_stats?.total_models_executed || 0}</div>
-                        <div className="text-sm text-muted-foreground">Modèles exécutés</div>
-                      </div>
-                      <div className="text-center p-3 bg-muted rounded-lg">
-                        <div className="text-xl font-bold">{currentAnalysis.global_stats?.total_competitors_found || 0}</div>
-                        <div className="text-sm text-muted-foreground">Concurrents trouvés</div>
-                      </div>
-                      <div className="text-center p-3 bg-muted rounded-lg">
-                        <div className="text-xl font-bold">{currentAnalysis.global_stats?.analysis_duration_ms || 0}ms</div>
-                        <div className="text-sm text-muted-foreground">Durée d'analyse</div>
-                      </div>
-                      <div className="text-center p-3 bg-muted rounded-lg">
-                        <div className="text-xl font-bold">{currentAnalysis.global_stats?.average_competitors_per_model || 0}</div>
-                        <div className="text-sm text-muted-foreground">Moyenne par modèle</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card> */}
+                  {/* Détails par modèle */}
+                  {(() => {
+                    // Grouper les concurrents par nom commercial (fusionner sonar + sonar-pro → Perplexity)
+                    const competitorsByCommercial: Record<string, any[]> = {};
 
-                {/* Métadonnées de l'analyse */}
-                {/* <Card className="bg-card border border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground">⚙️ Métadonnées de l'Analyse</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-foreground">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div><strong>Score minimum:</strong> {currentAnalysis.analysis_metadata?.min_score || 0}</div>
-                        <div><strong>Mentions minimum:</strong> {currentAnalysis.analysis_metadata?.min_mentions || 0}</div>
-                        <div><strong>Include raw:</strong> {currentAnalysis.analysis_metadata?.include_raw ? 'Oui' : 'Non'}</div>
-                        <div><strong>Include benchmark:</strong> {currentAnalysis.analysis_metadata?.include_benchmark ? 'Oui' : 'Non'}</div>
-                      </div>
-                      <div className="space-y-2">
-                        <div><strong>Benchmark competitors:</strong> {currentAnalysis.analysis_metadata?.benchmark_competitors_count || 0}</div>
-                        <div><strong>LLMO analysis:</strong> {currentAnalysis.analysis_metadata?.include_llmo_analysis ? 'Oui' : 'Non'}</div>
-                        <div><strong>LLMO count:</strong> {currentAnalysis.analysis_metadata?.llmo_analysis_count || 0}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-4">
-                      <strong>Modèles demandés:</strong>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {currentAnalysis.analysis_metadata?.models_requested?.map((model, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs text-foreground">
-                            {model}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card> */}
+                    const isV3 = !!(v3Data && v3Data.consolidated_competitors && v3Data.consolidated_competitors.length > 0);
 
-                {/* Détails par modèle */}
-                <Card className="bg-card border border-border">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground">Détails par Modèle IA</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-foreground">
-                    <div className="space-y-4">
-                      {/* Grouper les concurrents par modèle utilisé */}
-                      {(() => {
-                        const competitorsByModel: Record<string, any[]> = {};
-                        
-                        // Grouper les concurrents par modèle
-                        const competitors = (currentAnalysis as any)?.competitors;
-                        if (competitors && Array.isArray(competitors)) {
-                          competitors.forEach((competitor: any) => {
-                            if (competitor.sources && Array.isArray(competitor.sources)) {
-                              competitor.sources.forEach((source: string) => {
-                                if (!competitorsByModel[source]) {
-                                  competitorsByModel[source] = [];
-                                }
-                                competitorsByModel[source].push(competitor);
+                    // Domaine client pour exclusion
+                    const clientUrl = currentAnalysis?.url || v3Data?.url || '';
+                    const clientDomain = extractDomain(clientUrl).toLowerCase().replace('www.', '');
+                    const clientBase = clientDomain.split('.')[0];
+
+                    if (isV3) {
+                      // SOURCE PRIORITAIRE: v3 consolidated_competitors avec source_models
+                      const filtered = v3Data!.consolidated_competitors.filter(c => {
+                        const compDomain = extractDomain(c.primary_url).toLowerCase().replace('www.', '');
+                        const compBase = compDomain.split('.')[0];
+                        const compName = (c.name || '').toLowerCase();
+                        return !clientBase || (compDomain !== clientDomain && compBase !== clientBase && !compName.includes(clientBase));
+                      });
+
+                      filtered.forEach(c => {
+                        if (c.source_models && Array.isArray(c.source_models)) {
+                          c.source_models.forEach(model => {
+                            const commercial = getCommercialModelName(model);
+                            if (!competitorsByCommercial[commercial]) {
+                              competitorsByCommercial[commercial] = [];
+                            }
+                            const domain = extractDomain(c.primary_url);
+                            const alreadyAdded = competitorsByCommercial[commercial].some(
+                              (existing: any) => extractDomain(existing.url || existing.primary_url || '') === domain
+                            );
+                            if (!alreadyAdded) {
+                              competitorsByCommercial[commercial].push({
+                                ...c,
+                                url: c.primary_url,
+                                sources: c.source_models,
                               });
                             }
                           });
                         }
+                      });
+                    } else {
+                      // FALLBACK: ancienne logique
+                      const competitors = (currentAnalysis as any)?.competitors;
+                      if (competitors && Array.isArray(competitors)) {
+                        competitors.forEach((competitor: any) => {
+                          if (competitor.sources && Array.isArray(competitor.sources)) {
+                            competitor.sources.forEach((source: string) => {
+                              const commercial = getCommercialModelName(source);
+                              if (!competitorsByCommercial[commercial]) {
+                                competitorsByCommercial[commercial] = [];
+                              }
+                              const domain = extractDomain(competitor.url || competitor.primary_url || '');
+                              const alreadyAdded = competitorsByCommercial[commercial].some(
+                                (c: any) => extractDomain(c.url || c.primary_url || '') === domain
+                              );
+                              if (!alreadyAdded) {
+                                competitorsByCommercial[commercial].push(competitor);
+                              }
+                            });
+                          }
+                        });
+                      }
+                    }
 
-                        return Object.entries(competitorsByModel).map(([model, competitors]) => (
-                          <Card key={model} className="bg-muted/30 border border-border shadow-sm">
-                            <CardHeader className="pb-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <img
-                                    src={(() => {
-                                      const modelLower = model.toLowerCase();
-                                      if (modelLower.includes('mistral') || modelLower.includes('mixtral')) return '/Mistral.png';
-                                      const id = modelLower.includes('gpt') || modelLower.includes('openai')
-                                        ? 'openai-for-light'
-                                        : modelLower.includes('claude')
-                                          ? 'claude'
-                                          : modelLower.includes('gemini')
-                                            ? 'gemini'
-                                            : modelLower.includes('sonar') || modelLower.includes('perplexity')
-                                              ? 'perplexity'
-                                              : 'claude';
-                                      return `/prompt-model-${id}.svg`;
-                                    })()}
-                                    alt="Model"
-                                    className="w-6 h-6"
-                                  />
-                                  <div>
-                                    <h4 className="font-semibold text-foreground text-sm">
-                                      {model.replace('-', ' ').toUpperCase()}
-                                    </h4>
-                                    <p className="text-xs text-muted-foreground">
-                                      {Array.isArray(competitors) ? competitors.length : 0} concurrents trouvés
-                                    </p>
-                                  </div>
-                                </div>
-                                <Badge variant="outline" className="text-xs">
-                                  Score moyen: {Array.isArray(competitors) && competitors.length > 0 
-                                    ? Math.round((competitors.reduce((acc, c) => acc + c.average_score, 0) / competitors.length) * 100)
-                                    : 0}/100
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <div className="space-y-2">
-                                {Array.isArray(competitors) && competitors.slice(0, 5).map((competitor: any, index: number) => (
-                                  <div key={index} className="flex items-center justify-between p-2 bg-card rounded-lg border border-border">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-6 h-6 bg-muted rounded flex items-center justify-center">
-                                        <span className="text-xs font-semibold text-muted-foreground">#{index + 1}</span>
-                                      </div>
-                                      <div>
-                                        <span className="text-sm font-medium text-foreground font-semibold">{competitor.name}</span>
-                                        <div className="text-xs text-muted-foreground">
-                                          {competitor.url}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <Badge variant="outline" className="text-xs">
-                                        Score: {Math.round(competitor.average_score * 100)}/100
-                                      </Badge>
-                                      {/* Afficher score_details si disponible */}
-                                      {competitor.score_details && competitor.score_details[model] && (
-                                        <div className="text-xs text-muted-foreground mt-1">
-                                          {model}: {Math.round(competitor.score_details[model] * 100)}/100
-                                        </div>
-                                      )}
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        Mentions: {competitor.mentions}
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ));
-                      })() || (
-                        <Card className="bg-card border border-border shadow-sm">
+                    const modelNames = Object.keys(competitorsByCommercial);
+                    const defaultModel = modelNames[0] || '';
+                    const currentSelectedModel = selectedModel || defaultModel;
+                    const currentCompetitors = competitorsByCommercial[currentSelectedModel] || [];
+
+                    // Initialiser le modèle sélectionné si vide
+                    if (!selectedModel && defaultModel) {
+                      setSelectedModel(defaultModel);
+                    }
+
+                    if (modelNames.length === 0) {
+                      return (
+                        <Card className="bg-white border-gray-200 shadow-sm">
                           <CardContent className="flex flex-col items-center justify-center py-8">
-                            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="font-semibold text-foreground mb-2">Aucun concurrent trouvé</h3>
-                            <p className="text-sm text-muted-foreground text-center">
+                            <Users className="h-12 w-12 text-gray-400 mb-4" />
+                            <h3 className="font-semibold text-gray-900 mb-2">Aucun concurrent trouvé</h3>
+                            <p className="text-sm text-gray-600 text-center">
                               Les concurrents seront affichés ici une fois l'analyse terminée.
                             </p>
                           </CardContent>
                         </Card>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                      );
+                    }
 
-                {/* Analyses détaillées LLM */}
-                {currentAnalysis.mini_llm_results && currentAnalysis.mini_llm_results.length > 0 && (
-                  <Card className="bg-card border border-border">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-foreground">🧠 Analyses détaillées LLM</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-foreground">
-                      <div className="space-y-4">
-                        {currentAnalysis.mini_llm_results
-                          .filter(result => result.llm_analysis && result.llm_analysis.forces_principales)
-                          .slice(0, 3)
-                          .map((result, index) => (
-                            <Card key={index} className="bg-muted/30 border border-border shadow-sm">
-                              <CardHeader className="pb-3">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <h4 className="font-semibold text-foreground text-sm">{result.competitor_name}</h4>
-                                    <p className="text-xs text-muted-foreground">{result.competitor_url}</p>
+                    return (
+                      <Card className="bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                        <div className="flex justify-end items-center mb-4">
+                          <Select value={currentSelectedModel} onValueChange={setSelectedModel}>
+                            <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs border-gray-300 bg-white rounded-md px-2.5 py-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {modelNames.map((commercialName) => (
+                                <SelectItem key={commercialName} value={commercialName}>
+                                  <div className="flex items-center gap-2">
+                                    {getModelLogo(commercialName) ? (
+                                      <img src={getModelLogo(commercialName)!} alt={commercialName} className="w-4 h-4 object-contain" />
+                                    ) : null}
+                                    <span>{commercialName}</span>
                                   </div>
-                                  <Badge variant="outline" className="text-xs">
-                                    Menace: {result.llm_analysis.score_menace}/10
-                                  </Badge>
-                                </div>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                {/* Forces principales */}
-                                {result.llm_analysis.forces_principales && result.llm_analysis.forces_principales.length > 0 && (
-                                  <div>
-                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                                      <TrendingUp className="h-3 w-3 text-green-500" />
-                                      Forces principales
-                                    </h5>
-                                    <ul className="space-y-1">
-                                      {result.llm_analysis.forces_principales.slice(0, 3).map((force, idx) => (
-                                        <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
-                                          <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
-                                          {force}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-
-                                {/* Faiblesses principales */}
-                                {result.llm_analysis.faiblesses_principales && result.llm_analysis.faiblesses_principales.length > 0 && (
-                                  <div>
-                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                                      <TrendingDown className="h-3 w-3 text-red-500" />
-                                      Faiblesses principales
-                                    </h5>
-                                    <ul className="space-y-1">
-                                      {result.llm_analysis.faiblesses_principales.slice(0, 3).map((weakness, idx) => (
-                                        <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
-                                          <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
-                                          {weakness}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
-
-                                {/* Positionnement */}
-                                {result.llm_analysis.positionnement && (
-                                  <div>
-                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                                      <Target className="h-3 w-3 text-blue-500" />
-                                      Positionnement
-                                    </h5>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                      {result.llm_analysis.positionnement}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Résumé */}
-                                {result.llm_analysis.analyse_resume && result.llm_analysis.analyse_resume.trim() !== " " && (
-                                  <div className="pt-2 border-t border-border">
-                                    <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-2">
-                                      <Brain className="h-3 w-3 text-purple-500" />
-                                      Analyse résumée
-                                    </h5>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                      {result.llm_analysis.analyse_resume}
-                                    </p>
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Positionnement cible */}
-                {currentAnalysis.target_positioning && (
-                  <Card className="bg-card border border-border">
-                    {/* <CardHeader>
-                      <CardTitle className="text-lg text-foreground">Positionnement Cible</CardTitle>
-                    </CardHeader> */}
-                    {/* <CardContent className="text-foreground">
-                      <div className="space-y-4">
-                        {Object.entries(((currentAnalysis.target_positioning as any)?.trends_by_model || {})).map(([modelName, trends]) => {
-                          const t: any = trends as any;
-                          return (
-                          <div key={modelName} className="border border-border rounded-lg p-4">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="w-8 h-8 rounded-lg bg-card border border-border/50 flex items-center justify-center overflow-hidden">
-                                {(() => {
-                                  const name = modelName.toLowerCase();
-                                  if (name.includes('claude')) {
-                                    return <img src="/prompt-model-claude.svg" alt="Claude" className="w-5 h-5" />;
-                                  } else if (name.includes('gpt') || name.includes('openai')) {
-                                    return <img src="/prompt-model-openai-for-light.svg" alt="OpenAI" className="w-5 h-5" />;
-                                  } else if (name.includes('gemini')) {
-                                    return <img src="/prompt-model-gemini.svg" alt="Gemini" className="w-5 h-5" />;
-                                  } else if (name.includes('mistral')) {
-                                    return <img src="/Mistral.png" alt="Mistral" className="w-5 h-5" />;
-                                  } else if (name.includes('perplexity')) {
-                                    return <img src="/prompt-model-perplexity.svg" alt="Perplexity" className="w-5 h-5" />;
-                                  } else {
-                                    return <span className="text-sm font-bold text-primary">🎯</span>;
-                                  }
-                                })()}
-                              </div>
-                              <h4 className="font-semibold text-foreground">
-                                {(() => {
-                                  // Nettoyer et formater le nom du modèle
-                                  if (modelName.toLowerCase().includes('claude')) {
-                                    return 'Claude';
-                                  } else if (modelName.toLowerCase().includes('gpt')) {
-                                    const versionMatch = modelName.match(/gpt-?(\d+)/i);
-                                    if (versionMatch) {
-                                      return `GPT-${versionMatch[1]}`;
-                                    }
-                                    return 'GPT';
-                                  } else if (modelName.toLowerCase().includes('gemini')) {
-                                    return 'Gemini';
-                                  } else if (modelName.toLowerCase().includes('mistral')) {
-                                    return 'Mistral';
-                                  } else if (modelName.toLowerCase().includes('perplexity')) {
-                                    return 'Perplexity';
-                                  } else {
-                                    return modelName
-                                      .replace(/\([^)]*\)/g, '')
-                                      .replace(/\/.*$/, '')
-                                      .trim();
-                                  }
-                                })()}
-                              </h4>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              <div className="text-center">
-                                <div className="text-lg font-bold">{t.count}</div>
-                                <div className="text-sm text-muted-foreground">Points</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-lg font-bold text-foreground">{t.delta_30d > 0 ? '+' : ''}{t.delta_30d}%</div>
-                                <div className="text-sm text-muted-foreground">Delta 30j</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-lg font-bold text-foreground">
-                                  {t.points?.[0]?.global_score || 0}
-                                </div>
-                                <div className="text-sm text-muted-foreground">Score global</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-lg font-bold text-foreground">
-                                  {t.points?.[0]?.llmo_score || 0}
-                                </div>
-                                <div className="text-sm text-muted-foreground">Score LLMO</div>
-                              </div>
-                            </div>
-                          </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent> */}
-                  </Card>
-                )}
-
-                {/* Top concurrents */}
-                {currentAnalysis.target_positioning?.top_competitors && currentAnalysis.target_positioning.top_competitors.length > 0 && (
-                  <Card className="bg-card border border-border">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                        <Award className="h-5 w-5 text-muted-foreground" />
-                        Top concurrents
-                      </CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                        Classement des meilleurs concurrents identifiés pour votre marché
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="divide-y divide-border rounded-lg overflow-hidden border border-border">
-                        {currentAnalysis.target_positioning.top_competitors.map((c, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-4 bg-card hover:bg-muted/40 transition-colors">
-                            <div className="flex items-center gap-4 min-w-0">
-                              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center border border-border text-sm font-bold">
-                                #{c.rank}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-semibold text-foreground truncate">
-                                  {c.name}
-                                </div>
-                                <div className="text-xs text-muted-foreground flex items-center gap-2">
-                                  <span>Score: {Math.round(Number(c.score))}/100</span>
-                                  <span>•</span>
-                                  <span>Écart: {c.gap_vs_you > 0 ? '+' : ''}{Number(c.gap_vs_you).toFixed(1)}</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <Badge
-                                className={`${String(c.status).includes('devant') || String(c.status).includes('Leader') ? 'bg-red-500/10 text-red-600' : String(c.status).includes('derrière') ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground'}`}
-                              >
-                                {c.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Avantages concurrentiels et axes d'amélioration */}
-                {(currentAnalysis.target_positioning?.competitive_advantages?.length || 0) > 0 || (currentAnalysis.target_positioning?.improvement_areas?.length || 0) > 0 ? (
-                  <Card className="bg-card border border-border">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-foreground">Analyse qualitative</CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                        Points forts identifiés et axes d'amélioration recommandés
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        {/* Points forts */}
-                        <div className="p-4 rounded-lg bg-green-500/5 border border-green-500/20">
-                          <h4 className="text-sm font-semibold text-green-600 mb-3 flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4" />
-                            Points forts
-                          </h4>
-                          {(currentAnalysis.target_positioning?.competitive_advantages || []).length > 0 ? (
-                            <ul className="space-y-2 list-disc list-inside">
-                              {currentAnalysis.target_positioning!.competitive_advantages.map((item, idx) => (
-                                <li key={idx} className="text-sm text-foreground">{item}</li>
+                                </SelectItem>
                               ))}
-                            </ul>
-                          ) : (
-                            <div className="text-sm text-muted-foreground">Aucun point fort listé</div>
-                          )}
+                            </SelectContent>
+                          </Select>
                         </div>
-
-                        {/* À améliorer */}
-                        <div className="p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                          <h4 className="text-sm font-semibold text-amber-600 mb-3 flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4" />
-                            À améliorer
-                          </h4>
-                          {(currentAnalysis.target_positioning?.improvement_areas || []).length > 0 ? (
-                            <ul className="space-y-2 list-disc list-inside">
-                              {currentAnalysis.target_positioning!.improvement_areas.map((item, idx) => (
-                                <li key={idx} className="text-sm text-foreground">{item}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <div className="text-sm text-muted-foreground">Aucun axe d'amélioration listé</div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : null}
-
-                {/* Position de l'utilisateur - Tout en bas */}
-                {(currentAnalysis as any).your_position && (
-                  <Card className="bg-card border border-border shadow-sm">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg font-semibold text-foreground">
-                        Votre Position parmi les Concurrents
-                      </CardTitle>
-                      <CardDescription className="text-xs text-muted-foreground">
-                        {(currentAnalysis as any).your_position.position_text}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="text-center p-4 bg-muted rounded-lg border border-border">
-                          <div className="text-2xl font-bold text-primary mb-1">
-                            {(currentAnalysis as any).your_position.rank}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Rang sur {(currentAnalysis as any).your_position.total_competitors}</div>
-                        </div>
-                        <div className="text-center p-4 bg-muted rounded-lg border border-border">
-                          <div className="text-2xl font-bold text-foreground mb-1">
-                            {(() => {
-                              const benchmarkScore = (currentAnalysis as any).benchmark_results?.benchmark?.classement?.find((c: any) => c.url === currentAnalysis.url)?.score;
-                              if (benchmarkScore !== undefined) return benchmarkScore;
-                              const targetScore = currentAnalysis.target_positioning?.target_benchmark_score;
-                              return targetScore ? Math.round(typeof targetScore === 'number' ? targetScore : Number(targetScore)) : 'N/A';
-                            })()}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Score Benchmark</div>
-                        </div>
-                      </div>
-
-                   
-                  
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Données Benchmark - Tout en bas */}
-                {(currentAnalysis as any).benchmark_results?.benchmark && (
-                  <Card className="bg-card border border-border">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5" />
-                        Analyse Benchmark
-                      </CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                        {(currentAnalysis as any).benchmark_results.benchmark.comparaison}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-foreground">
-                      <div className="space-y-4">
-                        {/* Classement complet */}
+                        
                         <div>
-                          <h4 className="font-semibold text-foreground mb-3">Classement complet</h4>
-                          <div className="space-y-2 max-h-96 overflow-y-auto">
-                            {(currentAnalysis as any).benchmark_results.benchmark.classement.map((entry: any, idx: number) => {
-                              const competitor = (currentAnalysis as any).competitors?.find((c: any) => c.url === entry.url);
-                              const isYourSite = entry.url === currentAnalysis.url;
+                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3" style={{ letterSpacing: '1.2px' }}>
+                            {currentCompetitors.length} Concurrent{currentCompetitors.length > 1 ? 's' : ''} - {currentSelectedModel}
+                          </div>
+                          
+                          <div className="max-h-[500px] overflow-y-auto pr-2">
+                            {currentCompetitors.map((competitor: any, index: number) => {
+                              const rank = competitor.model_rank || (index + 1);
+                              const domain = extractDomain(competitor.url || competitor.primary_url || '');
                               return (
-                                <div 
-                                  key={idx}
-                                  className={`flex items-center justify-between p-3 rounded-lg border ${
-                                    isYourSite 
-                                      ? 'bg-primary/10 border-primary/30' 
-                                      : idx < 3
-                                        ? 'bg-yellow-50 border-yellow-200'
-                                        : 'bg-card border-border'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
-                                      isYourSite ? 'bg-primary text-primary-foreground' : 
-                                      idx === 0 ? 'bg-yellow-400 text-yellow-900' :
-                                      idx === 1 ? 'bg-gray-300 text-gray-900' :
-                                      idx === 2 ? 'bg-amber-400 text-amber-900' :
-                                      'bg-muted text-muted-foreground'
-                                    }`}>
-                                      {isYourSite ? '👤' : idx + 1}
-                                    </div>
-                                    <div>
-                                      <div className="font-medium text-foreground">
-                                        {isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url))}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">{extractDomain(entry.url)}</div>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <Badge variant="outline" className="text-sm font-semibold">
-                                      {entry.score}/100
-                                    </Badge>
+                                <div key={index} className="flex items-center gap-3 py-3 border-b border-gray-200 last:border-b-0 hover:bg-blue-50/30 transition-colors" style={{ borderBottom: index < currentCompetitors.length - 1 ? '1px solid #edf2f7' : 'none' }}>
+                                  <div className="text-base font-bold text-gray-400 min-w-[32px]" style={{ fontSize: '13px', fontWeight: 700 }}>{rank}</div>
+                                  <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt={domain} width={20} height={20} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-gray-900 mb-0.5" style={{ fontSize: '15px', fontWeight: 600 }}>{competitor.name || domain}</div>
+                                    <div className="text-gray-500" style={{ fontSize: '13px', color: '#94a3b8' }}>{domain}</div>
                                   </div>
                                 </div>
                               );
                             })}
                           </div>
                         </div>
+                      </Card>
+                    );
+                  })()}
+                </div>
+
+                {/* Analyses détaillées LLM */}
+
+                {/* Avantages concurrentiels et axes d'amélioration */}
+                {(currentAnalysis.target_positioning?.competitive_advantages?.length || 0) > 0 || (currentAnalysis.target_positioning?.improvement_areas?.length || 0) > 0 ? (
+                  <Card className="bg-white border-gray-200 shadow-sm">
+                    <CardHeader className="border-b border-gray-200">
+                      <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">Analyse qualitative<InfoTooltip {...HELP.analyseQualitative} /></CardTitle>
+                      <CardDescription className="text-gray-600">
+                        Points forts identifiés et axes d'amélioration recommandés
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {/* Points forts */}
+                        <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                          <h4 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4" />
+                            Points forts
+                            <InfoTooltip {...HELP.pointsForts} side="right" />
+                          </h4>
+                          {(currentAnalysis.target_positioning?.competitive_advantages || []).length > 0 ? (
+                            <ul className="space-y-2 list-disc list-inside">
+                              {currentAnalysis.target_positioning!.competitive_advantages.map((item, idx) => (
+                                <li key={idx} className="text-sm text-gray-900">{item}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div className="text-sm text-gray-600">Aucun point fort listé</div>
+                          )}
+                        </div>
+
+                        {/* Axes d'amélioration */}
+                        <div className="p-4 rounded-lg bg-orange-50 border border-orange-200">
+                          <h4 className="text-sm font-semibold text-orange-700 mb-3 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4" />
+                            Axes d'amélioration
+                            <InfoTooltip {...HELP.axesDamelioration} side="right" />
+                          </h4>
+                          {(currentAnalysis.target_positioning?.improvement_areas || []).length > 0 ? (
+                            <ul className="space-y-2 list-disc list-inside">
+                              {currentAnalysis.target_positioning!.improvement_areas.map((item, idx) => (
+                                <li key={idx} className="text-sm text-gray-900">{item}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div className="text-sm text-gray-600">Aucun axe d'amélioration listé</div>
+                          )}
+                        </div>
+
                       </div>
                     </CardContent>
                   </Card>
-                )}
+                ) : null}
+
+
+                  {/* Matrice de Matérialité */}
+                  {(() => {
+                    // Source prioritaire : materialityMatrix (endpoint dédié)
+                    // Fallback : ancienne logique via competitors + benchmark_results.raw_data
+                    const useMateriality = !!(materialityMatrix && materialityMatrix.brands && materialityMatrix.brands.length > 0);
+
+                    type MatricePoint = {
+                      name: string;
+                      url: string;
+                      favicon_url?: string;
+                      visibility: number;
+                      sentiment: number;
+                      totalScore: number;
+                      mentions: number;
+                      isTarget: boolean;
+                      audited: boolean;
+                      scoreDetails?: any;
+                      grade?: string;
+                      recommendations?: string[];
+                      pillars?: Record<string, { score: number; max: number }>;
+                      gaps?: string[];
+                    };
+
+                    const dataPoints: MatricePoint[] = [];
+                    const visibilityMid = 50;
+                    const sentimentMid = 0.5;
+
+                    if (useMateriality) {
+                      // Nouvelle source : materiality_matrix
+                      const dedupedByUrl = new Map<string, any>();
+                      const dedupedByName = new Map<string, any>();
+
+                      materialityMatrix!.brands.forEach((b) => {
+                        const canonicalUrl = toCanonicalUrl(b.url);
+                        const normalizedName = normalizeBrandLabel(b.name);
+
+                        const urlKey = canonicalUrl || '';
+                        if (urlKey) {
+                          const existing = dedupedByUrl.get(urlKey);
+                          if (!existing || compareMaterialityEntries(b, existing) > 0) {
+                            dedupedByUrl.set(urlKey, b);
+                          }
+                          return;
+                        }
+
+                        if (normalizedName) {
+                          const existing = dedupedByName.get(normalizedName);
+                          if (!existing || compareMaterialityEntries(b, existing) > 0) {
+                            dedupedByName.set(normalizedName, b);
+                          }
+                        }
+                      });
+
+                      const dedupedBrands = [
+                        ...dedupedByUrl.values(),
+                        ...dedupedByName.values(),
+                      ];
+
+                      dedupedBrands.forEach((b) => {
+                        const domain = extractDomain(b.url);
+                        dataPoints.push({
+                          name: b.name,
+                          url: b.url,
+                          favicon_url: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+                          visibility: b.visibility,
+                          sentiment: b.sentiment,
+                          totalScore: b.total_score,
+                          mentions: 0,
+                          isTarget: b.is_target,
+                          audited: b.audited,
+                          pillars: b.pillars,
+                          gaps: b.gaps,
+                        });
+                      });
+                    } else {
+                      // Fallback : ancienne logique
+                      const competitors = (currentAnalysis as any)?.competitors;
+                      const benchmarkRaw = (v1BenchmarkResults || (currentAnalysis as any)?.benchmark_results)?.raw_data;
+                      const analysisUrl = currentAnalysis?.url || '';
+
+                      if (!competitors || competitors.length === 0) return null;
+
+                      const competitorsByUrl = new Map<string, any>();
+                      for (const c of competitors) {
+                        const existing = competitorsByUrl.get(c.url);
+                        if (!existing || c.mentions > existing.mentions) {
+                          competitorsByUrl.set(c.url, c);
+                        }
+                      }
+
+                      for (const [url, comp] of competitorsByUrl) {
+                        const benchEntry = benchmarkRaw?.[url];
+                        const hasScore = benchEntry && typeof benchEntry.total_score === 'number';
+                        const totalScore = hasScore ? benchEntry.total_score : 0;
+
+                        dataPoints.push({
+                          name: comp.name,
+                          url,
+                          favicon_url: comp.favicon_url || `https://www.google.com/s2/favicons?domain=${url.replace(/^https?:\/\//, '').replace(/\/.*/, '')}&sz=32`,
+                          visibility: benchEntry?.visibility ?? totalScore,
+                          sentiment: benchEntry?.sentiment ?? comp.average_score ?? 0,
+                          totalScore,
+                          mentions: comp.mentions || 0,
+                          isTarget: false,
+                          audited: false,
+                          scoreDetails: hasScore ? benchEntry : undefined,
+                          grade: hasScore ? benchEntry.grade : undefined,
+                          recommendations: hasScore ? benchEntry.primary_recommendations : undefined,
+                        });
+                      }
+
+                      // Add user's site
+                      if (analysisUrl && benchmarkRaw?.[analysisUrl]) {
+                        const targetEntry = benchmarkRaw[analysisUrl];
+                        const targetScore = targetEntry.total_score || 0;
+                        const domain = analysisUrl.replace(/^https?:\/\//, '').replace(/\/.*/, '');
+                        dataPoints.push({
+                          name: domain,
+                          url: analysisUrl,
+                          favicon_url: `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+                          visibility: targetEntry.visibility ?? targetScore,
+                          sentiment: targetEntry.sentiment ?? 0,
+                          totalScore: targetScore,
+                          mentions: 0,
+                          isTarget: true,
+                          audited: true,
+                          scoreDetails: targetEntry,
+                          grade: targetEntry.grade,
+                          recommendations: targetEntry.primary_recommendations,
+                        });
+                      }
+                    }
+
+                    if (dataPoints.length === 0) return null;
+
+                    const getQuadrantInfo = (point: MatricePoint) => (
+                      point.visibility >= visibilityMid
+                        ? (point.sentiment >= sentimentMid
+                          ? { label: 'Leader', desc: 'Très bien positionné. Forte visibilité et perception positive par les IA.', color: '#22C55E' }
+                          : { label: 'Controversial', desc: 'Visible mais mal perçu. Les IA le mentionnent souvent mais avec un sentiment négatif.', color: '#F59E0B' })
+                        : (point.sentiment >= sentimentMid
+                          ? { label: 'Niche Player', desc: 'Bien perçu mais peu visible. Les IA en parlent positivement mais rarement.', color: '#6366F1' }
+                          : { label: 'Lagger', desc: 'En retard. Faible visibilité et perception négative par les IA.', color: '#EF4444' })
+                    );
+
+                    // Limiter à 12 concurrents max avec équilibre par quadrant
+                    const MAX_DISPLAY = 12;
+                    let displayPoints = dataPoints;
+                    if (dataPoints.length > MAX_DISPLAY) {
+                      const quadrantOrder = ['Leader', 'Controversial', 'Niche Player', 'Lagger'] as const;
+                      const targets = dataPoints.filter((d) => d.isTarget).sort((a, b) => b.totalScore - a.totalScore);
+                      const selected: MatricePoint[] = [];
+                      const selectedKeys = new Set<string>();
+                      const pointKey = (point: MatricePoint) => `${toCanonicalUrl(point.url)}|${normalizeBrandLabel(point.name)}`;
+                      const pushIfNew = (point: MatricePoint) => {
+                        const key = pointKey(point);
+                        if (selectedKeys.has(key) || selected.length >= MAX_DISPLAY) return false;
+                        selected.push(point);
+                        selectedKeys.add(key);
+                        return true;
+                      };
+
+                      // Garder au moins le site cible visible
+                      if (targets.length > 0) {
+                        pushIfNew(targets[0]);
+                      }
+
+                      const remaining = dataPoints
+                        .filter((d) => !d.isTarget);
+
+                      const buckets: Record<(typeof quadrantOrder)[number], MatricePoint[]> = {
+                        Leader: [],
+                        Controversial: [],
+                        'Niche Player': [],
+                        Lagger: [],
+                      };
+
+                      remaining.forEach((point) => {
+                        const label = getQuadrantInfo(point).label as (typeof quadrantOrder)[number];
+                        buckets[label].push(point);
+                      });
+
+                      const quadrantCenters: Record<(typeof quadrantOrder)[number], { x: number; y: number }> = {
+                        Leader: { x: (visibilityMid + 100) / 2, y: (sentimentMid + 1) / 2 },
+                        Controversial: { x: (visibilityMid + 100) / 2, y: sentimentMid / 2 },
+                        'Niche Player': { x: visibilityMid / 2, y: (sentimentMid + 1) / 2 },
+                        Lagger: { x: visibilityMid / 2, y: sentimentMid / 2 },
+                      };
+                      const representativeness = (point: MatricePoint, quadrant: (typeof quadrantOrder)[number]) => {
+                        const center = quadrantCenters[quadrant];
+                        const dx = (point.visibility - center.x) / 100;
+                        const dy = point.sentiment - center.y;
+                        return Math.sqrt(dx * dx + dy * dy);
+                      };
+
+                      quadrantOrder.forEach((quadrant) => {
+                        buckets[quadrant].sort((a, b) => {
+                          const aDist = representativeness(a, quadrant);
+                          const bDist = representativeness(b, quadrant);
+                          if (aDist !== bDist) return aDist - bDist;
+                          return b.totalScore - a.totalScore;
+                        });
+                      });
+
+                      const slots = MAX_DISPLAY - selected.length;
+                      const baseQuota = Math.max(1, Math.floor(slots / quadrantOrder.length));
+                      let remainingSlots = slots;
+                      const perQuadrantUsed: Record<(typeof quadrantOrder)[number], number> = {
+                        Leader: 0,
+                        Controversial: 0,
+                        'Niche Player': 0,
+                        Lagger: 0,
+                      };
+
+                      // 1er passage: garantir une présence équilibrée par quadrant quand possible
+                      quadrantOrder.forEach((quadrant) => {
+                        while (
+                          remainingSlots > 0 &&
+                          perQuadrantUsed[quadrant] < baseQuota &&
+                          buckets[quadrant].length > 0
+                        ) {
+                          const candidate = buckets[quadrant].shift()!;
+                          if (pushIfNew(candidate)) {
+                            perQuadrantUsed[quadrant] += 1;
+                            remainingSlots -= 1;
+                          }
+                        }
+                      });
+
+                      // 2e passage: compléter en round-robin pour garder l'équilibre
+                      while (remainingSlots > 0) {
+                        let picked = false;
+                        quadrantOrder.forEach((quadrant) => {
+                          if (remainingSlots <= 0 || buckets[quadrant].length === 0) return;
+                          const candidate = buckets[quadrant].shift()!;
+                          if (pushIfNew(candidate)) {
+                            perQuadrantUsed[quadrant] += 1;
+                            remainingSlots -= 1;
+                            picked = true;
+                          }
+                        });
+                        if (!picked) break;
+                      }
+
+                      // 3e passage: fallback sécurité
+                      if (selected.length < MAX_DISPLAY) {
+                        remaining.forEach((point) => {
+                          if (selected.length < MAX_DISPLAY) pushIfNew(point);
+                        });
+                      }
+
+                      displayPoints = selected;
+                    }
+
+                    const chartW = 1000;
+                    const chartH = 720;
+                    const pad = { top: 40, right: 40, bottom: 75, left: 75 };
+                    const plotW = chartW - pad.left - pad.right;
+                    const plotH = chartH - pad.top - pad.bottom;
+                    const xScale = (v: number) => pad.left + (v / 100) * plotW;
+                    const yScale = (s: number) => pad.top + plotH - s * plotH;
+
+                    // Legend pagination
+                    const LEGEND_INITIAL = 5;
+                    const legendItems = displayPoints;
+                    const visibleLegend = showAllLegend ? legendItems : legendItems.slice(0, LEGEND_INITIAL);
+                    const hasMoreLegend = legendItems.length > LEGEND_INITIAL;
+
+                    return (
+                      <Card className="w-full bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2 flex items-center justify-center gap-2" style={{ textAlign: 'center' }}>
+                          Matrice de Matérialité
+                          <InfoTooltip {...HELP.matricePositionnement} />
+                        </h3>
+                        {dataPoints.length > MAX_DISPLAY && (
+                          <p className="text-xs text-gray-400 mb-3" style={{ textAlign: 'center' }}>
+                            Top {MAX_DISPLAY} concurrents affichés sur {dataPoints.length}
+                          </p>
+                        )}
+
+                        <div style={{ position: 'relative' }}>
+                          <div
+                            style={
+                              isStarter
+                                ? { filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }
+                                : undefined
+                            }
+                          >
+                        {/* Legend with pagination */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16, alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 12, color: '#64748B' }}>Marques</span>
+                          {visibleLegend.map(d => (
+                            <div
+                              key={d.url}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 4, cursor: isStarter ? 'default' : 'pointer',
+                                padding: '2px 8px', borderRadius: 6,
+                                background: d.isTarget ? '#EEF2FF' : 'transparent',
+                                border: d.isTarget ? '1px solid #C7D2FE' : '1px solid transparent',
+                              }}
+                              onClick={() => {
+                                if (isStarter) return;
+                                setSelectedGeoEntry({
+                                  url: d.url,
+                                  domain: extractDomain(d.url),
+                                  data: { ...(d.scoreDetails || { pillars: d.pillars, gaps: d.gaps, total_score: d.totalScore, audited: d.audited }), visibility: d.visibility, sentiment: d.sentiment }
+                                });
+                                setGeoModalOpen(true);
+                              }}
+                            >
+                              <img
+                                src={d.favicon_url}
+                                alt={d.name}
+                                style={{ width: 16, height: 16, borderRadius: 3 }}
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                              <span style={{ fontSize: 11, color: d.isTarget ? '#4F46E5' : '#475569', fontWeight: d.isTarget ? 600 : 400 }}>
+                                {d.name}
+                              </span>
+                              {d.audited && (
+                                <span style={{ fontSize: 9, color: '#16A34A', fontWeight: 600 }} title="Audité">&#x2713;</span>
+                              )}
+                            </div>
+                          ))}
+                          {hasMoreLegend && (
+                            <button
+                              onClick={() => setShowAllLegend(!showAllLegend)}
+                              style={{
+                                fontSize: 11, color: '#475569', background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer',
+                                padding: '4px 12px', fontWeight: 600, borderRadius: '6px', transition: 'all 0.15s',
+                              }}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#F1F5F9'; }}
+                              onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; }}
+                            >
+                              {showAllLegend ? 'Voir moins' : `+${legendItems.length - LEGEND_INITIAL} autres`}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* SVG Scatter Chart */}
+                        <div style={{ overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+                          <svg viewBox={`0 0 ${chartW} ${chartH}`} style={{ width: '100%', maxWidth: chartW, height: 'auto' }}>
+                            {/* Quadrant backgrounds */}
+                            <rect x={pad.left} y={pad.top} width={plotW} height={plotH} fill="#FAFBFC" />
+
+                            {/* Quadrant labels */}
+                            <text x={pad.left + plotW * 0.25} y={pad.top + 22} textAnchor="middle" fontSize="14" fill="#6B7280" fontWeight="600">Niche Players</text>
+                            <text x={pad.left + plotW * 0.75} y={pad.top + 22} textAnchor="middle" fontSize="14" fill="#16A34A" fontWeight="600">Leaders</text>
+                            <text x={pad.left + plotW * 0.25} y={pad.top + plotH - 10} textAnchor="middle" fontSize="14" fill="#DC2626" fontWeight="600">Laggers</text>
+                            <text x={pad.left + plotW * 0.75} y={pad.top + plotH - 10} textAnchor="middle" fontSize="14" fill="#D97706" fontWeight="600">Controversial</text>
+
+                            {/* Grid lines */}
+                            {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(v => (
+                              <g key={`x-${v}`}>
+                                <line x1={xScale(v)} y1={pad.top} x2={xScale(v)} y2={pad.top + plotH} stroke="#E5E7EB" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "4 2"} />
+                                <text x={xScale(v)} y={pad.top + plotH + 20} textAnchor="middle" fontSize="11" fill="#9CA3AF">{v}%</text>
+                              </g>
+                            ))}
+                            {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map(s => (
+                              <g key={`y-${s}`}>
+                                <line x1={pad.left} y1={yScale(s)} x2={pad.left + plotW} y2={yScale(s)} stroke="#E5E7EB" strokeWidth={0.5} strokeDasharray={s === 0.5 ? "0" : "4 2"} />
+                                <text x={pad.left - 12} y={yScale(s) + 4} textAnchor="end" fontSize="11" fill="#9CA3AF">{s.toFixed(1)}</text>
+                              </g>
+                            ))}
+
+                            {/* Center cross */}
+                            <line x1={xScale(visibilityMid)} y1={pad.top} x2={xScale(visibilityMid)} y2={pad.top + plotH} stroke="#CBD5E1" strokeWidth={1} />
+                            <line x1={pad.left} y1={yScale(sentimentMid)} x2={pad.left + plotW} y2={yScale(sentimentMid)} stroke="#CBD5E1" strokeWidth={1} />
+
+                            {/* Axis labels */}
+                            <text x={pad.left + plotW / 2} y={chartH - 10} textAnchor="middle" fontSize="13" fill="#6B7280" fontWeight="500">Visibility</text>
+                            <text x={18} y={pad.top + plotH / 2} textAnchor="middle" fontSize="13" fill="#6B7280" fontWeight="500" transform={`rotate(-90, 18, ${pad.top + plotH / 2})`}>Sentiment</text>
+
+                            {/* Data points - render non-hovered first, hovered last so tooltip stays on top */}
+                            {[...displayPoints].sort((a, b) => (a.url === hoveredMatricePoint ? 1 : 0) - (b.url === hoveredMatricePoint ? 1 : 0)).map((d, i) => {
+                              const cx = xScale(d.visibility);
+                              const cy = yScale(d.sentiment);
+                              const quadrantInfo = getQuadrantInfo(d);
+                              const isHovered = hoveredMatricePoint === d.url;
+                              const tooltipW = 220;
+                              const tooltipH = 130;
+                              const tooltipX = cx + tooltipW + 20 > chartW ? cx - tooltipW - 10 : cx + 24;
+                              const tooltipY = cy - tooltipH / 2 < 0 ? 4 : (cy + tooltipH / 2 > chartH ? chartH - tooltipH - 4 : cy - tooltipH / 2);
+
+
+                              return (
+                                <g
+                                  key={d.url + i}
+                                  style={{ cursor: isStarter ? 'default' : 'pointer' }}
+                                  onMouseEnter={() => setHoveredMatricePoint(d.url)}
+                                  onMouseLeave={() => setHoveredMatricePoint(null)}
+                                  onClick={() => {
+                                    if (isStarter) return;
+                                    setSelectedGeoEntry({
+                                      url: d.url,
+                                      domain: extractDomain(d.url),
+                                      data: { ...(d.scoreDetails || { pillars: d.pillars, gaps: d.gaps, total_score: d.totalScore, audited: d.audited }), visibility: d.visibility, sentiment: d.sentiment }
+                                    });
+                                    setGeoModalOpen(true);
+                                  }}
+                                >
+                                  <circle cx={cx} cy={cy} r={isHovered ? 28 : 26} fill="rgba(0,0,0,0.06)" />
+                                  <circle
+                                    cx={cx} cy={cy} r={isHovered ? 26 : 24}
+                                    fill={d.isTarget ? '#4F46E5' : '#fff'}
+                                    stroke={d.isTarget ? '#4F46E5' : d.audited ? '#22C55E' : '#E2E8F0'}
+                                    strokeWidth={isHovered ? 3 : 2}
+                                    strokeDasharray={d.audited ? '0' : '4 2'}
+                                  />
+                                  <image
+                                    href={d.favicon_url}
+                                    x={cx - 14} y={cy - 14} width={28} height={28}
+                                    style={{ pointerEvents: 'none' }}
+                                  />
+                                  {isHovered && (
+                                    <foreignObject x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} style={{ pointerEvents: 'none', overflow: 'visible' }}>
+                                      <div style={{
+                                        background: '#F8FAFC', color: '#1E293B', borderRadius: 10, padding: '12px 14px',
+                                        fontSize: 11, lineHeight: 1.5, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', border: '1px solid #E2E8F0',
+                                      }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                          <span style={{ fontWeight: 700, fontSize: 13, color: '#1E293B' }}>{d.name}</span>
+                                          <span style={{ fontSize: 10, fontWeight: 600, color: quadrantInfo.color, background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>{quadrantInfo.label}</span>
+                                          {d.audited && <span style={{ fontSize: 9, color: '#16A34A', fontWeight: 600, background: '#F0FDF4', padding: '1px 4px', borderRadius: 3 }}>Audité</span>}
+                                        </div>
+                                        <div style={{ fontSize: 11, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
+                                          {quadrantInfo.desc}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 12, fontSize: 11 }}>
+                                          <span><span style={{ color: '#64748B' }}>Visibility </span><span style={{ fontWeight: 600, color: '#1E293B' }}>{d.visibility}%</span></span>
+                                          <span><span style={{ color: '#64748B' }}>Sentiment </span><span style={{ fontWeight: 600, color: '#1E293B' }}>{(d.sentiment * 100).toFixed(0)}%</span></span>
+                                        </div>
+                                      </div>
+                                    </foreignObject>
+                                  )}
+                                </g>
+                              );
+                            })}
+                          </svg>
+                        </div>
+                          </div>
+                          {isStarter && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                inset: 0,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(255,255,255,0.45)',
+                                borderRadius: 12,
+                                zIndex: 10,
+                                padding: 16,
+                              }}
+                            >
+                              <Lock size={32} style={{ color: '#6366F1', marginBottom: 12 }} />
+                              <p style={{ fontSize: 16, fontWeight: 600, color: '#1E293B', marginBottom: 4, textAlign: 'center' }}>
+                                Contenu réservé aux plans supérieurs
+                              </p>
+                              <p style={{ fontSize: 13, color: '#64748B', textAlign: 'center', maxWidth: 320 }}>
+                                Passez à un plan supérieur pour débloquer la matrice de matérialité
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    );
+                  })()}
+
+                  {/* Données Benchmark - Mode Paysage - Pleine Largeur */}
+                  {(() => {
+                  const _br2 = v1BenchmarkResults || (currentAnalysis as any)?.benchmark_results;
+                  if (!_br2?.benchmark) return null;
+                  const benchmarkData = _br2.benchmark;
+                  // Dédupliquer par domaine (éviter carmignac.fr et carmignac.fr/)
+                  const rawClassement = benchmarkData.classement || [];
+                  const seenDomains = new Set<string>();
+                  const classement = rawClassement.filter((e: any) => {
+                    const domain = extractDomain(e.url);
+                    if (seenDomains.has(domain)) return false;
+                    seenDomains.add(domain);
+                    return true;
+                  });
+                  const yourSiteDomain = extractDomain(currentAnalysis.url || '');
+                  const yourSiteIndex = classement.findIndex((e: any) => extractDomain(e.url) === yourSiteDomain);
+                  const yourSiteRank = yourSiteIndex >= 0 ? yourSiteIndex + 1 : null;
+
+                  // Rang Score Benchmark (materialityMatrix trié par total_score)
+                  const matBrandsForRank = materialityMatrix?.brands;
+                  let benchmarkRank: number | null = null;
+                  let benchmarkTotal: number | null = null;
+                  if (matBrandsForRank && matBrandsForRank.length > 0) {
+                    const sorted = [...matBrandsForRank].sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
+                    benchmarkTotal = sorted.length;
+                    const idx = sorted.findIndex((b) => b.is_target);
+                    benchmarkRank = idx >= 0 ? idx + 1 : null;
+                  }
+
+                  const activeRank = benchmarkView === 'raw_data' ? benchmarkRank : yourSiteRank;
+                  const activeTotal = benchmarkView === 'raw_data' ? benchmarkTotal : classement.length;
+                  const activeLabel = benchmarkView === 'raw_data' ? 'Score Benchmark' : 'Score GEO';
+
+                  return (
+                    <Card className="w-full bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                        {/* Header */}
+                        <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
+                          <div className="flex-1">
+                            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                              Analyse Benchmark
+                              <InfoTooltip {...HELP.analyseBenchmark} />
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {`Comparaison entre ${currentAnalysis.url || ''} et ${(activeTotal ?? 1) - 1} concurrent${(activeTotal ?? 1) - 1 > 1 ? 's' : ''} (${activeLabel})${activeRank ? `. Position du site cible : ${activeRank} sur ${activeTotal}` : ''}.`}
+                            </p>
+                          </div>
+                          {activeRank && (
+                            <div className="text-right">
+                              <div className="text-2xl md:text-3xl font-bold text-gray-900">{activeRank}{getOrdinalSuffix(activeRank)}</div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Dropdown et tableau en mode paysage */}
+                        <div className="w-full">
+                          <div className="flex justify-between items-center mb-4 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const rows: string[][] = [['Position', 'Marque', 'Domaine', 'Score']];
+                                classement.forEach((entry: any, idx: number) => {
+                                  const d = extractDomain(entry.url);
+                                  const comp = (currentAnalysis as any).competitors?.find((c: any) => extractDomain(c.url) === d);
+                                  const name = d === yourSiteDomain ? 'Votre site' : (comp?.name || d);
+                                  rows.push([String(idx + 1), name, d, String(entry.score || 0)]);
+                                });
+                                exportToCsvCompetition('benchmark-classement.csv', rows);
+                              }}
+                              className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-1.5 transition-colors bg-white flex-shrink-0"
+                            >
+                              <Download size={13} />
+                              CSV
+                            </button>
+                            <Select value={benchmarkView} onValueChange={(val) => setBenchmarkView(val as 'score' | 'raw_data')}>
+                              <SelectTrigger className="w-full sm:w-[200px] h-9 text-sm border-gray-300 bg-white">
+                                <SelectValue placeholder="Score Benchmark" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="score">Score GEO</SelectItem>
+                                <SelectItem value="raw_data">Score Benchmark</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {benchmarkView === 'score' ? (
+                          <>
+                          {/* Table Header - Mode Paysage avec plus de colonnes - Pleine Largeur */}
+                          <div className="w-full overflow-x-auto">
+                            <div className="min-w-[500px]">
+                              <div className="grid grid-cols-[60px_2fr_1fr] gap-6 pb-3 border-b-2 border-gray-200 mb-3">
+                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Position</div>
+                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
+                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Score</div>
+                              </div>
+
+                              {/* Liste scrollable en mode paysage */}
+                              <div className="max-h-[600px] overflow-y-auto">
+                                {classement.map((entry: any, idx: number) => {
+                                  const entryDomain = extractDomain(entry.url);
+                                  const competitor = (currentAnalysis as any).competitors?.find((c: any) => extractDomain(c.url) === entryDomain);
+                                  const isYourSite = entryDomain === yourSiteDomain;
+                                  const brandName = isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url));
+                                  const domain = extractDomain(entry.url);
+                                  const rank = idx + 1;
+
+                                  return (
+                                    <div
+                                      key={idx}
+                                      onClick={() => !isYourSite && setSelectedCompetitorDetail({ name: brandName, domain, rank, score: entry.score || 0, url: entry.url })}
+                                      className={`grid grid-cols-[60px_2fr_1fr] gap-6 py-4 border-b border-gray-100 last:border-b-0 transition-colors items-center ${isYourSite ? 'bg-blue-50/50' : 'hover:bg-gray-50 cursor-pointer'}`}
+                                    >
+                                      <div className="flex items-center">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${isYourSite ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                          {rank}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-3 min-w-0">
+                                        <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt={domain} width={20} height={20} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                        <div className="min-w-0">
+                                          <div className={`font-semibold text-sm ${isYourSite ? 'text-blue-600' : 'text-gray-900'}`}>
+                                            {brandName}
+                                          </div>
+                                          <div className="text-xs text-gray-500 truncate">{domain}</div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <div className="text-base font-bold text-gray-900">{entry.score || 0}%</div>
+                                        {!isYourSite && <ChevronRight size={14} className="text-gray-300 flex-shrink-0" />}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                          </>
+                          ) : (
+                          <>
+                          {/* Vue Analyse GEO - materiality_matrix */}
+                          {(() => {
+                            const matBrands = materialityMatrix?.brands;
+                            if (!matBrands || matBrands.length === 0) {
+                              return (
+                                <div className="text-center text-gray-500 py-8">
+                                  Aucune donnée GEO disponible pour cette analyse.
+                                </div>
+                              );
+                            }
+
+                            const rawEntries = matBrands
+                              .map((b: any) => ({
+                                url: b.url,
+                                domain: extractDomain(b.url),
+                                totalScore: b.total_score || 0,
+                                grade: '-',
+                                credibility: b.pillars?.credibility_authority?.score || 0,
+                                structure: b.pillars?.structure_readability?.score || 0,
+                                relevance: b.pillars?.contextual_relevance?.score || 0,
+                                technical: b.pillars?.technical_compatibility?.score || 0,
+                                recommendations: [],
+                                fullData: { pillars: b.pillars, gaps: b.gaps, total_score: b.total_score, audited: b.audited, visibility: b.visibility, sentiment: b.sentiment },
+                                brandName: b.name,
+                                isTarget: b.is_target,
+                              }))
+                              .sort((a: any, b: any) => b.totalScore - a.totalScore);
+
+                            const geoContent = (
+                              <div className="w-full overflow-x-auto">
+                                <div className="min-w-[700px]">
+                                  <div className="grid grid-cols-[60px_2fr_repeat(4,80px)_100px] gap-4 pb-3 border-b-2 border-gray-200 mb-3">
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Position</div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Crédibilité<InfoTooltip {...HELP.credibiliteAutorite} side="top" /></div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Structure<InfoTooltip {...HELP.structureListabilite} side="top" /></div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Pertinence<InfoTooltip {...HELP.pertinenceContextuelle} side="top" /></div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Technique<InfoTooltip {...HELP.compatibiliteTechnique} side="top" /></div>
+                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Total</div>
+                                  </div>
+
+                                  <div className="max-h-[600px] overflow-y-auto">
+                                    {rawEntries.map((entry: any, idx: number) => {
+                                      const isYourSite = entry.isTarget || false;
+                                      const brandName = isYourSite ? 'Votre site' : (entry.brandName || entry.domain);
+
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className={`grid grid-cols-[60px_2fr_repeat(4,80px)_100px] gap-4 py-4 border-b border-gray-100 last:border-b-0 transition-colors items-center ${isStarter ? '' : 'cursor-pointer hover:bg-gray-50'} ${isYourSite ? 'bg-blue-50/50' : ''}`}
+                                          onClick={() => {
+                                            if (isStarter) return;
+                                            setSelectedGeoEntry({ url: entry.url, domain: entry.domain, data: entry.fullData });
+                                            setGeoModalOpen(true);
+                                          }}
+                                        >
+                                          <div className="flex items-center">
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${isYourSite ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                              {idx + 1}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-3 min-w-0">
+                                            <img src={`https://www.google.com/s2/favicons?domain=${entry.domain}&sz=32`} alt={entry.domain} width={20} height={20} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                            <div className="min-w-0">
+                                              <div className={`font-semibold text-sm ${isYourSite ? 'text-blue-600' : 'text-gray-900'}`}>
+                                                {brandName}
+                                              </div>
+                                              <div className="text-xs text-gray-500 truncate">{entry.domain}</div>
+                                            </div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-sm font-semibold text-gray-900">{entry.credibility}</div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-sm font-semibold text-gray-900">{entry.structure}</div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-sm font-semibold text-gray-900">{entry.relevance}</div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-sm font-semibold text-gray-900">{entry.technical}</div>
+                                          </div>
+                                          <div className="text-center">
+                                            <div className="text-base font-bold text-gray-900">{entry.totalScore}%</div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+
+                            if (isStarter) {
+                              return (
+                                <div style={{ position: 'relative' }}>
+                                  <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }}>
+                                    {geoContent}
+                                  </div>
+                                  <div style={{
+                                    position: 'absolute', inset: 0,
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                    background: 'rgba(255,255,255,0.4)', zIndex: 10, borderRadius: '12px'
+                                  }}>
+                                    <Lock size={28} style={{ color: '#6366F1', marginBottom: 10 }} />
+                                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#1E293B', marginBottom: 4 }}>
+                                      Contenu réservé aux plans supérieurs
+                                    </p>
+                                    <p style={{ fontSize: '13px', color: '#64748B' }}>
+                                      Passez à un plan supérieur pour accéder à l'analyse GEO
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            return geoContent;
+                          })()}
+                          </>
+                          )}
+                        </div>
+                      </Card>
+                  );
+                })()}
+
+                {/* Modal détails GEO raw_data */}
+                <Dialog open={geoModalOpen} onOpenChange={(open) => {
+                  setGeoModalOpen(open);
+                  if (!open) setSelectedGeoEntry(null);
+                }}>
+                  <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
+                    {selectedGeoEntry && (() => {
+                      const d = selectedGeoEntry.data;
+                      const competitor = (currentAnalysis as any)?.competitors?.find((c: any) => c.url === selectedGeoEntry.url);
+                      const brandName = selectedGeoEntry.url === currentAnalysis?.url ? 'Votre site' : (competitor?.name || selectedGeoEntry.domain);
+                      const isAudited = !!d.audited;
+
+                      // Pillars depuis materiality_matrix
+                      const p = d.pillars as Record<string, { score: number; max: number }> | undefined;
+
+                      const categories = [
+                        {
+                          label: 'Crédibilité & Autorité',
+                          score: d.credibility_authority?.score ?? p?.credibility_authority?.score ?? 0,
+                          max: p?.credibility_authority?.max ?? 25,
+                          details: d.credibility_authority?.details || {},
+                          labels: {
+                            sources_verifiables: 'Sources vérifiables',
+                            certifications: 'Certifications',
+                            avis_clients: 'Avis clients',
+                            historique_marque: 'Historique marque',
+                          }
+                        },
+                        {
+                          label: 'Structure & Lisibilité',
+                          score: d.structure_readability?.score ?? p?.structure_readability?.score ?? 0,
+                          max: p?.structure_readability?.max ?? 25,
+                          details: d.structure_readability?.details || {},
+                          labels: {
+                            hierarchie: 'Hiérarchie',
+                            formatage: 'Formatage',
+                            lisibilite: 'Lisibilité',
+                            longueur_optimale: 'Longueur optimale',
+                            multimedia: 'Multimédia',
+                          }
+                        },
+                        {
+                          label: 'Pertinence contextuelle',
+                          score: d.contextual_relevance?.score ?? p?.contextual_relevance?.score ?? 0,
+                          max: p?.contextual_relevance?.max ?? 25,
+                          details: d.contextual_relevance?.details || {},
+                          labels: {
+                            reponse_intention: 'Réponse intention',
+                            personnalisation: 'Personnalisation',
+                            actualite: 'Actualité',
+                            langue_naturelle: 'Langue naturelle',
+                            localisation: 'Localisation',
+                          }
+                        },
+                        {
+                          label: 'Compatibilité technique',
+                          score: d.technical_compatibility?.score ?? p?.technical_compatibility?.score ?? 0,
+                          max: p?.technical_compatibility?.max ?? 25,
+                          details: d.technical_compatibility?.details || {},
+                          labels: {
+                            donnees_structurees: 'Données structurées',
+                            meta_donnees: 'Métadonnées',
+                            performances: 'Performances',
+                            compatibilite_mobile: 'Compatibilité mobile',
+                            securite: 'Sécurité',
+                          }
+                        },
+                      ];
+
+                      // Quadrant info
+                      const vis = d.visibility ?? 0;
+                      const sent = d.sentiment ?? 0;
+                      const visMid = 50;
+                      const sentMid = 0.5;
+                      const quadrant = vis >= visMid
+                        ? (sent >= sentMid
+                          ? { label: 'Leader', color: '#22C55E', desc: 'Forte visibilité et perception positive par les IA.' }
+                          : { label: 'Controversial', color: '#F59E0B', desc: 'Visible mais mal perçu par les IA.' })
+                        : (sent >= sentMid
+                          ? { label: 'Niche Player', color: '#6366F1', desc: 'Bien perçu mais peu visible par les IA.' }
+                          : { label: 'Lagger', color: '#EF4444', desc: 'Faible visibilité et perception négative.' });
+
+                      // Gaps
+                      const gaps = (d.gaps as string[]) || [];
+                      const gapLabels: Record<string, string> = {
+                        sources_verifiables: 'Sources vérifiables', certifications: 'Certifications',
+                        avis_clients: 'Avis clients', historique_marque: 'Historique marque',
+                        hierarchie: 'Hiérarchie', formatage: 'Formatage', lisibilite: 'Lisibilité',
+                        longueur_optimale: 'Longueur optimale', multimedia: 'Multimédia',
+                        reponse_intention: 'Réponse intention', personnalisation: 'Personnalisation',
+                        actualite: 'Actualité', langue_naturelle: 'Langue naturelle', localisation: 'Localisation',
+                        donnees_structurees: 'Données structurées', meta_donnees: 'Métadonnées',
+                        performances: 'Performances', compatibilite_mobile: 'Compatibilité mobile', securite: 'Sécurité',
+                      };
+
+                      return (
+                        <div className="space-y-6">
+                          {/* Header */}
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <img src={`https://www.google.com/s2/favicons?domain=${selectedGeoEntry.domain}&sz=64`} alt={selectedGeoEntry.domain} width={40} height={40} style={{ borderRadius: '8px' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <div>
+                              <h2 className="text-lg md:text-xl font-bold text-gray-900">{brandName}</h2>
+                              <p className="text-sm text-gray-500">{selectedGeoEntry.domain}</p>
+                            </div>
+                            <div className="sm:ml-auto text-left sm:text-right">
+                              <div className="text-2xl md:text-3xl font-bold text-gray-900">{d.total_score || 0}<span className="text-base md:text-lg text-gray-400">/100</span></div>
+                            </div>
+                          </div>
+
+                          {/* Quadrant */}
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: quadrant.color + '18', color: quadrant.color }}>{quadrant.label}</span>
+                          </div>
+                          <p className="text-xs text-gray-500">{quadrant.desc}</p>
+
+                          {/* Categories */}
+                          {categories.length > 0 && (
+                            <div className="space-y-4">
+                              {categories.map((cat, catIdx) => {
+                                const hasDetails = Object.keys(cat.details).length > 0;
+                                const scoreVal = Math.round(cat.score * 10) / 10;
+                                const barColor = scoreVal >= 18 ? '#10B981' : scoreVal >= 10 ? '#F59E0B' : '#EF4444';
+                                return (
+                                  <div key={catIdx} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <span className="text-sm font-semibold text-gray-800">{cat.label}</span>
+                                      <span className="text-lg font-bold" style={{ color: barColor }}>
+                                        {scoreVal}
+                                      </span>
+                                    </div>
+                                    {hasDetails && (
+                                      <div className="space-y-2">
+                                        {Object.entries(cat.details as Record<string, number>).map(([key, value]) => {
+                                          const label = (cat.labels as Record<string, string>)[key] || key.replace(/_/g, ' ');
+                                          const percentage = Math.min((value / 5) * 100, 100);
+                                          return (
+                                            <div key={key} className="flex items-center gap-3">
+                                              <span className="text-xs text-gray-500 w-[100px] sm:w-[140px] shrink-0">{label}</span>
+                                              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div className="h-full rounded-full bg-gray-900" style={{ width: `${percentage}%`, transition: 'width 0.5s ease' }} />
+                                              </div>
+                                              <span className="text-xs font-semibold text-gray-700 w-[28px] text-right">{value}</span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+
+                          {/* Gaps */}
+                          {gaps.length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-800 mb-2">Points faibles identifiés</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {gaps.map(g => (
+                                  <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-600 font-medium">
+                                    {gapLabels[g] || g.replace(/_/g, ' ')}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </DialogContent>
+                </Dialog>
+
+
+
               </div>
             )}
 
-            {/* Analyses LLM détaillées */}
-            {!isAnalyzing && currentAnalysis && miniLLMResults.length > 0 && (
-              <Card className="border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold text-foreground">
-                    Analyses  Détaillées
-                  </CardTitle>
-                  <p className="text-muted-foreground">
-                    Analyses approfondies de vos concurrents principaux
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <MiniLLMAnalysis 
-                    data={miniLLMResults} 
-                    isLoading={loadingMiniLLM}
-                  />
-                </CardContent>
-              </Card>
-            )}
+        </div>
+      </div>
 
-            {/* Affichage détaillé de l'analyse concurrentielle */}
-            {!isAnalyzing && currentAnalysis && (
-              <>
-                {console.log('🔍 Debug currentAnalysis:', currentAnalysis)}
-                {console.log('🔍 Debug consolidated_competitors:', currentAnalysis.consolidated_competitors)}
-                {console.log('🔍 Debug competitors length:', currentAnalysis.consolidated_competitors?.length || 0)}
-                {console.log('🔍 Debug models_analysis:', currentAnalysis.models_analysis)}
-                {console.log('🔍 Debug models_analysis length:', currentAnalysis.models_analysis?.length || 0)}
-                {console.log('🔍 Debug first model competitors:', currentAnalysis.models_analysis?.[0]?.competitors)}
-                {console.log('🔍 Debug first model competitors length:', currentAnalysis.models_analysis?.[0]?.competitors?.length || 0)}
-                {console.log('🔍 Debug target_positioning:', currentAnalysis.target_positioning)}
-                {console.log('🔍 Debug global_stats:', currentAnalysis.global_stats)}
-                {/* <DetailedCompetitiveAnalysis 
-                  competitors={(() => {
-                   //console.log('🔍 Fallback logic - consolidated_competitors length:', currentAnalysis.consolidated_competitors?.length || 0);
-                    
-                    if (currentAnalysis.consolidated_competitors?.length > 0) {
-                     //console.log('✅ Using consolidated_competitors');
-                      return currentAnalysis.consolidated_competitors.map(comp => ({
-                        name: comp.name,
-                        domain: comp.primary_url,
-                        traffic: 0,
-                        keywords: 0,
-                        backlinks: 0,
-                        domain_rating: comp.average_score,
-                        organic_keywords: 0,
-                        paid_keywords: 0,
-                        top_keywords: [],
-                        strengths: [],
-                        weaknesses: [],
-                        opportunities: []
-                      }));
-                    } else {
-                     //console.log('🔄 Using models_analysis fallback');
-                      const extracted = currentAnalysis.models_analysis?.flatMap(model => {
-                       //console.log('🔍 Processing model:', model.model_info?.display_name);
-                       //console.log('🔍 Model competitors:', model.competitors?.length || 0);
-                        return model.competitors?.map(comp => ({
-                          name: comp.name,
-                          domain: comp.url,
-                          traffic: 0,
-                          keywords: 0,
-                          backlinks: 0,
-                          domain_rating: comp.similarity_score,
-                          organic_keywords: 0,
-                          paid_keywords: 0,
-                          top_keywords: comp.mentioned_features || [],
-                          strengths: comp.competitive_advantages || [],
-                          weaknesses: [],
-                          opportunities: [],
-                          // Toutes les données supplémentaires
-                          url: comp.url,
-                          alternative_urls: comp.alternative_urls || [],
-                          similarity_score: comp.similarity_score,
-                          confidence_level: comp.confidence_level,
-                          model_rank: comp.model_rank,
-                          reasoning: comp.reasoning,
-                          context_snippet: comp.context_snippet,
-                          mentioned_features: comp.mentioned_features || [],
-                          competitive_advantages: comp.competitive_advantages || []
-                        })) || [];
-                      }) || [];
-                     //console.log('🔍 Extracted competitors:', extracted.length);
-                      return extracted;
-                    }
-                  })()} 
-                  isLoading={false}
-                /> */}
-               
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-      </div>
+      {/* Modal fiche détail concurrent */}
+      {selectedCompetitorDetail && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedCompetitorDetail(null)}>
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedCompetitorDetail(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors"
+            >
+              <XIcon size={18} />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-5">
+              <img
+                src={`https://www.google.com/s2/favicons?domain=${selectedCompetitorDetail.domain}&sz=64`}
+                alt={selectedCompetitorDetail.domain}
+                className="w-10 h-10 rounded-xl flex-shrink-0"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+              <div>
+                <h2 className="text-base font-bold text-gray-900">{selectedCompetitorDetail.name}</h2>
+                <a
+                  href={selectedCompetitorDetail.url.startsWith('http') ? selectedCompetitorDetail.url : `https://${selectedCompetitorDetail.url}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                >
+                  {selectedCompetitorDetail.domain}
+                  <ExternalLink size={10} />
+                </a>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="p-3 bg-gray-50 rounded-xl text-center">
+                <div className="text-2xl font-extrabold text-indigo-600">{selectedCompetitorDetail.rank}<sup className="text-sm font-semibold text-gray-400">e</sup></div>
+                <div className="text-xs text-gray-500 mt-0.5">Position</div>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl text-center">
+                <div className="text-2xl font-extrabold text-gray-900">{selectedCompetitorDetail.score}%</div>
+                <div className="text-xs text-gray-500 mt-0.5 flex items-center justify-center gap-1">Score GEO<InfoTooltip {...HELP.scoreGeoGlobal} side="top" /></div>
+              </div>
+            </div>
+
+            {/* Barre de score colorée */}
+            <div className="mb-4">
+              <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+                <span className="flex items-center gap-1">Score GEO<InfoTooltip {...HELP.scoreGeoGlobal} side="top" /></span>
+                <span style={{ color: selectedCompetitorDetail.score >= 70 ? '#10B981' : selectedCompetitorDetail.score >= 40 ? '#F97316' : '#EF4444' }}>
+                  {selectedCompetitorDetail.score >= 70 ? 'Bon' : selectedCompetitorDetail.score >= 40 ? 'Moyen' : 'Faible'}
+                </span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${selectedCompetitorDetail.score}%`,
+                    backgroundColor: selectedCompetitorDetail.score >= 70 ? '#10B981' : selectedCompetitorDetail.score >= 40 ? '#F97316' : '#EF4444',
+                  }}
+                />
+              </div>
+            </div>
+
+            <a
+              href={selectedCompetitorDetail.url.startsWith('http') ? selectedCompetitorDetail.url : `https://${selectedCompetitorDetail.url}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Visiter le site
+              <ExternalLink size={14} />
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

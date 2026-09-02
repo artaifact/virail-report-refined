@@ -48,7 +48,6 @@ export function useAuth() {
           });
         }
       } catch (error) {
-        console.error('Erreur lors de l\'initialisation de l\'authentification:', error);
         if (!cancelled) {
           setAuthState({
             user: null,
@@ -78,6 +77,8 @@ export function useAuth() {
       toast({
         title: "Connexion réussie",
         description: `Bienvenue ${response.user.username}!`,
+        variant: "success" as any,
+        duration: 3000,
       });
 
       return response;
@@ -89,6 +90,7 @@ export function useAuth() {
         title: "Erreur de connexion",
         description: message,
         variant: "destructive",
+        duration: 5000,
       });
       
       throw error;
@@ -110,6 +112,8 @@ export function useAuth() {
       toast({
         title: "Inscription réussie",
         description: `Bienvenue ${response.user.username}!`,
+        variant: "success" as any,
+        duration: 3000,
       });
 
       return response;
@@ -121,6 +125,7 @@ export function useAuth() {
         title: "Erreur d'inscription",
         description: message,
         variant: "destructive",
+        duration: 5000,
       });
       
       throw error;
@@ -138,14 +143,16 @@ export function useAuth() {
       });
 
       toast({
-        title: "Déconnexion",
-        description: "Vous avez été déconnecté avec succès",
+        title: "Déconnexion réussie",
+        description: "À bientôt !",
+        duration: 3000,
       });
     } catch (error) {
       toast({
         title: "Erreur",
         description: "Erreur lors de la déconnexion",
         variant: "destructive",
+        duration: 5000,
       });
     }
   }, []);
@@ -164,8 +171,9 @@ export function useAuth() {
         title: "Erreur de connexion Google",
         description: message,
         variant: "destructive",
+        duration: 5000,
       });
-      
+
       throw error;
     }
   }, []);
@@ -173,9 +181,9 @@ export function useAuth() {
   const handleGoogleCallback = useCallback(async () => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }));
-      
+
       const response = await AuthService.handleGoogleCallback();
-      
+
       setAuthState({
         user: response.user,
         isAuthenticated: true,
@@ -185,19 +193,22 @@ export function useAuth() {
       toast({
         title: "Connexion Google réussie",
         description: `Bienvenue ${response.user.username}!`,
+        variant: "success" as any,
+        duration: 3000,
       });
 
       return response;
     } catch (error) {
       setAuthState(prev => ({ ...prev, isLoading: false }));
-      
+
       const message = error instanceof Error ? error.message : 'Erreur de connexion Google';
       toast({
         title: "Erreur de connexion Google",
         description: message,
         variant: "destructive",
+        duration: 5000,
       });
-      
+
       throw error;
     }
   }, []);

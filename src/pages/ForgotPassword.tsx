@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { AuthService } from '@/services/authService';
-import { ArrowLeft, Mail, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 
 const ForgotPassword: React.FC = () => {
+  usePageTitle('Mot de passe oublié');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
@@ -24,7 +22,7 @@ const ForgotPassword: React.FC = () => {
 
     try {
       const result = await AuthService.forgotPassword(email);
-      
+
       if (result.success) {
         setIsEmailSent(true);
         toast({
@@ -49,208 +47,128 @@ const ForgotPassword: React.FC = () => {
 
   if (isEmailSent) {
     return (
-      <div className="min-h-screen flex bg-background text-foreground">
-        {/* Section gauche - Formulaire */}
-        <div className="flex-1 flex items-center justify-center p-8 bg-background">
-          <div className="w-full max-w-md">
-            <div className="text-center mb-8">
-              <div className="lg:hidden flex items-center justify-center gap-3 mb-6">
-                <img 
-                  src="/LOGO BLEU FOND TRANSPARENT (1).png" 
-                  alt="BPC Logo" 
-                  className="h-12 w-auto"
-                />
-                <h1 className="text-2xl font-bold text-foreground">Virail Studio</h1>
+      <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
+        <main className="flex-1 flex items-center justify-center py-16 px-4">
+          <div className="w-full max-w-md mx-auto">
+            <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
+              <div className="text-center mb-8">
+                <div className="mx-auto w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+                <h1 className="text-3xl md:text-4xl font-semibold text-[#1b1b1f] mb-3">
+                  Email envoyé !
+                </h1>
+                <p className="text-[15px] md:text-[16px] text-[#6e6e73]">
+                  Nous avons envoyé un lien de réinitialisation à votre adresse email.
+                </p>
               </div>
-              <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-              <h2 className="text-3xl font-bold text-foreground mb-2">Email envoyé !</h2>
-              <p className="text-muted-foreground">Nous avons envoyé un lien de réinitialisation à votre adresse email.</p>
-            </div>
 
-            <Card className="shadow-sm border border-border bg-card">
-              <CardContent className="p-8">
-                <Alert className="mb-6">
-                  <Mail className="h-4 w-4" />
-                  <AlertDescription>
-                    Vérifiez votre boîte de réception et votre dossier spam. 
-                    Le lien de réinitialisation expire dans 1 heure.
-                  </AlertDescription>
-                </Alert>
-                
-                <div className="space-y-3">
-                  <Button 
-                    onClick={() => navigate('/login')} 
-                    className="w-full bg-[#1A3AFF] hover:bg-[#2E4CFF] text-white py-3 font-medium transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg rounded-xl"
-                  >
-                    Retour à la connexion
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setIsEmailSent(false);
-                      setEmail('');
-                    }}
-                    className="w-full border-2 border-[#3A3A3A] bg-card text-foreground hover:bg-[#2E2E3E] hover:text-white font-medium py-3 rounded-xl transition-all duration-200"
-                  >
-                    Envoyer un nouvel email
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              <Alert className="mb-6">
+                <Mail className="h-4 w-4" />
+                <AlertDescription>
+                  Vérifiez votre boîte de réception et votre dossier spam.
+                  Le lien de réinitialisation expire dans 1 heure.
+                </AlertDescription>
+              </Alert>
 
-        {/* Section droite - Informations */}
-        <div className="hidden lg:flex lg:flex-1 bg-card relative overflow-hidden border-l border-border">
-          <div className="absolute inset-0 bg-muted/20" />
-          <div className="relative z-10 flex flex-col justify-center p-12 text-foreground">
-            <div className="mb-8">
-              <h3 className="text-4xl font-bold mb-4">Récupération de compte</h3>
-              <p className="text-xl text-foreground/90 leading-relaxed">
-                Un email de réinitialisation a été envoyé à votre adresse. 
-                Suivez les instructions pour créer un nouveau mot de passe sécurisé.
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              <div className="flex items-center gap-4 text-foreground/90">
-                <div className="w-8 h-8 bg-card/10 rounded-lg flex items-center justify-center">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <span>Vérifiez votre boîte de réception</span>
-              </div>
-              <div className="flex items-center gap-4 text-foreground/90">
-                <div className="w-8 h-8 bg-card/10 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4" />
-                </div>
-                <span>Lien sécurisé et temporaire</span>
-              </div>
-              <div className="flex items-center gap-4 text-foreground/90">
-                <div className="w-8 h-8 bg-card/10 rounded-lg flex items-center justify-center">
-                  <ArrowLeft className="w-4 h-4" />
-                </div>
-                <span>Retour facile à la connexion</span>
+              <div className="space-y-3">
+                <button
+                  onClick={() => navigate('/login')}
+                  className="w-full bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg"
+                >
+                  Retour à la connexion
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEmailSent(false);
+                    setEmail('');
+                  }}
+                  className="w-full py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold border-2 border-slate-200 text-[#6e6e73] hover:bg-slate-50 transition-colors"
+                >
+                  Envoyer un nouvel email
+                </button>
               </div>
             </div>
           </div>
-        </div>
+        </main>
+
+        <footer className="w-full px-6 py-4 text-center">
+          <p className="text-sm text-[#6e6e73]">© 2025 Virail. Tous droits réservés.</p>
+        </footer>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground">
-      {/* Section gauche - Formulaire */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="lg:hidden flex items-center justify-center gap-3 mb-6">
-              <img 
-                src="/LOGO BLEU FOND TRANSPARENT (1).png" 
-                alt="BPC Logo" 
-                className="h-12 w-auto"
-              />
-              <h1 className="text-2xl font-bold text-foreground">Virail Studio</h1>
+    <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
+      <main className="flex-1 flex items-center justify-center py-16 px-4">
+        <div className="w-full max-w-md mx-auto">
+          <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl md:text-4xl font-semibold text-[#1b1b1f] mb-3">
+                Mot de passe oublié ?
+              </h1>
+              <p className="text-[15px] md:text-[16px] text-[#6e6e73]">
+                Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+              </p>
             </div>
-            <h2 className="text-3xl font-bold text-foreground mb-2">Mot de passe oublié ?</h2>
-            <p className="text-muted-foreground">Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.</p>
-          </div>
 
-          <Card className="shadow-sm border border-border bg-card">
-            <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-foreground font-medium">Adresse email</Label>
-                  <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-neutral-700 transition-colors" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="votre@email.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      disabled={isLoading}
-                      className="pl-12 py-3 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 bg-card/50"
-                    />
-                  </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label htmlFor="email" className="block text-[11px] uppercase tracking-wide font-bold text-[#1b1b1f] mb-2 ml-1">
+                  Adresse email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="votre@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className="w-full bg-[#f7f8fc] rounded-xl px-4 py-3.5 text-sm md:text-[15px] text-[#1b1b1f] placeholder:text-slate-300 border border-transparent focus:bg-white focus:border-[#9cb5ff] focus:ring-0 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+
+              {error && (
+                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm">
+                  <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-red-700 font-medium">{error}</p>
                 </div>
+              )}
 
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
+              <button
+                type="submit"
+                disabled={isLoading || !email}
+                className="w-full bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Envoi en cours...
+                  </div>
+                ) : (
+                  'Envoyer le lien de réinitialisation'
                 )}
+              </button>
+            </form>
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-[#1A3AFF] hover:bg-[#2E4CFF] text-white py-3 font-medium transition-all duration-200 transform hover:scale-[1.02] hover:shadow-lg rounded-xl"
-                  disabled={isLoading || !email}
-                >
-                  {isLoading ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Envoi en cours...
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-5 h-5" />
-                      Envoyer le lien de réinitialisation
-                    </div>
-                  )}
-                </Button>
-              </form>
-
-              <div className="mt-6 text-center">
-                <Link 
-                  to="/login" 
-                  className="inline-flex items-center text-sm text-primary hover:text-primary/90 transition-colors"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Retour à la connexion
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Section droite - Informations */}
-      <div className="hidden lg:flex lg:flex-1 bg-card relative overflow-hidden border-l border-border">
-        <div className="absolute inset-0 bg-muted/20" />
-        <div className="relative z-10 flex flex-col justify-center p-12 text-foreground">
-          <div className="mb-8">
-            <h3 className="text-4xl font-bold mb-4">Récupération sécurisée</h3>
-            <p className="text-xl text-foreground/90 leading-relaxed">
-              Pas de panique ! Nous vous aidons à récupérer l'accès à votre compte 
-              de manière sécurisée et rapide.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 text-foreground/90">
-              <div className="w-8 h-8 bg-card/10 rounded-lg flex items-center justify-center">
-                <Mail className="w-4 h-4" />
-              </div>
-              <span>Email de réinitialisation sécurisé</span>
-            </div>
-            <div className="flex items-center gap-4 text-foreground/90">
-              <div className="w-8 h-8 bg-card/10 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-4 h-4" />
-              </div>
-              <span>Processus simple et rapide</span>
-            </div>
-            <div className="flex items-center gap-4 text-foreground/90">
-              <div className="w-8 h-8 bg-card/10 rounded-lg flex items-center justify-center">
-                <ArrowLeft className="w-4 h-4" />
-              </div>
-              <span>Retour immédiat à vos analyses</span>
+            <div className="mt-6 text-center">
+              <Link
+                to="/login"
+                className="inline-flex items-center text-sm text-[#9cb5ff] hover:text-[#8ca5ef] font-semibold transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Retour à la connexion
+              </Link>
             </div>
           </div>
         </div>
-      </div>
+      </main>
+
+      <footer className="w-full px-6 py-4 text-center">
+        <p className="text-sm text-[#6e6e73]">© 2025 Virail. Tous droits réservés.</p>
+      </footer>
     </div>
   );
 };

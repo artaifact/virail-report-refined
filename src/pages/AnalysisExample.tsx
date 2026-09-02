@@ -46,7 +46,6 @@ const AnalysisExample: React.FC = () => {
       const result = await analyzeWebsite(url, `analysis_${Date.now()}`);
       setResults(result);
     } catch (error) {
-      console.error('Erreur lors de l\'analyse:', error);
       setAnalysisError(error);
     }
   };
@@ -75,7 +74,6 @@ const AnalysisExample: React.FC = () => {
       });
       setResults(result);
     } catch (error) {
-      console.error('Erreur lors de l\'analyse de concurrents:', error);
       setAnalysisError(error);
     }
   };
@@ -101,7 +99,6 @@ const AnalysisExample: React.FC = () => {
       const result = await optimizeWebsite(url);
       setResults(result);
     } catch (error) {
-      console.error('Erreur lors de l\'optimisation:', error);
       setAnalysisError(error);
     }
   };
@@ -174,7 +171,7 @@ const AnalysisExample: React.FC = () => {
                   className="flex items-center gap-2"
                 >
                   {isProcessing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   ) : (
                     <BarChart3 className="h-4 w-4" />
                   )}
@@ -189,7 +186,7 @@ const AnalysisExample: React.FC = () => {
                   className="flex items-center gap-2"
                 >
                   {isProcessing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   ) : (
                     <Target className="h-4 w-4" />
                   )}
@@ -204,7 +201,7 @@ const AnalysisExample: React.FC = () => {
                   className="flex items-center gap-2"
                 >
                   {isProcessing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   ) : (
                     <Zap className="h-4 w-4" />
                   )}

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npm run build)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(cd:*)",
+      "Bash(python --version 2>&1 || py --version 2>&1 || node --version 2>&1)",
+      "Bash(wc:*)",
+      "Bash(node:*)",
+      "Bash(echo OK:*)",
+      "Bash(head:*)"
+    ]
+  }
+}

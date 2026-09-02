@@ -47,7 +47,6 @@ export function useOnboarding(): UseOnboardingReturn {
       }
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement de l\'onboarding';
       setError(errorMessage);
-      console.error('Erreur lors du chargement de l\'onboarding:', err);
       // Ne pas afficher d'erreur toast pour éviter de perturber l'utilisateur
     } finally {
       setIsLoading(false);
@@ -81,7 +80,6 @@ export function useOnboarding(): UseOnboardingReturn {
           err instanceof Error
             ? err.message
             : "Erreur lors de l'enregistrement de l'étape";
-        console.error('Erreur lors de la complétion de l\'étape:', err);
         toast({
           title: 'Erreur',
           description: errorMessage,
@@ -123,7 +121,6 @@ export function useOnboarding(): UseOnboardingReturn {
           err instanceof Error
             ? err.message
             : "Erreur lors de la finalisation de l'onboarding";
-        console.error('Erreur lors de la complétion de l\'onboarding:', err);
         toast({
           title: 'Erreur',
           description: errorMessage,
@@ -141,7 +138,6 @@ export function useOnboarding(): UseOnboardingReturn {
     async (reason: 'user_choice' | 'timeout' | 'error' = 'user_choice') => {
       try {
         const response = await onboardingService.skipOnboarding({ reason });
-        console.log('Onboarding skipped:', response);
         
         // Marquer immédiatement comme complété pour fermer l'onboarding
         // Ne PAS recharger le statut immédiatement car le backend peut ne pas avoir
@@ -163,8 +159,6 @@ export function useOnboarding(): UseOnboardingReturn {
           err instanceof Error
             ? err.message
             : "Erreur lors de l'ignorance de l'onboarding";
-        console.error('Erreur lors du skip de l\'onboarding:', err);
-        
         // Même en cas d'erreur, marquer comme complété pour fermer
         setStatus({
           completed: true,

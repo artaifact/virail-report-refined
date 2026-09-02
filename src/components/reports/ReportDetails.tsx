@@ -195,10 +195,10 @@ const ReportDetails = ({ mappedData }: ReportDetailsProps) => {
             className="cursor-pointer hover:bg-gray-50 transition-colors"
             onClick={() => setExpandedSection(expandedSection === key ? null : key)}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <div className={`text-2xl font-bold ${getScoreColor(section.score)}`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                <div className="text-center flex-shrink-0">
+                  <div className={`text-xl sm:text-2xl font-bold ${getScoreColor(section.score)}`}>
                     {section.score}/100
                   </div>
                   <Badge 
@@ -211,16 +211,18 @@ const ReportDetails = ({ mappedData }: ReportDetailsProps) => {
                     {section.score >= 80 ? "Excellent" : section.score >= 60 ? "Moyen" : "Faible"}
                   </Badge>
                 </div>
-                <div>
-                  <CardTitle className="text-lg text-gray-900">{section.title}</CardTitle>
-                  <Progress value={section.score} className="w-64 h-2 mt-2" />
+                <div className="min-w-0">
+                  <CardTitle className="text-base sm:text-lg text-gray-900">{section.title}</CardTitle>
+                  <Progress value={section.score} className="w-full max-w-64 h-2 mt-2" />
                 </div>
               </div>
-              {expandedSection === key ? (
-                <ChevronDown className="h-5 w-5 text-gray-500" />
-              ) : (
-                <ChevronRight className="h-5 w-5 text-gray-500" />
-              )}
+              <div className="flex-shrink-0">
+                {expandedSection === key ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                )}
+              </div>
             </div>
           </CardHeader>
           

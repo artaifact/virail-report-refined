@@ -36,15 +36,11 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
   const loadUsers = async () => {
     try {
       setLoading(true);
-     //console.log('🔄 Chargement des utilisateurs en attente...', { currentPage, perPage });
       const response: AdminUsersResponse = await AdminService.getPendingUsers(currentPage, perPage);
-     //console.log('✅ Réponse reçue dans le composant:', response);
       setUsers(response.users);
       setTotal(response.total);
       setTotalPages(response.total_pages);
-     //console.log(`✅ ${response.users.length} utilisateur(s) en attente chargé(s) sur ${response.total} total`);
     } catch (error) {
-      console.error('❌ Erreur lors du chargement des utilisateurs en attente:', error);
       toast({
         title: "Erreur de chargement",
         description: error instanceof Error ? error.message : "Impossible de charger les utilisateurs en attente",
@@ -67,7 +63,6 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
       setNotes('');
       await loadUsers(); // Recharger la liste
     } catch (error) {
-      console.error('Erreur lors de l\'approbation:', error);
       toast({
         title: "Erreur",
         description: error instanceof Error ? error.message : "Impossible d'approuver l'utilisateur",
@@ -90,7 +85,6 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
       setNotes('');
       await loadUsers(); // Recharger la liste
     } catch (error) {
-      console.error('Erreur lors du rejet:', error);
       toast({
         title: "Erreur",
         description: error instanceof Error ? error.message : "Impossible de rejeter l'utilisateur",
@@ -150,7 +144,7 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
 
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
               <span className="ml-2 text-muted-foreground">Chargement...</span>
             </div>
           ) : filteredUsers.length === 0 ? (
@@ -237,7 +231,7 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
                                 >
                                   {actionLoading === user.id ? (
                                     <>
-                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
                                       Traitement...
                                     </>
                                   ) : (
@@ -300,7 +294,7 @@ export const PendingUsersManagement: React.FC<PendingUsersManagementProps> = ({ 
                                 >
                                   {actionLoading === user.id ? (
                                     <>
-                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
                                       Traitement...
                                     </>
                                   ) : (
