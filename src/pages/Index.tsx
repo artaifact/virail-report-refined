@@ -222,36 +222,7 @@ function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReport
   })) : [];
 
   return (
-    <div className="citations-chart relative w-full">
-      {/* Target GEO Score - En haut à droite de Citations totales */}
-      {targetGeoScore !== null && targetGeoScore !== undefined && (
-        <div className="w-full sm:w-auto flex justify-end mb-2 sm:mb-0 sm:absolute sm:top-0 sm:right-2 md:right-4 z-10">
-          <div 
-            className="inline-flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white/95 sm:bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-xs hover:shadow-sm transition-all"
-            title="Score GEO Cible (Target GEO Score)"
-          >
-            <div className="flex flex-col text-right">
-              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                Score GEO
-              </span>
-              <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">
-                Cible
-              </span>
-            </div>
-            <div className={cn(
-              "flex items-center justify-center min-w-[34px] h-[34px] sm:min-w-[38px] sm:h-[38px] px-1.5 rounded-lg font-extrabold text-sm sm:text-base shadow-xs",
-              targetGeoScore >= 75
-                ? "bg-emerald-600 text-white shadow-emerald-200/50"
-                : targetGeoScore >= 50
-                ? "bg-indigo-600 text-white shadow-indigo-200/50"
-                : "bg-amber-500 text-white shadow-amber-200/50"
-            )}>
-              {targetGeoScore}
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="citations-chart">
       <div className="relative w-fit mx-auto">
         <svg viewBox="0 0 280 280" className="w-full max-w-[200px] sm:max-w-[240px] h-auto mx-auto">
           {/* Background circle */}
@@ -384,6 +355,77 @@ function NavigationButtons({ activeView, onViewChange }: { activeView: string, o
 }
 
 /**
+ * Jauge circulaire Score GEO (Score GEO Cible)
+ */
+export function GeoScoreGauge({ score, className }: { score: number; className?: string }) {
+  const normalized = Math.max(0, Math.min(100, Math.round(score)));
+  const strokeColor = normalized >= 75 ? '#10B981' : normalized >= 50 ? '#6366F1' : '#F59E0B';
+  const badgeColor = normalized >= 75 
+    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' 
+    : normalized >= 50 
+    ? 'bg-indigo-50 text-indigo-700 border-indigo-200/80' 
+    : 'bg-amber-50 text-amber-700 border-amber-200/80';
+  const statusLabel = normalized >= 75 ? 'Excellent' : normalized >= 50 ? 'Bon' : 'À améliorer';
+
+  const r = 28;
+  const circ = 2 * Math.PI * r;
+  const strokeDashoffset = circ - (normalized / 100) * circ;
+
+  return (
+    <div className={cn("inline-flex items-center gap-3 bg-white/95 backdrop-blur-sm border border-slate-200/90 rounded-2xl px-3.5 py-2 sm:px-4 sm:py-2.5 shadow-xs hover:shadow-sm transition-all", className)}>
+      {/* Jauge circulaire SVG */}
+      <div className="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0">
+        <svg viewBox="0 0 70 70" className="w-full h-full -rotate-90">
+          <circle
+            cx="35"
+            cy="35"
+            r={r}
+            fill="none"
+            stroke="#F1F5F9"
+            strokeWidth="6"
+          />
+          <circle
+            cx="35"
+            cy="35"
+            r={r}
+            fill="none"
+            stroke={strokeColor}
+            strokeWidth="6"
+            strokeDasharray={circ}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            className="transition-all duration-700 ease-out"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-sm sm:text-base font-black text-slate-900 leading-none">
+            {normalized}
+          </span>
+          <span className="text-[8px] sm:text-[9px] font-semibold text-slate-400 leading-none mt-0.5">
+            /100
+          </span>
+        </div>
+      </div>
+
+      {/* Libellé et métriques */}
+      <div className="flex flex-col">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-900">
+            Score GEO
+          </span>
+          <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-bold border", badgeColor)}>
+            {statusLabel}
+          </span>
+        </div>
+        <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-0.5">
+          Score cible
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Section haute du dashboard - Fixe
  * Contient le graphique de citations, le carrousel de logos et les boutons de navigation
  */
@@ -436,7 +478,7 @@ function TopSection({ activeView, onViewChange, reportData, reports, onOpenRepor
 
   return (
     <div className="top-section relative">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 px-1 mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1 mb-2">
         <div className="min-w-0">
           <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight truncate">
             {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
@@ -445,8 +487,15 @@ function TopSection({ activeView, onViewChange, reportData, reports, onOpenRepor
             <p className="text-xs text-slate-400 mt-0.5">Dernière mise à jour : {lastUpdate}</p>
           )}
         </div>
+
+        {/* Score GEO circulaire en haut à droite */}
+        {targetGeoScore !== null && targetGeoScore !== undefined && (
+          <div className="self-end sm:self-auto">
+            <GeoScoreGauge score={targetGeoScore} />
+          </div>
+        )}
       </div>
-      <CitationsChart reportData={reportData} targetGeoScore={targetGeoScore} />
+      <CitationsChart reportData={reportData} />
       <NavigationButtons activeView={activeView} onViewChange={onViewChange} />
     </div>
   );
