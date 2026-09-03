@@ -41,7 +41,7 @@ export function useRateLimit(): UseRateLimitReturn {
     let data: { error?: string; message?: string; retry_after?: number } = {};
 
     // Gestion des erreurs fetch Response
-    if (error instanceof Response && error.status === 429) {
+    if (typeof Response !== 'undefined' && error instanceof Response && error.status === 429) {
       is429 = true;
     }
 

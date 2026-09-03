@@ -1021,7 +1021,7 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
   const [hoveredItem, setHoveredItem] = <span class="cstat-no" title="statement not covered" >useState&lt;string | null&gt;(null);</span>
 &nbsp;
   // Filtrer les recommandations
-  const filteredRecommendations = <span class="cstat-no" title="statement not covered" >useMemo(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+  const filteredRecommendations = <span class="cstat-no" title="statement not covered" >useMemo(<span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    return recommendations.filter(<span class="fstat-no" title="function not covered" >rec </span>=&gt; {</span>
       const categoryMatch = <span class="cstat-no" title="statement not covered" >selectedCategory === 'all' || rec.category === selectedCategory;</span>
       const priorityMatch = <span class="cstat-no" title="statement not covered" >selectedPriority === 'all' || rec.priority === selectedPriority;</span>
@@ -1030,7 +1030,7 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
   }, [recommendations, selectedCategory, selectedPriority]);
 &nbsp;
   // Obtenir les catégories uniques
-  const categories = <span class="cstat-no" title="statement not covered" >useMemo(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+  const categories = <span class="cstat-no" title="statement not covered" >useMemo(<span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
     const uniqueCategories = <span class="cstat-no" title="statement not covered" >[...new Set(recommendations.map(<span class="fstat-no" title="function not covered" >rec </span>=&gt; <span class="cstat-no" title="statement not covered" >rec.category)</span>)];</span>
 <span class="cstat-no" title="statement not covered" >    return uniqueCategories;</span>
   }, [recommendations]);
@@ -1052,7 +1052,7 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
   };
 &nbsp;
   // Obtenir la couleur selon le quadrant
-  const getQuadrantColor = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(q</span>uadrant: string) =&gt; {</span>
+  const getQuadrantColor = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >quadrant: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (quadrant) {</span>
       case 'quick_wins': <span class="cstat-no" title="statement not covered" >return 'bg-green-100 border-green-300 text-green-800';</span>
       case 'major_projects': <span class="cstat-no" title="statement not covered" >return 'bg-blue-100 border-blue-300 text-blue-800';</span>
@@ -1063,7 +1063,7 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
   };
 &nbsp;
   // Obtenir l'icône selon le quadrant
-  const getQuadrantIcon = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(q</span>uadrant: string) =&gt; {</span>
+  const getQuadrantIcon = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >quadrant: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (quadrant) {</span>
       case 'quick_wins': <span class="cstat-no" title="statement not covered" >return &lt;Zap className="h-4 w-4" /&gt;;</span>
       case 'major_projects': <span class="cstat-no" title="statement not covered" >return &lt;Target className="h-4 w-4" /&gt;;</span>
@@ -1074,7 +1074,7 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
   };
 &nbsp;
   // Obtenir la taille du point selon la priorité
-  const getPointSize = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(p</span>riority: string) =&gt; {</span>
+  const getPointSize = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >priority: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (priority) {</span>
       case 'critical': <span class="cstat-no" title="statement not covered" >return 'w-6 h-6';</span>
       case 'high': <span class="cstat-no" title="statement not covered" >return 'w-5 h-5';</span>
@@ -1085,7 +1085,7 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
   };
 &nbsp;
   // Obtenir la couleur selon la priorité
-  const getPriorityColor = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(p</span>riority: string) =&gt; {</span>
+  const getPriorityColor = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >priority: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (priority) {</span>
       case 'critical': <span class="cstat-no" title="statement not covered" >return 'bg-red-500';</span>
       case 'high': <span class="cstat-no" title="statement not covered" >return 'bg-orange-500';</span>
@@ -1100,13 +1100,13 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
       {/* En-tête avec filtres */}
       &lt;Card className="bg-white border border-neutral-200 shadow-sm"&gt;
         &lt;CardHeader&gt;
-          &lt;div className="flex items-center justify-between"&gt;
+          &lt;div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"&gt;
             &lt;div&gt;
-              &lt;CardTitle className="flex items-center gap-2 text-xl"&gt;
-                &lt;Target className="h-6 w-6 text-neutral-700" /&gt;
+              &lt;CardTitle className="flex items-center gap-2 text-lg sm:text-xl"&gt;
+                &lt;Target className="h-5 w-5 sm:h-6 sm:w-6 text-neutral-700" /&gt;
                 Matrice Impact / Effort
               &lt;/CardTitle&gt;
-              &lt;p className="text-neutral-600 mt-1"&gt;
+              &lt;p className="text-neutral-600 mt-1 text-sm"&gt;
                 Visualisez vos recommandations selon leur impact et l'effort requis
               &lt;/p&gt;
             &lt;/div&gt;
@@ -1123,12 +1123,12 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
               &lt;label className="text-sm font-medium text-neutral-700"&gt;Catégorie:&lt;/label&gt;
               &lt;select
                 value={selectedCategory}
-                onChange={<span class="fstat-no" title="function not covered" >(e</span>) =&gt; <span class="cstat-no" title="statement not covered" >setSelectedCategory(e.target.value)}</span>
+                onChange={(<span class="fstat-no" title="function not covered" >e)</span> =&gt; <span class="cstat-no" title="statement not covered" >setSelectedCategory(e.target.value)}</span>
                 className="px-3 py-1 border border-neutral-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-neutral-500"
               &gt;
                 &lt;option value="all"&gt;Toutes&lt;/option&gt;
                 {categories.map(<span class="fstat-no" title="function not covered" >category </span>=&gt; (
-<span class="cstat-no" title="statement not covered" >                  &lt;option key={category} v</span>alue={category}&gt;{category}&lt;/option&gt;
+<span class="cstat-no" title="statement not covered" >                  &lt;option key={category} value={category}&gt;{category}&lt;/option&gt;</span>
                 ))}
               &lt;/select&gt;
             &lt;/div&gt;
@@ -1138,7 +1138,7 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
               &lt;label className="text-sm font-medium text-neutral-700"&gt;Priorité:&lt;/label&gt;
               &lt;select
                 value={selectedPriority}
-                onChange={<span class="fstat-no" title="function not covered" >(e</span>) =&gt; <span class="cstat-no" title="statement not covered" >setSelectedPriority(e.target.value)}</span>
+                onChange={(<span class="fstat-no" title="function not covered" >e)</span> =&gt; <span class="cstat-no" title="statement not covered" >setSelectedPriority(e.target.value)}</span>
                 className="px-3 py-1 border border-neutral-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-neutral-500"
               &gt;
                 &lt;option value="all"&gt;Toutes&lt;/option&gt;
@@ -1157,7 +1157,7 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
         &lt;CardContent className="p-6"&gt;
           &lt;div className="relative"&gt;
             {/* Grille de fond avec carreaux */}
-            &lt;div className="relative w-full h-96 bg-white rounded-lg border-2 border-neutral-300 shadow-inner"&gt;
+            &lt;div className="relative w-full h-64 sm:h-80 md:h-96 bg-white rounded-lg border-2 border-neutral-300 shadow-inner"&gt;
               {/* Grille de carreaux - en arrière-plan */}
               &lt;div className="absolute inset-0 z-0"&gt;
                 {/* Grille verticale (tous les 10%) */}
@@ -1273,7 +1273,7 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
               &lt;/div&gt;
 &nbsp;
               {/* Points des recommandations */}
-              {filteredRecommendations.map(<span class="fstat-no" title="function not covered" >(r</span>ec) =&gt; {
+              {filteredRecommendations.map((<span class="fstat-no" title="function not covered" >rec)</span> =&gt; {
                 const position = <span class="cstat-no" title="statement not covered" >getMatrixPosition(rec.impact_score, rec.effort_score);</span>
                 const quadrant = <span class="cstat-no" title="statement not covered" >getQuadrant(rec.impact_score, rec.effort_score);</span>
                 const isHovered = <span class="cstat-no" title="statement not covered" >hoveredItem === rec.id;</span>
@@ -1289,9 +1289,9 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
                       top: `${100 - position.y}%`, // Inverser Y pour que 0 soit en bas
                       transform: 'translate(-50%, -50%)'
                     }}
-                    onMouseEnter={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setHoveredItem(rec.id)}</span>
-                    onMouseLeave={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setHoveredItem(null)}</span>
-                    onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >onRecommendationSelect?.(rec)}</span>
+                    onMouseEnter={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etHoveredItem(rec.id)}</span>
+                    onMouseLeave={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etHoveredItem(null)}</span>
+                    onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >o</span>nRecommendationSelect?.(rec)}</span>
                   &gt;
                     {/* Point principal */}
                     &lt;div
@@ -1302,7 +1302,7 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
                     
                     {/* Tooltip au survol */}
                     {isHovered &amp;&amp; (
-                      &lt;div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-white border border-neutral-200 rounded-lg shadow-xl p-3 z-60"&gt;
+                      &lt;div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 sm:w-64 bg-white border border-neutral-200 rounded-lg shadow-xl p-3 z-60"&gt;
                         &lt;div className="flex items-start justify-between mb-2"&gt;
                           &lt;h4 className="font-semibold text-neutral-900 text-sm"&gt;{rec.title}&lt;/h4&gt;
                           &lt;Badge className={`${getQuadrantColor(quadrant)} text-xs`}&gt;
@@ -1441,7 +1441,7 @@ const ImpactEffortMatrix: React.FC&lt;ImpactEffortMatrixProps&gt; = <span class=
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.128Z
+                at 2026-09-03T10:34:58.552Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

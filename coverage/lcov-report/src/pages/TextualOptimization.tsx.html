@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/66</span>
+                <span class='fraction'>0/61</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/66</span>
+                <span class='fraction'>0/61</span>
             </div>
         
             
@@ -667,12 +667,8 @@
 <a name='L602'></a><a href='#L602'>602</a>
 <a name='L603'></a><a href='#L603'>603</a>
 <a name='L604'></a><a href='#L604'>604</a>
-<a name='L605'></a><a href='#L605'>605</a>
-<a name='L606'></a><a href='#L606'>606</a>
-<a name='L607'></a><a href='#L607'>607</a>
-<a name='L608'></a><a href='#L608'>608</a>
-<a name='L609'></a><a href='#L609'>609</a>
-<a name='L610'></a><a href='#L610'>610</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L605'></a><a href='#L605'>605</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -695,6 +691,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -722,12 +719,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -802,7 +793,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1283,6 +1273,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import React, { useState, useEffect } from 'react';</span>
 <span class="cstat-no" title="statement not covered" >import { useLocation, useSearchParams } from 'react-router-dom';</span>
+<span class="cstat-no" title="statement not covered" >import { usePageTitle } from '@/hooks/usePageTitle';</span>
 <span class="cstat-no" title="statement not covered" >import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';</span>
 <span class="cstat-no" title="statement not covered" >import { Badge } from '@/components/ui/badge';</span>
 <span class="cstat-no" title="statement not covered" >import { Button } from '@/components/ui/button';</span>
@@ -1304,7 +1295,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 <span class="cstat-no" title="statement not covered" >import { OptimizationRequest, getAvailableStrategies, getAvailableTones } from '@/services/textualOptimizationService';</span>
 import { AuthService } from '@/services/authService';
 &nbsp;
-const TextualOptimization: React.FC = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+const TextualOptimization: React.FC = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
+<span class="cstat-no" title="statement not covered" >  usePageTitle('Optimisation textuelle');</span>
   const location = <span class="cstat-no" title="statement not covered" >useLocation();</span>
   const [searchParams] = <span class="cstat-no" title="statement not covered" >useSearchParams();</span>
   
@@ -1331,13 +1323,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
   const [activeTab, setActiveTab] = <span class="cstat-no" title="statement not covered" >useState('Résumé');</span>
 &nbsp;
   // Debug: afficher les données chargées
-<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >   //console.log('🔍 TextualOptimization - État actuel:');</span>
-<span class="cstat-no" title="statement not covered" >   //console.log('📊 Optimizations:', optimizations);</span>
-<span class="cstat-no" title="statement not covered" >   //console.log('📊 Current Optimization:', currentOptimization);</span>
-<span class="cstat-no" title="statement not covered" >   //console.log('📊 Loading:', isLoading);</span>
-<span class="cstat-no" title="statement not covered" >   //console.log('📊 Processing:', isProcessing);</span>
-<span class="cstat-no" title="statement not covered" >   //console.log('📊 Error:', error);</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
   }, [optimizations, currentOptimization, isLoading, isProcessing, error]);
 &nbsp;
   // États pour le formulaire de création
@@ -1373,7 +1359,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
   });
 &nbsp;
   // Fonction pour créer une optimisation
-  const handleCreateOptimization = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
+  const handleCreateOptimization = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async () =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    if (!formData.text.trim()) {</span>
 <span class="cstat-no" title="statement not covered" >      toast({</span>
         title: "Erreur",
@@ -1411,7 +1397,6 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
         description: "Optimisation créée avec succès",
       });
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      console.error('Erreur lors de la création de l\'optimisation:', error);</span>
 <span class="cstat-no" title="statement not covered" >      toast({</span>
         title: "Erreur",
         description: "Une erreur est survenue lors de la création de l'optimisation",
@@ -1424,29 +1409,29 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
     &lt;div className="flex-1 min-h-screen bg-background"&gt;
       &lt;div className="max-w-6xl mx-auto"&gt;
         {/* Hero Header Section */}
-        &lt;div className="relative overflow-hidden bg-card px-8 py-12 border-b border-border"&gt;
+        &lt;div className="relative overflow-hidden bg-card px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 border-b border-border"&gt;
         {/* Background decorative elements */}
         &lt;div className="absolute inset-0 bg-muted/50"&gt;&lt;/div&gt;
         
         &lt;div className="relative z-10"&gt;
-          &lt;div className="flex items-center justify-between"&gt;
+          &lt;div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6"&gt;
             &lt;div className="max-w-3xl"&gt;
-              &lt;h1 className="text-4xl font-bold text-foreground mb-3"&gt;
+              &lt;h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3"&gt;
                 Optimisation Textuelle
               &lt;/h1&gt;
-              &lt;p className="text-xl text-muted-foreground mb-6 leading-relaxed"&gt;
+              &lt;p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 leading-relaxed"&gt;
                 Optimisez votre contenu avec l'intelligence artificielle et des stratégies d'enrichissement avancées.
               &lt;/p&gt;
-              &lt;div className="flex items-center gap-4"&gt;
+              &lt;div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4"&gt;
                 &lt;Button 
-                  onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setShowCreateForm(true)}</span>
+                  onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etShowCreateForm(true)}</span>
                   className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-semibold px-6 py-3 h-auto"
                   disabled={isProcessing}
                 &gt;
                   Nouvelle Optimisation
                 &lt;/Button&gt;
                     &lt;Button 
-                  onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >window.location.reload()}</span>
+                  onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >w</span>indow.location.reload()}</span>
                       variant="outline"
                       className="border-border text-foreground hover:bg-muted px-6 py-3 h-auto"
                     &gt;
@@ -1472,9 +1457,9 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
       &lt;/div&gt;
 &nbsp;
       {/* Navigation Tabs */}
-      &lt;div className="px-8 py-6"&gt;
+      &lt;div className="px-4 py-4 sm:px-6 md:px-8 md:py-6"&gt;
         &lt;div className="flex items-center justify-center"&gt;
-          &lt;div className="bg-card rounded-xl p-2 shadow-lg border border-transparent inline-block relative"&gt;
+          &lt;div className="bg-card rounded-xl p-1.5 sm:p-2 shadow-lg border border-transparent inline-block relative"&gt;
             {/* Indicateur animé qui se déplace */}
             &lt;div
               className="absolute top-2 bottom-2 bg-primary rounded-lg transition-all duration-300 ease-in-out"
@@ -1490,22 +1475,22 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
 &nbsp;
             &lt;div className="relative flex items-center justify-center space-x-0 z-10"&gt;
               &lt;button
-                onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setActiveTab('Résumé')}</span>
-                className="px-6 py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
+                onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etActiveTab('Résumé')}</span>
+                className="px-3 py-2 sm:px-6 sm:py-3 text-sm sm:text-base transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
                 style={{ color: activeTab === 'Résumé' ? 'white' : 'var(--muted-foreground)' }}
               &gt;
                 Résumé
               &lt;/button&gt;
               &lt;button
-                onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setActiveTab('Modifications')}</span>
-                className="px-6 py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
+                onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etActiveTab('Modifications')}</span>
+                className="px-3 py-2 sm:px-6 sm:py-3 text-sm sm:text-base transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
                 style={{ color: activeTab === 'Modifications' ? 'white' : 'var(--muted-foreground)' }}
               &gt;
                 Modifications
               &lt;/button&gt;
               &lt;button
-                onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setActiveTab('Analyse')}</span>
-                className="px-6 py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
+                onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etActiveTab('Analyse')}</span>
+                className="px-3 py-2 sm:px-6 sm:py-3 text-sm sm:text-base transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
                 style={{ color: activeTab === 'Analyse' ? 'white' : 'var(--muted-foreground)' }}
               &gt;
                 Analyse
@@ -1535,8 +1520,8 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
             {currentOptimization &amp;&amp; (
               &lt;div className="space-y-6"&gt;
                 {/* Informations générales */}
-                &lt;Card className="bg-card border border-border shadow-sm"&gt;
-                  &lt;CardHeader className="bg-muted border-b border-border"&gt;
+                &lt;Card className="bg-card border-none shadow-sm"&gt;
+                  &lt;CardHeader className="bg-muted"&gt;
             &lt;div className="flex items-center justify-between"&gt;
               &lt;div&gt;
                         &lt;CardTitle className="flex items-center gap-3 text-xl text-foreground"&gt;
@@ -1550,9 +1535,9 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
             &lt;/div&gt;
           &lt;/CardHeader&gt;
           &lt;CardContent className="p-6 text-foreground"&gt;
-                    &lt;div className="grid grid-cols-2 md:grid-cols-4 gap-4"&gt;
+                    &lt;div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"&gt;
                       &lt;div className="text-center"&gt;
-                        &lt;div className="text-2xl font-bold"&gt;{currentOptimization.input_parameters.original_text_words}&lt;/div&gt;
+                        &lt;div className="text-xl sm:text-2xl font-bold"&gt;{currentOptimization.input_parameters.original_text_words}&lt;/div&gt;
                         &lt;div className="text-sm text-muted-foreground"&gt;Mots originaux&lt;/div&gt;
                       &lt;/div&gt;
                       &lt;div className="text-center"&gt;
@@ -1572,7 +1557,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
         &lt;/Card&gt;
 &nbsp;
                 {/* Texte optimisé */}
-                &lt;Card className="bg-card border border-border shadow-sm"&gt;
+                &lt;Card className="bg-card border-none shadow-sm"&gt;
               &lt;CardHeader&gt;
                     &lt;CardTitle className="flex items-center gap-2 text-foreground"&gt;
                       Texte Optimisé
@@ -1591,7 +1576,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
             &lt;/Card&gt;
 &nbsp;
                 {/* Checklist de conformité */}
-                &lt;Card className="bg-card border border-border shadow-sm"&gt;
+                &lt;Card className="bg-card border-none shadow-sm"&gt;
               &lt;CardHeader&gt;
                     &lt;CardTitle className="flex items-center gap-2 text-foreground"&gt;
                       Checklist de Conformité
@@ -1601,9 +1586,9 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
                 &lt;/CardDescription&gt;
               &lt;/CardHeader&gt;
               &lt;CardContent&gt;
-                    &lt;div className="grid grid-cols-2 md:grid-cols-3 gap-4"&gt;
+                    &lt;div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"&gt;
                       {Object.entries(currentOptimization.analysis_details.checklist).map(<span class="fstat-no" title="function not covered" >([</span>key, value]) =&gt; (
-<span class="cstat-no" title="statement not covered" >                        &lt;div key={key} c</span>lassName="flex items-center gap-2"&gt;
+<span class="cstat-no" title="statement not covered" >                        &lt;div key={key} className="flex items-center gap-2"&gt;</span>
                           {value ? (
                             &lt;span className="text-green-600"&gt;✓&lt;/span&gt;
                           ) : (
@@ -1626,7 +1611,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
             {/* Onglet Modifications */}
         {activeTab === 'Modifications' &amp;&amp; (
           &lt;div className="mt-8"&gt;
-            &lt;Card className="bg-card border border-border shadow-sm"&gt;
+            &lt;Card className="bg-card border-none shadow-sm"&gt;
                 &lt;CardHeader&gt;
                 &lt;CardTitle className="flex items-center gap-2 text-xl"&gt;
                   Modifications Apportées
@@ -1639,7 +1624,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
                 {currentOptimization ? (
                   &lt;div className="space-y-4"&gt;
                     {currentOptimization.analysis_details.modifications.map(<span class="fstat-no" title="function not covered" >(m</span>odification, index) =&gt; (
-<span class="cstat-no" title="statement not covered" >                      &lt;div key={index} c</span>lassName="border border-border rounded-lg p-4"&gt;
+<span class="cstat-no" title="statement not covered" >                      &lt;div key={index} className="border border-border rounded-lg p-4"&gt;</span>
                         &lt;div className="flex items-start justify-between mb-2"&gt;
                           &lt;div className="flex items-center gap-2"&gt;
                               &lt;Badge 
@@ -1687,7 +1672,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
         {/* Onglet Analyse */}
         {activeTab === 'Analyse' &amp;&amp; (
           &lt;div className="mt-8"&gt;
-            &lt;Card className="bg-card border border-border shadow-sm"&gt;
+            &lt;Card className="bg-card border-none shadow-sm"&gt;
                 &lt;CardHeader&gt;
                 &lt;CardTitle className="flex items-center gap-2 text-xl"&gt;
                   Analyse des Optimisations
@@ -1704,8 +1689,8 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
                       &lt;h4 className="text-lg font-semibold text-foreground mb-4"&gt;Analyse Sémantique&lt;/h4&gt;
                       &lt;div className="grid gap-4"&gt;
                         {currentOptimization.analysis_details.semantic_analysis.map(<span class="fstat-no" title="function not covered" >(a</span>nalysis, index) =&gt; (
-<span class="cstat-no" title="statement not covered" >                          &lt;div key={index} c</span>lassName="border border-border rounded-lg p-4"&gt;
-                            &lt;div className="grid grid-cols-2 md:grid-cols-4 gap-4"&gt;
+<span class="cstat-no" title="statement not covered" >                          &lt;div key={index} className="border border-border rounded-lg p-4"&gt;</span>
+                            &lt;div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"&gt;
                               &lt;div&gt;
                                 &lt;span className="text-sm font-medium text-muted-foreground"&gt;Avant&lt;/span&gt;
                                 &lt;p className="text-foreground"&gt;{analysis.Avant}&lt;/p&gt;
@@ -1756,7 +1741,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
                       &lt;h4 className="text-lg font-semibold text-foreground mb-4"&gt;Sources&lt;/h4&gt;
                       &lt;div className="space-y-2"&gt;
                         {currentOptimization.analysis_details.sources.map(<span class="fstat-no" title="function not covered" >(s</span>ource, index) =&gt; (
-<span class="cstat-no" title="statement not covered" >                          &lt;div key={index} c</span>lassName="flex items-center gap-2 p-3 bg-muted rounded-lg"&gt;
+<span class="cstat-no" title="statement not covered" >                          &lt;div key={index} className="flex items-center gap-2 p-3 bg-muted rounded-lg"&gt;</span>
                             &lt;span className="text-foreground"&gt;{source}&lt;/span&gt;
                           &lt;/div&gt;
                         ))}
@@ -1778,7 +1763,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
                       
       {/* Dialog pour créer une nouvelle optimisation */}
       &lt;Dialog open={showCreateForm} onOpenChange={setShowCreateForm}&gt;
-        &lt;DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto"&gt;
+        &lt;DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto"&gt;
           &lt;DialogHeader&gt;
             &lt;DialogTitle className="flex items-center gap-2"&gt;
               Nouvelle Optimisation Textuelle
@@ -1795,7 +1780,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
                 id="text"
                 placeholder="Saisissez votre texte à optimiser..."
                 value={formData.text}
-                onChange={<span class="fstat-no" title="function not covered" >(e</span>) =&gt; <span class="cstat-no" title="statement not covered" >setFormData({...formData, text: e.target.value})}</span>
+                onChange={(<span class="fstat-no" title="function not covered" >e)</span> =&gt; <span class="cstat-no" title="statement not covered" >setFormData({...formData, text: e.target.value})}</span>
                 className="min-h-[120px]"
               /&gt;
                       &lt;/div&gt;
@@ -1803,7 +1788,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
             &lt;div className="grid gap-4 md:grid-cols-2"&gt;
               &lt;div&gt;
                 &lt;Label htmlFor="domain"&gt;Domaine de contenu&lt;/Label&gt;
-                &lt;Select value={formData.content_domain} onValueChange={<span class="fstat-no" title="function not covered" >(v</span>alue) =&gt; <span class="cstat-no" title="statement not covered" >setFormData({...formData, content_domain: value})}</span>&gt;
+                &lt;Select value={formData.content_domain} onValueChange={(<span class="fstat-no" title="function not covered" >value)</span> =&gt; <span class="cstat-no" title="statement not covered" >setFormData({...formData, content_domain: value})}</span>&gt;
                   &lt;SelectTrigger&gt;
                     &lt;SelectValue /&gt;
                   &lt;/SelectTrigger&gt;
@@ -1818,7 +1803,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
                       
               &lt;div&gt;
                 &lt;Label htmlFor="audience"&gt;Audience cible&lt;/Label&gt;
-                &lt;Select value={formData.target_audience} onValueChange={<span class="fstat-no" title="function not covered" >(v</span>alue) =&gt; <span class="cstat-no" title="statement not covered" >setFormData({...formData, target_audience: value})}</span>&gt;
+                &lt;Select value={formData.target_audience} onValueChange={(<span class="fstat-no" title="function not covered" >value)</span> =&gt; <span class="cstat-no" title="statement not covered" >setFormData({...formData, target_audience: value})}</span>&gt;
                   &lt;SelectTrigger&gt;
                     &lt;SelectValue /&gt;
                   &lt;/SelectTrigger&gt;
@@ -1835,13 +1820,13 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
             &lt;div className="grid gap-4 md:grid-cols-2"&gt;
               &lt;div&gt;
                 &lt;Label htmlFor="primary-strategy"&gt;Stratégie principale&lt;/Label&gt;
-                &lt;Select value={formData.primary_strategy} onValueChange={<span class="fstat-no" title="function not covered" >(v</span>alue) =&gt; <span class="cstat-no" title="statement not covered" >setFormData({...formData, primary_strategy: value as any})}</span>&gt;
+                &lt;Select value={formData.primary_strategy} onValueChange={(<span class="fstat-no" title="function not covered" >value)</span> =&gt; <span class="cstat-no" title="statement not covered" >setFormData({...formData, primary_strategy: value as any})}</span>&gt;
                   &lt;SelectTrigger&gt;
                     &lt;SelectValue /&gt;
                   &lt;/SelectTrigger&gt;
                   &lt;SelectContent&gt;
-                    {getAvailableStrategies().map(<span class="fstat-no" title="function not covered" >(s</span>trategy) =&gt; (
-<span class="cstat-no" title="statement not covered" >                      &lt;SelectItem key={strategy.value} v</span>alue={strategy.value}&gt;{strategy.label}&lt;/SelectItem&gt;
+                    {getAvailableStrategies().map((<span class="fstat-no" title="function not covered" >strategy)</span> =&gt; (
+<span class="cstat-no" title="statement not covered" >                      &lt;SelectItem key={strategy.value} value={strategy.value}&gt;{strategy.label}&lt;/SelectItem&gt;</span>
                     ))}
                   &lt;/SelectContent&gt;
                 &lt;/Select&gt;
@@ -1849,13 +1834,13 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
 &nbsp;
               &lt;div&gt;
                 &lt;Label htmlFor="tone"&gt;Ton&lt;/Label&gt;
-                &lt;Select value={formData.tone} onValueChange={<span class="fstat-no" title="function not covered" >(v</span>alue) =&gt; <span class="cstat-no" title="statement not covered" >setFormData({...formData, tone: value as any})}</span>&gt;
+                &lt;Select value={formData.tone} onValueChange={(<span class="fstat-no" title="function not covered" >value)</span> =&gt; <span class="cstat-no" title="statement not covered" >setFormData({...formData, tone: value as any})}</span>&gt;
                   &lt;SelectTrigger&gt;
                     &lt;SelectValue /&gt;
                   &lt;/SelectTrigger&gt;
                   &lt;SelectContent&gt;
-                    {getAvailableTones().map(<span class="fstat-no" title="function not covered" >(t</span>one) =&gt; (
-<span class="cstat-no" title="statement not covered" >                      &lt;SelectItem key={tone.value} v</span>alue={tone.value}&gt;{tone.label}&lt;/SelectItem&gt;
+                    {getAvailableTones().map((<span class="fstat-no" title="function not covered" >tone)</span> =&gt; (
+<span class="cstat-no" title="statement not covered" >                      &lt;SelectItem key={tone.value} value={tone.value}&gt;{tone.label}&lt;/SelectItem&gt;</span>
                     ))}
                   &lt;/SelectContent&gt;
                 &lt;/Select&gt;
@@ -1863,7 +1848,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
             &lt;/div&gt;
 &nbsp;
             &lt;div className="flex justify-end gap-4"&gt;
-              &lt;Button variant="outline" onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setShowCreateForm(false)}</span>&gt;
+              &lt;Button variant="outline" onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etShowCreateForm(false)}</span>&gt;
                 Annuler
             &lt;/Button&gt;
             &lt;Button 
@@ -1897,7 +1882,7 @@ const TextualOptimization: React.FC = <span class="cstat-no" title="statement no
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.128Z
+                at 2026-09-03T10:34:58.552Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

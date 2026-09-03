@@ -1,4 +1,19 @@
 import '@testing-library/jest-dom';
+import React from 'react';
+(global as any).React = React;
+
+// Global mock for lucide-react icons
+jest.mock('lucide-react', () => {
+  const React = require('react');
+  return new Proxy({}, {
+    get: (_target, prop) => {
+      if (prop === '__esModule') return true;
+      const MockIcon = (props: any) => React.createElement('div', { 'data-testid': `${String(prop).toLowerCase()}-icon`, ...props });
+      MockIcon.displayName = String(prop);
+      return MockIcon;
+    }
+  });
+});
 
 // Mock fetch for tests
 global.fetch = jest.fn();

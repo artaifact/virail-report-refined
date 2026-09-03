@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/63</span>
+                <span class='fraction'>0/65</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/55</span>
+                <span class='fraction'>0/57</span>
             </div>
         
             
@@ -286,17 +286,21 @@
 <a name='L221'></a><a href='#L221'>221</a>
 <a name='L222'></a><a href='#L222'>222</a>
 <a name='L223'></a><a href='#L223'>223</a>
-<a name='L224'></a><a href='#L224'>224</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<a name='L224'></a><a href='#L224'>224</a>
+<a name='L225'></a><a href='#L225'>225</a>
+<a name='L226'></a><a href='#L226'>226</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -510,6 +514,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import React, { useEffect, useMemo, useState } from 'react';</span>
+<span class="cstat-no" title="statement not covered" >import { usePageTitle } from '@/hooks/usePageTitle';</span>
 <span class="cstat-no" title="statement not covered" >import { AdminService } from '@/services/adminService';</span>
 import { AdminMessage } from '@/types/admin';
 <span class="cstat-no" title="statement not covered" >import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';</span>
@@ -520,7 +525,8 @@ import { AdminMessage } from '@/types/admin';
 <span class="cstat-no" title="statement not covered" >import { AlertCircle, Mail, Search, Loader2 } from 'lucide-react';</span>
 <span class="cstat-no" title="statement not covered" >import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';</span>
 &nbsp;
-const AdminMessages: React.FC = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+const AdminMessages: React.FC = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
+<span class="cstat-no" title="statement not covered" >  usePageTitle('Admin - Messages');</span>
   const [messages, setMessages] = <span class="cstat-no" title="statement not covered" >useState&lt;AdminMessage[]&gt;([]);</span>
   const [total, setTotal] = <span class="cstat-no" title="statement not covered" >useState(0);</span>
   const [page, setPage] = <span class="cstat-no" title="statement not covered" >useState(1);</span>
@@ -532,9 +538,9 @@ const AdminMessages: React.FC = <span class="cstat-no" title="statement not cove
   const [error, setError] = <span class="cstat-no" title="statement not covered" >useState&lt;string | null&gt;(null);</span>
   const [selectedMessage, setSelectedMessage] = <span class="cstat-no" title="statement not covered" >useState&lt;AdminMessage | null&gt;(null);</span>
 &nbsp;
-  const totalPages = <span class="cstat-no" title="statement not covered" >useMemo(<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >Math.max(1, Math.ceil(total / perPage)),</span> [total, perPage]);</span>
+  const totalPages = <span class="cstat-no" title="statement not covered" >useMemo(<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >M</span>ath.max(1, Math.ceil(total / perPage)),</span> [total, perPage]);</span>
 &nbsp;
-  const loadMessages = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
+  const loadMessages = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async () =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      setLoading(true);</span>
 <span class="cstat-no" title="statement not covered" >      setError(null);</span>
@@ -554,27 +560,27 @@ const AdminMessages: React.FC = <span class="cstat-no" title="statement not cove
     }
   };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    loadMessages();</span>
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, perPage, status, priority]);
 &nbsp;
-  const resetFilters = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+  const resetFilters = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    setStatus(undefined);</span>
 <span class="cstat-no" title="statement not covered" >    setPriority(undefined);</span>
 <span class="cstat-no" title="statement not covered" >    setQuery('');</span>
 <span class="cstat-no" title="statement not covered" >    setPage(1);</span>
   };
 &nbsp;
-  const openMessage = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(m</span>sg: AdminMessage) =&gt; {</span>
+  const openMessage = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >msg: AdminMessage)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    setSelectedMessage(msg);</span>
   };
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  return (</span>
-    &lt;div className="min-h-screen bg-background text-foreground px-6 py-8"&gt;
+    &lt;div className="min-h-screen bg-background text-foreground px-3 py-4 sm:px-4 md:px-6 md:py-8"&gt;
       &lt;div className="max-w-6xl mx-auto space-y-6"&gt;
         &lt;div&gt;
-          &lt;h1 className="text-3xl font-bold"&gt;Messages (Admin)&lt;/h1&gt;
+          &lt;h1 className="text-2xl sm:text-3xl font-bold"&gt;Messages (Admin)&lt;/h1&gt;
           &lt;p className="text-muted-foreground"&gt;Gestion des messages: recherche, filtres, pagination&lt;/p&gt;
         &lt;/div&gt;
 &nbsp;
@@ -591,12 +597,12 @@ const AdminMessages: React.FC = <span class="cstat-no" title="statement not cove
                   &lt;Input
                     placeholder="Recherche (email, sujet, contenu)"
                     value={query}
-                    onChange={<span class="fstat-no" title="function not covered" >(e</span>) =&gt; <span class="cstat-no" title="statement not covered" >setQuery(e.target.value)}</span>
+                    onChange={(<span class="fstat-no" title="function not covered" >e)</span> =&gt; <span class="cstat-no" title="statement not covered" >setQuery(e.target.value)}</span>
                     className="pl-9 border-border bg-card text-foreground"
                   /&gt;
                 &lt;/div&gt;
               &lt;/div&gt;
-              &lt;Select value={status ?? undefined as any} onValueChange={<span class="fstat-no" title="function not covered" >(v</span>) =&gt; { <span class="cstat-no" title="statement not covered" >setStatus(v === 'all' ? undefined : v); <span class="cstat-no" title="statement not covered" ></span>setPage(1); </span>}}&gt;
+              &lt;Select value={status ?? undefined as any} onValueChange={(<span class="fstat-no" title="function not covered" >v)</span> =&gt; { <span class="cstat-no" title="statement not covered" >setStatus(v === 'all' ? undefined : v); <span class="cstat-no" title="statement not covered" >s</span>etPage(1); }</span>}&gt;
                 &lt;SelectTrigger className="border-border bg-card"&gt;
                   &lt;SelectValue placeholder="Statut" /&gt;
                 &lt;/SelectTrigger&gt;
@@ -608,7 +614,7 @@ const AdminMessages: React.FC = <span class="cstat-no" title="statement not cove
                   &lt;SelectItem value="archived"&gt;Archivés&lt;/SelectItem&gt;
                 &lt;/SelectContent&gt;
               &lt;/Select&gt;
-              &lt;Select value={priority ?? undefined as any} onValueChange={<span class="fstat-no" title="function not covered" >(v</span>) =&gt; { <span class="cstat-no" title="statement not covered" >setPriority(v === 'all' ? undefined : v); <span class="cstat-no" title="statement not covered" ></span>setPage(1); </span>}}&gt;
+              &lt;Select value={priority ?? undefined as any} onValueChange={(<span class="fstat-no" title="function not covered" >v)</span> =&gt; { <span class="cstat-no" title="statement not covered" >setPriority(v === 'all' ? undefined : v); <span class="cstat-no" title="statement not covered" >s</span>etPage(1); }</span>}&gt;
                 &lt;SelectTrigger className="border-border bg-card"&gt;
                   &lt;SelectValue placeholder="Priorité" /&gt;
                 &lt;/SelectTrigger&gt;
@@ -622,8 +628,8 @@ const AdminMessages: React.FC = <span class="cstat-no" title="statement not cove
               &lt;/Select&gt;
             &lt;/div&gt;
             &lt;div className="flex items-center gap-3"&gt;
-              &lt;Button onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; { <span class="cstat-no" title="statement not covered" >setPage(1); <span class="cstat-no" title="statement not covered" ></span>loadMessages(); </span>}} disabled={loading} className="bg-primary text-primary-foreground"&gt;
-                {loading ? &lt;Loader2 className="h-4 w-4 animate-spin mr-2" /&gt; : null}
+              &lt;Button onClick={<span class="fstat-no" title="function not covered" >() =&gt; </span>{ <span class="cstat-no" title="statement not covered" >setPage(1); <span class="cstat-no" title="statement not covered" >l</span>oadMessages(); }</span>} disabled={loading} className="bg-primary text-primary-foreground"&gt;
+                {loading ? &lt;Loader2 className="h-4 w-4 animate-spin mr-2 text-blue-600" /&gt; : null}
                 Appliquer
               &lt;/Button&gt;
               &lt;Button variant="outline" onClick={resetFilters} className="border-border"&gt;Réinitialiser&lt;/Button&gt;
@@ -647,19 +653,19 @@ const AdminMessages: React.FC = <span class="cstat-no" title="statement not cove
               &lt;div className="text-muted-foreground text-sm"&gt;Aucun message trouvé.&lt;/div&gt;
             ) : (
               &lt;div className="divide-y divide-border"&gt;
-                {messages.map(<span class="fstat-no" title="function not covered" >(m</span>) =&gt; (
-<span class="cstat-no" title="statement not covered" >                  &lt;div key={m.id} c</span>lassName="py-3 flex items-start justify-between gap-4 cursor-pointer hover:bg-muted/40 transition-colors" onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >openMessage(m)}</span>&gt;
-                    &lt;div className="flex items-start gap-3"&gt;
-                      &lt;div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center"&gt;
+                {messages.map((<span class="fstat-no" title="function not covered" >m)</span> =&gt; (
+<span class="cstat-no" title="statement not covered" >                  &lt;div key={m.id} className="py-3 flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4 cursor-pointer hover:bg-muted/40 transition-colors" onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >o</span>penMessage(m)}</span>&gt;</span>
+                    &lt;div className="flex items-start gap-3 min-w-0"&gt;
+                      &lt;div className="w-9 h-9 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center"&gt;
                         &lt;Mail className="h-4 w-4 text-foreground" /&gt;
                       &lt;/div&gt;
-                      &lt;div&gt;
-                        &lt;div className="font-semibold text-foreground"&gt;{m.subject || '(Sans sujet)'}&lt;/div&gt;
-                        &lt;div className="text-sm text-muted-foreground"&gt;{m.first_name} {m.last_name} • {m.email}&lt;/div&gt;
+                      &lt;div className="min-w-0"&gt;
+                        &lt;div className="font-semibold text-foreground truncate"&gt;{m.subject || '(Sans sujet)'}&lt;/div&gt;
+                        &lt;div className="text-sm text-muted-foreground truncate"&gt;{m.first_name} {m.last_name} • {m.email}&lt;/div&gt;
                         &lt;div className="text-sm text-muted-foreground line-clamp-2 mt-1"&gt;{m.message}&lt;/div&gt;
                       &lt;/div&gt;
                     &lt;/div&gt;
-                    &lt;div className="flex flex-col items-end gap-2"&gt;
+                    &lt;div className="flex sm:flex-col items-center sm:items-end gap-2 ml-12 sm:ml-0"&gt;
                       &lt;div className="flex gap-2"&gt;
                         {m.status ? &lt;Badge variant="outline" className="border-border"&gt;{m.status}&lt;/Badge&gt; : null}
                         {m.priority ? &lt;Badge variant="outline" className="border-border"&gt;{m.priority}&lt;/Badge&gt; : null}
@@ -670,10 +676,10 @@ const AdminMessages: React.FC = <span class="cstat-no" title="statement not cove
                 ))}
               &lt;/div&gt;
             )}
-            &lt;div className="flex items-center justify-between pt-3"&gt;
+            &lt;div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3"&gt;
               &lt;div className="flex items-center gap-2 text-sm text-muted-foreground"&gt;
                 &lt;span&gt;Par page&lt;/span&gt;
-                &lt;Select value={String(perPage)} onValueChange={<span class="fstat-no" title="function not covered" >(v</span>) =&gt; { <span class="cstat-no" title="statement not covered" >setPerPage(Number(v)); <span class="cstat-no" title="statement not covered" ></span>setPage(1); </span>}}&gt;
+                &lt;Select value={String(perPage)} onValueChange={(<span class="fstat-no" title="function not covered" >v)</span> =&gt; { <span class="cstat-no" title="statement not covered" >setPerPage(Number(v)); <span class="cstat-no" title="statement not covered" >s</span>etPage(1); }</span>}&gt;
                   &lt;SelectTrigger className="h-8 w-[90px] border-border bg-card"&gt;
                     &lt;SelectValue /&gt;
                   &lt;/SelectTrigger&gt;
@@ -685,16 +691,16 @@ const AdminMessages: React.FC = <span class="cstat-no" title="statement not cove
                 &lt;/Select&gt;
               &lt;/div&gt;
               &lt;div className="flex items-center gap-2"&gt;
-                &lt;Button variant="outline" className="border-border" disabled={page &lt;= 1} onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setPage(<span class="fstat-no" title="function not covered" >(p</span>) =&gt; <span class="cstat-no" title="statement not covered" >Math.max(1, p - 1))</span>}</span>&gt;Précédent&lt;/Button&gt;
-                &lt;Button variant="outline" className="border-border" disabled={page &gt;= totalPages} onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setPage(<span class="fstat-no" title="function not covered" >(p</span>) =&gt; <span class="cstat-no" title="statement not covered" >Math.min(totalPages, p + 1))</span>}</span>&gt;Suivant&lt;/Button&gt;
+                &lt;Button variant="outline" className="border-border" disabled={page &lt;= 1} onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etPage((<span class="fstat-no" title="function not covered" >p)</span> =&gt; <span class="cstat-no" title="statement not covered" >Math.max(1, p - 1))</span>}</span>&gt;Précédent&lt;/Button&gt;
+                &lt;Button variant="outline" className="border-border" disabled={page &gt;= totalPages} onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etPage((<span class="fstat-no" title="function not covered" >p)</span> =&gt; <span class="cstat-no" title="statement not covered" >Math.min(totalPages, p + 1))</span>}</span>&gt;Suivant&lt;/Button&gt;
               &lt;/div&gt;
             &lt;/div&gt;
           &lt;/CardContent&gt;
         &lt;/Card&gt;
         
         {selectedMessage &amp;&amp; (
-          &lt;Dialog open={!!selectedMessage} onOpenChange={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setSelectedMessage(null)}</span>&gt;
-            &lt;DialogContent className="bg-card border-border max-w-2xl"&gt;
+          &lt;Dialog open={!!selectedMessage} onOpenChange={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etSelectedMessage(null)}</span>&gt;
+            &lt;DialogContent className="bg-card border-border w-[95vw] max-w-2xl"&gt;
               &lt;DialogHeader&gt;
                 &lt;DialogTitle className="text-foreground"&gt;{selectedMessage.subject || '(Sans sujet)'}&lt;/DialogTitle&gt;
                 &lt;DialogDescription className="text-muted-foreground"&gt;
@@ -719,7 +725,7 @@ const AdminMessages: React.FC = <span class="cstat-no" title="statement not cove
                 &lt;div className="text-foreground whitespace-pre-wrap"&gt;{selectedMessage.message}&lt;/div&gt;
               &lt;/div&gt;
               &lt;DialogFooter&gt;
-                &lt;Button variant="outline" onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setSelectedMessage(null)}</span> className="border-border"&gt;Fermer&lt;/Button&gt;
+                &lt;Button variant="outline" onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etSelectedMessage(null)}</span> className="border-border"&gt;Fermer&lt;/Button&gt;
               &lt;/DialogFooter&gt;
             &lt;/DialogContent&gt;
           &lt;/Dialog&gt;
@@ -739,7 +745,7 @@ const AdminMessages: React.FC = <span class="cstat-no" title="statement not cove
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.128Z
+                at 2026-09-03T10:34:58.552Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

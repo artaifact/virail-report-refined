@@ -147,10 +147,10 @@ class ApiService {
       const isGetLike = method === 'GET' || method === 'HEAD';
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...options,
+        method,
         credentials: 'include', // Important pour les cookies JWT
         headers: {
-          // Ne pas envoyer Content-Type pour GET/HEAD (évite un préflight CORS inutile)
-          ...(isGetLike ? {} : { 'Content-Type': 'application/json' }),
+          'Content-Type': 'application/json',
           ...(options.headers || {}),
         },
         signal: controller.signal,
@@ -183,14 +183,16 @@ class ApiService {
           );
         }
 
-        let errorData: any = { detail: { message: `Erreur HTTP: ${response.status}` } };
+        let errorData: any = null;
         try {
-          const errorText = await response.text();
-          errorData = JSON.parse(errorText);
-          // Log pour le debug (détail Pydantic visible dans la console)
-          console.error(`[API ${response.status}] ${endpoint}`, errorData);
+          errorData = await response.json();
         } catch {
-          // ignore parse error
+          try {
+            const errorText = await response.text();
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { detail: { message: `Erreur HTTP: ${response.status}` } };
+          }
         }
 
         const detail = errorData?.detail;
@@ -211,7 +213,7 @@ class ApiService {
       clearTimeout(timeoutId);
       
       if (error instanceof Error) {
-        if (error.name === 'AbortError') {
+        if (error.name === 'AbortError' || error.message === 'AbortError' || error.message.toLowerCase().includes('abort')) {
           throw new Error('Délai d\'attente dépassé');
         }
         throw error;
@@ -513,7 +515,7 @@ class ApiService {
     created_at: string;
   }> {
     try {
-      return await this.request('/api/v1/competitors/analyze', {
+      return await this.request('/api/v3/competitors/analyze', {
         method: 'POST',
         body: JSON.stringify({
           url,

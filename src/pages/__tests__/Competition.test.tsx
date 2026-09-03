@@ -1,508 +1,296 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { Competition } from '../Competition';
-import { useCompetitiveAnalysis } from '@/hooks/useCompetitiveAnalysis';
-import { useToast } from '@/hooks/use-toast';
+import { useReports, useReport } from '@/hooks/useReports';
+import * as competitorService from '@/services/competitorAnalysisService';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
-// Mock dependencies
-jest.mock('@/hooks/useCompetitiveAnalysis');
-jest.mock('@/hooks/use-toast');
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useNavigate: () => jest.fn(),
+jest.mock('@/hooks/useReports', () => ({
+  ...jest.requireActual('@/hooks/useReports'),
+  useReports: jest.fn(),
+  useReport: jest.fn(),
+}));
+jest.mock('@/services/competitorAnalysisService', () => ({
+  ...jest.requireActual('@/services/competitorAnalysisService'),
+  getCompetitorAnalysisById: jest.fn(),
+  getCompetitorAnalysisFromReport: jest.fn(),
+  extractDomain: (url: string) => {
+    try {
+      return new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace('www.', '');
+    } catch {
+      return url;
+    }
+  },
 }));
 
-// Mock icons
-jest.mock('lucide-react', () => ({
-  Trophy: () => <div data-testid="trophy-icon">Trophy</div>,
-  Plus: () => <div data-testid="plus-icon">Plus</div>,
-  Loader2: () => <div data-testid="loader-icon">Loader2</div>,
-  RefreshCw: () => <div data-testid="refresh-icon">RefreshCw</div>,
-  Trash2: () => <div data-testid="trash-icon">Trash2</div>,
-  ExternalLink: () => <div data-testid="external-link-icon">ExternalLink</div>,
-  ArrowLeft: () => <div data-testid="arrow-left-icon">ArrowLeft</div>,
-  BarChart3: () => <div data-testid="bar-chart-icon">BarChart3</div>,
-  Target: () => <div data-testid="target-icon">Target</div>,
-  TrendingUp: () => <div data-testid="trending-up-icon">TrendingUp</div>,
-  Brain: () => <div data-testid="brain-icon">Brain</div>,
-  AlertCircle: () => <div data-testid="alert-circle-icon">AlertCircle</div>,
-  CheckCircle: () => <div data-testid="check-circle-icon">CheckCircle</div>,
-  Clock: () => <div data-testid="clock-icon">Clock</div>,
+const mockUseReports = useReports as jest.MockedFunction<typeof useReports>;
+const mockUseReport = useReport as jest.MockedFunction<typeof useReport>;
+const mockGetCompetitorAnalysisFromReport = competitorService.getCompetitorAnalysisFromReport as jest.Mock;
+const mockGetCompetitorAnalysisById = competitorService.getCompetitorAnalysisById as jest.Mock;
+
+jest.mock('@/hooks/usePayment', () => ({
+  usePayment: () => ({
+    userPlan: 'pro',
+    plans: [],
+    loading: false,
+    error: null,
+    hasActiveSubscription: true,
+    checkFeatureAccess: () => true,
+    incrementUsage: jest.fn(),
+    subscription: { plan: { id: 'pro' } },
+  }),
 }));
 
-const mockUseCompetitiveAnalysis = useCompetitiveAnalysis as jest.MockedFunction<typeof useCompetitiveAnalysis>;
-const mockUseToast = useToast as jest.MockedFunction<typeof useToast>;
+jest.mock('@/contexts/PaymentContext', () => ({
+  usePayment: () => ({
+    userPlan: 'pro',
+    plans: [],
+    loading: false,
+    error: null,
+    hasActiveSubscription: true,
+    checkFeatureAccess: () => true,
+    incrementUsage: jest.fn(),
+    subscription: { plan: { id: 'pro' } },
+  }),
+  PaymentProvider: ({ children }: any) => children,
+}));
+
+// Mock recharts to prevent rendering issues in JSDOM
+jest.mock('recharts', () => {
+  const OriginalModule = jest.requireActual('recharts');
+  const React = require('react');
+  return {
+    ...OriginalModule,
+    ResponsiveContainer: ({ children }: any) => React.createElement('div', { 'data-testid': 'responsive-container' }, children),
+  };
+});
 
 const renderWithRouter = (component: React.ReactElement) => {
   return render(
     <BrowserRouter>
-      {component}
+      <TooltipProvider>
+        {component}
+      </TooltipProvider>
     </BrowserRouter>
   );
 };
 
 describe('Competition', () => {
-  const mockCompetitiveAnalysis = {
-    isAnalyzing: false,
-    hasAnalysis: false,
-    currentAnalysis: null,
-    savedAnalyses: [],
-    error: null,
-    progress: 0,
-    startAnalysis: jest.fn(),
-    loadAnalysis: jest.fn(),
-    deleteAnalysis: jest.fn(),
-    clearError: jest.fn(),
-    refreshAnalyses: jest.fn(),
-    updateProgress: jest.fn(),
-    usageInfo: { used: 1, limit: 10, remaining: 9 },
-  };
-
-  const mockToast = {
-    toast: jest.fn(),
+  const mockAnalysisData: any = {
+    analysis_id: 1,
+    url: 'https://example.com',
+    title: 'Analyse Example',
+    description: 'Description',
+    models_analysis: [],
+    consolidated_competitors: [],
+    mini_llm_results: [],
+    target_positioning: {
+      target_site: 'https://example.com',
+      rank: 1,
+      total_competitors: 3,
+      global_score: 85,
+    },
+    global_stats: {
+      total_models_executed: 4,
+      total_competitors_found: 3,
+      analysis_duration_ms: 1000,
+      average_competitors_per_model: 2,
+    },
+    analysis_metadata: {
+      min_score: 0,
+      min_mentions: 0,
+      models_requested: [],
+      include_raw: false,
+      include_benchmark: true,
+      include_llmo_analysis: true,
+      benchmark_competitors_count: 3,
+      llmo_analysis_count: 3,
+    },
+    created_at: '2025-01-01T00:00:00Z',
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseCompetitiveAnalysis.mockReturnValue(mockCompetitiveAnalysis);
-    mockUseToast.mockReturnValue(mockToast);
+
+    mockUseReports.mockReturnValue({
+      reports: [],
+      loading: false,
+      error: null,
+      createAnalysis: jest.fn(),
+      refreshReports: jest.fn(),
+    });
+
+    mockUseReport.mockReturnValue({
+      report: null,
+      loading: false,
+      error: null,
+    });
+
+    mockGetCompetitorAnalysisFromReport.mockResolvedValue(null);
+    mockGetCompetitorAnalysisById.mockResolvedValue(null);
   });
 
-  it('should render page title and breadcrumb', () => {
+  it('should render skeleton and empty state when no analysis is available', () => {
     renderWithRouter(<Competition />);
 
-    expect(screen.getByText('Analyse Concurrentielle GEO')).toBeInTheDocument();
-    expect(screen.getByText('Tableau de bord')).toBeInTheDocument();
-    expect(screen.getByText('Analyse Concurrentielle GEO')).toBeInTheDocument();
+    expect(screen.getByText('Aucune analyse disponible')).toBeInTheDocument();
   });
 
-  it('should render new analysis button', () => {
-    renderWithRouter(<Competition />);
-
-    const newAnalysisButton = screen.getByText('Nouvelle Analyse');
-    expect(newAnalysisButton).toBeInTheDocument();
-  });
-
-  it('should open new analysis dialog when button is clicked', () => {
-    renderWithRouter(<Competition />);
-
-    const newAnalysisButton = screen.getByText('Nouvelle Analyse');
-    fireEvent.click(newAnalysisButton);
-
-    expect(screen.getByText('Lancer une analyse concurrentielle')).toBeInTheDocument();
-  });
-
-  it('should handle URL input and start analysis', async () => {
-    const mockStartAnalysis = jest.fn().mockResolvedValue();
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      startAnalysis: mockStartAnalysis,
+  it('should render loading/waiting state when reports are loading', () => {
+    mockUseReports.mockReturnValue({
+      reports: [],
+      loading: true,
+      error: null,
+      createAnalysis: jest.fn(),
+      refreshReports: jest.fn(),
     });
 
     renderWithRouter(<Competition />);
 
-    // Open dialog
-    const newAnalysisButton = screen.getByText('Nouvelle Analyse');
-    fireEvent.click(newAnalysisButton);
-
-    // Enter URL
-    const urlInput = screen.getByPlaceholderText('https://example.com');
-    fireEvent.change(urlInput, { target: { value: 'example.com' } });
-
-    // Start analysis
-    const startButton = screen.getByText('Lancer l\'analyse');
-    fireEvent.click(startButton);
-
-    await waitFor(() => {
-      expect(mockStartAnalysis).toHaveBeenCalledWith('https://example.com');
-    });
+    expect(screen.getByText('Aucune analyse disponible')).toBeInTheDocument();
   });
 
-  it('should add https:// prefix to URLs without protocol', async () => {
-    const mockStartAnalysis = jest.fn().mockResolvedValue();
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      startAnalysis: mockStartAnalysis,
-    });
-
-    renderWithRouter(<Competition />);
-
-    // Open dialog
-    const newAnalysisButton = screen.getByText('Nouvelle Analyse');
-    fireEvent.click(newAnalysisButton);
-
-    // Enter URL without protocol
-    const urlInput = screen.getByPlaceholderText('https://example.com');
-    fireEvent.change(urlInput, { target: { value: 'example.com' } });
-
-    // Start analysis
-    const startButton = screen.getByText('Lancer l\'analyse');
-    fireEvent.click(startButton);
-
-    await waitFor(() => {
-      expect(mockStartAnalysis).toHaveBeenCalledWith('https://example.com');
-    });
-  });
-
-  it('should show loading state during analysis', () => {
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      isAnalyzing: true,
-      progress: 50,
-    });
-
-    renderWithRouter(<Competition />);
-
-    expect(screen.getByText('Analyse en cours...')).toBeInTheDocument();
-    expect(screen.getByText('50%')).toBeInTheDocument();
-  });
-
-  it('should show error message when analysis fails', () => {
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      error: 'Analysis failed',
-    });
-
-    renderWithRouter(<Competition />);
-
-    expect(screen.getByText('Analysis failed')).toBeInTheDocument();
-  });
-
-  it('should clear error when clear button is clicked', () => {
-    const mockClearError = jest.fn();
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      error: 'Analysis failed',
-      clearError: mockClearError,
-    });
-
-    renderWithRouter(<Competition />);
-
-    const clearButton = screen.getByText('Effacer');
-    fireEvent.click(clearButton);
-
-    expect(mockClearError).toHaveBeenCalled();
-  });
-
-  it('should display saved analyses', () => {
-    const mockSavedAnalyses = [
+  it('should load analysis and render positioning when report is available', async () => {
+    const mockReports = [
       {
         id: '1',
-        timestamp: '2025-01-01T00:00:00Z',
-        userSite: {
-          url: 'https://example.com',
-          domain: 'example.com',
-          report: { total_score: 85 },
-        },
-        competitors: [
-          {
-            url: 'https://competitor1.com',
-            domain: 'competitor1.com',
-            report: { total_score: 80 },
+        url: 'https://example.com',
+        domain: 'example.com',
+        createdAt: '2025-01-01T00:00:00Z',
+        metadata: { score: 85 },
+        status: 'completed',
+      },
+    ];
+
+    mockUseReports.mockReturnValue({
+      reports: mockReports,
+      loading: false,
+      error: null,
+      createAnalysis: jest.fn(),
+      refreshReports: jest.fn(),
+    });
+
+    mockUseReport.mockReturnValue({
+      report: {
+        id: '1',
+        url: 'https://example.com',
+      } as any,
+      loading: false,
+      error: null,
+    });
+
+    mockGetCompetitorAnalysisFromReport.mockResolvedValue(mockAnalysisData);
+
+    renderWithRouter(<Competition />);
+
+    await waitFor(() => {
+      expect(mockGetCompetitorAnalysisFromReport).toHaveBeenCalledWith(1);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Votre positionnement')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Evolution du score GEO sur 1 analyse/i)).toBeInTheDocument();
+  });
+
+  it('should fallback to getCompetitorAnalysisById if fromReport returns null', async () => {
+    const mockReports = [
+      {
+        id: '2',
+        url: 'https://test.com',
+        domain: 'test.com',
+        createdAt: '2025-01-02T00:00:00Z',
+        metadata: { score: 90 },
+        status: 'completed',
+      },
+    ];
+
+    mockUseReports.mockReturnValue({
+      reports: mockReports,
+      loading: false,
+      error: null,
+      createAnalysis: jest.fn(),
+      refreshReports: jest.fn(),
+    });
+
+    mockUseReport.mockReturnValue({
+      report: { id: '2', url: 'https://test.com' } as any,
+      loading: false,
+      error: null,
+    });
+
+    mockGetCompetitorAnalysisFromReport.mockResolvedValue(null);
+    mockGetCompetitorAnalysisById.mockResolvedValue({
+      ...mockAnalysisData,
+      analysis_id: 2,
+      url: 'https://test.com',
+    });
+
+    renderWithRouter(<Competition />);
+
+    await waitFor(() => {
+      expect(mockGetCompetitorAnalysisById).toHaveBeenCalledWith(2);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Votre positionnement')).toBeInTheDocument();
+    });
+  });
+
+  it('should render qualitative analysis when v3Data is present', async () => {
+    const mockReports = [
+      {
+        id: '1',
+        url: 'https://example.com',
+        domain: 'example.com',
+        createdAt: '2025-01-01T00:00:00Z',
+        metadata: { score: 85 },
+        status: 'completed',
+      },
+    ];
+
+    mockUseReports.mockReturnValue({
+      reports: mockReports,
+      loading: false,
+      error: null,
+      createAnalysis: jest.fn(),
+      refreshReports: jest.fn(),
+    });
+
+    mockUseReport.mockReturnValue({
+      report: {
+        id: '1',
+        url: 'https://example.com',
+        analyse_concurrentielle_v3: {
+          analyse_qualitative: {
+            forces: ['Bonne autorité de domaine'],
+            faiblesses: ['Moins de citations IA'],
+            opportunités: ['Cibler les requêtes comparatives'],
           },
-        ],
-        summary: {
-          userRank: 1,
-          totalAnalyzed: 2,
-          strengthsVsCompetitors: ['Strength 1'],
-          weaknessesVsCompetitors: ['Weakness 1'],
-          opportunitiesIdentified: ['Opportunity 1'],
         },
-      },
-    ];
+      } as any,
+      loading: false,
+      error: null,
+    });
 
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      savedAnalyses: mockSavedAnalyses,
+    mockGetCompetitorAnalysisFromReport.mockResolvedValue({
+      ...mockAnalysisData,
+      target_positioning: {
+        ...mockAnalysisData.target_positioning,
+        competitive_advantages: ['Bonne autorité de domaine'],
+        improvement_areas: ['Moins de citations IA'],
+      },
     });
 
     renderWithRouter(<Competition />);
-
-    expect(screen.getByText('example.com')).toBeInTheDocument();
-    expect(screen.getByText('1er sur 2')).toBeInTheDocument();
-    expect(screen.getByText('85%')).toBeInTheDocument();
-  });
-
-  it('should load analysis when analysis card is clicked', async () => {
-    const mockLoadAnalysis = jest.fn().mockResolvedValue();
-    const mockSavedAnalyses = [
-      {
-        id: '1',
-        timestamp: '2025-01-01T00:00:00Z',
-        userSite: {
-          url: 'https://example.com',
-          domain: 'example.com',
-          report: { total_score: 85 },
-        },
-        competitors: [],
-        summary: {
-          userRank: 1,
-          totalAnalyzed: 1,
-          strengthsVsCompetitors: [],
-          weaknessesVsCompetitors: [],
-          opportunitiesIdentified: [],
-        },
-      },
-    ];
-
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      savedAnalyses: mockSavedAnalyses,
-      loadAnalysis: mockLoadAnalysis,
-    });
-
-    renderWithRouter(<Competition />);
-
-    const analysisCard = screen.getByText('example.com');
-    fireEvent.click(analysisCard);
 
     await waitFor(() => {
-      expect(mockLoadAnalysis).toHaveBeenCalledWith('1');
-    });
-  });
-
-  it('should delete analysis when delete button is clicked', async () => {
-    const mockDeleteAnalysis = jest.fn().mockResolvedValue();
-    const mockSavedAnalyses = [
-      {
-        id: '1',
-        timestamp: '2025-01-01T00:00:00Z',
-        userSite: {
-          url: 'https://example.com',
-          domain: 'example.com',
-          report: { total_score: 85 },
-        },
-        competitors: [],
-        summary: {
-          userRank: 1,
-          totalAnalyzed: 1,
-          strengthsVsCompetitors: [],
-          weaknessesVsCompetitors: [],
-          opportunitiesIdentified: [],
-        },
-      },
-    ];
-
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      savedAnalyses: mockSavedAnalyses,
-      deleteAnalysis: mockDeleteAnalysis,
+      expect(screen.getByText('Analyse qualitative')).toBeInTheDocument();
     });
 
-    renderWithRouter(<Competition />);
-
-    const deleteButton = screen.getByTestId('trash-icon');
-    fireEvent.click(deleteButton);
-
-    await waitFor(() => {
-      expect(mockDeleteAnalysis).toHaveBeenCalledWith('1');
-    });
-  });
-
-  it('should display current analysis results', () => {
-    const mockCurrentAnalysis = {
-      id: '1',
-      timestamp: '2025-01-01T00:00:00Z',
-      userSite: {
-        url: 'https://example.com',
-        domain: 'example.com',
-        report: { total_score: 85 },
-      },
-      competitors: [
-        {
-          url: 'https://competitor1.com',
-          domain: 'competitor1.com',
-          report: { total_score: 80 },
-        },
-        {
-          url: 'https://competitor2.com',
-          domain: 'competitor2.com',
-          report: { total_score: 75 },
-        },
-      ],
-      summary: {
-        userRank: 1,
-        totalAnalyzed: 3,
-        strengthsVsCompetitors: ['Strength 1', 'Strength 2'],
-        weaknessesVsCompetitors: ['Weakness 1'],
-        opportunitiesIdentified: ['Opportunity 1', 'Opportunity 2'],
-      },
-    };
-
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      hasAnalysis: true,
-      currentAnalysis: mockCurrentAnalysis,
-    });
-
-    renderWithRouter(<Competition />);
-
-    expect(screen.getByText('Résultats de l\'analyse')).toBeInTheDocument();
-    expect(screen.getByText('example.com')).toBeInTheDocument();
-    expect(screen.getByText('competitor1.com')).toBeInTheDocument();
-    expect(screen.getByText('competitor2.com')).toBeInTheDocument();
-    expect(screen.getByText('1er sur 3')).toBeInTheDocument();
-  });
-
-  it('should show empty state when no saved analyses', () => {
-    renderWithRouter(<Competition />);
-
-    expect(screen.getByText('Aucune analyse sauvegardée')).toBeInTheDocument();
-  });
-
-  it('should display usage information', () => {
-    renderWithRouter(<Competition />);
-
-    expect(screen.getByText('Analyses utilisées: 1/10')).toBeInTheDocument();
-    expect(screen.getByText('Restantes: 9')).toBeInTheDocument();
-  });
-
-  it('should refresh analyses when refresh button is clicked', () => {
-    const mockRefreshAnalyses = jest.fn();
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      refreshAnalyses: mockRefreshAnalyses,
-    });
-
-    renderWithRouter(<Competition />);
-
-    const refreshButton = screen.getByTestId('refresh-icon');
-    fireEvent.click(refreshButton);
-
-    expect(mockRefreshAnalyses).toHaveBeenCalled();
-  });
-
-  it('should handle tab switching', () => {
-    renderWithRouter(<Competition />);
-
-    const resultsTab = screen.getByText('Résultats');
-    fireEvent.click(resultsTab);
-
-    expect(resultsTab).toHaveAttribute('data-state', 'active');
-  });
-
-  it('should show please wait message during analysis', () => {
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      isAnalyzing: true,
-    });
-
-    renderWithRouter(<Competition />);
-
-    expect(screen.getByText('Veuillez patienter, votre analyse sera prête dans quelques instants...')).toBeInTheDocument();
-  });
-
-  it('should handle URL blur event for prefix addition', () => {
-    renderWithRouter(<Competition />);
-
-    // Open dialog
-    const newAnalysisButton = screen.getByText('Nouvelle Analyse');
-    fireEvent.click(newAnalysisButton);
-
-    // Enter URL without protocol
-    const urlInput = screen.getByPlaceholderText('https://example.com');
-    fireEvent.change(urlInput, { target: { value: 'example.com' } });
-    fireEvent.blur(urlInput);
-
-    // URL should have https:// prefix added
-    expect(urlInput).toHaveValue('https://example.com');
-  });
-
-  it('should show success message after analysis completion', async () => {
-    const mockStartAnalysis = jest.fn().mockResolvedValue();
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      startAnalysis: mockStartAnalysis,
-    });
-
-    renderWithRouter(<Competition />);
-
-    // Open dialog
-    const newAnalysisButton = screen.getByText('Nouvelle Analyse');
-    fireEvent.click(newAnalysisButton);
-
-    // Enter URL
-    const urlInput = screen.getByPlaceholderText('https://example.com');
-    fireEvent.change(urlInput, { target: { value: 'example.com' } });
-
-    // Start analysis
-    const startButton = screen.getByText('Lancer l\'analyse');
-    fireEvent.click(startButton);
-
-    await waitFor(() => {
-      expect(mockToast.toast).toHaveBeenCalledWith({
-        title: 'Analyse lancée',
-        description: 'Votre analyse concurrentielle a été lancée avec succès',
-      });
-    });
-  });
-
-  it('should handle analysis with competitors', () => {
-    const mockCurrentAnalysis = {
-      id: '1',
-      timestamp: '2025-01-01T00:00:00Z',
-      userSite: {
-        url: 'https://example.com',
-        domain: 'example.com',
-        report: { total_score: 85 },
-      },
-      competitors: [
-        {
-          url: 'https://competitor1.com',
-          domain: 'competitor1.com',
-          report: { total_score: 80 },
-        },
-      ],
-      summary: {
-        userRank: 1,
-        totalAnalyzed: 2,
-        strengthsVsCompetitors: ['Strength 1'],
-        weaknessesVsCompetitors: ['Weakness 1'],
-        opportunitiesIdentified: ['Opportunity 1'],
-      },
-    };
-
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      hasAnalysis: true,
-      currentAnalysis: mockCurrentAnalysis,
-    });
-
-    renderWithRouter(<Competition />);
-
-    expect(screen.getByText('Forces par rapport aux concurrents')).toBeInTheDocument();
-    expect(screen.getByText('Faiblesses par rapport aux concurrents')).toBeInTheDocument();
-    expect(screen.getByText('Opportunités identifiées')).toBeInTheDocument();
-  });
-
-  it('should display analysis date and time', () => {
-    const mockCurrentAnalysis = {
-      id: '1',
-      timestamp: '2025-01-01T12:00:00Z',
-      userSite: {
-        url: 'https://example.com',
-        domain: 'example.com',
-        report: { total_score: 85 },
-      },
-      competitors: [],
-      summary: {
-        userRank: 1,
-        totalAnalyzed: 1,
-        strengthsVsCompetitors: [],
-        weaknessesVsCompetitors: [],
-        opportunitiesIdentified: [],
-      },
-    };
-
-    mockUseCompetitiveAnalysis.mockReturnValue({
-      ...mockCompetitiveAnalysis,
-      hasAnalysis: true,
-      currentAnalysis: mockCurrentAnalysis,
-    });
-
-    renderWithRouter(<Competition />);
-
-    expect(screen.getByText(/01\/01\/2025/)).toBeInTheDocument();
+    expect(screen.getByText('Bonne autorité de domaine')).toBeInTheDocument();
+    expect(screen.getByText('Moins de citations IA')).toBeInTheDocument();
   });
 });

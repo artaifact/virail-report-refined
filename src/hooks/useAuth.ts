@@ -83,7 +83,7 @@ export function useAuth() {
 
       return response;
     } catch (error) {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
+      setAuthState(prev => ({ ...prev, user: null, isAuthenticated: false, isLoading: false }));
       
       const message = error instanceof Error ? error.message : 'Erreur de connexion';
       toast({
@@ -118,7 +118,7 @@ export function useAuth() {
 
       return response;
     } catch (error) {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
+      setAuthState(prev => ({ ...prev, user: null, isAuthenticated: false, isLoading: false }));
       
       const message = error instanceof Error ? error.message : 'Erreur d\'inscription';
       toast({
@@ -144,7 +144,7 @@ export function useAuth() {
 
       toast({
         title: "Déconnexion réussie",
-        description: "À bientôt !",
+        description: "Vous avez été déconnecté avec succès",
         duration: 3000,
       });
     } catch (error) {

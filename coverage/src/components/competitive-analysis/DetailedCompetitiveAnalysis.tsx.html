@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/34</span>
+                <span class='fraction'>0/30</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/30</span>
+                <span class='fraction'>0/26</span>
             </div>
         
             
@@ -367,11 +367,7 @@
 <a name='L302'></a><a href='#L302'>302</a>
 <a name='L303'></a><a href='#L303'>303</a>
 <a name='L304'></a><a href='#L304'>304</a>
-<a name='L305'></a><a href='#L305'>305</a>
-<a name='L306'></a><a href='#L306'>306</a>
-<a name='L307'></a><a href='#L307'>307</a>
-<a name='L308'></a><a href='#L308'>308</a>
-<a name='L309'></a><a href='#L309'>309</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L305'></a><a href='#L305'>305</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -433,11 +429,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -723,7 +715,7 @@ function <span class="fstat-no" title="function not covered" >DetailedCompetitiv
       &lt;div className="space-y-6"&gt;
         &lt;div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"&gt;
           {[...Array(3)].map(<span class="fstat-no" title="function not covered" >(_</span>, i) =&gt; (
-<span class="cstat-no" title="statement not covered" >            &lt;Card key={i} c</span>lassName="animate-pulse"&gt;
+<span class="cstat-no" title="statement not covered" >            &lt;Card key={i} className="animate-pulse"&gt;</span>
               &lt;CardHeader&gt;
                 &lt;div className="h-4 bg-gray-200 rounded w-3/4"&gt;&lt;/div&gt;
               &lt;/CardHeader&gt;
@@ -741,12 +733,8 @@ function <span class="fstat-no" title="function not covered" >DetailedCompetitiv
     );
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" > //console.log('🔍 DetailedCompetitiveAnalysis - competitors:', competitors);</span>
-<span class="cstat-no" title="statement not covered" > //console.log('🔍 DetailedCompetitiveAnalysis - competitors length:', competitors?.length);</span>
-<span class="cstat-no" title="statement not covered" > //console.log('🔍 DetailedCompetitiveAnalysis - isLoading:', isLoading);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  if (!competitors || competitors.length === 0) {</span>
-<span class="cstat-no" title="statement not covered" >   //console.log('⚠️ Aucune donnée de concurrents - competitors:', competitors);</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
       &lt;Card&gt;
         &lt;CardContent className="p-6 text-center"&gt;
@@ -765,7 +753,7 @@ function <span class="fstat-no" title="function not covered" >DetailedCompetitiv
 <span class="cstat-no" title="statement not covered" >    return &lt;Minus className="h-4 w-4 text-gray-500" /&gt;;</span>
   };
 &nbsp;
-  const formatNumber = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(n</span>um: number) =&gt; {</span>
+  const formatNumber = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >num: number)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (num &gt;= 1000000) <span class="cstat-no" title="statement not covered" >return `${(num / 1000000).toFixed(1)}M`;</span></span>
 <span class="cstat-no" title="statement not covered" >    if (num &gt;= 1000) <span class="cstat-no" title="statement not covered" >return `${(num / 1000).toFixed(1)}K`;</span></span>
 <span class="cstat-no" title="statement not covered" >    return num.toString();</span>
@@ -775,7 +763,7 @@ function <span class="fstat-no" title="function not covered" >DetailedCompetitiv
     &lt;div className="space-y-6"&gt;
       &lt;div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"&gt;
         {competitors.map(<span class="fstat-no" title="function not covered" >(c</span>ompetitor, index) =&gt; (
-<span class="cstat-no" title="statement not covered" >          &lt;Card key={index} c</span>lassName="hover:shadow-lg transition-shadow"&gt;
+<span class="cstat-no" title="statement not covered" >          &lt;Card key={index} className="hover:shadow-lg transition-shadow"&gt;</span>
             &lt;CardHeader&gt;
               &lt;div className="flex items-center justify-between"&gt;
                 &lt;CardTitle className="text-lg"&gt;{competitor.name}&lt;/CardTitle&gt;
@@ -878,7 +866,7 @@ function <span class="fstat-no" title="function not covered" >DetailedCompetitiv
                   &lt;strong&gt;Fonctionnalités mentionnées:&lt;/strong&gt;
                   &lt;div className="mt-1 flex flex-wrap gap-1"&gt;
                     {competitor.mentioned_features.map(<span class="fstat-no" title="function not covered" >(f</span>eature, idx) =&gt; (
-<span class="cstat-no" title="statement not covered" >                      &lt;Badge key={idx} v</span>ariant="secondary" className="text-xs"&gt;
+<span class="cstat-no" title="statement not covered" >                      &lt;Badge key={idx} variant="secondary" className="text-xs"&gt;</span>
                         {feature}
                       &lt;/Badge&gt;
                     ))}
@@ -892,7 +880,7 @@ function <span class="fstat-no" title="function not covered" >DetailedCompetitiv
                   &lt;strong&gt;Avantages concurrentiels:&lt;/strong&gt;
                   &lt;div className="mt-1 flex flex-wrap gap-1"&gt;
                     {competitor.competitive_advantages.map(<span class="fstat-no" title="function not covered" >(a</span>dvantage, idx) =&gt; (
-<span class="cstat-no" title="statement not covered" >                      &lt;Badge key={idx} v</span>ariant="default" className="text-xs bg-green-100 text-green-800"&gt;
+<span class="cstat-no" title="statement not covered" >                      &lt;Badge key={idx} variant="default" className="text-xs bg-green-100 text-green-800"&gt;</span>
                         {advantage}
                       &lt;/Badge&gt;
                     ))}
@@ -941,7 +929,7 @@ function <span class="fstat-no" title="function not covered" >DetailedCompetitiv
                   &lt;h4 className="text-sm font-medium mb-2"&gt;Top mots-clés&lt;/h4&gt;
                   &lt;div className="flex flex-wrap gap-1"&gt;
                     {competitor.top_keywords.slice(0, 3).map(<span class="fstat-no" title="function not covered" >(k</span>eyword, i) =&gt; (
-<span class="cstat-no" title="statement not covered" >                      &lt;Badge key={i} v</span>ariant="outline" className="text-xs"&gt;
+<span class="cstat-no" title="statement not covered" >                      &lt;Badge key={i} variant="outline" className="text-xs"&gt;</span>
                         {keyword}
                       &lt;/Badge&gt;
                     ))}
@@ -956,7 +944,7 @@ function <span class="fstat-no" title="function not covered" >DetailedCompetitiv
                     &lt;h4 className="text-sm font-medium text-green-700 mb-1"&gt;Forces&lt;/h4&gt;
                     &lt;ul className="text-xs text-green-600 space-y-1"&gt;
                       {competitor.strengths.slice(0, 2).map(<span class="fstat-no" title="function not covered" >(s</span>trength, i) =&gt; (
-<span class="cstat-no" title="statement not covered" >                        &lt;li key={i} c</span>lassName="flex items-start gap-1"&gt;
+<span class="cstat-no" title="statement not covered" >                        &lt;li key={i} className="flex items-start gap-1"&gt;</span>
                           &lt;span className="text-green-500"&gt;•&lt;/span&gt;
                           {strength}
                         &lt;/li&gt;
@@ -970,7 +958,7 @@ function <span class="fstat-no" title="function not covered" >DetailedCompetitiv
                     &lt;h4 className="text-sm font-medium text-red-700 mb-1"&gt;Faiblesses&lt;/h4&gt;
                     &lt;ul className="text-xs text-red-600 space-y-1"&gt;
                       {competitor.weaknesses.slice(0, 2).map(<span class="fstat-no" title="function not covered" >(w</span>eakness, i) =&gt; (
-<span class="cstat-no" title="statement not covered" >                        &lt;li key={i} c</span>lassName="flex items-start gap-1"&gt;
+<span class="cstat-no" title="statement not covered" >                        &lt;li key={i} className="flex items-start gap-1"&gt;</span>
                           &lt;span className="text-red-500"&gt;•&lt;/span&gt;
                           {weakness}
                         &lt;/li&gt;
@@ -994,7 +982,7 @@ function <span class="fstat-no" title="function not covered" >DetailedCompetitiv
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.627Z
+                at 2026-09-03T10:34:58.787Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

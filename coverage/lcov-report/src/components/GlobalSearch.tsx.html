@@ -335,7 +335,7 @@ interface SearchResult {
   category: string;
 }
 &nbsp;
-const GlobalSearch = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+const GlobalSearch = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
   const [isOpen, setIsOpen] = <span class="cstat-no" title="statement not covered" >useState(false);</span>
   const [query, setQuery] = <span class="cstat-no" title="statement not covered" >useState("");</span>
 &nbsp;
@@ -356,8 +356,8 @@ const GlobalSearch = <span class="cstat-no" title="statement not covered" ><span
       )
     : [];
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-    const handleKeyDown = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(e</span>: KeyboardEvent) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
+    const handleKeyDown = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >e: KeyboardEvent)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      if ((e.ctrlKey || e.metaKey) &amp;&amp; e.key === 'k') {</span>
 <span class="cstat-no" title="statement not covered" >        e.preventDefault();</span>
 <span class="cstat-no" title="statement not covered" >        setIsOpen(true);</span>
@@ -369,7 +369,7 @@ const GlobalSearch = <span class="cstat-no" title="statement not covered" ><span
     };
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    document.addEventListener('keydown', handleKeyDown);</span>
-<span class="cstat-no" title="statement not covered" >    return <span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >document.removeEventListener('keydown', handleKeyDown);</span></span>
+<span class="cstat-no" title="statement not covered" >    return <span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >d</span>ocument.removeEventListener('keydown', handleKeyDown);</span></span>
   }, []);
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  if (!isOpen) <span class="cstat-no" title="statement not covered" >return null;</span></span>
@@ -383,7 +383,7 @@ const GlobalSearch = <span class="cstat-no" title="statement not covered" ><span
             &lt;Input
               placeholder="Rechercher métriques, pages, actions..."
               value={query}
-              onChange={<span class="fstat-no" title="function not covered" >(e</span>) =&gt; <span class="cstat-no" title="statement not covered" >setQuery(e.target.value)}</span>
+              onChange={(<span class="fstat-no" title="function not covered" >e)</span> =&gt; <span class="cstat-no" title="statement not covered" >setQuery(e.target.value)}</span>
               className="border-0 focus:ring-0 text-lg"
               autoFocus
             /&gt;
@@ -398,7 +398,7 @@ const GlobalSearch = <span class="cstat-no" title="statement not covered" ><span
 <span class="cstat-no" title="statement not covered" >                    &lt;div</span>
                       key={index}
                       className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer group"
-                      onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; {
+                      onClick={<span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >                        window.location.href = result.path;</span>
 <span class="cstat-no" title="statement not covered" >                        setIsOpen(false);</span>
 <span class="cstat-no" title="statement not covered" >                        setQuery("");</span>
@@ -435,7 +435,7 @@ const GlobalSearch = <span class="cstat-no" title="statement not covered" ><span
                     key={term}
                     variant="outline" 
                     className="cursor-pointer hover:bg-gray-100"
-                    onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setQuery(term)}</span>
+                    onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etQuery(term)}</span>
                   &gt;
                     {term}
                   &lt;/Badge&gt;
@@ -457,7 +457,7 @@ const GlobalSearch = <span class="cstat-no" title="statement not covered" ><span
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.128Z
+                at 2026-09-03T10:34:58.552Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

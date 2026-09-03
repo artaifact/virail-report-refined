@@ -714,21 +714,21 @@ const PAYMENTS_HISTORY_KEY = <span class="cstat-no" title="statement not covered
   /**
    * Obtenir tous les plans disponibles
    */
-<span class="fstat-no" title="function not covered" >  static </span>getPlans(): Plan[] {
+<span class="fstat-no" title="function not covered" >  static g</span>etPlans(): Plan[] {
 <span class="cstat-no" title="statement not covered" >    return PLANS;</span>
   }
 &nbsp;
   /**
    * Obtenir un plan par ID
    */
-<span class="fstat-no" title="function not covered" >  static </span>getPlanById(planId: string): Plan | null {
+<span class="fstat-no" title="function not covered" >  static g</span>etPlanById(planId: string): Plan | null {
 <span class="cstat-no" title="statement not covered" >    return PLANS.find(<span class="fstat-no" title="function not covered" >plan </span>=&gt; <span class="cstat-no" title="statement not covered" >plan.id === planId)</span> || null;</span>
   }
 &nbsp;
   /**
    * Obtenir le plan actuel de l'utilisateur
    */
-<span class="fstat-no" title="function not covered" >  static </span>getCurrentUserPlan(): UserPlan | null {
+<span class="fstat-no" title="function not covered" >  static g</span>etCurrentUserPlan(): UserPlan | null {
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const stored = <span class="cstat-no" title="statement not covered" >localStorage.getItem(USER_PLAN_KEY);</span>
 <span class="cstat-no" title="statement not covered" >      if (!stored) <span class="cstat-no" title="statement not covered" >return null;</span></span>
@@ -753,7 +753,7 @@ const PAYMENTS_HISTORY_KEY = <span class="cstat-no" title="statement not covered
   /**
    * Simuler un paiement (faux système)
    */
-<span class="fstat-no" title="function not covered" >  static </span>async processPayment(
+<span class="fstat-no" title="function not covered" >  static async p</span>rocessPayment(
     planId: string,
     paymentMethod: Omit&lt;PaymentMethod, 'id'&gt;
   ): Promise&lt;{ success: boolean; subscription?: Subscription; error?: string }&gt; {
@@ -823,7 +823,7 @@ const PAYMENTS_HISTORY_KEY = <span class="cstat-no" title="statement not covered
   /**
    * Changer de plan
    */
-<span class="fstat-no" title="function not covered" >  static </span>async changePlan(newPlanId: string): Promise&lt;{ success: boolean; error?: string }&gt; {
+<span class="fstat-no" title="function not covered" >  static async c</span>hangePlan(newPlanId: string): Promise&lt;{ success: boolean; error?: string }&gt; {
     const currentUserPlan = <span class="cstat-no" title="statement not covered" >this.getCurrentUserPlan();</span>
 <span class="cstat-no" title="statement not covered" >    if (!currentUserPlan) {</span>
 <span class="cstat-no" title="statement not covered" >      return { success: false, error: 'Aucun abonnement actif trouvé' };</span>
@@ -865,7 +865,7 @@ const PAYMENTS_HISTORY_KEY = <span class="cstat-no" title="statement not covered
   /**
    * Annuler l'abonnement
    */
-<span class="fstat-no" title="function not covered" >  static </span>async cancelSubscription(): Promise&lt;{ success: boolean; error?: string }&gt; {
+<span class="fstat-no" title="function not covered" >  static async c</span>ancelSubscription(): Promise&lt;{ success: boolean; error?: string }&gt; {
     const currentUserPlan = <span class="cstat-no" title="statement not covered" >this.getCurrentUserPlan();</span>
 <span class="cstat-no" title="statement not covered" >    if (!currentUserPlan) {</span>
 <span class="cstat-no" title="statement not covered" >      return { success: false, error: 'Aucun abonnement actif trouvé' };</span>
@@ -885,7 +885,7 @@ const PAYMENTS_HISTORY_KEY = <span class="cstat-no" title="statement not covered
   /**
    * Réactiver l'abonnement
    */
-<span class="fstat-no" title="function not covered" >  static </span>async reactivateSubscription(): Promise&lt;{ success: boolean; error?: string }&gt; {
+<span class="fstat-no" title="function not covered" >  static async r</span>eactivateSubscription(): Promise&lt;{ success: boolean; error?: string }&gt; {
     const currentUserPlan = <span class="cstat-no" title="statement not covered" >this.getCurrentUserPlan();</span>
 <span class="cstat-no" title="statement not covered" >    if (!currentUserPlan) {</span>
 <span class="cstat-no" title="statement not covered" >      return { success: false, error: 'Aucun abonnement trouvé' };</span>
@@ -904,7 +904,7 @@ const PAYMENTS_HISTORY_KEY = <span class="cstat-no" title="statement not covered
   /**
    * Obtenir l'historique des paiements
    */
-<span class="fstat-no" title="function not covered" >  static </span>getPaymentsHistory(): Payment[] {
+<span class="fstat-no" title="function not covered" >  static g</span>etPaymentsHistory(): Payment[] {
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const stored = <span class="cstat-no" title="statement not covered" >localStorage.getItem(PAYMENTS_HISTORY_KEY);</span>
 <span class="cstat-no" title="statement not covered" >      return stored ? JSON.parse(stored) : [];</span>
@@ -916,7 +916,7 @@ const PAYMENTS_HISTORY_KEY = <span class="cstat-no" title="statement not covered
   /**
    * Vérifier si l'utilisateur peut utiliser une fonctionnalité
    */
-<span class="fstat-no" title="function not covered" >  static </span>canUseFeature(feature: 'analysis' | 'report'): { allowed: boolean; reason?: string } {
+<span class="fstat-no" title="function not covered" >  static c</span>anUseFeature(feature: 'analysis' | 'report'): { allowed: boolean; reason?: string } {
     const userPlan = <span class="cstat-no" title="statement not covered" >this.getCurrentUserPlan();</span>
     
 <span class="cstat-no" title="statement not covered" >    if (!userPlan || userPlan.subscription.status !== 'active') {</span>
@@ -945,7 +945,7 @@ const PAYMENTS_HISTORY_KEY = <span class="cstat-no" title="statement not covered
   /**
    * Incrémenter l'usage d'une fonctionnalité
    */
-<span class="fstat-no" title="function not covered" >  static </span>incrementUsage(feature: 'analysis' | 'report'): void {
+<span class="fstat-no" title="function not covered" >  static i</span>ncrementUsage(feature: 'analysis' | 'report'): void {
     const userPlan = <span class="cstat-no" title="statement not covered" >this.getCurrentUserPlan();</span>
 <span class="cstat-no" title="statement not covered" >    if (!userPlan) <span class="cstat-no" title="statement not covered" >return;</span></span>
 &nbsp;
@@ -961,7 +961,7 @@ const PAYMENTS_HISTORY_KEY = <span class="cstat-no" title="statement not covered
   /**
    * Réinitialiser l'usage mensuel (à appeler au début de chaque mois)
    */
-<span class="fstat-no" title="function not covered" >  static </span>resetMonthlyUsage(): void {
+<span class="fstat-no" title="function not covered" >  static r</span>esetMonthlyUsage(): void {
     const userPlan = <span class="cstat-no" title="statement not covered" >this.getCurrentUserPlan();</span>
 <span class="cstat-no" title="statement not covered" >    if (!userPlan) <span class="cstat-no" title="statement not covered" >return;</span></span>
 &nbsp;
@@ -981,7 +981,7 @@ const PAYMENTS_HISTORY_KEY = <span class="cstat-no" title="statement not covered
 &nbsp;
   // Méthodes privées
 &nbsp;
-  private <span class="fstat-no" title="function not covered" >static </span>addPaymentToHistory(payment: Payment): void {
+  private <span class="fstat-no" title="function not covered" >static a</span>ddPaymentToHistory(payment: Payment): void {
     const history = <span class="cstat-no" title="statement not covered" >this.getPaymentsHistory();</span>
 <span class="cstat-no" title="statement not covered" >    history.unshift(payment); </span>// Ajouter au début
     // Garder seulement les 50 derniers paiements
@@ -991,7 +991,7 @@ const PAYMENTS_HISTORY_KEY = <span class="cstat-no" title="statement not covered
 <span class="cstat-no" title="statement not covered" >    localStorage.setItem(PAYMENTS_HISTORY_KEY, JSON.stringify(history));</span>
   }
 &nbsp;
-  private <span class="fstat-no" title="function not covered" >static </span>calculateProration(currentPlan: Plan, newPlan: Plan): number {
+  private <span class="fstat-no" title="function not covered" >static c</span>alculateProration(currentPlan: Plan, newPlan: Plan): number {
     // Calcul simplifié du prorata
     const priceDiff = <span class="cstat-no" title="statement not covered" >newPlan.price - currentPlan.price;</span>
     // En production, ceci serait plus complexe (jours restants, etc.)
@@ -1024,7 +1024,7 @@ export const <span class="cstat-no" title="statement not covered" >FREE_PLAN: Pl
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.128Z
+                at 2026-09-03T10:34:58.552Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

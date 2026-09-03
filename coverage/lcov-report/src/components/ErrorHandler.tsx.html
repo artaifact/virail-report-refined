@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/50</span>
+                <span class='fraction'>0/51</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/47</span>
+                <span class='fraction'>0/48</span>
             </div>
         
             
@@ -384,7 +384,7 @@
 <a name='L319'></a><a href='#L319'>319</a>
 <a name='L320'></a><a href='#L320'>320</a>
 <a name='L321'></a><a href='#L321'>321</a>
-<a name='L322'></a><a href='#L322'>322</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L322'></a><a href='#L322'>322</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -705,7 +705,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import React from 'react';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import React from 'react';</span>
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 <span class="cstat-no" title="statement not covered" >import { Button } from '@/components/ui/button';</span>
 <span class="cstat-no" title="statement not covered" >import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';</span>
@@ -745,7 +745,7 @@ const ErrorHandler: React.FC&lt;ErrorHandlerProps&gt; = <span class="cstat-no" t
 }) =&gt; {
 <span class="cstat-no" title="statement not covered" >  if (!error) <span class="cstat-no" title="statement not covered" >return null;</span></span>
 &nbsp;
-  const getErrorIcon = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(c</span>ode: string) =&gt; {</span>
+  const getErrorIcon = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >code: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (code) {</span>
       case 'QUOTA_EXCEEDED':
 <span class="cstat-no" title="statement not covered" >        return &lt;Crown className="h-5 w-5" /&gt;;</span>
@@ -760,7 +760,7 @@ const ErrorHandler: React.FC&lt;ErrorHandlerProps&gt; = <span class="cstat-no" t
     }
   };
 &nbsp;
-  const getErrorColor = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(c</span>ode: string) =&gt; {</span>
+  const getErrorColor = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >code: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (code) {</span>
       case 'QUOTA_EXCEEDED':
 <span class="cstat-no" title="statement not covered" >        return 'border-purple-200 bg-purple-50 text-purple-800';</span>
@@ -775,7 +775,7 @@ const ErrorHandler: React.FC&lt;ErrorHandlerProps&gt; = <span class="cstat-no" t
     }
   };
 &nbsp;
-  const getErrorActions = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(c</span>ode: string) =&gt; {</span>
+  const getErrorActions = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >code: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (code) {</span>
       case 'QUOTA_EXCEEDED':
 <span class="cstat-no" title="statement not covered" >        return (</span>
@@ -924,7 +924,7 @@ const ErrorHandler: React.FC&lt;ErrorHandlerProps&gt; = <span class="cstat-no" t
     }
   };
 &nbsp;
-  const ErrorContent = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =</span>&gt; (</span>
+  const ErrorContent = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =&gt; (</span></span>
 <span class="cstat-no" title="statement not covered" >    &lt;div className={`p-4 rounded-lg border ${getErrorColor(error.code)}`}&gt;</span>
       &lt;div className="flex items-start gap-3"&gt;
         {getErrorIcon(error.code)}
@@ -943,7 +943,7 @@ const ErrorHandler: React.FC&lt;ErrorHandlerProps&gt; = <span class="cstat-no" t
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  if (showAsDialog) {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
-      &lt;Dialog open={!!error} onOpenChange={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >onDismiss?.()}</span>&gt;
+      &lt;Dialog open={!!error} onOpenChange={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >o</span>nDismiss?.()}</span>&gt;
         &lt;DialogContent className="sm:max-w-md"&gt;
           &lt;DialogHeader&gt;
             &lt;DialogTitle className="flex items-center gap-2"&gt;
@@ -989,7 +989,7 @@ export const <span class="cstat-no" title="statement not covered" >createPayment
 };
 &nbsp;
 // Hook pour gérer les erreurs API
-export const <span class="cstat-no" title="statement not covered" >handleApiError = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>e</span>rror: any): PaymentError =&gt; {</span>
+export const <span class="cstat-no" title="statement not covered" >handleApiError = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >e</span>rror: any)</span>: PaymentError =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  if (error.response?.status === 403) {</span>
 <span class="cstat-no" title="statement not covered" >    return createPaymentError(</span>
       'QUOTA_EXCEEDED',
@@ -1033,7 +1033,7 @@ export const <span class="cstat-no" title="statement not covered" >handleApiErro
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.128Z
+                at 2026-09-03T10:34:58.552Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

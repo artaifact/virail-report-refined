@@ -562,7 +562,7 @@ const RecommendationsPanel = <span class="cstat-no" title="statement not covered
     "Améliorer la navigation interne"
   ];
 &nbsp;
-  const getPriorityBadge = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(p</span>riority: string) =&gt; {</span>
+  const getPriorityBadge = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >priority: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (priority) {</span>
       case "high":
 <span class="cstat-no" title="statement not covered" >        return &lt;Badge className="bg-red-100 text-red-800 border-red-200"&gt;Priorité élevée&lt;/Badge&gt;;</span>
@@ -573,7 +573,7 @@ const RecommendationsPanel = <span class="cstat-no" title="statement not covered
     }
   };
 &nbsp;
-  const getPriorityIcon = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(p</span>riority: string) =&gt; {</span>
+  const getPriorityIcon = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >priority: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (priority) {</span>
       case "high":
 <span class="cstat-no" title="statement not covered" >        return &lt;AlertTriangle className="h-5 w-5 text-red-500" /&gt;;</span>
@@ -603,15 +603,15 @@ const RecommendationsPanel = <span class="cstat-no" title="statement not covered
         &lt;/CardHeader&gt;
         &lt;CardContent className="space-y-6"&gt;
           {priorityRecommendations.map(<span class="fstat-no" title="function not covered" >(r</span>ec, index) =&gt; (
-<span class="cstat-no" title="statement not covered" >            &lt;div key={index} c</span>lassName="border border-gray-200 rounded-lg p-6 hover:shadow-sm transition-shadow"&gt;
-              &lt;div className="flex items-start justify-between mb-4"&gt;
+<span class="cstat-no" title="statement not covered" >            &lt;div key={index} className="border border-gray-200 rounded-lg p-6 hover:shadow-sm transition-shadow"&gt;</span>
+              &lt;div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-4"&gt;
                 &lt;div className="flex items-center gap-3"&gt;
-                  &lt;div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center"&gt;
+                  &lt;div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0"&gt;
                     {getPriorityIcon(rec.priority)}
                   &lt;/div&gt;
-                  &lt;h3 className="text-lg font-semibold text-gray-900"&gt;{rec.title}&lt;/h3&gt;
+                  &lt;h3 className="text-base sm:text-lg font-semibold text-gray-900"&gt;{rec.title}&lt;/h3&gt;
                 &lt;/div&gt;
-                &lt;div className="flex items-center gap-2"&gt;
+                &lt;div className="flex items-center gap-2 flex-shrink-0"&gt;
                   {getPriorityBadge(rec.priority)}
                   &lt;Badge variant="outline" className="text-gray-600"&gt;{rec.category}&lt;/Badge&gt;
                 &lt;/div&gt;
@@ -670,7 +670,7 @@ const RecommendationsPanel = <span class="cstat-no" title="statement not covered
         &lt;CardContent&gt;
           &lt;div className="grid md:grid-cols-2 gap-4"&gt;
             {quickWins.map(<span class="fstat-no" title="function not covered" >(w</span>in, index) =&gt; (
-<span class="cstat-no" title="statement not covered" >              &lt;div key={index} c</span>lassName="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors"&gt;
+<span class="cstat-no" title="statement not covered" >              &lt;div key={index} className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors"&gt;</span>
                 &lt;CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" /&gt;
                 &lt;span className="text-gray-900 flex-1"&gt;{win}&lt;/span&gt;
                 &lt;ArrowRight className="h-4 w-4 text-gray-400" /&gt;
@@ -698,7 +698,7 @@ const RecommendationsPanel = <span class="cstat-no" title="statement not covered
         &lt;CardContent className="space-y-6"&gt;
           &lt;div className="space-y-3"&gt;
             &lt;div className="flex justify-between items-center"&gt;
-              &lt;span className="text-gray-700 font-medium"&gt;Score LLMO global&lt;/span&gt;
+              &lt;span className="text-gray-700 font-medium"&gt;Score GEO global&lt;/span&gt;
               &lt;span className="text-2xl font-bold text-blue-600"&gt;72/100&lt;/span&gt;
             &lt;/div&gt;
             &lt;Progress value={72} className="h-3" /&gt;
@@ -710,7 +710,7 @@ const RecommendationsPanel = <span class="cstat-no" title="statement not covered
               { value: "+15%", label: "Amélioration ce mois", color: "green", icon: TrendingUp },
               { value: "A", label: "Grade LLMO actuel", color: "purple", icon: Award }
             ].map(<span class="fstat-no" title="function not covered" >(m</span>etric, index) =&gt; (
-<span class="cstat-no" title="statement not covered" >              &lt;div key={index} c</span>lassName={`text-center p-4 rounded-lg border ${
+<span class="cstat-no" title="statement not covered" >              &lt;div key={index} className={`text-center p-4 rounded-lg border ${</span>
                 metric.color === 'blue' ? 'bg-blue-50 border-blue-200' :
                 metric.color === 'green' ? 'bg-green-50 border-green-200' : 'bg-purple-50 border-purple-200'
               }`}&gt;
@@ -742,7 +742,7 @@ const RecommendationsPanel = <span class="cstat-no" title="statement not covered
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.128Z
+                at 2026-09-03T10:34:58.552Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

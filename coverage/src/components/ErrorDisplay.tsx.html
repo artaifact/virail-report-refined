@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/49</span>
+                <span class='fraction'>0/50</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/48</span>
+                <span class='fraction'>0/49</span>
             </div>
         
             
@@ -287,7 +287,7 @@
 <a name='L222'></a><a href='#L222'>222</a>
 <a name='L223'></a><a href='#L223'>223</a>
 <a name='L224'></a><a href='#L224'>224</a>
-<a name='L225'></a><a href='#L225'>225</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L225'></a><a href='#L225'>225</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -511,7 +511,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import React from 'react';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import React from 'react';</span>
 <span class="cstat-no" title="statement not covered" >import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';</span>
 <span class="cstat-no" title="statement not covered" >import { AlertTriangle, RefreshCw, ExternalLink, HelpCircle } from 'lucide-react';</span>
 <span class="cstat-no" title="statement not covered" >import { Button } from '@/components/ui/button';</span>
@@ -523,7 +523,7 @@ interface ErrorDisplayProps {
 }
 &nbsp;
 export const <span class="cstat-no" title="statement not covered" >ErrorDisplay: React.FC&lt;ErrorDisplayProps&gt; = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>{</span> error, onRetry, url }) =&gt; {</span>
-  const getErrorType = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(e</span>rrorMessage: string) =&gt; {</span>
+  const getErrorType = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >errorMessage: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (errorMessage.includes('incompatible avec notre analyseur')) {</span>
 <span class="cstat-no" title="statement not covered" >      return 'incompatible';</span>
     }
@@ -554,7 +554,7 @@ export const <span class="cstat-no" title="statement not covered" >ErrorDisplay:
 <span class="cstat-no" title="statement not covered" >    return 'generic';</span>
   };
 &nbsp;
-  const getErrorDetails = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(t</span>ype: string) =&gt; {</span>
+  const getErrorDetails = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >type: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (type) {</span>
       case 'incompatible':
 <span class="cstat-no" title="statement not covered" >        return {</span>
@@ -672,7 +672,7 @@ export const <span class="cstat-no" title="statement not covered" >ErrorDisplay:
   const errorType = <span class="cstat-no" title="statement not covered" >getErrorType(error);</span>
   const errorDetails = <span class="cstat-no" title="statement not covered" >getErrorDetails(errorType);</span>
 &nbsp;
-  const getSeverityColor = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(s</span>everity: string) =&gt; {</span>
+  const getSeverityColor = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >severity: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (severity) {</span>
       case 'error':
 <span class="cstat-no" title="statement not covered" >        return 'destructive';</span>
@@ -694,7 +694,7 @@ export const <span class="cstat-no" title="statement not covered" >ErrorDisplay:
           &lt;Button
             variant="ghost"
             size="sm"
-            onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >window.open(url, '_blank')}</span>
+            onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >w</span>indow.open(url, '_blank')}</span>
             className="h-auto p-1 ml-2"
           &gt;
             &lt;ExternalLink className="h-3 w-3" /&gt;
@@ -708,7 +708,7 @@ export const <span class="cstat-no" title="statement not covered" >ErrorDisplay:
           &lt;p className="text-sm font-medium text-gray-700"&gt;Suggestions :&lt;/p&gt;
           &lt;ul className="text-sm text-gray-600 space-y-1 ml-4"&gt;
             {errorDetails.suggestions.map(<span class="fstat-no" title="function not covered" >(s</span>uggestion, index) =&gt; (
-<span class="cstat-no" title="statement not covered" >              &lt;li key={index} c</span>lassName="flex items-start gap-2"&gt;
+<span class="cstat-no" title="statement not covered" >              &lt;li key={index} className="flex items-start gap-2"&gt;</span>
                 &lt;HelpCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /&gt;
                 {suggestion}
               &lt;/li&gt;
@@ -742,7 +742,7 @@ export const <span class="cstat-no" title="statement not covered" >ErrorDisplay:
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.627Z
+                at 2026-09-03T10:34:58.787Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

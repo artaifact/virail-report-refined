@@ -414,10 +414,7 @@ describe('ApiService', () => {
         expect.stringContaining('/analyze'),
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({
-            url: 'https://example.com',
-            output_name: expect.stringContaining('analysis_'),
-          }),
+          body: expect.stringMatching(/"output_name":"analysis_/),
         })
       );
     });

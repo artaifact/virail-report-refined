@@ -18,6 +18,7 @@ global.fetch = jest.fn();
 
 describe('AuthService', () => {
   beforeEach(() => {
+    AuthService.clearAll();
     jest.clearAllMocks();
     localStorageMock.getItem.mockReturnValue(null);
     localStorageMock.setItem.mockImplementation(() => {});
@@ -472,7 +473,8 @@ describe('AuthService', () => {
       const user = { id: '1', email: 'test@example.com', username: 'test' };
       localStorageMock.getItem
         .mockReturnValueOnce(JSON.stringify(user)) // getUser call
-        .mockReturnValueOnce('expired-token'); // getAccessToken call
+        .mockReturnValueOnce('expired-token') // getAccessToken call
+        .mockReturnValue('valid-refresh-token'); // refresh token call
       
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({

@@ -665,7 +665,7 @@ const ContentAnalysis = <span class="cstat-no" title="statement not covered" ><s
     }
   ];
 &nbsp;
-  const getScoreColor = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(s</span>tatus: string) =&gt; {</span>
+  const getScoreColor = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >status: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (status) {</span>
       case "excellent": <span class="cstat-no" title="statement not covered" >return "text-green-600";</span>
       case "good": <span class="cstat-no" title="statement not covered" >return "text-blue-600";</span>
@@ -674,7 +674,7 @@ const ContentAnalysis = <span class="cstat-no" title="statement not covered" ><s
     }
   };
 &nbsp;
-  const getProgressColor = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(s</span>tatus: string) =&gt; {</span>
+  const getProgressColor = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >status: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (status) {</span>
       case "excellent": <span class="cstat-no" title="statement not covered" >return "bg-green-500";</span>
       case "good": <span class="cstat-no" title="statement not covered" >return "bg-blue-500";</span>
@@ -721,7 +721,7 @@ const ContentAnalysis = <span class="cstat-no" title="statement not covered" ><s
     "Contenu actualisé"
   ];
 &nbsp;
-  const getSeverityBadge = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(s</span>everity: string) =&gt; {</span>
+  const getSeverityBadge = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >severity: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (severity) {</span>
       case "high":
 <span class="cstat-no" title="statement not covered" >        return &lt;Badge className="bg-red-100 text-red-800"&gt;Élevé&lt;/Badge&gt;;</span>
@@ -732,7 +732,7 @@ const ContentAnalysis = <span class="cstat-no" title="statement not covered" ><s
     }
   };
 &nbsp;
-  const getSeverityIcon = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(s</span>everity: string) =&gt; {</span>
+  const getSeverityIcon = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >severity: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (severity) {</span>
       case "high":
 <span class="cstat-no" title="statement not covered" >        return &lt;AlertTriangle className="h-4 w-4 text-red-600" /&gt;;</span>
@@ -758,7 +758,7 @@ const ContentAnalysis = <span class="cstat-no" title="statement not covered" ><s
         &lt;/CardHeader&gt;
         &lt;CardContent className="space-y-6"&gt;
           {semanticMetrics.map(<span class="fstat-no" title="function not covered" >(m</span>etric, index) =&gt; (
-<span class="cstat-no" title="statement not covered" >            &lt;div key={index} c</span>lassName="space-y-3"&gt;
+<span class="cstat-no" title="statement not covered" >            &lt;div key={index} className="space-y-3"&gt;</span>
               &lt;div className="flex items-center justify-between"&gt;
                 &lt;h4 className="font-semibold text-gray-900"&gt;{metric.category}&lt;/h4&gt;
                 &lt;div className="flex items-center gap-2"&gt;
@@ -794,13 +794,13 @@ const ContentAnalysis = <span class="cstat-no" title="statement not covered" ><s
         &lt;/CardHeader&gt;
         &lt;CardContent className="space-y-4"&gt;
           {contentIssues.map(<span class="fstat-no" title="function not covered" >(i</span>ssue: any, index: number) =&gt; (
-<span class="cstat-no" title="statement not covered" >            &lt;div key={index} c</span>lassName="border border-gray-200 rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors"&gt;
-              &lt;div className="flex items-start justify-between mb-3"&gt;
+<span class="cstat-no" title="statement not covered" >            &lt;div key={index} className="border border-gray-200 rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors"&gt;</span>
+              &lt;div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3"&gt;
                 &lt;div className="flex items-center gap-2"&gt;
                   {getSeverityIcon(issue.severity)}
                   &lt;h4 className="font-semibold text-gray-900"&gt;{issue.title}&lt;/h4&gt;
                 &lt;/div&gt;
-                &lt;div className="flex items-center gap-2"&gt;
+                &lt;div className="flex items-center gap-2 flex-shrink-0"&gt;
                   {getSeverityBadge(issue.severity)}
                   &lt;Badge variant="outline" className="border-gray-300 text-gray-600"&gt;{issue.type}&lt;/Badge&gt;
                 &lt;/div&gt;
@@ -830,7 +830,7 @@ const ContentAnalysis = <span class="cstat-no" title="statement not covered" ><s
         &lt;CardContent&gt;
           &lt;div className="grid md:grid-cols-2 gap-4"&gt;
             {contentStrengths.map(<span class="fstat-no" title="function not covered" >(s</span>trength: string | ContentStrength, index: number) =&gt; (
-<span class="cstat-no" title="statement not covered" >              &lt;div key={index} c</span>lassName="flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200"&gt;
+<span class="cstat-no" title="statement not covered" >              &lt;div key={index} className="flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200"&gt;</span>
                 &lt;CheckCircle className="h-5 w-5 text-green-600 mt-0.5" /&gt;
                 &lt;div&gt;
                   &lt;h4 className="font-semibold text-green-900 mb-1"&gt;
@@ -889,7 +889,7 @@ const ContentAnalysis = <span class="cstat-no" title="statement not covered" ><s
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.128Z
+                at 2026-09-03T10:34:58.552Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

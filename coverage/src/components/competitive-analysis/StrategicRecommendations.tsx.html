@@ -540,7 +540,7 @@ const StrategicRecommendations: React.FC&lt;StrategicRecommendationsProps&gt; = 
   const [expandedCards, setExpandedCards] = <span class="cstat-no" title="statement not covered" >useState&lt;Set&lt;number&gt;&gt;(new Set());</span>
   const [showConclusion, setShowConclusion] = <span class="cstat-no" title="statement not covered" >useState&lt;boolean&gt;(false);</span>
 &nbsp;
-  const toggleCard = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(i</span>ndex: number) =&gt; {</span>
+  const toggleCard = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >index: number)</span> =&gt; {</span>
     const newExpanded = <span class="cstat-no" title="statement not covered" >new Set(expandedCards);</span>
 <span class="cstat-no" title="statement not covered" >    if (newExpanded.has(index)) {</span>
 <span class="cstat-no" title="statement not covered" >      newExpanded.delete(index);</span>
@@ -550,7 +550,7 @@ const StrategicRecommendations: React.FC&lt;StrategicRecommendationsProps&gt; = 
 <span class="cstat-no" title="statement not covered" >    setExpandedCards(newExpanded);</span>
   };
 &nbsp;
-  const getCardColor = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(i</span>ndex: number): string =&gt; {</span>
+  const getCardColor = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >index: number)</span>: string =&gt; {</span>
     const colors = <span class="cstat-no" title="statement not covered" >[</span>
       "from-blue-50 to-indigo-50 border-blue-200",
       "from-green-50 to-emerald-50 border-green-200", 
@@ -561,7 +561,7 @@ const StrategicRecommendations: React.FC&lt;StrategicRecommendationsProps&gt; = 
 <span class="cstat-no" title="statement not covered" >    return colors[index % colors.length];</span>
   };
 &nbsp;
-  const getIconColor = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(i</span>ndex: number): string =&gt; {</span>
+  const getIconColor = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >index: number)</span>: string =&gt; {</span>
     const colors = <span class="cstat-no" title="statement not covered" >[</span>
       "text-blue-600",
       "text-green-600",
@@ -572,7 +572,7 @@ const StrategicRecommendations: React.FC&lt;StrategicRecommendationsProps&gt; = 
 <span class="cstat-no" title="statement not covered" >    return colors[index % colors.length];</span>
   };
 &nbsp;
-  const getIcon = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(i</span>ndex: number) =&gt; {</span>
+  const getIcon = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >index: number)</span> =&gt; {</span>
     const icons = <span class="cstat-no" title="statement not covered" >[</span>
       &lt;FileText className="h-5 w-5" /&gt;,
       &lt;Target className="h-5 w-5" /&gt;,
@@ -612,7 +612,7 @@ const StrategicRecommendations: React.FC&lt;StrategicRecommendationsProps&gt; = 
             key={index} 
             className={`bg-gradient-to-br ${getCardColor(index)} transition-all duration-200 hover:shadow-md`}
           &gt;
-            &lt;CardHeader className="cursor-pointer" onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >toggleCard(index)}</span>&gt;
+            &lt;CardHeader className="cursor-pointer" onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >t</span>oggleCard(index)}</span>&gt;
               &lt;div className="flex items-center justify-between"&gt;
                 &lt;CardTitle className={`flex items-center gap-3 ${getIconColor(index)}`}&gt;
                   &lt;div className={`p-2 bg-white rounded-lg ${getIconColor(index)}`}&gt;
@@ -645,7 +645,7 @@ const StrategicRecommendations: React.FC&lt;StrategicRecommendationsProps&gt; = 
                   &lt;/h4&gt;
                   &lt;div className="space-y-2"&gt;
                     {recommendation.actions.map(<span class="fstat-no" title="function not covered" >(a</span>ction, actionIndex) =&gt; (
-<span class="cstat-no" title="statement not covered" >                      &lt;div key={actionIndex} c</span>lassName="flex items-start gap-3"&gt;
+<span class="cstat-no" title="statement not covered" >                      &lt;div key={actionIndex} className="flex items-start gap-3"&gt;</span>
                         &lt;div className={`p-1 rounded-full ${getIconColor(index)} bg-opacity-20 mt-1`}&gt;
                           &lt;ArrowRight className={`h-3 w-3 ${getIconColor(index)}`} /&gt;
                         &lt;/div&gt;
@@ -695,7 +695,7 @@ const StrategicRecommendations: React.FC&lt;StrategicRecommendationsProps&gt; = 
             &lt;Button
               variant="outline"
               size="sm"
-              onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setShowConclusion(!showConclusion)}</span>
+              onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etShowConclusion(!showConclusion)}</span>
             &gt;
               {showConclusion ? (
                 &lt;&gt;
@@ -748,7 +748,7 @@ const StrategicRecommendations: React.FC&lt;StrategicRecommendationsProps&gt; = 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.627Z
+                at 2026-09-03T10:34:58.787Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

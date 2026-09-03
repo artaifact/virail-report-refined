@@ -1,37 +1,21 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { Analyses } from '../Analyses';
 import { useReports, useReport } from '@/hooks/useReports';
 import { useToast } from '@/hooks/use-toast';
 import { AuthService } from '@/services/authService';
+import { SelectedReportProvider } from '@/contexts/SelectedReportContext';
 
 // Mock dependencies
+const mockNavigate = jest.fn();
+
 jest.mock('@/hooks/useReports');
 jest.mock('@/hooks/use-toast');
 jest.mock('@/services/authService');
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
-  useNavigate: () => jest.fn(),
-}));
-
-// Mock icons
-jest.mock('lucide-react', () => ({
-  BarChart3: () => <div data-testid="bar-chart-icon">BarChart</div>,
-  TrendingUp: () => <div data-testid="trending-up-icon">TrendingUp</div>,
-  Users: () => <div data-testid="users-icon">Users</div>,
-  Calendar: () => <div data-testid="calendar-icon">Calendar</div>,
-  FileText: () => <div data-testid="file-text-icon">FileText</div>,
-  ChevronRight: () => <div data-testid="chevron-right-icon">ChevronRight</div>,
-  ArrowLeft: () => <div data-testid="arrow-left-icon">ArrowLeft</div>,
-  Plus: () => <div data-testid="plus-icon">Plus</div>,
-  RefreshCw: () => <div data-testid="refresh-icon">RefreshCw</div>,
-  Loader2: () => <div data-testid="loader-icon">Loader2</div>,
-  Zap: () => <div data-testid="zap-icon">Zap</div>,
-  Sparkles: () => <div data-testid="sparkles-icon">Sparkles</div>,
-  Target: () => <div data-testid="target-icon">Target</div>,
-  Star: () => <div data-testid="star-icon">Star</div>,
-  Brain: () => <div data-testid="brain-icon">Brain</div>,
+  useNavigate: () => mockNavigate,
 }));
 
 const mockUseReports = useReports as jest.MockedFunction<typeof useReports>;
@@ -42,7 +26,9 @@ const mockAuthService = AuthService as jest.Mocked<typeof AuthService>;
 const renderWithRouter = (component: React.ReactElement) => {
   return render(
     <BrowserRouter>
-      {component}
+      <SelectedReportProvider>
+        {component}
+      </SelectedReportProvider>
     </BrowserRouter>
   );
 };
@@ -54,6 +40,8 @@ describe('Analyses', () => {
       url: 'https://example.com',
       domain: 'example.com',
       score: 85,
+      metadata: { score: 85 },
+      score_produit_analyse: 85,
       status: 'completed',
       created_at: '2025-01-01T00:00:00Z',
       updated_at: '2025-01-01T00:00:00Z',
@@ -63,6 +51,8 @@ describe('Analyses', () => {
       url: 'https://test.com',
       domain: 'test.com',
       score: 75,
+      metadata: { score: 75 },
+      score_produit_analyse: 75,
       status: 'completed',
       created_at: '2025-01-02T00:00:00Z',
       updated_at: '2025-01-02T00:00:00Z',
@@ -94,12 +84,11 @@ describe('Analyses', () => {
     mockAuthService.isAuthenticated.mockReturnValue(true);
   });
 
-  it('should render page title and breadcrumb', () => {
+  it('should render page title and description', () => {
     renderWithRouter(<Analyses />);
 
-    expect(screen.getByText('Analyses GEO')).toBeInTheDocument();
-    expect(screen.getByText('Tableau de bord')).toBeInTheDocument();
-    expect(screen.getByText('Analyses GEO')).toBeInTheDocument();
+    expect(screen.getAllByText('Analyses GEO').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Analysez et optimisez vos contenus/i)).toBeInTheDocument();
   });
 
   it('should display metrics cards', () => {
@@ -121,7 +110,7 @@ describe('Analyses', () => {
   it('should calculate and display unique sites count', () => {
     renderWithRouter(<Analyses />);
 
-    expect(screen.getByText('2')).toBeInTheDocument(); // 2 unique domains
+    expect(screen.getByText('2 analyses totales')).toBeInTheDocument();
   });
 
   it('should render new analysis button', () => {
@@ -137,7 +126,7 @@ describe('Analyses', () => {
     const newAnalysisButton = screen.getByText('Nouvelle Analyse');
     fireEvent.click(newAnalysisButton);
 
-    expect(screen.getByText('Lancer une nouvelle analyse')).toBeInTheDocument();
+    expect(screen.getByText('Nouvelle Analyse GEO')).toBeInTheDocument();
   });
 
   it('should handle URL input and validation', async () => {
@@ -170,7 +159,7 @@ describe('Analyses', () => {
     fireEvent.click(startButton);
 
     await waitFor(() => {
-      expect(mockCreateAnalysis).toHaveBeenCalledWith('https://new-site.com');
+      expect(mockCreateAnalysis).toHaveBeenCalledWith('https://new-site.com', true);
     });
   });
 
@@ -204,7 +193,7 @@ describe('Analyses', () => {
     fireEvent.click(startButton);
 
     await waitFor(() => {
-      expect(mockCreateAnalysis).toHaveBeenCalledWith('https://example.com');
+      expect(mockCreateAnalysis).toHaveBeenCalledWith('https://example.com', true);
     });
   });
 
@@ -238,7 +227,7 @@ describe('Analyses', () => {
     fireEvent.click(startButton);
 
     await waitFor(() => {
-      expect(mockCreateAnalysis).toHaveBeenCalledWith('http://example.com');
+      expect(mockCreateAnalysis).toHaveBeenCalledWith('http://example.com', true);
     });
   });
 
@@ -274,7 +263,7 @@ describe('Analyses', () => {
 
     // Should show loading state
     await waitFor(() => {
-      expect(screen.getByText('Analyse en cours...')).toBeInTheDocument();
+      expect(screen.getAllByText('Analyse en cours...').length).toBeGreaterThan(0);
     });
 
     // Resolve analysis
@@ -314,19 +303,20 @@ describe('Analyses', () => {
     fireEvent.click(startButton);
 
     await waitFor(() => {
-      expect(mockToast.toast).toHaveBeenCalledWith({
-        title: 'Erreur',
-        description: 'Analysis failed',
-        variant: 'destructive',
-      });
+      expect(mockToast.toast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Erreur',
+          description: 'Analysis failed',
+          variant: 'destructive',
+        })
+      );
     });
   });
 
-  it('should display reports in tabs', () => {
+  it('should display reports in list card', () => {
     renderWithRouter(<Analyses />);
 
-    expect(screen.getByText('Rapports récents')).toBeInTheDocument();
-    expect(screen.getByText('Analyses sauvegardées')).toBeInTheDocument();
+    expect(screen.getByText('Rapports Récents')).toBeInTheDocument();
   });
 
   it('should show empty state when no reports', () => {
@@ -340,7 +330,7 @@ describe('Analyses', () => {
 
     renderWithRouter(<Analyses />);
 
-    expect(screen.getByText('Aucune analyse trouvée')).toBeInTheDocument();
+    expect(screen.getByText('Aucun rapport disponible')).toBeInTheDocument();
   });
 
   it('should show loading state', () => {
@@ -354,7 +344,7 @@ describe('Analyses', () => {
 
     renderWithRouter(<Analyses />);
 
-    expect(screen.getByTestId('loader-icon')).toBeInTheDocument();
+    expect(screen.getByText('Chargement des rapports...')).toBeInTheDocument();
   });
 
   it('should show error state', () => {
@@ -368,7 +358,8 @@ describe('Analyses', () => {
 
     renderWithRouter(<Analyses />);
 
-    expect(screen.getByText('Erreur lors du chargement des rapports')).toBeInTheDocument();
+    expect(screen.getByText('Erreur de chargement')).toBeInTheDocument();
+    expect(screen.getByText('Failed to load reports')).toBeInTheDocument();
   });
 
   it('should handle checkbox for optimization inclusion', () => {
@@ -385,30 +376,17 @@ describe('Analyses', () => {
     expect(checkbox).not.toBeChecked();
   });
 
-  it('should render optimized analysis section', () => {
+  it('should open optimized analysis dialog from report action', () => {
     renderWithRouter(<Analyses />);
 
-    expect(screen.getByText('Optimisation de Site')).toBeInTheDocument();
-    expect(screen.getByText('Nouvelle Optimisation')).toBeInTheDocument();
-  });
+    const optimizeButtons = screen.getAllByText('Optimiser');
+    fireEvent.click(optimizeButtons[0]);
 
-  it('should open optimized analysis dialog', () => {
-    renderWithRouter(<Analyses />);
-
-    const optimizedButton = screen.getByText('Nouvelle Optimisation');
-    fireEvent.click(optimizedButton);
-
-    expect(screen.getByText('Lancer une optimisation de site')).toBeInTheDocument();
+    expect(screen.getByText('Analyse Optimisée')).toBeInTheDocument();
   });
 
   it('should redirect to login if not authenticated', () => {
     mockAuthService.isAuthenticated.mockReturnValue(false);
-
-    const mockNavigate = jest.fn();
-    jest.doMock('react-router-dom', () => ({
-      ...jest.requireActual('react-router-dom'),
-      useNavigate: () => mockNavigate,
-    }));
 
     renderWithRouter(<Analyses />);
 
@@ -419,8 +397,8 @@ describe('Analyses', () => {
   it('should display correct icons for metrics', () => {
     renderWithRouter(<Analyses />);
 
-    expect(screen.getByTestId('bar-chart-icon')).toBeInTheDocument();
-    expect(screen.getByTestId('trending-up-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('barchart3-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('trendingup-icon')).toBeInTheDocument();
     expect(screen.getByTestId('users-icon')).toBeInTheDocument();
     expect(screen.getByTestId('calendar-icon')).toBeInTheDocument();
   });
@@ -437,7 +415,7 @@ describe('Analyses', () => {
 
     renderWithRouter(<Analyses />);
 
-    const refreshButton = screen.getByTestId('refresh-icon');
+    const refreshButton = screen.getByText('Actualiser');
     fireEvent.click(refreshButton);
 
     expect(mockRefreshReports).toHaveBeenCalled();
@@ -454,7 +432,7 @@ describe('Analyses', () => {
 
     renderWithRouter(<Analyses />);
 
-    expect(screen.getByText('0')).toBeInTheDocument(); // Sites count
+    expect(screen.getByText('Aucun site analysé')).toBeInTheDocument(); // Sites count description
     expect(screen.getByText('0%')).toBeInTheDocument(); // Average score
   });
 

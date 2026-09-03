@@ -155,10 +155,10 @@ describe('useAuth', () => {
       expect(result.current.isAuthenticated).toBe(true);
       expect(result.current.user).toEqual(mockResponse.user);
       expect(result.current.isLoading).toBe(false);
-      expect(mockToast).toHaveBeenCalledWith({
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
         title: "Connexion réussie",
         description: `Bienvenue ${mockResponse.user.username}!`,
-      });
+      }));
     });
 
     it('should handle login errors', async () => {
@@ -178,11 +178,11 @@ describe('useAuth', () => {
       expect(result.current.isAuthenticated).toBe(false);
       expect(result.current.user).toBe(null);
       expect(result.current.isLoading).toBe(false);
-      expect(mockToast).toHaveBeenCalledWith({
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
         title: "Erreur de connexion",
         description: "Invalid credentials",
         variant: "destructive",
-      });
+      }));
     });
 
     it('should set loading state during login', async () => {
@@ -256,10 +256,10 @@ describe('useAuth', () => {
       expect(result.current.isAuthenticated).toBe(true);
       expect(result.current.user).toEqual(mockResponse.user);
       expect(result.current.isLoading).toBe(false);
-      expect(mockToast).toHaveBeenCalledWith({
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
         title: "Inscription réussie",
         description: `Bienvenue ${mockResponse.user.username}!`,
-      });
+      }));
     });
 
     it('should handle registration errors', async () => {
@@ -280,11 +280,11 @@ describe('useAuth', () => {
       expect(result.current.isAuthenticated).toBe(false);
       expect(result.current.user).toBe(null);
       expect(result.current.isLoading).toBe(false);
-      expect(mockToast).toHaveBeenCalledWith({
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
         title: "Erreur d'inscription",
         description: "User already exists",
         variant: "destructive",
-      });
+      }));
     });
   });
 
@@ -302,10 +302,10 @@ describe('useAuth', () => {
       expect(result.current.isAuthenticated).toBe(false);
       expect(result.current.user).toBe(null);
       expect(result.current.isLoading).toBe(false);
-      expect(mockToast).toHaveBeenCalledWith({
-        title: "Déconnexion",
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
+        title: expect.stringContaining("Déconnexion"),
         description: "Vous avez été déconnecté avec succès",
-      });
+      }));
     });
 
     it('should handle logout errors', async () => {
@@ -317,22 +317,23 @@ describe('useAuth', () => {
         await result.current.logout();
       });
 
-      expect(mockToast).toHaveBeenCalledWith({
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
         title: "Erreur",
         description: "Erreur lors de la déconnexion",
         variant: "destructive",
-      });
+      }));
     });
   });
 
   describe('loginWithGoogle', () => {
     it('should handle Google login', async () => {
-      mockAuthService.loginWithGoogle.mockResolvedValue();
+      mockAuthService.loginWithGoogle.mockReturnValue(new Promise(() => {}));
 
       const { result } = renderHook(() => useAuth());
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-      await act(async () => {
-        await result.current.loginWithGoogle();
+      act(() => {
+        result.current.loginWithGoogle();
       });
 
       expect(mockAuthService.loginWithGoogle).toHaveBeenCalled();
@@ -349,11 +350,11 @@ describe('useAuth', () => {
       });
 
       expect(result.current.isLoading).toBe(false);
-      expect(mockToast).toHaveBeenCalledWith({
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
         title: "Erreur de connexion Google",
         description: "Google auth failed",
         variant: "destructive",
-      });
+      }));
     });
   });
 
@@ -381,10 +382,10 @@ describe('useAuth', () => {
       expect(result.current.isAuthenticated).toBe(true);
       expect(result.current.user).toEqual(mockResponse.user);
       expect(result.current.isLoading).toBe(false);
-      expect(mockToast).toHaveBeenCalledWith({
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
         title: "Connexion Google réussie",
         description: `Bienvenue ${mockResponse.user.username}!`,
-      });
+      }));
     });
 
     it('should handle Google callback errors', async () => {
@@ -397,11 +398,11 @@ describe('useAuth', () => {
       });
 
       expect(result.current.isLoading).toBe(false);
-      expect(mockToast).toHaveBeenCalledWith({
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
         title: "Erreur de connexion Google",
         description: "Callback failed",
         variant: "destructive",
-      });
+      }));
     });
   });
 

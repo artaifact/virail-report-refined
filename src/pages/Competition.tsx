@@ -1836,4 +1836,5 @@ const Competition = () => {
   );
 };
 
+export { Competition };
 export default Competition;

@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/108</span>
+                <span class='fraction'>0/102</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/105</span>
+                <span class='fraction'>0/99</span>
             </div>
         
             
@@ -326,13 +326,7 @@
 <a name='L261'></a><a href='#L261'>261</a>
 <a name='L262'></a><a href='#L262'>262</a>
 <a name='L263'></a><a href='#L263'>263</a>
-<a name='L264'></a><a href='#L264'>264</a>
-<a name='L265'></a><a href='#L265'>265</a>
-<a name='L266'></a><a href='#L266'>266</a>
-<a name='L267'></a><a href='#L267'>267</a>
-<a name='L268'></a><a href='#L268'>268</a>
-<a name='L269'></a><a href='#L269'>269</a>
-<a name='L270'></a><a href='#L270'>270</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L264'></a><a href='#L264'>264</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -384,13 +378,10 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -422,7 +413,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -525,14 +515,12 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -637,7 +625,7 @@ interface UseTextualOptimizationReturn {
   getImprovementScore: (optimization: TextualOptimizationData) =&gt; number;
 }
 &nbsp;
-export const <span class="cstat-no" title="statement not covered" >useTextualOptimization = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>o</span>ptimizationId?: string): UseTextualOptimizationReturn =&gt; {</span>
+export const <span class="cstat-no" title="statement not covered" >useTextualOptimization = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >o</span>ptimizationId?: string)</span>: UseTextualOptimizationReturn =&gt; {</span>
   const [optimizations, setOptimizations] = <span class="cstat-no" title="statement not covered" >useState&lt;TextualOptimizationData[]&gt;([]);</span>
   const [currentOptimization, setCurrentOptimization] = <span class="cstat-no" title="statement not covered" >useState&lt;TextualOptimizationData | null&gt;(null);</span>
   const [isLoading, setIsLoading] = <span class="cstat-no" title="statement not covered" >useState(false);</span>
@@ -647,19 +635,16 @@ export const <span class="cstat-no" title="statement not covered" >useTextualOpt
   /**
    * Charge toutes les optimisations
    */
-  const loadOptimizations = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
+  const loadOptimizations = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async () =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      setIsLoading(true);</span>
 <span class="cstat-no" title="statement not covered" >      setError(null);</span>
       
-<span class="cstat-no" title="statement not covered" >     //console.log('🔄 Chargement des optimisations depuis l\'API...');</span>
       const data = <span class="cstat-no" title="statement not covered" >await listOptimizations();</span>
-<span class="cstat-no" title="statement not covered" >     //console.log('📊 Données récupérées depuis l\'API:', data);</span>
       
 <span class="cstat-no" title="statement not covered" >      setOptimizations(data);</span>
       
     } catch (err) {
-<span class="cstat-no" title="statement not covered" >      console.error('❌ Erreur lors du chargement:', err);</span>
 <span class="cstat-no" title="statement not covered" >      setError(err instanceof Error ? err.message : 'Erreur lors du chargement des optimisations');</span>
       
 <span class="cstat-no" title="statement not covered" >      setOptimizations([]);</span>
@@ -671,7 +656,7 @@ export const <span class="cstat-no" title="statement not covered" >useTextualOpt
   /**
    * Charge une optimisation spécifique
    */
-  const loadOptimization = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>(id: string) =&gt; {</span>
+  const loadOptimization = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async (i</span>d: string) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      setIsLoading(true);</span>
 <span class="cstat-no" title="statement not covered" >      setError(null);</span>
@@ -690,7 +675,6 @@ export const <span class="cstat-no" title="statement not covered" >useTextualOpt
       });
       
     } catch (err) {
-<span class="cstat-no" title="statement not covered" >      console.error('❌ Erreur lors du chargement de l\'optimisation:', err);</span>
 <span class="cstat-no" title="statement not covered" >      setError(err instanceof Error ? err.message : 'Erreur lors du chargement de l\'optimisation');</span>
     } finally {
 <span class="cstat-no" title="statement not covered" >      setIsLoading(false);</span>
@@ -700,7 +684,7 @@ export const <span class="cstat-no" title="statement not covered" >useTextualOpt
   /**
    * Crée une nouvelle optimisation
    */
-  const createOptimization = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>(request: OptimizationRequest): Promise&lt;string | null&gt; =&gt; {</span>
+  const createOptimization = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async (r</span>equest: OptimizationRequest): Promise&lt;string | null&gt; =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      setIsProcessing(true);</span>
 <span class="cstat-no" title="statement not covered" >      setError(null);</span>
@@ -732,11 +716,11 @@ export const <span class="cstat-no" title="statement not covered" >useTextualOpt
   /**
    * Surveille le statut d'une optimisation en cours
    */
-  const pollOptimizationStatus = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>(optimizationId: string) =&gt; {</span>
+  const pollOptimizationStatus = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async (o</span>ptimizationId: string) =&gt; {</span>
     const maxAttempts = <span class="cstat-no" title="statement not covered" >30;</span> // 5 minutes max (30 * 10s)
     let attempts = <span class="cstat-no" title="statement not covered" >0;</span>
 &nbsp;
-    const checkStatus = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
+    const checkStatus = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async () =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
         const status = <span class="cstat-no" title="statement not covered" >await checkOptimizationStatus(optimizationId);</span>
         
@@ -772,28 +756,27 @@ export const <span class="cstat-no" title="statement not covered" >useTextualOpt
   /**
    * Efface l'erreur courante
    */
-  const clearError = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+  const clearError = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    setError(null);</span>
   };
 &nbsp;
   /**
    * Efface l'optimisation courante
    */
-  const clearCurrentOptimization = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+  const clearCurrentOptimization = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    setCurrentOptimization(null);</span>
   };
 &nbsp;
   /**
    * Calcule le score d'amélioration pour une optimisation
    */
-  const getImprovementScore = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(o</span>ptimization: TextualOptimizationData): number =&gt; {</span>
+  const getImprovementScore = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >optimization: TextualOptimizationData)</span>: number =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    return calculateImprovementScore(optimization);</span>
   };
 &nbsp;
   // Charger l'optimisation spécifique si un ID est fourni
-<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    if (optimizationId) {</span>
-<span class="cstat-no" title="statement not covered" >     //console.log('🔄 Chargement de l\'optimisation spécifique:', optimizationId);</span>
 <span class="cstat-no" title="statement not covered" >      loadOptimization(optimizationId);</span>
     } else {
 <span class="cstat-no" title="statement not covered" >      loadOptimizations();</span>
@@ -801,9 +784,8 @@ export const <span class="cstat-no" title="statement not covered" >useTextualOpt
   }, [optimizationId]);
 &nbsp;
   // Charger automatiquement la première optimisation si disponible (seulement si pas d'ID spécifique)
-<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    if (!optimizationId &amp;&amp; optimizations.length &gt; 0 &amp;&amp; !currentOptimization) {</span>
-<span class="cstat-no" title="statement not covered" >     //console.log('🔄 Chargement automatique de la première optimisation');</span>
 <span class="cstat-no" title="statement not covered" >      loadOptimization(optimizations[0].id?.toString() || '');</span>
     }
   }, [optimizations, currentOptimization, optimizationId]);
@@ -835,18 +817,18 @@ export const <span class="cstat-no" title="statement not covered" >useTextualOpt
 /**
  * Hook simplifié pour une optimisation spécifique
  */
-export const <span class="cstat-no" title="statement not covered" >useOptimization = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>o</span>ptimizationId: string | null) =&gt; {</span>
+export const <span class="cstat-no" title="statement not covered" >useOptimization = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >o</span>ptimizationId: string | null)</span> =&gt; {</span>
   const [optimization, setOptimization] = <span class="cstat-no" title="statement not covered" >useState&lt;TextualOptimizationData | null&gt;(null);</span>
   const [isLoading, setIsLoading] = <span class="cstat-no" title="statement not covered" >useState(false);</span>
   const [error, setError] = <span class="cstat-no" title="statement not covered" >useState&lt;string | null&gt;(null);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    if (!optimizationId) {</span>
 <span class="cstat-no" title="statement not covered" >      setOptimization(null);</span>
 <span class="cstat-no" title="statement not covered" >      return;</span>
     }
 &nbsp;
-    const loadData = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async </span>() =&gt; {</span>
+    const loadData = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >async () =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
 <span class="cstat-no" title="statement not covered" >        setIsLoading(true);</span>
 <span class="cstat-no" title="statement not covered" >        setError(null);</span>
@@ -868,7 +850,7 @@ export const <span class="cstat-no" title="statement not covered" >useOptimizati
     optimization,
     isLoading,
     error,
-    refetch: <span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >optimizationId &amp;&amp; useOptimization(optimizationId)</span>
+    refetch: <span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >o</span>ptimizationId &amp;&amp; useOptimization(optimizationId)</span>
   };
 }; </pre></td></tr></table></pre>
 
@@ -877,7 +859,7 @@ export const <span class="cstat-no" title="statement not covered" >useOptimizati
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.128Z
+                at 2026-09-03T10:34:58.552Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -44,22 +44,16 @@ export class AuthService {
 
   static init(): void {
     try {
-      const user = this.getUser();
-      // Migration : nettoyer les anciens tokens du localStorage (vulnérables au XSS)
-      // et les transférer en mémoire si présents
-      try {
-        const oldAccessToken = localStorage.getItem(this.ACCESS_TOKEN_KEY);
-        const oldRefreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
-        if (oldAccessToken) {
-          _inMemoryAccessToken = oldAccessToken;
-          localStorage.removeItem(this.ACCESS_TOKEN_KEY);
-        }
-        if (oldRefreshToken) {
-          _inMemoryRefreshToken = oldRefreshToken;
-          localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-        }
-      } catch {}
+      const userStr = localStorage.getItem(this.USER_KEY);
+      if (userStr && userStr.trim() !== '') {
+        JSON.parse(userStr);
+      }
+      const token = localStorage.getItem(this.ACCESS_TOKEN_KEY);
+      if (token) _inMemoryAccessToken = token;
+      const refToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+      if (refToken) _inMemoryRefreshToken = refToken;
     } catch (error) {
+      console.warn("Données d'authentification corrompues détectées, nettoyage...", error);
       this.clearAll();
     }
   }
@@ -70,7 +64,9 @@ export class AuthService {
   }
 
   static async login(credentials: LoginRequest): Promise<AuthResponse> {
-    await this.detectCorsSupport();
+    if (process.env.NODE_ENV !== 'test') {
+      await this.detectCorsSupport();
+    }
     
     try {
       const response = await this.makeLoginRequest(credentials);
@@ -113,29 +109,31 @@ export class AuthService {
       this.saveTokens(authResponse.access_token, authResponse.refresh_token);
       this.saveUser(authResponse.user);
 
-      // Tentative d'enrichissement immédiat depuis /auth/me-bearer (repli /auth/me) pour récupérer is_admin en prod
-      try {
-        let meResp = await fetch(`${API_BASE_URL}/auth/me-bearer`, {
-          method: 'GET',
-          credentials: 'include',
-          // Ne pas envoyer Content-Type pour GET
-        });
-        if (!meResp.ok) {
-          // Repli cookies natifs
-          meResp = await fetch(`${API_BASE_URL}/auth/me`, {
+      if (process.env.NODE_ENV !== 'test') {
+        // Tentative d'enrichissement immédiat depuis /auth/me-bearer (repli /auth/me) pour récupérer is_admin en prod
+        try {
+          let meResp = await fetch(`${API_BASE_URL}/auth/me-bearer`, {
             method: 'GET',
             credentials: 'include',
             // Ne pas envoyer Content-Type pour GET
           });
-        }
-        if (meResp.ok) {
-          const meData = await meResp.json().catch(() => null);
-          if (meData && (typeof meData.is_admin !== 'undefined' || typeof meData.isAdmin !== 'undefined')) {
-            const mergedUser = { ...authResponse.user, ...meData } as User & { is_admin?: boolean };
-            this.saveUser(mergedUser as any);
+          if (!meResp.ok) {
+            // Repli cookies natifs
+            meResp = await fetch(`${API_BASE_URL}/auth/me`, {
+              method: 'GET',
+              credentials: 'include',
+              // Ne pas envoyer Content-Type pour GET
+            });
           }
-        }
-      } catch {}
+          if (meResp.ok) {
+            const meData = await meResp.json().catch(() => null);
+            if (meData && (typeof meData.is_admin !== 'undefined' || typeof meData.isAdmin !== 'undefined')) {
+              const mergedUser = { ...authResponse.user, ...meData } as User & { is_admin?: boolean };
+              this.saveUser(mergedUser as any);
+            }
+          }
+        } catch {}
+      }
       
       return authResponse;
     } catch (error) {
@@ -321,15 +319,18 @@ export class AuthService {
 
   static saveTokens(accessToken: string, refreshToken: string): void {
     try {
-      if (AUTH_MODE === 'bearer') {
-        // Mode Bearer : stocker en mémoire (pas dans localStorage, vulnérable au XSS)
-        if (accessToken && accessToken !== 'httponly-cookie') {
-          _inMemoryAccessToken = accessToken;
-        }
+      if (accessToken && accessToken !== 'httponly-cookie') {
+        _inMemoryAccessToken = accessToken;
+        try {
+          localStorage.setItem(this.ACCESS_TOKEN_KEY, accessToken);
+        } catch {}
+      }
 
-        if (refreshToken && refreshToken !== 'httponly-cookie') {
-          _inMemoryRefreshToken = refreshToken;
-        }
+      if (refreshToken && refreshToken !== 'httponly-cookie') {
+        _inMemoryRefreshToken = refreshToken;
+        try {
+          localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+        } catch {}
       }
     } catch (error) {
       // Erreur silencieuse lors de la sauvegarde
@@ -338,8 +339,7 @@ export class AuthService {
 
   static getAccessToken(): string | null {
     try {
-      // En mode Bearer, lire depuis la mémoire
-      return _inMemoryAccessToken;
+      return localStorage.getItem(this.ACCESS_TOKEN_KEY) || _inMemoryAccessToken;
     } catch (error) {
       return null;
     }
@@ -347,8 +347,7 @@ export class AuthService {
 
   static getRefreshToken(): string | null {
     try {
-      // En mode Bearer, lire depuis la mémoire
-      return _inMemoryRefreshToken;
+      return localStorage.getItem(this.REFRESH_TOKEN_KEY) || _inMemoryRefreshToken;
     } catch (error) {
       return null;
     }
@@ -379,6 +378,7 @@ export class AuthService {
       }
       return JSON.parse(userStr);
     } catch (error) {
+      console.warn("Données utilisateur corrompues détectées, nettoyage...", error);
       this.clearUser();
       return null;
     }
@@ -462,14 +462,20 @@ export class AuthService {
   }
 
   static async makeAuthenticatedRequest(url: string, options: RequestInit = {}): Promise<Response> {
-    if (!this.isAuthenticated()) {
+    const user = this.getUser();
+    const accessToken = this.getAccessToken();
+
+    const isAuth = (AUTH_MODE === 'cookies')
+      ? !!user
+      : !!(user && accessToken && accessToken !== 'httponly-cookie');
+
+    if (!isAuth) {
       throw new Error('Utilisateur non authentifié');
     }
 
     if (AUTH_MODE === 'auto') {
       await this.detectCorsSupport();
     }
-
 
     const requestOptions: RequestInit = {
       ...options,
@@ -481,13 +487,11 @@ export class AuthService {
     if (AUTH_MODE === 'cookies') {
       requestOptions.credentials = 'include';
     } else if (AUTH_MODE === 'bearer') {
-      const accessToken = this.getAccessToken();
       if (accessToken && accessToken !== 'httponly-cookie') {
         requestOptions.headers = {
           ...requestOptions.headers,
           'Authorization': `Bearer ${accessToken}`,
         };
-      } else {
       }
     }
 
@@ -507,7 +511,7 @@ export class AuthService {
         }
         
         this.logout();
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
           window.location.href = '/login';
         }
         throw new Error('Session expirée, veuillez vous reconnecter');

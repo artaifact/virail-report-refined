@@ -459,7 +459,7 @@
 &nbsp;
 export const <span class="cstat-no" title="statement not covered" >handlers = [</span>
   // Auth endpoints
-  http.post('/api/v1/auth/login', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.post('/api/v1/auth/login', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       access_token: 'mock-access-token',
       token_type: 'bearer',
@@ -477,7 +477,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
     });
   }),
 &nbsp;
-  http.post('/api/v1/auth/register', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.post('/api/v1/auth/register', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       access_token: 'mock-access-token',
       token_type: 'bearer',
@@ -490,12 +490,12 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
     });
   }),
 &nbsp;
-  http.post('/api/v1/auth/logout', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.post('/api/v1/auth/logout', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({ message: 'Logged out successfully' });</span>
   }),
 &nbsp;
   // Analysis endpoints
-  http.get('/api/v1/analyses', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.get('/api/v1/analyses', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       analyses: [
         {
@@ -514,7 +514,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
     });
   }),
 &nbsp;
-  http.post('/api/v1/analyses', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.post('/api/v1/analyses', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       id: '1',
       url: 'https://example.com',
@@ -525,7 +525,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
     });
   }),
 &nbsp;
-  http.get('/api/v1/analyses/:id', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.get('/api/v1/analyses/:id', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       id: '1',
       url: 'https://example.com',
@@ -542,7 +542,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
   }),
 &nbsp;
   // Competitive analysis endpoints
-  http.post('/api/v1/competitors/analyze', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.post('/api/v1/competitors/analyze', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       id: '1',
       url: 'https://example.com',
@@ -552,7 +552,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
     });
   }),
 &nbsp;
-  http.get('/api/v1/competitors/analyses/:id', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.get('/api/v1/competitors/analyses/:id', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       id: '1',
       url: 'https://example.com',
@@ -581,7 +581,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
   }),
 &nbsp;
   // Site optimization endpoints
-  http.post('/api/v1/optimize', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.post('/api/v1/optimize', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       id: '1',
       url: 'https://example.com',
@@ -591,7 +591,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
   }),
 &nbsp;
   // Textual optimization endpoints
-  http.post('/api/v1/textual-optimize', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.post('/api/v1/textual-optimize', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       id: '1',
       text: 'Mock text for optimization',
@@ -601,7 +601,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
   }),
 &nbsp;
   // Payment endpoints
-  http.get('/api/v1/payments/plans', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.get('/api/v1/payments/plans', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json([</span>
       {
         id: 'basic',
@@ -620,7 +620,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
     ]);
   }),
 &nbsp;
-  http.post('/api/v1/payments/create-subscription', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.post('/api/v1/payments/create-subscription', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       subscription_id: 'sub_123',
       client_secret: 'pi_123_secret',
@@ -628,7 +628,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
   }),
 &nbsp;
   // User profile endpoints
-  http.get('/api/v1/users/me', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.get('/api/v1/users/me', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       id: 1,
       email: 'test@example.com',
@@ -642,7 +642,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
     });
   }),
 &nbsp;
-  http.put('/api/v1/users/me', <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+  http.put('/api/v1/users/me', <span class="fstat-no" title="function not covered" >() =&gt; </span>{
 <span class="cstat-no" title="statement not covered" >    return HttpResponse.json({</span>
       id: 1,
       email: 'test@example.com',
@@ -658,7 +658,7 @@ export const <span class="cstat-no" title="statement not covered" >handlers = [<
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.128Z
+                at 2026-09-03T10:34:58.552Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -11,7 +11,8 @@ import { useSelectedReport } from '@/contexts/SelectedReportContext';
 import { AuthService } from '@/services/authService';
 import type { FullReportData, ReportResponse, BulkJobProgress, BulkPageResult, BulkResultsResponse, BulkJobSummary } from '@/lib/api';
 import { startBulkOptimization, getBulkProgress, getBulkPages, getBulkResults, cancelBulkJob, fetchPageOptimization, listBulkJobs } from '@/lib/api';
-import { listCompetitorAnalyses, getCompetitorAnalysisById, extractDomain, CompetitorAnalysisResponse, mapApiResponseToCompetitorAnalysisResponse, mapAnalyseConcurrentielleV1ToResponse } from '@/services/competitorAnalysisService';
+import { cn } from '@/lib/utils';
+import { listCompetitorAnalyses, getCompetitorAnalysisById, getCompetitorAnalysisFromReport, extractDomain, CompetitorAnalysisResponse, mapApiResponseToCompetitorAnalysisResponse, mapAnalyseConcurrentielleV1ToResponse } from '@/services/competitorAnalysisService';
 import { modelLogos } from '@/components/ModelLogosCarousel';
 import { usePayment } from '@/hooks/usePayment';
 import { ScoreCard } from '@/components/dashboard/ScoreCard';
@@ -57,7 +58,95 @@ const MODEL_COLORS: Record<string, string> = {
 };
 const MODEL_COLORS_FALLBACK = ['#B5A8D8', '#DBA8C4', '#8DD0C4', '#E0C68A', '#A5A7E0', '#8BC5E0'];
 
-function CitationsChart({ reportData }: { reportData: FullReportData | null }) {
+/**
+ * Extrait le score target_geo_score depuis les différentes structures possibles du rapport
+ */
+export const extractTargetGeoScore = (reportData: FullReportData | null): number | null => {
+  if (!reportData) return null;
+
+  const raw = reportData as any;
+
+  // 1. Directement sur root ou report
+  const directCandidates = [
+    raw.target_geo_score,
+    raw.report?.target_geo_score,
+    raw.llmo_report?.target_geo_score,
+    raw.metadata?.target_geo_score,
+    raw.report?.metadata?.target_geo_score,
+    raw.target_positioning?.target_geo_score,
+    raw.report?.target_positioning?.target_geo_score,
+  ];
+  for (const c of directCandidates) {
+    if (c !== undefined && c !== null && c !== '') {
+      const num = Number(c);
+      if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+    }
+  }
+
+  // 2. Dans analyse_concurrentielle_v3 ou competitor_analysis ou analyse_concurrentielle_v1
+  const compCandidates = [
+    raw.analyse_concurrentielle_v3?.target_positioning?.target_geo_score,
+    raw.analyse_concurrentielle_v3?.target_geo_score,
+    raw.competitor_analysis?.target_positioning?.target_geo_score,
+    raw.competitor_analysis?.target_geo_score,
+    raw.analyse_concurrentielle_v1?.target_positioning?.target_geo_score,
+    raw.analyse_concurrentielle_v1?.target_geo_score,
+  ];
+  for (const c of compCandidates) {
+    if (c !== undefined && c !== null && c !== '') {
+      const num = Number(c);
+      if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+    }
+  }
+
+  // 3. Mapping via mapAnalyseConcurrentielleV1ToResponse si analyse_concurrentielle_v1 ou competitor_analysis existe
+  const compData = raw.analyse_concurrentielle_v1 || raw.competitor_analysis;
+  if (compData) {
+    try {
+      const mapped = mapAnalyseConcurrentielleV1ToResponse(raw.report?.id || 0, compData);
+      const score = mapped?.target_positioning?.target_geo_score;
+      if (score !== undefined && score !== null && score !== '') {
+        const num = Number(score);
+        if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+      }
+    } catch {}
+  }
+
+  // 4. Score produit analysé (report.score_produit_analyse)
+  const scoreProduit = raw.report?.score_produit_analyse ?? raw.score_produit_analyse;
+  if (scoreProduit !== undefined && scoreProduit !== null) {
+    const num = Number(scoreProduit);
+    if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+  }
+
+  // 5. Moyenne depuis les modules d'analyses (audit_geo.score_global_geo)
+  if (Array.isArray(raw.analyses) && raw.analyses.length > 0) {
+    const geoScores = raw.analyses
+      .map((a: any) => a.modules?.audit_geo?.score_global_geo)
+      .filter((s: any) => typeof s === 'number' && !isNaN(s));
+    if (geoScores.length > 0) {
+      const avg = geoScores.reduce((sum: number, val: number) => sum + val, 0) / geoScores.length;
+      return avg > 0 && avg <= 1 ? Math.round(avg * 100) : Math.round(avg);
+    }
+  }
+
+  // 6. Crawl optimizer overall score
+  const crawlOptScore = raw.crawl_optimizer?.score?.overall ?? (raw as any)?.crawl_optimizer?.analyze?.score?.overall;
+  if (crawlOptScore !== undefined && crawlOptScore !== null) {
+    const num = Number(crawlOptScore);
+    if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+  }
+
+  // 7. Metadata score
+  if (raw.report?.metadata?.score !== undefined && raw.report?.metadata?.score !== null) {
+    const num = Number(raw.report.metadata.score);
+    if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+  }
+
+  return null;
+};
+
+function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReportData | null; targetGeoScore?: number | null }) {
   const [hoveredModel, setHoveredModel] = useState<string | null>(null);
   const getTotalCitations = () => {
     if (reportData?.analyse_citation?.total_citations !== undefined) {
@@ -133,7 +222,36 @@ function CitationsChart({ reportData }: { reportData: FullReportData | null }) {
   })) : [];
 
   return (
-    <div className="citations-chart">
+    <div className="citations-chart relative w-full">
+      {/* Target GEO Score - En haut à droite de Citations totales */}
+      {targetGeoScore !== null && targetGeoScore !== undefined && (
+        <div className="w-full sm:w-auto flex justify-end mb-2 sm:mb-0 sm:absolute sm:top-0 sm:right-2 md:right-4 z-10">
+          <div 
+            className="inline-flex items-center gap-2 sm:gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-white/95 sm:bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-xs hover:shadow-sm transition-all"
+            title="Score GEO Cible (Target GEO Score)"
+          >
+            <div className="flex flex-col text-right">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                Score GEO
+              </span>
+              <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium">
+                Cible
+              </span>
+            </div>
+            <div className={cn(
+              "flex items-center justify-center min-w-[34px] h-[34px] sm:min-w-[38px] sm:h-[38px] px-1.5 rounded-lg font-extrabold text-sm sm:text-base shadow-xs",
+              targetGeoScore >= 75
+                ? "bg-emerald-600 text-white shadow-emerald-200/50"
+                : targetGeoScore >= 50
+                ? "bg-indigo-600 text-white shadow-indigo-200/50"
+                : "bg-amber-500 text-white shadow-amber-200/50"
+            )}>
+              {targetGeoScore}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="relative w-fit mx-auto">
         <svg viewBox="0 0 280 280" className="w-full max-w-[200px] sm:max-w-[240px] h-auto mx-auto">
           {/* Background circle */}
@@ -284,17 +402,51 @@ function TopSection({ activeView, onViewChange, reportData, reports, onOpenRepor
     return parsed.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   }, [reportData]);
 
+  // Récupération synchrone ou asynchrone du score target_geo_score
+  const [asyncGeoScore, setAsyncGeoScore] = useState<number | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const directScore = extractTargetGeoScore(reportData);
+    if (directScore !== null) {
+      setAsyncGeoScore(directScore);
+      return;
+    }
+
+    const reportId = (reportData as any)?.report?.id || (reportData as any)?.llmo_report?.id;
+    if (!reportId) return;
+
+    getCompetitorAnalysisFromReport(reportId)
+      .then((res) => {
+        if (!isMounted || !res) return;
+        const s = res.target_positioning?.target_geo_score;
+        if (s !== undefined && s !== null) {
+          const num = Number(s);
+          if (!isNaN(num)) {
+            setAsyncGeoScore(num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num));
+          }
+        }
+      })
+      .catch(() => {});
+
+    return () => { isMounted = false; };
+  }, [reportData]);
+
+  const targetGeoScore = asyncGeoScore ?? extractTargetGeoScore(reportData);
+
   return (
-    <div className="top-section">
-      <div className="px-1 mb-2">
-        <h1 className="text-lg font-bold text-slate-900 leading-tight">
-          {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
-        </h1>
-        {lastUpdate && (
-          <p className="text-xs text-slate-400 mt-0.5">Dernière mise à jour : {lastUpdate}</p>
-        )}
+    <div className="top-section relative">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 px-1 mb-2">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight truncate">
+            {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
+          </h1>
+          {lastUpdate && (
+            <p className="text-xs text-slate-400 mt-0.5">Dernière mise à jour : {lastUpdate}</p>
+          )}
+        </div>
       </div>
-      <CitationsChart reportData={reportData} />
+      <CitationsChart reportData={reportData} targetGeoScore={targetGeoScore} />
       <NavigationButtons activeView={activeView} onViewChange={onViewChange} />
     </div>
   );

@@ -86,7 +86,7 @@ export function useReports() {
             completionRate: 0,
             // Ajouter les nouvelles métadonnées si disponibles
             ...(result.metadata && { apiMetadata: result.metadata }),
-            ...(result.optimizationResults && { optimizationData: result.optimizationResults })
+            ...((result as any).optimizationResults && { optimizationData: (result as any).optimizationResults })
           }
         };
         setReports(prev => [newReport, ...prev]);
@@ -118,6 +118,8 @@ export function useReports() {
     loading,
     error,
     loadReports,
+    refreshReports: loadReports,
+    refresh: loadReports,
     createAnalysis,
   };
 }

@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/51</span>
+                <span class='fraction'>0/50</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/64</span>
+                <span class='fraction'>0/65</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/50</span>
+                <span class='fraction'>0/49</span>
             </div>
         
             
@@ -231,8 +231,7 @@
 <a name='L166'></a><a href='#L166'>166</a>
 <a name='L167'></a><a href='#L167'>167</a>
 <a name='L168'></a><a href='#L168'>168</a>
-<a name='L169'></a><a href='#L169'>169</a>
-<a name='L170'></a><a href='#L170'>170</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L169'></a><a href='#L169'>169</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -344,7 +343,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -412,7 +410,7 @@ export interface AnalysisError {
   retryable: boolean;
 }
 &nbsp;
-export const <span class="cstat-no" title="statement not covered" >useAnalysisError = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>) =</span>&gt; {</span>
+export const <span class="cstat-no" title="statement not covered" >useAnalysisError = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(</span>) =&gt; </span>{</span>
   const [currentError, setCurrentError] = <span class="cstat-no" title="statement not covered" >useState&lt;AnalysisError | null&gt;(null);</span>
   const { toast } = <span class="cstat-no" title="statement not covered" >useToast();</span>
 &nbsp;
@@ -430,10 +428,10 @@ export const <span class="cstat-no" title="statement not covered" >useAnalysisEr
       };
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    if (errorMessage.includes('timeout') || errorMessage.includes('TimeoutError')) {</span>
+<span class="cstat-no" title="statement not covered" >    if (errorMessage.toLowerCase().includes('timeout') || errorMessage.includes('TimeoutError') || errorMessage.includes('Page.goto')) {</span>
 <span class="cstat-no" title="statement not covered" >      return {</span>
         type: 'network',
-        message: `Le site ${url || 'demandé'} met trop de temps à répondre. Essayez plus tard.`,
+        message: `Le site ${url || 'demandé'} est inaccessible ou met trop de temps à répondre. Le site bloque peut-être l'accès automatisé (protection anti-bot, Cloudflare, etc.).`,
         originalError: errorMessage,
         url,
         retryable: true
@@ -513,15 +511,14 @@ export const <span class="cstat-no" title="statement not covered" >useAnalysisEr
       });
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    console.error('Erreur d\'analyse:', parsedError);</span>
 <span class="cstat-no" title="statement not covered" >    return parsedError;</span>
   }, [parseError, toast]);
 &nbsp;
-  const clearError = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+  const clearError = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    setCurrentError(null);</span>
   }, []);
 &nbsp;
-  const retry = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+  const retry = <span class="cstat-no" title="statement not covered" >useCallback(<span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
 <span class="cstat-no" title="statement not covered" >    if (currentError?.retryable) {</span>
 <span class="cstat-no" title="statement not covered" >      clearError();</span>
 <span class="cstat-no" title="statement not covered" >      return true;</span>
@@ -539,7 +536,7 @@ export const <span class="cstat-no" title="statement not covered" >useAnalysisEr
 };
 &nbsp;
 // Fonctions utilitaires
-const getErrorTitle = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(t</span>ype: AnalysisError['type']): string =&gt; {</span>
+const getErrorTitle = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >type: AnalysisError['type'])</span>: string =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  switch (type) {</span>
     case 'playwright':
 <span class="cstat-no" title="statement not covered" >      return 'Site incompatible';</span>
@@ -556,7 +553,7 @@ const getErrorTitle = <span class="cstat-no" title="statement not covered" ><spa
   }
 };
 &nbsp;
-const getErrorVariant = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(t</span>ype: AnalysisError['type']): 'default' | 'destructive' =&gt; {</span>
+const getErrorVariant = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >type: AnalysisError['type'])</span>: 'default' | 'destructive' =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  switch (type) {</span>
     case 'server':
     case 'network':
@@ -577,7 +574,7 @@ const getErrorVariant = <span class="cstat-no" title="statement not covered" ><s
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.128Z
+                at 2026-09-03T10:34:58.552Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

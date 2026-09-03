@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>0/11</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>0/11</span>
             </div>
         
             
@@ -283,21 +283,13 @@
 <a name='L218'></a><a href='#L218'>218</a>
 <a name='L219'></a><a href='#L219'>219</a>
 <a name='L220'></a><a href='#L220'>220</a>
-<a name='L221'></a><a href='#L221'>221</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L221'></a><a href='#L221'>221</a>
+<a name='L222'></a><a href='#L222'>222</a>
+<a name='L223'></a><a href='#L223'>223</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -309,6 +301,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -503,7 +498,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import React from 'react';
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import React from 'react';</span>
+<span class="cstat-no" title="statement not covered" >import { usePageTitle } from '@/hooks/usePageTitle';</span>
 <span class="cstat-no" title="statement not covered" >import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';</span>
 <span class="cstat-no" title="statement not covered" >import { Badge } from '@/components/ui/badge';</span>
 <span class="cstat-no" title="statement not covered" >import { Button } from '@/components/ui/button';</span>
@@ -518,13 +523,14 @@
   TrendingUp
 } from 'lucide-react';
 &nbsp;
-const TechnicalOptimization: React.FC = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
+const TechnicalOptimization: React.FC = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >() =&gt; </span>{</span>
+<span class="cstat-no" title="statement not covered" >  usePageTitle('Optimisation technique');</span>
 <span class="cstat-no" title="statement not covered" >  return (</span>
-    &lt;div className="p-6 space-y-6"&gt;
+    &lt;div className="p-3 sm:p-4 md:p-6 space-y-6"&gt;
       {/* En-tête */}
       &lt;div&gt;
-        &lt;h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3"&gt;
-          &lt;Code className="h-8 w-8 text-blue-600" /&gt;
+        &lt;h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3"&gt;
+          &lt;Code className="h-7 w-7 sm:h-8 sm:w-8 text-blue-600" /&gt;
           Optimisation Technique
         &lt;/h1&gt;
         &lt;p className="text-gray-600 mt-2"&gt;
@@ -589,36 +595,36 @@ const TechnicalOptimization: React.FC = <span class="cstat-no" title="statement 
         &lt;/CardHeader&gt;
         &lt;CardContent className="space-y-4"&gt;
           &lt;div className="space-y-3"&gt;
-            &lt;div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200"&gt;
-              &lt;AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" /&gt;
+            &lt;div className="flex flex-col sm:flex-row items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200"&gt;
+              &lt;AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" /&gt;
               &lt;div className="flex-1"&gt;
                 &lt;h4 className="font-medium text-red-900"&gt;Optimisation des images&lt;/h4&gt;
                 &lt;p className="text-sm text-red-700 mt-1"&gt;
                   Les images représentent 60% du poids de la page. Compresser et convertir en WebP peut réduire le temps de chargement de 40%.
                 &lt;/p&gt;
-                &lt;div className="flex gap-2 mt-2"&gt;
+                &lt;div className="flex flex-wrap gap-2 mt-2"&gt;
                   &lt;Badge variant="destructive" className="text-xs"&gt;Priorité Haute&lt;/Badge&gt;
                   &lt;Badge variant="outline" className="text-xs"&gt;Impact: -40% temps de chargement&lt;/Badge&gt;
                 &lt;/div&gt;
               &lt;/div&gt;
-              &lt;Button size="sm" variant="outline"&gt;
+              &lt;Button size="sm" variant="outline" className="self-start sm:self-auto"&gt;
                 Corriger
               &lt;/Button&gt;
             &lt;/div&gt;
 &nbsp;
-            &lt;div className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200"&gt;
-              &lt;Database className="h-5 w-5 text-orange-600 mt-0.5" /&gt;
+            &lt;div className="flex flex-col sm:flex-row items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200"&gt;
+              &lt;Database className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" /&gt;
               &lt;div className="flex-1"&gt;
                 &lt;h4 className="font-medium text-orange-900"&gt;Cache navigateur&lt;/h4&gt;
                 &lt;p className="text-sm text-orange-700 mt-1"&gt;
                   Configurer des en-têtes de cache appropriés pour les ressources statiques peut améliorer les visites répétées.
                 &lt;/p&gt;
-                &lt;div className="flex gap-2 mt-2"&gt;
+                &lt;div className="flex flex-wrap gap-2 mt-2"&gt;
                   &lt;Badge variant="secondary" className="text-xs"&gt;Priorité Moyenne&lt;/Badge&gt;
                   &lt;Badge variant="outline" className="text-xs"&gt;Impact: +25% vitesse retour&lt;/Badge&gt;
                 &lt;/div&gt;
               &lt;/div&gt;
-              &lt;Button size="sm" variant="outline"&gt;
+              &lt;Button size="sm" variant="outline" className="self-start sm:self-auto"&gt;
                 Configurer
               &lt;/Button&gt;
             &lt;/div&gt;
@@ -730,7 +736,7 @@ const TechnicalOptimization: React.FC = <span class="cstat-no" title="statement 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.627Z
+                at 2026-09-03T10:34:58.787Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

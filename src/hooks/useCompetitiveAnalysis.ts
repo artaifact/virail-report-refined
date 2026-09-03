@@ -46,6 +46,7 @@ export const useCompetitiveAnalysis = () => {
         savedAnalyses: analyses
       }));
     } catch (error) {
+      console.error("Erreur lors du chargement des analyses sauvegardées:", error);
     }
   }, []);
 
@@ -64,7 +65,21 @@ export const useCompetitiveAnalysis = () => {
       const isAuthenticated = AuthService.isAuthenticated();
 
       if (!isAuthenticated) {
-        throw new Error('Vous devez être connecté pour lancer une analyse concurrentielle. Veuillez vous connecter et réessayer.');
+        setState(prev => ({
+          ...prev,
+          isAnalyzing: false,
+          error: 'Vous devez être connecté pour lancer une analyse',
+        }));
+        return null;
+      }
+
+      if (canUseFeature && !canUseFeature('competitor_analysis')) {
+        setState(prev => ({
+          ...prev,
+          isAnalyzing: false,
+          error: "Quota d'analyses concurrentielles dépassé",
+        }));
+        return null;
       }
 
 
@@ -184,13 +199,22 @@ export const useCompetitiveAnalysis = () => {
       setState(prev => ({
         ...prev,
         isAnalyzing: false,
+        hasAnalysis: false,
         error: errorMessage,
         progress: 0
       }));
 
-      throw error;
+      return null;
     }
   }, [canUseFeature, getFeatureLimits, usageLimits, loadSavedAnalyses]);
+
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null }));
+  }, []);
+
+  const updateProgress = useCallback((val: number) => {
+    setState(prev => ({ ...prev, progress: Math.max(0, Math.min(100, val)) }));
+  }, []);
 
   const loadAnalysis = useCallback(async (id: string) => {
     try {
@@ -199,10 +223,10 @@ export const useCompetitiveAnalysis = () => {
         setState(prev => ({
           ...prev,
           currentAnalysis: analysis,
-          hasAnalysis: true
+          hasAnalysis: true,
+          error: null
         }));
 
-        // Si les données enrichies manquent (mini_llm_results), tenter une récupération enrichie supplémentaire
         const hasMini = (analysis as any)?.mini_llm_results && Array.isArray((analysis as any).mini_llm_results);
         if (!hasMini) {
           try {
@@ -218,9 +242,13 @@ export const useCompetitiveAnalysis = () => {
             // ignore
           }
         }
+      } else {
+        setState(prev => ({ ...prev, error: 'Analysis not found' }));
       }
       return analysis;
     } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Analysis not found';
+      setState(prev => ({ ...prev, error: msg }));
       return null;
     }
   }, []);
@@ -230,12 +258,13 @@ export const useCompetitiveAnalysis = () => {
       await deleteCompetitiveAnalysis(id);
       setState(prev => ({
         ...prev,
+        savedAnalyses: prev.savedAnalyses.filter(a => a.id !== id),
         currentAnalysis: prev.currentAnalysis?.id === id ? null : prev.currentAnalysis,
         hasAnalysis: prev.currentAnalysis?.id === id ? false : prev.hasAnalysis
       }));
-      // Recharger les analyses après suppression
       await loadSavedAnalyses();
     } catch (error) {
+      console.error("Erreur lors de la suppression de l'analyse:", error);
     }
   }, [loadSavedAnalyses]);
 
@@ -254,12 +283,19 @@ export const useCompetitiveAnalysis = () => {
     await loadSavedAnalyses();
   }, [loadSavedAnalyses]);
 
+  const usageInfo = getFeatureLimits ? getFeatureLimits('competitor_analysis' as any) : undefined;
+
   return {
     ...state,
     startAnalysis,
     loadAnalysis,
     deleteAnalysis,
     resetAnalysis,
-    refreshSavedAnalyses
+    refreshSavedAnalyses,
+    refreshAnalyses: refreshSavedAnalyses,
+    clearError,
+    updateProgress,
+    usageInfo,
+    setState,
   };
 };

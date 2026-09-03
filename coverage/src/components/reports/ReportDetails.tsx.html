@@ -399,7 +399,9 @@
 <a name='L334'></a><a href='#L334'>334</a>
 <a name='L335'></a><a href='#L335'>335</a>
 <a name='L336'></a><a href='#L336'>336</a>
-<a name='L337'></a><a href='#L337'>337</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L337'></a><a href='#L337'>337</a>
+<a name='L338'></a><a href='#L338'>338</a>
+<a name='L339'></a><a href='#L339'>339</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -595,6 +597,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -749,7 +753,7 @@ interface ReportDetailsProps {
 const ReportDetails = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span> mappedData }: ReportDetailsProps) =&gt; {</span>
   const [expandedSection, setExpandedSection] = <span class="cstat-no" title="statement not covered" >useState&lt;string | null&gt;("semantic");</span>
 &nbsp;
-  const getStatusIcon = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(s</span>tatus: string) =&gt; {</span>
+  const getStatusIcon = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >status: string)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    switch (status) {</span>
       case "success": <span class="cstat-no" title="statement not covered" >return "✅";</span>
       case "warning": <span class="cstat-no" title="statement not covered" >return "⚠️";</span>
@@ -758,7 +762,7 @@ const ReportDetails = <span class="cstat-no" title="statement not covered" ><spa
     }
   };
 &nbsp;
-  const getScoreColor = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(s</span>core: number) =&gt; {</span>
+  const getScoreColor = (<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >score: number)</span> =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (score &gt;= 80) <span class="cstat-no" title="statement not covered" >return "text-green-600";</span></span>
 <span class="cstat-no" title="statement not covered" >    if (score &gt;= 60) <span class="cstat-no" title="statement not covered" >return "text-yellow-600";</span></span>
 <span class="cstat-no" title="statement not covered" >    return "text-red-600";</span>
@@ -927,15 +931,15 @@ const ReportDetails = <span class="cstat-no" title="statement not covered" ><spa
       &lt;/Card&gt;
 &nbsp;
       {Object.entries(semanticDetails).map(<span class="fstat-no" title="function not covered" >([</span>key, section]: [string, any]) =&gt; (
-<span class="cstat-no" title="statement not covered" >        &lt;Card key={key} c</span>lassName="border-gray-200"&gt;
+<span class="cstat-no" title="statement not covered" >        &lt;Card key={key} className="border-gray-200"&gt;</span>
           &lt;CardHeader 
             className="cursor-pointer hover:bg-gray-50 transition-colors"
-            onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setExpandedSection(expandedSection === key ? null : key)}</span>
+            onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etExpandedSection(expandedSection === key ? null : key)}</span>
           &gt;
-            &lt;div className="flex items-center justify-between"&gt;
-              &lt;div className="flex items-center gap-4"&gt;
-                &lt;div className="text-center"&gt;
-                  &lt;div className={`text-2xl font-bold ${getScoreColor(section.score)}`}&gt;
+            &lt;div className="flex items-center justify-between gap-2"&gt;
+              &lt;div className="flex items-center gap-3 sm:gap-4 min-w-0"&gt;
+                &lt;div className="text-center flex-shrink-0"&gt;
+                  &lt;div className={`text-xl sm:text-2xl font-bold ${getScoreColor(section.score)}`}&gt;
                     {section.score}/100
                   &lt;/div&gt;
                   &lt;Badge 
@@ -948,16 +952,18 @@ const ReportDetails = <span class="cstat-no" title="statement not covered" ><spa
                     {section.score &gt;= 80 ? "Excellent" : section.score &gt;= 60 ? "Moyen" : "Faible"}
                   &lt;/Badge&gt;
                 &lt;/div&gt;
-                &lt;div&gt;
-                  &lt;CardTitle className="text-lg text-gray-900"&gt;{section.title}&lt;/CardTitle&gt;
-                  &lt;Progress value={section.score} className="w-64 h-2 mt-2" /&gt;
+                &lt;div className="min-w-0"&gt;
+                  &lt;CardTitle className="text-base sm:text-lg text-gray-900"&gt;{section.title}&lt;/CardTitle&gt;
+                  &lt;Progress value={section.score} className="w-full max-w-64 h-2 mt-2" /&gt;
                 &lt;/div&gt;
               &lt;/div&gt;
-              {expandedSection === key ? (
-                &lt;ChevronDown className="h-5 w-5 text-gray-500" /&gt;
-              ) : (
-                &lt;ChevronRight className="h-5 w-5 text-gray-500" /&gt;
-              )}
+              &lt;div className="flex-shrink-0"&gt;
+                {expandedSection === key ? (
+                  &lt;ChevronDown className="h-5 w-5 text-gray-500" /&gt;
+                ) : (
+                  &lt;ChevronRight className="h-5 w-5 text-gray-500" /&gt;
+                )}
+              &lt;/div&gt;
             &lt;/div&gt;
           &lt;/CardHeader&gt;
           
@@ -966,7 +972,7 @@ const ReportDetails = <span class="cstat-no" title="statement not covered" ><spa
               &lt;div className="space-y-3"&gt;
                 &lt;h4 className="font-semibold text-gray-900"&gt;Détails d'Évaluation&lt;/h4&gt;
                 {section.details.map(<span class="fstat-no" title="function not covered" >(d</span>etail: any, index: number) =&gt; (
-<span class="cstat-no" title="statement not covered" >                  &lt;div key={index} c</span>lassName="flex items-center justify-between p-3 bg-gray-50 rounded-lg"&gt;
+<span class="cstat-no" title="statement not covered" >                  &lt;div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"&gt;</span>
                     &lt;div className="flex items-center gap-3"&gt;
                       &lt;span className="text-lg"&gt;{getStatusIcon(detail.status)}&lt;/span&gt;
                       &lt;div&gt;
@@ -982,7 +988,7 @@ const ReportDetails = <span class="cstat-no" title="statement not covered" ><spa
                 &lt;h4 className="font-semibold text-gray-900"&gt;Recommandations&lt;/h4&gt;
                 &lt;ul className="space-y-1"&gt;
                   {section.recommendations.map(<span class="fstat-no" title="function not covered" >(r</span>ec: string, index: number) =&gt; (
-<span class="cstat-no" title="statement not covered" >                    &lt;li key={index} c</span>lassName="text-sm text-gray-700 flex items-start gap-2"&gt;
+<span class="cstat-no" title="statement not covered" >                    &lt;li key={index} className="text-sm text-gray-700 flex items-start gap-2"&gt;</span>
                       &lt;span className="text-blue-600 mt-1"&gt;•&lt;/span&gt;
                       {rec}
                     &lt;/li&gt;
@@ -1021,7 +1027,7 @@ const ReportDetails = <span class="cstat-no" title="statement not covered" ><spa
         &lt;CardContent&gt;
             &lt;div className="space-y-3"&gt;
               {semanticAnalysis.improvements.map(<span class="fstat-no" title="function not covered" >(i</span>mprovement, index) =&gt; (
-<span class="cstat-no" title="statement not covered" >                &lt;div key={index} c</span>lassName="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400"&gt;
+<span class="cstat-no" title="statement not covered" >                &lt;div key={index} className="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400"&gt;</span>
                   &lt;span className="text-orange-600 mt-1 font-bold"&gt;{index + 1}.&lt;/span&gt;
                   &lt;p className="text-gray-700 flex-1"&gt;{improvement}&lt;/p&gt;
                 &lt;/div&gt;
@@ -1078,7 +1084,7 @@ const ReportDetails = <span class="cstat-no" title="statement not covered" ><spa
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-10-03T14:52:25.627Z
+                at 2026-09-03T10:34:58.787Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

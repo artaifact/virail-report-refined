@@ -26,6 +26,13 @@ import { ModelLogosCarousel } from "@/components/ModelLogosCarousel";
 const Analyses = () => {
   usePageTitle('Analyses');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!AuthService.isAuthenticated()) {
+      navigate('/login');
+    }
+  }, [navigate]);
+
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const { setSelectedReportId: setGlobalSelectedReportId } = useSelectedReport();
 
@@ -56,7 +63,7 @@ const Analyses = () => {
   const [isOptimizedAnalyzing, setIsOptimizedAnalyzing] = useState(false);
   const [optimizedProgress, setOptimizedProgress] = useState(0);
   
-  const { reports, loading, error, createAnalysis } = useReports();
+  const { reports, loading, error, createAnalysis, refreshReports } = useReports();
   const { report, loading: reportLoading, error: reportError } = useReport(selectedReportId);
   const { toast } = useToast();
 
@@ -396,6 +403,16 @@ const Analyses = () => {
                     </Button>
                   </DialogTrigger>
                 </Dialog>
+                <Button
+                  variant="outline"
+                  onClick={() => refreshReports && refreshReports()}
+                  title="Actualiser les rapports"
+                  className="px-4 py-3 h-auto border-border text-foreground hover:bg-muted"
+                  disabled={loading || isAnalyzing}
+                >
+                  <RefreshCw className="h-5 w-5 mr-2" />
+                  Actualiser
+                </Button>
               </div>
             </div>
             
@@ -435,7 +452,7 @@ const Analyses = () => {
                 <Label htmlFor="optimized-url">URL du site web</Label>
                 <Input
                   id="optimized-url"
-                  placeholder="exemple.com"
+                  placeholder="https://example.com"
                   value={optimizedAnalysisUrl}
                   onChange={(e) => setOptimizedAnalysisUrl(e.target.value)}
                   onBlur={() => {
@@ -500,7 +517,7 @@ const Analyses = () => {
                 <Label htmlFor="url">URL du site web</Label>
                 <Input
                   id="url"
-                  placeholder="exemple.com"
+                  placeholder="https://example.com"
                   value={newAnalysisUrl}
                   onChange={(e) => setNewAnalysisUrl(e.target.value)}
                   onBlur={() => {
@@ -572,72 +589,76 @@ const Analyses = () => {
         
         {/* Enhanced Stats Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-neutral-50 border border-neutral-200 overflow-hidden relative"> */}
-            {/* <div className="absolute top-0 right-0 w-20 h-20 bg-neutral-300/20 rounded-full blur-xl"></div> */}
-            {/* <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-neutral-800">Analyses Total</CardTitle>
-              <div className="w-10 h-10 bg-neutral-300 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                <BarChart3 className="h-5 w-5 text-neutral-700" />
-              </div>
-            </CardHeader> */}
-            {/* <CardContent className="relative z-10">
-              <div className="text-3xl font-bold text-neutral-900 mb-1">156</div>
-              <p className="text-sm text-neutral-600 font-semibold">+12 ce mois</p>
-            </CardContent> */}
-          {/* </Card> */}
-          
-          {/* <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-neutral-50 border border-neutral-200 overflow-hidden relative"> */}
-            {/* <div className="absolute top-0 right-0 w-20 h-20 bg-neutral-300/20 rounded-full blur-xl"></div> */}
-            {/* <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-neutral-800">Score Moyen</CardTitle>
-              <div className="w-10 h-10 bg-neutral-300 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                <TrendingUp className="h-5 w-5 text-neutral-700" />
-              </div>
-            </CardHeader> */}
-            {/* <CardContent className="relative z-10">
-              <div className="text-3xl font-bold text-neutral-900 mb-1">
-                {reports.length > 0 
-                  ? Math.round(reports.reduce((acc, r) => acc + (r.metadata.score || 0), 0) / reports.filter(r => r.metadata.score).length)
-                  : 0
-                }
-              </div> */}
-              {/* <p className="text-sm text-neutral-600 font-semibold">
-                {reports.length > 0 ? `${reports.length} analyses` : 'Aucune analyse'}
-              </p>
-            </CardContent>
-          </Card> */}
-          
-          {/* <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-neutral-50 border border-neutral-200 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-neutral-300/20 rounded-full blur-xl"></div>
+          <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-card border border-border overflow-hidden relative">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-neutral-800">Sites Analysés</CardTitle>
-              <div className="w-10 h-10 bg-neutral-300 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                <Users className="h-5 w-5 text-neutral-700" />
+              <CardTitle className="text-sm font-medium text-foreground">Analyses Total</CardTitle>
+              <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                <BarChart3 className="h-5 w-5 text-muted-foreground" />
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-3xl font-bold text-neutral-900 mb-1">
-                {new Set(reports.map(r => new URL(r.url).hostname.replace('www.', ''))).size}
+              <div className="text-3xl font-bold text-foreground mb-1">{reports.length}</div>
+              <p className="text-sm text-muted-foreground font-semibold">
+                {reports.length > 0 ? `${reports.length} analyses` : 'Aucune analyse'}
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-card border border-border overflow-hidden relative">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+              <CardTitle className="text-sm font-medium text-foreground">Score Moyen</CardTitle>
+              <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
               </div>
-              <p className="text-sm text-neutral-600 font-semibold">
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className="text-3xl font-bold text-foreground mb-1">
+                {reports.filter(r => r.metadata?.score != null).length > 0
+                  ? `${Math.round(reports.reduce((acc, r) => acc + (Number(r.metadata?.score) || 0), 0) / reports.filter(r => r.metadata?.score != null).length)}%`
+                  : '0%'
+                }
+              </div>
+              <p className="text-sm text-muted-foreground font-semibold">
+                {reports.length > 0 ? `${reports.length} analyses` : 'Aucune analyse'}
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-card border border-border overflow-hidden relative">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+              <CardTitle className="text-sm font-medium text-foreground">Sites Analysés</CardTitle>
+              <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                <Users className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className="text-3xl font-bold text-foreground mb-1">
+                {new Set(reports.map(r => {
+                  try {
+                    return new URL(r.url.startsWith('http') ? r.url : `https://${r.url}`).hostname.replace('www.', '');
+                  } catch {
+                    return r.url;
+                  }
+                })).size}
+              </div>
+              <p className="text-sm text-muted-foreground font-semibold">
                 {reports.length > 0 ? `${reports.length} analyses totales` : 'Aucun site analysé'}
               </p>
             </CardContent>
-          </Card> */}
+          </Card>
           
-          {/* <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-neutral-50 border border-neutral-200 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-neutral-300/20 rounded-full blur-xl"></div> */}
-            {/* <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-neutral-800">Temps Moyen</CardTitle>
-              <div className="w-10 h-10 bg-neutral-300 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                <Calendar className="h-5 w-5 text-neutral-700" />
+          <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-card border border-border overflow-hidden relative">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+              <CardTitle className="text-sm font-medium text-foreground">Temps Moyen</CardTitle>
+              <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                <Calendar className="h-5 w-5 text-muted-foreground" />
               </div>
-            </CardHeader> */}
-            {/* <CardContent className="relative z-10">
-              <div className="text-3xl font-bold text-neutral-900 mb-1">95.4s</div>
-              <p className="text-sm text-neutral-600 font-semibold">-8.7% optimisation</p>
-            </CardContent> */}
-          {/* </Card> */}
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className="text-3xl font-bold text-foreground mb-1">95.4s</div>
+              <p className="text-sm text-muted-foreground font-semibold">-8.7% optimisation</p>
+            </CardContent>
+          </Card>
         </div>
         
         {/* Enhanced Reports List */}
@@ -748,7 +769,7 @@ const Analyses = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 sm:gap-4 self-end sm:self-auto">
-                      {report.metadata.score &&
+                      {report.metadata?.score &&
                         <div className="text-right">
                           <div className="text-xl sm:text-2xl font-bold text-foreground">{report.metadata.score}</div>
                           <div className="text-xs sm:text-sm text-muted-foreground">Score</div>
@@ -781,4 +802,5 @@ const Analyses = () => {
   );
 };
 
+export { Analyses };
 export default Analyses;
