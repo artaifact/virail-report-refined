@@ -148,6 +148,7 @@ export const extractTargetGeoScore = (reportData: FullReportData | null): number
 
 function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReportData | null; targetGeoScore?: number | null }) {
   const [hoveredModel, setHoveredModel] = useState<string | null>(null);
+  const [isScoreGeoHovered, setIsScoreGeoHovered] = useState(false);
   const getTotalCitations = () => {
     if (reportData?.analyse_citation?.total_citations !== undefined) {
       return reportData.analyse_citation.total_citations;
@@ -221,61 +222,137 @@ function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReport
     pct: totalCitations > 0 ? Math.round((model.count / totalCitations) * 100) : 0,
   })) : [];
 
+  // Configuration du graphique Score GEO (même dimension que Citations totales)
+  const normalizedGeoScore = targetGeoScore != null ? Math.max(0, Math.min(100, Math.round(targetGeoScore))) : null;
+  const geoStrokeColor = normalizedGeoScore != null 
+    ? (normalizedGeoScore >= 75 ? '#10B981' : normalizedGeoScore >= 50 ? '#6366F1' : '#F59E0B') 
+    : '#10B981';
+  const geoGradStart = normalizedGeoScore != null 
+    ? (normalizedGeoScore >= 75 ? '#34D399' : normalizedGeoScore >= 50 ? '#818CF8' : '#FBBF24') 
+    : '#34D399';
+  const geoCirc = 2 * Math.PI * r;
+  const geoDashoffset = normalizedGeoScore != null ? geoCirc - (normalizedGeoScore / 100) * geoCirc : 0;
+  const geoStatusLabel = normalizedGeoScore != null 
+    ? (normalizedGeoScore >= 75 ? 'Visibilité optimale' : normalizedGeoScore >= 50 ? 'Bonne visibilité' : 'À améliorer') 
+    : '';
+
   return (
     <div className="citations-chart">
-      <div className="relative w-fit mx-auto">
-        <svg viewBox="0 0 280 280" className="w-full max-w-[200px] sm:max-w-[240px] h-auto mx-auto">
-          {/* Background circle */}
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="24" />
+      {/* Conteneur des deux graphiques côte à côte de même dimension */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 md:gap-14 w-full mb-3">
+        {/* 1. Graphique circulaire : Citations totales */}
+        <div className="relative w-fit">
+          <svg viewBox="0 0 280 280" className="w-full max-w-[190px] sm:max-w-[220px] md:max-w-[240px] h-auto mx-auto">
+            {/* Background circle */}
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="24" />
 
-          {/* Model segments */}
-          {hasModels && activeModels.map((model, i) => {
-            const fraction = model.count / totalCitations;
-            const segSweep = fraction * totalSweep;
-            const segStart = currentAngle;
-            const segEnd = segStart + segSweep;
-            currentAngle = segEnd;
-            const color = MODEL_COLORS[model.name] || MODEL_COLORS_FALLBACK[fallbackIdx++ % MODEL_COLORS_FALLBACK.length];
-            const isHovered = hoveredModel === model.name;
-            return (
-              <path
-                key={model.name}
-                d={describeArc(segStart, segEnd, r)}
-                fill="none" stroke={color} strokeWidth="32" strokeLinecap="butt"
-                opacity={hoveredModel && !isHovered ? 0.35 : 1}
-                style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                onMouseEnter={() => setHoveredModel(model.name)}
-                onMouseLeave={() => setHoveredModel(null)}
+            {/* Model segments */}
+            {hasModels && activeModels.map((model, i) => {
+              const fraction = model.count / totalCitations;
+              const segSweep = fraction * totalSweep;
+              const segStart = currentAngle;
+              const segEnd = segStart + segSweep;
+              currentAngle = segEnd;
+              const color = MODEL_COLORS[model.name] || MODEL_COLORS_FALLBACK[fallbackIdx++ % MODEL_COLORS_FALLBACK.length];
+              const isHovered = hoveredModel === model.name;
+              return (
+                <path
+                  key={model.name}
+                  d={describeArc(segStart, segEnd, r)}
+                  fill="none" stroke={color} strokeWidth="32" strokeLinecap="butt"
+                  opacity={hoveredModel && !isHovered ? 0.35 : 1}
+                  style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+                  onMouseEnter={() => setHoveredModel(model.name)}
+                  onMouseLeave={() => setHoveredModel(null)}
+                />
+              );
+            })}
+
+            {/* Si pas de modèles, cercle gris */}
+            {!hasModels && totalCitations > 0 && (
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#CBD5E1" strokeWidth="24" opacity={0.5} />
+            )}
+
+            {/* Center text: nombre ou info modèle survolé */}
+            {hoveredData ? (
+              <>
+                <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                  {hoveredData.count}
+                </text>
+                <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 500, fill: '#64748B', fontFamily: 'Inter, sans-serif' }}>
+                  {hoveredData.name}
+                </text>
+              </>
+            ) : (
+              <>
+                <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                  {totalCitations}
+                </text>
+                <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
+                  Citations totales
+                </text>
+              </>
+            )}
+          </svg>
+        </div>
+
+        {/* 2. Graphique circulaire : Score GEO (même dimension exacte) */}
+        {normalizedGeoScore !== null && (
+          <div className="relative w-fit">
+            <svg 
+              viewBox="0 0 280 280" 
+              className="w-full max-w-[190px] sm:max-w-[220px] md:max-w-[240px] h-auto mx-auto cursor-pointer"
+              onMouseEnter={() => setIsScoreGeoHovered(true)}
+              onMouseLeave={() => setIsScoreGeoHovered(false)}
+            >
+              <defs>
+                <linearGradient id="geoScoreRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor={geoGradStart} />
+                  <stop offset="100%" stopColor={geoStrokeColor} />
+                </linearGradient>
+              </defs>
+
+              {/* Background circle (exactement même dimension cx, cy, r, strokeWidth) */}
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="24" />
+
+              {/* Progress ring */}
+              <circle
+                cx={cx}
+                cy={cy}
+                r={r}
+                fill="none"
+                stroke="url(#geoScoreRingGradient)"
+                strokeWidth="24"
+                strokeDasharray={geoCirc}
+                strokeDashoffset={geoDashoffset}
+                strokeLinecap="round"
+                transform={`rotate(-90 ${cx} ${cy})`}
+                style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.3s ease' }}
               />
-            );
-          })}
 
-          {/* Si pas de modèles, cercle gris */}
-          {!hasModels && totalCitations > 0 && (
-            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#CBD5E1" strokeWidth="24" opacity={0.5} />
-          )}
-
-          {/* Center text: nombre ou info modèle survolé */}
-          {hoveredData ? (
-            <>
-              <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
-                {hoveredData.count}
-              </text>
-              <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 500, fill: '#64748B', fontFamily: 'Inter, sans-serif' }}>
-                {hoveredData.name}
-              </text>
-            </>
-          ) : (
-            <>
-              <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
-                {totalCitations}
-              </text>
-              <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
-                Citations totales
-              </text>
-            </>
-          )}
-        </svg>
+              {/* Center text : même style typographique que citations totales */}
+              {isScoreGeoHovered ? (
+                <>
+                  <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                    {normalizedGeoScore}/100
+                  </text>
+                  <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: geoStrokeColor, fontFamily: 'Inter, sans-serif' }}>
+                    {geoStatusLabel}
+                  </text>
+                </>
+              ) : (
+                <>
+                  <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                    {normalizedGeoScore}
+                  </text>
+                  <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
+                    Score GEO
+                  </text>
+                </>
+              )}
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* Légende des couleurs par modèle */}
@@ -355,77 +432,6 @@ function NavigationButtons({ activeView, onViewChange }: { activeView: string, o
 }
 
 /**
- * Jauge circulaire Score GEO (Score GEO Cible)
- */
-export function GeoScoreGauge({ score, className }: { score: number; className?: string }) {
-  const normalized = Math.max(0, Math.min(100, Math.round(score)));
-  const strokeColor = normalized >= 75 ? '#10B981' : normalized >= 50 ? '#6366F1' : '#F59E0B';
-  const badgeColor = normalized >= 75 
-    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80' 
-    : normalized >= 50 
-    ? 'bg-indigo-50 text-indigo-700 border-indigo-200/80' 
-    : 'bg-amber-50 text-amber-700 border-amber-200/80';
-  const statusLabel = normalized >= 75 ? 'Excellent' : normalized >= 50 ? 'Bon' : 'À améliorer';
-
-  const r = 28;
-  const circ = 2 * Math.PI * r;
-  const strokeDashoffset = circ - (normalized / 100) * circ;
-
-  return (
-    <div className={cn("inline-flex items-center gap-3 bg-white/95 backdrop-blur-sm border border-slate-200/90 rounded-2xl px-3.5 py-2 sm:px-4 sm:py-2.5 shadow-xs hover:shadow-sm transition-all", className)}>
-      {/* Jauge circulaire SVG */}
-      <div className="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0">
-        <svg viewBox="0 0 70 70" className="w-full h-full -rotate-90">
-          <circle
-            cx="35"
-            cy="35"
-            r={r}
-            fill="none"
-            stroke="#F1F5F9"
-            strokeWidth="6"
-          />
-          <circle
-            cx="35"
-            cy="35"
-            r={r}
-            fill="none"
-            stroke={strokeColor}
-            strokeWidth="6"
-            strokeDasharray={circ}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            className="transition-all duration-700 ease-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-sm sm:text-base font-black text-slate-900 leading-none">
-            {normalized}
-          </span>
-          <span className="text-[8px] sm:text-[9px] font-semibold text-slate-400 leading-none mt-0.5">
-            /100
-          </span>
-        </div>
-      </div>
-
-      {/* Libellé et métriques */}
-      <div className="flex flex-col">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-900">
-            Score GEO
-          </span>
-          <span className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-bold border", badgeColor)}>
-            {statusLabel}
-          </span>
-        </div>
-        <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-0.5">
-          Score cible
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/**
  * Section haute du dashboard - Fixe
  * Contient le graphique de citations, le carrousel de logos et les boutons de navigation
  */
@@ -478,24 +484,15 @@ function TopSection({ activeView, onViewChange, reportData, reports, onOpenRepor
 
   return (
     <div className="top-section relative">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1 mb-2">
-        <div className="min-w-0">
-          <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight truncate">
-            {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
-          </h1>
-          {lastUpdate && (
-            <p className="text-xs text-slate-400 mt-0.5">Dernière mise à jour : {lastUpdate}</p>
-          )}
-        </div>
-
-        {/* Score GEO circulaire en haut à droite */}
-        {targetGeoScore !== null && targetGeoScore !== undefined && (
-          <div className="self-end sm:self-auto">
-            <GeoScoreGauge score={targetGeoScore} />
-          </div>
+      <div className="px-1 mb-2">
+        <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight truncate">
+          {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
+        </h1>
+        {lastUpdate && (
+          <p className="text-xs text-slate-400 mt-0.5">Dernière mise à jour : {lastUpdate}</p>
         )}
       </div>
-      <CitationsChart reportData={reportData} />
+      <CitationsChart reportData={reportData} targetGeoScore={targetGeoScore} />
       <NavigationButtons activeView={activeView} onViewChange={onViewChange} />
     </div>
   );

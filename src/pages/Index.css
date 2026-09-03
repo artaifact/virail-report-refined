@@ -234,7 +234,8 @@
 /* Graphique circulaire */
 .citations-chart {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     position: relative;
     width: 100%;
     margin: var(--spacing-xl) 0; /* Réduit */
