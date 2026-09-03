@@ -238,13 +238,13 @@ function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReport
 
   return (
     <div className="citations-chart">
-      {/* Conteneur des deux graphiques côte à côte de même dimension */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 md:gap-14 w-full mb-3">
+      {/* Conteneur des deux graphiques côte à côte de même dimension et arrondi */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12 md:gap-16 w-full mb-3">
         {/* 1. Graphique circulaire : Citations totales */}
-        <div className="relative w-fit">
-          <svg viewBox="0 0 280 280" className="w-full max-w-[190px] sm:max-w-[220px] md:max-w-[240px] h-auto mx-auto">
-            {/* Background circle */}
-            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="24" />
+        <div className="relative w-full max-w-[200px] sm:max-w-[240px] mx-auto">
+          <svg viewBox="0 0 280 280" className="w-full h-auto mx-auto">
+            {/* Background circle - même épaisseur 32 que les segments */}
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
 
             {/* Model segments */}
             {hasModels && activeModels.map((model, i) => {
@@ -270,7 +270,7 @@ function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReport
 
             {/* Si pas de modèles, cercle gris */}
             {!hasModels && totalCitations > 0 && (
-              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#CBD5E1" strokeWidth="24" opacity={0.5} />
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#CBD5E1" strokeWidth="32" opacity={0.5} />
             )}
 
             {/* Center text: nombre ou info modèle survolé */}
@@ -296,12 +296,12 @@ function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReport
           </svg>
         </div>
 
-        {/* 2. Graphique circulaire : Score GEO (même dimension exacte) */}
+        {/* 2. Graphique circulaire : Score GEO (même dimension et même arrondi exact) */}
         {normalizedGeoScore !== null && (
-          <div className="relative w-fit">
+          <div className="relative w-full max-w-[200px] sm:max-w-[240px] mx-auto">
             <svg 
               viewBox="0 0 280 280" 
-              className="w-full max-w-[190px] sm:max-w-[220px] md:max-w-[240px] h-auto mx-auto cursor-pointer"
+              className="w-full h-auto mx-auto cursor-pointer"
               onMouseEnter={() => setIsScoreGeoHovered(true)}
               onMouseLeave={() => setIsScoreGeoHovered(false)}
             >
@@ -312,17 +312,17 @@ function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReport
                 </linearGradient>
               </defs>
 
-              {/* Background circle (exactement même dimension cx, cy, r, strokeWidth) */}
-              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="24" />
+              {/* Background circle - même dimension exacte cx, cy, r et strokeWidth=32 */}
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
 
-              {/* Progress ring */}
+              {/* Progress ring - même épaisseur 32 et même rayon r=95 */}
               <circle
                 cx={cx}
                 cy={cy}
                 r={r}
                 fill="none"
                 stroke="url(#geoScoreRingGradient)"
-                strokeWidth="24"
+                strokeWidth="32"
                 strokeDasharray={geoCirc}
                 strokeDashoffset={geoDashoffset}
                 strokeLinecap="round"
