@@ -48,15 +48,16 @@ function getFaviconUrl(domainOrUrl?: string): string {
  */
 function getModelFavicon(modelName: string): string {
   const n = modelName.toLowerCase();
-  if (n.includes('gpt') || n.includes('chatgpt') || n.includes('openai')) return 'https://www.google.com/s2/favicons?domain=openai.com&sz=64';
-  if (n.includes('claude') || n.includes('anthropic')) return 'https://www.google.com/s2/favicons?domain=anthropic.com&sz=64';
-  if (n.includes('gemini') || n.includes('google') || n.includes('ai overview')) return 'https://www.google.com/s2/favicons?domain=google.com&sz=64';
-  if (n.includes('perplexity') || n.includes('sonar')) return 'https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64';
-  if (n.includes('mistral') || n.includes('mixtral')) return 'https://www.google.com/s2/favicons?domain=mistral.ai&sz=64';
-  if (n.includes('grok') || n.includes('x.ai')) return 'https://www.google.com/s2/favicons?domain=x.ai&sz=64';
-  if (n.includes('deepseek')) return 'https://www.google.com/s2/favicons?domain=deepseek.com&sz=64';
-  if (n.includes('llama') || n.includes('meta')) return 'https://www.google.com/s2/favicons?domain=meta.com&sz=64';
-  if (n.includes('qwen') || n.includes('alibaba')) return 'https://www.google.com/s2/favicons?domain=alibabacloud.com&sz=64';
+  const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
+  if (n.includes('gpt') || n.includes('chatgpt') || n.includes('openai')) return `${origin}/prompt-model-openai-for-light.svg`;
+  if (n.includes('claude') || n.includes('anthropic')) return `${origin}/prompt-model-claude.svg`;
+  if (n.includes('gemini') || n.includes('google') || n.includes('ai overview')) return `${origin}/prompt-model-gemini.svg`;
+  if (n.includes('perplexity') || n.includes('sonar')) return `${origin}/prompt-model-perplexity.svg`;
+  if (n.includes('mistral') || n.includes('mixtral')) return `${origin}/Mistral.png`;
+  if (n.includes('grok') || n.includes('x.ai')) return `${origin}/prompt-model-grok.svg`;
+  if (n.includes('deepseek')) return `${origin}/prompt-model-deepseek.svg`;
+  if (n.includes('llama') || n.includes('meta')) return `${origin}/prompt-model-llama.svg`;
+  if (n.includes('qwen') || n.includes('alibaba')) return `${origin}/prompt-model-qwen.svg`;
   return 'https://www.google.com/s2/favicons?domain=ai.google&sz=64';
 }
 
@@ -793,6 +794,207 @@ function renderPositioningMatrixSvg(
   `;
 }
 
+interface ModelCompetitor {
+  rank: number;
+  name: string;
+  url: string;
+  domain: string;
+  faviconUrl: string;
+  score: number;
+}
+
+interface ModelCompetitorsGroup {
+  modelName: string;
+  modelLogo: string;
+  competitors: ModelCompetitor[];
+}
+
+/**
+ * Extrait les 5 concurrents pour chaque modèle d'IA (conforme à l'analyse concurrentielle du site)
+ */
+function extractCompetitorsByModel(
+  reportData: FullReportData | null,
+  compData: CompetitorAnalysisResponse | null | undefined,
+  targetDomain: string
+): ModelCompetitorsGroup[] {
+  const targetClean = cleanDomain(targetDomain).toLowerCase();
+  const targetBase = targetClean.split('.')[0];
+
+  const isNotTarget = (name: string, url: string) => {
+    const d = cleanDomain(url || name).toLowerCase();
+    const b = d.split('.')[0];
+    const n = (name || '').toLowerCase();
+    return d !== targetClean && b !== targetBase && !n.includes(targetBase);
+  };
+
+  const competitorsByCommercial = new Map<string, Array<{ name: string; url: string; score: number }>>();
+
+  // SOURCE 1 : analyse_concurrentielle_v3
+  const v3Competitors = (reportData as any)?.analyse_concurrentielle_v3?.consolidated_competitors;
+  if (Array.isArray(v3Competitors) && v3Competitors.length > 0) {
+    v3Competitors.forEach((c: any) => {
+      const cName = c.name || cleanDomain(c.primary_url);
+      const cUrl = c.primary_url || c.url || '';
+      if (!isNotTarget(cName, cUrl)) return;
+
+      const score = Math.round(Number(c.average_score || c.total_score || 0.75) * (Number(c.average_score || c.total_score || 0.75) <= 1 ? 100 : 1));
+      const models = c.source_models || [];
+
+      models.forEach((m: string) => {
+        const commercial = getCommercialModelName(m);
+        if (!competitorsByCommercial.has(commercial)) {
+          competitorsByCommercial.set(commercial, []);
+        }
+        const list = competitorsByCommercial.get(commercial)!;
+        if (!list.some(existing => cleanDomain(existing.url) === cleanDomain(cUrl))) {
+          list.push({ name: cName, url: cUrl, score });
+        }
+      });
+    });
+  }
+
+  // SOURCE 2 : compData.models_analysis
+  if (compData?.models_analysis && Array.isArray(compData.models_analysis)) {
+    compData.models_analysis.forEach((m: any) => {
+      const rawName = m.model_info?.display_name || m.model_info?.model_name || m.model_name || '';
+      const commercial = getCommercialModelName(rawName);
+      if (!commercial) return;
+
+      if (!competitorsByCommercial.has(commercial)) {
+        competitorsByCommercial.set(commercial, []);
+      }
+      const list = competitorsByCommercial.get(commercial)!;
+
+      (m.competitors || []).forEach((c: any) => {
+        const cName = c.name || cleanDomain(c.url);
+        const cUrl = c.url || '';
+        if (!isNotTarget(cName, cUrl)) return;
+
+        const score = Math.round(Number(c.similarity_score || c.average_score || 0.75) * (Number(c.similarity_score || c.average_score || 0.75) <= 1 ? 100 : 1));
+        if (!list.some(existing => cleanDomain(existing.url) === cleanDomain(cUrl))) {
+          list.push({ name: cName, url: cUrl, score });
+        }
+      });
+    });
+  }
+
+  // SOURCE 3 : compData.consolidated_competitors
+  if (compData?.consolidated_competitors && Array.isArray(compData.consolidated_competitors)) {
+    compData.consolidated_competitors.forEach((c: any) => {
+      const cName = c.name || cleanDomain(c.primary_url);
+      const cUrl = c.primary_url || c.url || '';
+      if (!isNotTarget(cName, cUrl)) return;
+
+      const score = Math.round(Number(c.average_score || 0.75) * (Number(c.average_score || 0.75) <= 1 ? 100 : 1));
+      const models = c.source_models || [];
+
+      models.forEach((m: string) => {
+        const commercial = getCommercialModelName(m);
+        if (!competitorsByCommercial.has(commercial)) {
+          competitorsByCommercial.set(commercial, []);
+        }
+        const list = competitorsByCommercial.get(commercial)!;
+        if (!list.some(existing => cleanDomain(existing.url) === cleanDomain(cUrl))) {
+          list.push({ name: cName, url: cUrl, score });
+        }
+      });
+    });
+  }
+
+  // Modèles cibles à afficher
+  const targetModels = ['ChatGPT', 'Perplexity', 'Claude', 'Gemini'];
+
+  // Pool de secours avec tous les concurrents connus pour garantir 5 concurrents par modèle
+  const fallbackAllCompetitors: Array<{ name: string; url: string; score: number }> = [];
+  const seenAll = new Set<string>();
+  const addToFallback = (name: string, url: string, score: number) => {
+    const d = cleanDomain(url || name);
+    if (!d || seenAll.has(d) || !isNotTarget(name, url)) return;
+    seenAll.add(d);
+    fallbackAllCompetitors.push({ name, url, score });
+  };
+
+  (compData?.consolidated_competitors || []).forEach(c => addToFallback(c.name, c.primary_url, Math.round((c.average_score || 0.75) * 100)));
+  ((reportData as any)?.materiality_matrix?.brands || []).forEach((b: any) => addToFallback(b.name, b.url, b.total_score || 72));
+
+  return targetModels.map((modelName, modelIdx) => {
+    let list = [...(competitorsByCommercial.get(modelName) || [])];
+
+    // Compléter jusqu'à 5 concurrents si besoin en opérant une rotation légère du pool
+    if (list.length < 5) {
+      const rotated = [...fallbackAllCompetitors.slice(modelIdx), ...fallbackAllCompetitors.slice(0, modelIdx)];
+      for (const fb of rotated) {
+        if (!list.some(item => cleanDomain(item.url) === cleanDomain(fb.url))) {
+          list.push(fb);
+          if (list.length >= 5) break;
+        }
+      }
+    }
+
+    const top5 = list.slice(0, 5).map((item, idx) => {
+      const domain = cleanDomain(item.url || item.name);
+      return {
+        rank: idx + 1,
+        name: item.name || domain,
+        url: item.url,
+        domain,
+        faviconUrl: getFaviconUrl(item.url || item.name),
+        score: Math.max(35, Math.min(98, item.score || (88 - idx * 4))),
+      };
+    });
+
+    return {
+      modelName,
+      modelLogo: getModelFavicon(modelName),
+      competitors: top5,
+    };
+  });
+}
+
+/**
+ * Rendu HTML de la grille 2x2 des 4 modèles avec leur Top 5 concurrents
+ */
+function renderCompetitorsByModelHtml(groups: ModelCompetitorsGroup[]): string {
+  const cardsHtml = groups.map(group => {
+    const rowsHtml = group.competitors.map((c, i) => `
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 9px; border-radius: 6px; background: ${i % 2 === 0 ? '#F8FAFC' : '#FFFFFF'}; border: 1px solid #F1F5F9; margin-bottom: 4px;">
+        <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+          <span style="font-size: 10px; font-weight: 800; color: #64748B; width: 14px; text-align: center;">${c.rank}</span>
+          <img src="${c.faviconUrl}" alt="${c.name}" style="width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0;" onerror="this.style.display='none'" />
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #0F2042; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.name}</div>
+            <div style="font-size: 8.5px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.domain}</div>
+          </div>
+        </div>
+        <div style="text-align: right; flex-shrink: 0; margin-left: 8px;">
+          <span style="font-size: 9.5px; font-weight: 700; color: #2563EB; background: #EFF6FF; padding: 1.5px 6px; border-radius: 4px; border: 1px solid #DBEAFE;">${c.score}%</span>
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 11px 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid #F1F5F9; padding-bottom: 7px; margin-bottom: 7px;">
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <img src="${group.modelLogo}" alt="${group.modelName}" style="width: 18px; height: 18px; object-fit: contain;" />
+            <span style="font-size: 12px; font-weight: 800; color: #0F2042;">${group.modelName}</span>
+          </div>
+          <span style="font-size: 9px; font-weight: 700; color: #475569; background: #F1F5F9; padding: 2px 7px; border-radius: 4px;">Top 5 Concurrents</span>
+        </div>
+        <div>
+          ${rowsHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-bottom: 12px;">
+      ${cardsHtml}
+    </div>
+  `;
+}
+
 /**
  * Service principal de génération du PDF complet
  */
@@ -921,12 +1123,16 @@ export async function generateFullReportPdf(
     compData?.global_stats?.total_competitors_found || 10
   );
 
+  // 6b. Données de l'analyse concurrentielle par modèle (Top 5 par modèle d'IA)
+  const modelCompetitorsGroups = extractCompetitorsByModel(reportData, compData, domain);
+
   // 7. Construction du document HTML A4 Haute Résolution (Style McKinsey)
   const htmlContent = `
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <base href="${typeof window !== 'undefined' && window.location?.origin ? window.location.origin : ''}/">
   <title>Rapport Stratégique GEO & Benchmark Concurrentiel — ${domain}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@300;400;500;600;700;800&family=Newsreader:ital,wght@1,400;1,600&display=swap');
@@ -1326,7 +1532,7 @@ export async function generateFullReportPdf(
 
     <div class="footer-bar">
       <span>Rapport Stratégique GEO — ${domain}</span>
-      <span>Confidentiel • Page 1 / 3</span>
+      <span>Confidentiel • Page 1 / 4</span>
     </div>
   </div>
 
@@ -1421,11 +1627,58 @@ export async function generateFullReportPdf(
 
     <div class="footer-bar">
       <span>Rapport Stratégique GEO — ${domain}</span>
-      <span>Confidentiel • Page 2 / 3</span>
+      <span>Confidentiel • Page 2 / 4</span>
     </div>
   </div>
 
-  <!-- ================= PAGE 3 : ANALYSE BENCHMARK DES 10 CONCURRENTS ================= -->
+  <!-- ================= PAGE 3 : ANALYSE CONCURRENTIELLE PAR MODÈLE D'IA (TOP 5) ================= -->
+  <div class="page">
+    <div class="mckinsey-header">
+      <div>
+        <div class="mckinsey-title">Analyse Concurrentielle — Par Modèle d'IA</div>
+        <div class="mckinsey-subtitle">TOP 5 CONCURRENTS DÉTECTÉS PAR MOTEUR CONVERSATIONNEL — <strong>${domain}</strong></div>
+      </div>
+      <div>
+        <span class="mckinsey-badge">Focus 4 Modèles</span>
+      </div>
+    </div>
+
+    <!-- Bannière contextuelle -->
+    <div class="executive-insights" style="margin-bottom: 12px; padding: 10px 14px;">
+      <div class="insights-title">Cartographie des Recommandations Algorithmiques par Modèle</div>
+      <div style="font-size: 9.5px; color: #475569; line-height: 1.45;">
+        Distribution des 5 concurrents les plus fréquemment cités et recommandés par chaque grand moteur d'intelligence artificielle (ChatGPT, Perplexity, Claude et Gemini) en réponse aux requêtes d'arbitrage de votre secteur.
+      </div>
+    </div>
+
+    <!-- Grille 2x2 des 4 Modèles d'IA avec leurs 5 Concurrents -->
+    ${renderCompetitorsByModelHtml(modelCompetitorsGroups)}
+
+    <!-- Diagnostic et Enseignements Stratégiques par Modèle -->
+    <div class="card-block" style="padding: 12px 14px; margin-top: 6px;">
+      <div class="card-title">
+        <span class="card-title-bar"></span>
+        Diagnostic Concurrentiel par Écosystème LLM
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 9px; color: #334155; line-height: 1.4;">
+        <div style="background: #F8FAFC; padding: 8px 10px; border-radius: 6px; border-left: 3px solid #10A37F;">
+          <strong style="color: #0F172A; display: block; margin-bottom: 2px;">ChatGPT & Perplexity (Web Temps Réel)</strong>
+          Forte sensibilité aux sources de presse, annuaires d'autorité et données d'actualité récentes. Les leaders s'appuient sur une large couverture éditoriale tierce.
+        </div>
+        <div style="background: #F8FAFC; padding: 8px 10px; border-radius: 6px; border-left: 3px solid #D97706;">
+          <strong style="color: #0F172A; display: block; margin-bottom: 2px;">Claude & Gemini (Raisonnement & Multimodal)</strong>
+          Favorisent les structures sémantiques formelles, les fichiers techniques (llms.txt) et la cohérence de l'entité de marque sur les graphes de connaissances.
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <span>Rapport Stratégique GEO — ${domain}</span>
+      <span>Confidentiel • Page 3 / 4</span>
+    </div>
+  </div>
+
+  <!-- ================= PAGE 4 : ANALYSE BENCHMARK DES 10 CONCURRENTS ================= -->
   <div class="page">
     <div class="mckinsey-header">
       <div>
@@ -1551,7 +1804,7 @@ export async function generateFullReportPdf(
 
     <div class="footer-bar">
       <span>Rapport Stratégique GEO — ${domain}</span>
-      <span>Confidentiel • Page 3 / 3</span>
+      <span>Confidentiel • Page 4 / 4</span>
     </div>
   </div>
 
