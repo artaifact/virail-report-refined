@@ -125,6 +125,8 @@
 
 /* === SECTION HAUTE - Fixe === */
 .top-section {
+    position: relative;
+    z-index: 30;
     background: rgba(255, 255, 255, 0.95); /* Légère transparence */
     backdrop-filter: blur(10px); /* Effet Glassmorphism */
     border-radius: var(--border-radius-lg);
@@ -259,6 +261,8 @@
     gap: var(--spacing-sm); /* Réduit */
     justify-content: center;
     margin-top: var(--spacing-lg); /* Réduit */
+    position: relative;
+    z-index: 40;
 }
 
 .nav-btn {
@@ -356,6 +360,7 @@
 /* === SECTION BASSE - Contenu dynamique === */
 .bottom-section {
     position: relative;
+    z-index: 1;
     min-height: 600px;
     overflow-x: hidden;
 }

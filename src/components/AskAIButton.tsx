@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import styles from '../App.module.css';
 
 /**
@@ -163,24 +169,8 @@ export default function AskAIButton({
 }: AskAIButtonProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
 
-  // Fermer au clic extérieur et à Échap
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    document.addEventListener('mousedown', onClick);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onClick);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  // URL pour les LLMs : on pointe vers /llms-full.txt (servi en text/plain, 100% compatible avec tous les crawlers de LLM)
+  // URL pour les LLMs : on pointe vers /llms-full.txt
   const md = markdownUrl || `${origin}/llms-full.txt`;
 
   // Génération dynamique du contenu Markdown du rapport d'infos détaillées
@@ -204,7 +194,7 @@ export default function AskAIButton({
     (reportData
       ? "Explique-moi ce rapport d'audit GEO en français, de façon factuelle et structurée. Voici son contenu en Markdown :"
       : "Explique-moi cette page en français, de façon factuelle et structurée. Voici son contenu en Markdown :");
-  
+
   const mcp = mcpConfigUrl || 'https://github.com/crypto-yannso/viraill-mcp#readme';
 
   const copyForAI = async () => {
@@ -232,61 +222,75 @@ export default function AskAIButton({
   const targetContent = detailedMarkdown ? detailedMarkdown.slice(0, 1800) : md;
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative' }} className={styles.askAiWrapper}>
-      <button
-        type="button"
-        aria-label="Se faire expliquer cette page par une IA"
-        aria-expanded={open}
-        aria-haspopup="menu"
-        onClick={() => setOpen(!open)}
-        className={styles.askAiButton}
-      >
-        <span aria-hidden="true">✨</span>
-        <span className={styles.askAiLabel}>Expliquer par l'IA</span>
-      </button>
+    <div className={styles.askAiWrapper}>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            aria-label="Se faire expliquer cette page par une IA"
+            className={styles.askAiButton}
+          >
+            <span aria-hidden="true">✨</span>
+            <span className={styles.askAiLabel}>Expliquer par l'IA</span>
+          </button>
+        </DropdownMenuTrigger>
 
-      {open && (
-        <div className={styles.askAiMenu} role="menu" aria-label="Expliquer cette page par une IA">
-          <button type="button" role="menuitem" className={styles.askAiItem} onClick={copyForAI}>
+        <DropdownMenuContent
+          align="end"
+          sideOffset={8}
+          className={styles.askAiMenu}
+        >
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              copyForAI();
+            }}
+            className={`${styles.askAiItem} ${copied ? styles.askAiItemCopied : ''}`}
+          >
             <span className={styles.askAiItemTitle}>
               {copied ? '✓ Copié en Markdown' : 'Copier la page pour un LLM'}
             </span>
             <span className={styles.askAiItemSub}>
               {copied ? 'Collez-le directement dans votre IA' : 'Format Markdown optimisé pour contexte IA'}
             </span>
-          </button>
+          </DropdownMenuItem>
 
-          <a
-            role="menuitem"
-            className={styles.askAiItem}
-            href={textBlobUrl || md}
-            target="_blank"
-            rel="noopener"
-          >
-            <span className={styles.askAiItemTitle}>Voir la version texte (LLM)</span>
-            <span className={styles.askAiItemSub}>Documentation complète /llms-full.txt ↗</span>
-          </a>
-
-          {CHAT_TARGETS.map((t) => (
+          <DropdownMenuItem asChild className={styles.askAiItem}>
             <a
-              key={t.id}
-              role="menuitem"
-              className={styles.askAiItem}
-              href={t.url(targetContent, defaultPrompt)}
+              href={textBlobUrl || md}
               target="_blank"
               rel="noopener"
             >
-              <span className={styles.askAiItemTitle}>{t.label}</span>
-              <span className={styles.askAiItemSub}>{t.sub} ↗</span>
+              <span className={styles.askAiItemTitle}>Voir la version texte (LLM)</span>
+              <span className={styles.askAiItemSub}>Documentation complète /llms-full.txt ↗</span>
             </a>
+          </DropdownMenuItem>
+
+          <div className={styles.askAiSeparator} />
+
+          {CHAT_TARGETS.map((t) => (
+            <DropdownMenuItem key={t.id} asChild className={styles.askAiItem}>
+              <a
+                href={t.url(targetContent, defaultPrompt)}
+                target="_blank"
+                rel="noopener"
+              >
+                <span className={styles.askAiItemTitle}>{t.label}</span>
+                <span className={styles.askAiItemSub}>{t.sub} ↗</span>
+              </a>
+            </DropdownMenuItem>
           ))}
 
-          <a role="menuitem" className={styles.askAiItem} href={mcp} target="_blank" rel="noopener">
-            <span className={styles.askAiItemTitle}>Connecter via MCP</span>
-            <span className={styles.askAiItemSub}>Installer le serveur @crypto-yannso/viraill-mcp ↗</span>
-          </a>
-        </div>
-      )}
+          <div className={styles.askAiSeparator} />
+
+          <DropdownMenuItem asChild className={styles.askAiItem}>
+            <a href={mcp} target="_blank" rel="noopener">
+              <span className={styles.askAiItemTitle}>Connecter via MCP</span>
+              <span className={styles.askAiItemSub}>Installer le serveur @crypto-yannso/viraill-mcp ↗</span>
+            </a>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
