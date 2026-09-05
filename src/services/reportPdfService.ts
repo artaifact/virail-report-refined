@@ -60,40 +60,220 @@ function getModelFavicon(modelName: string): string {
   return 'https://www.google.com/s2/favicons?domain=ai.google&sz=64';
 }
 
+const MODEL_COLORS: Record<string, string> = {
+  'ChatGPT': '#86CEAC',
+  'Perplexity': '#8ECFD9',
+  'Gemini': '#93B5E1',
+  'Claude': '#E0C08A',
+  'Mistral': '#F0B88A',
+  'DeepSeek': '#A5A7E0',
+  'Meta AI': '#88B5E8',
+  'Qwen': '#B8A3DB',
+  'Grok': '#E8A0A0',
+};
+const MODEL_COLORS_FALLBACK = ['#B5A8D8', '#DBA8C4', '#8DD0C4', '#E0C68A', '#A5A7E0', '#8BC5E0'];
+
+function getCommercialModelName(apiName: string): string {
+  const n = apiName.toLowerCase().trim();
+  if (n.includes('sonar')) return 'Perplexity';
+  if (n.includes('claude')) return 'Claude';
+  if (n.startsWith('gpt') || n === 'chatgpt') return 'ChatGPT';
+  if (n.includes('gemini') || n === 'ai overview' || n === 'ai-overview') return 'Gemini';
+  if (n.includes('mistral') || n.includes('mixtral')) return 'Mistral';
+  if (n.includes('deepseek')) return 'DeepSeek';
+  if (n.includes('llama')) return 'Meta AI';
+  if (n.includes('qwen')) return 'Qwen';
+  if (n.includes('grok')) return 'Grok';
+  return apiName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+function polarToCartesian(cx: number, cy: number, radius: number, angleInDegrees: number) {
+  const angleInRadians = (angleInDegrees * Math.PI) / 180.0;
+  return {
+    x: cx + radius * Math.cos(angleInRadians),
+    y: cy + radius * Math.sin(angleInRadians),
+  };
+}
+
+function describeArc(cx: number, cy: number, radius: number, startAngle: number, endAngle: number): string {
+  let end = endAngle;
+  if (end - startAngle >= 360) {
+    end = startAngle + 359.99;
+  }
+  const start = polarToCartesian(cx, cy, radius, startAngle);
+  const finish = polarToCartesian(cx, cy, radius, end);
+  const largeArcFlag = end - startAngle > 180 ? 1 : 0;
+  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${finish.x} ${finish.y}`;
+}
+
 /**
- * Rendu SVG d'une jauge circulaire de haute définition
+ * Rendu SVG du Donut des Citations Totales - Exactement comme sur le site
  */
-function renderCircularGaugeSvg(value: number, label: string, color: string, total: number = 100, isScore: boolean = false): string {
-  const r = 40;
-  const circ = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(100, isScore ? value : (value / Math.max(1, total)) * 100));
-  const offset = circ - (pct / 100) * circ;
+function renderCitationsDonutSvg(
+  totalCitations: number,
+  models: Array<{ name: string; count: number; color: string }>
+): string {
+  const cx = 140;
+  const cy = 140;
+  const r = 95;
+  const activeWithCitations = models.filter(m => m.count > 0);
+  const hasModels = activeWithCitations.length > 0 && totalCitations > 0;
+
+  let segmentsSvg = '';
+  if (hasModels) {
+    let currentAngle = -90;
+    segmentsSvg = activeWithCitations.map(m => {
+      const fraction = m.count / totalCitations;
+      const sweep = fraction * 360;
+      const start = currentAngle;
+      const end = start + sweep;
+      currentAngle = end;
+      return `<path d="${describeArc(cx, cy, r, start, end)}" fill="none" stroke="${m.color}" stroke-width="32" stroke-linecap="butt" />`;
+    }).join('');
+  } else if (totalCitations > 0) {
+    segmentsSvg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#CBD5E1" stroke-width="32" opacity="0.5" />`;
+  }
 
   return `
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 130px;">
-      <svg viewBox="0 0 100 100" style="width: 95px; height: 95px;">
-        <circle cx="50" cy="50" r="${r}" fill="none" stroke="#F1F5F9" stroke-width="9" />
-        <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="9"
-          stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
-          transform="rotate(-90 50 50)" />
-        <text x="50" y="47" text-anchor="middle" style="font-size: 22px; font-weight: 800; fill: #0F172A; font-family: Inter, system-ui, sans-serif;">
-          ${value}
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <svg viewBox="0 0 280 280" style="width: 140px; height: 140px;">
+        <!-- Background circle - même épaisseur 32 et même rayon 95 -->
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#F1F5F9" stroke-width="32" />
+        ${segmentsSvg}
+        <!-- Center text: même style typographique que le site -->
+        <text x="${cx}" y="${cy + 8}" text-anchor="middle" style="font-size: 42px; font-weight: 700; fill: #0F172A; font-family: Inter, sans-serif;">
+          ${totalCitations}
         </text>
-        <text x="50" y="62" text-anchor="middle" style="font-size: 8.5px; font-weight: 600; fill: #64748B; font-family: Inter, system-ui, sans-serif;">
-          ${isScore ? '/ 100' : 'citations'}
+        <text x="${cx}" y="${cy + 32}" text-anchor="middle" style="font-size: 13px; font-weight: 500; fill: #94A3B8; font-family: Inter, sans-serif;">
+          Citations totales
         </text>
       </svg>
-      <div style="font-size: 10px; font-weight: 700; color: #1E293B; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">
-        ${label}
-      </div>
     </div>
   `;
 }
 
 /**
- * Construit le SVG de la Matrice de Matérialité type McKinsey (2x2 Quadrants)
+ * Rendu SVG du Score GEO - Même dimension et même arrondi exact que Citations totales
  */
-function renderMaterialityMatrixSvg(
+function renderScoreGeoDonutSvg(targetGeoScore: number): string {
+  const cx = 140;
+  const cy = 140;
+  const r = 95;
+  const normalized = Math.max(0, Math.min(100, Math.round(targetGeoScore)));
+  const geoStrokeColor = normalized >= 75 ? '#10B981' : normalized >= 50 ? '#6366F1' : '#F59E0B';
+  const geoGradStart = normalized >= 75 ? '#34D399' : normalized >= 50 ? '#818CF8' : '#FBBF24';
+  const geoCirc = 2 * Math.PI * r;
+  const geoDashoffset = geoCirc - (normalized / 100) * geoCirc;
+
+  return `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <svg viewBox="0 0 280 280" style="width: 140px; height: 140px;">
+        <defs>
+          <linearGradient id="pdfGeoScoreRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${geoGradStart}" />
+            <stop offset="100%" stop-color="${geoStrokeColor}" />
+          </linearGradient>
+        </defs>
+        <!-- Background circle - même épaisseur 32 que Citations -->
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#F1F5F9" stroke-width="32" />
+        <!-- Progress ring avec dégradé et arrondi exact du site -->
+        <circle
+          cx="${cx}" cy="${cy}" r="${r}"
+          fill="none"
+          stroke="url(#pdfGeoScoreRingGradient)"
+          stroke-width="32"
+          stroke-dasharray="${geoCirc.toFixed(2)}"
+          stroke-dashoffset="${geoDashoffset.toFixed(2)}"
+          stroke-linecap="round"
+          transform="rotate(-90 ${cx} ${cy})"
+        />
+        <!-- Center text: même style exact que Citations totales -->
+        <text x="${cx}" y="${cy + 8}" text-anchor="middle" style="font-size: 42px; font-weight: 700; fill: #0F172A; font-family: Inter, sans-serif;">
+          ${normalized}
+        </text>
+        <text x="${cx}" y="${cy + 32}" text-anchor="middle" style="font-size: 13px; font-weight: 500; fill: #94A3B8; font-family: Inter, sans-serif;">
+          Score GEO
+        </text>
+      </svg>
+    </div>
+  `;
+}
+
+/**
+ * Légende des couleurs par modèle (exactement comme sous le graphique du site)
+ */
+function renderModelLegendHtml(models: Array<{ name: string; count: number; color: string; pct: number }>): string {
+  const activeWithCitations = models.filter(m => m.count > 0);
+  if (activeWithCitations.length === 0) return '';
+
+  return `
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; margin-top: 8px; width: 100%;">
+      ${activeWithCitations.map(m => `
+        <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 9px;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: ${m.color}; display: inline-block; flex-shrink: 0;"></span>
+          <span style="font-weight: 600; color: #334155;">${m.name}</span>
+          <span style="color: #94A3B8; font-weight: 400;">${m.count} (${m.pct}%)</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/**
+ * Alerte de statut de visibilité (exactement comme le banner sur le site)
+ */
+function renderCitationsStatusBannerHtml(totalCitations: number): string {
+  if (totalCitations >= 5) {
+    return `
+      <div style="background: #F0FDF4; border: 1px solid #86EFAC; border-radius: 8px; padding: 7px 10px; margin-top: 8px;">
+        <div style="font-size: 10px; font-weight: 700; color: #166534; margin-bottom: 2px;">
+          ✓ Excellent ! Vous êtes bien cité
+        </div>
+        <div style="font-size: 9px; color: #14532D; line-height: 1.35;">
+          Votre site est cité <strong>${totalCitations} fois</strong> dans les moteurs génératifs. Félicitations ! Vous disposez d'une solide visibilité.
+        </div>
+      </div>
+    `;
+  } else if (totalCitations >= 2) {
+    return `
+      <div style="background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 8px; padding: 7px 10px; margin-top: 8px;">
+        <div style="font-size: 10px; font-weight: 700; color: #9A3412; margin-bottom: 2px;">
+          ⚠ Visibilité à améliorer
+        </div>
+        <div style="font-size: 9px; color: #7C2D12; line-height: 1.35;">
+          Votre site est cité <strong>${totalCitations} fois</strong> dans les moteurs génératifs. C'est un début mais votre visibilité reste limitée.
+        </div>
+      </div>
+    `;
+  } else if (totalCitations === 1) {
+    return `
+      <div style="background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 8px; padding: 7px 10px; margin-top: 8px;">
+        <div style="font-size: 10px; font-weight: 700; color: #9A3412; margin-bottom: 2px;">
+          ⚠ Visibilité très faible
+        </div>
+        <div style="font-size: 9px; color: #7C2D12; line-height: 1.35;">
+          Votre site n'est cité qu'<strong>1 seule fois</strong> dans les moteurs génératifs.
+        </div>
+      </div>
+    `;
+  } else {
+    return `
+      <div style="background: #FEE2E2; border: 1px solid #FCA5A5; border-radius: 8px; padding: 7px 10px; margin-top: 8px;">
+        <div style="font-size: 10px; font-weight: 700; color: #991B1B; margin-bottom: 2px;">
+          ⚠ Aucune citation détectée
+        </div>
+        <div style="font-size: 9px; color: #7F1D1D; line-height: 1.35;">
+          Votre site n'est absolument pas cité dans les réponses des IA. Agissez en priorité sur les recommandations GEO.
+        </div>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Construit le SVG de la Matrice de Positionnement Concurrentiel (Quadrants Stratégiques)
+ */
+function renderPositioningMatrixSvg(
   targetDomain: string,
   targetScore: number,
   brands: Array<{ name: string; url?: string; visibility: number; totalScore: number; isTarget?: boolean }>
@@ -237,13 +417,21 @@ export async function generateFullReportPdf(
     }, 0);
   }
 
-  // 3. Citations par modèle d'IA (avec logos officiels)
+  // 3. Citations par modèle d'IA (regroupées par nom commercial & couleurs officielles du site)
   const citationsByModel = (reportData?.analyse_citation?.citations_by_model || {}) as Record<string, number>;
-  const modelEntries = Object.entries(citationsByModel)
+  const groupedModelMap: Record<string, number> = {};
+  Object.entries(citationsByModel).forEach(([raw, count]) => {
+    const commercial = getCommercialModelName(raw);
+    groupedModelMap[commercial] = (groupedModelMap[commercial] || 0) + (Number(count) || 0);
+  });
+
+  let fallbackColorIdx = 0;
+  const modelEntries = Object.entries(groupedModelMap)
     .map(([model, count]) => ({
       name: model,
       count: Number(count) || 0,
       pct: totalCitations > 0 ? Math.round(((Number(count) || 0) / totalCitations) * 100) : 0,
+      color: MODEL_COLORS[model] || MODEL_COLORS_FALLBACK[fallbackColorIdx++ % MODEL_COLORS_FALLBACK.length],
       logoUrl: getModelFavicon(model),
     }))
     .sort((a, b) => b.count - a.count);
@@ -294,7 +482,7 @@ export async function generateFullReportPdf(
   const targetRank = compData?.your_position?.rank || 1;
   const totalCompetitorsCount = Math.max(top10Competitors.length, compData?.global_stats?.total_competitors_found || 10);
 
-  // Données pour la Matrice de Matérialité
+  // Données pour la Matrice de Positionnement Concurrentiel
   const matrixDataFromReport = (reportData as any)?.materiality_matrix?.brands;
   const matrixBrands = matrixDataFromReport && matrixDataFromReport.length > 0
     ? matrixDataFromReport.map((b: any) => ({
@@ -587,16 +775,27 @@ export async function generateFullReportPdf(
       </div>
     </div>
 
-    <!-- Synthèse Visuelle des Scores Cibles (Jauges circulaires vectorielles) -->
-    <div class="card-block" style="display: flex; align-items: center; justify-content: space-around; padding: 16px 20px; background: #FAFBFD;">
-      ${renderCircularGaugeSvg(totalCitations, 'Citations Totales', '#2563EB', 100, false)}
-      ${renderCircularGaugeSvg(targetGeoScore, 'Score GEO Cible', geoColor, 100, true)}
-      <div style="max-width: 250px;">
-        <div style="font-size: 10px; font-weight: 800; color: #0F2042; text-transform: uppercase; letter-spacing: 0.05em;">SYNTHÈSE DE POSITIONNEMENT</div>
-        <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 3px 0;">Indice de Visibilité : ${geoStatus}</div>
-        <p style="font-size: 10.5px; color: #475569; margin: 0; line-height: 1.45;">
-          Votre écosystème totalise <strong>${totalCitations} citations vérifiées</strong> sur les moteurs conversationnels. L'autorité de votre marque se positionne au rang <strong>#${targetRank}</strong> face aux compétiteurs directs.
-        </p>
+    <!-- Synthèse Visuelle des Scores Cibles (Exactement comme sur le site) -->
+    <div class="card-block" style="padding: 12px 16px; background: #FAFBFD;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 18px;">
+        <!-- Double graphique côte à côte + légende des modèles (même dimension, même arrondi) -->
+        <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 24px; width: 100%;">
+            ${renderCitationsDonutSvg(totalCitations, modelEntries)}
+            ${renderScoreGeoDonutSvg(targetGeoScore)}
+          </div>
+          ${renderModelLegendHtml(modelEntries)}
+        </div>
+
+        <!-- Synthèse de positionnement & Alerte de visibilité conforme au site -->
+        <div style="max-width: 260px; border-left: 1.5px solid #E2E8F0; padding-left: 16px; flex-shrink: 0;">
+          <div style="font-size: 9px; font-weight: 800; color: #0F2042; text-transform: uppercase; letter-spacing: 0.05em;">SYNTHÈSE DE POSITIONNEMENT</div>
+          <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 2px 0;">Indice de Visibilité : ${geoStatus}</div>
+          <p style="font-size: 9.5px; color: #475569; margin: 0 0 4px 0; line-height: 1.4;">
+            Votre écosystème totalise <strong>${totalCitations} citations vérifiées</strong> sur les moteurs conversationnels. L'autorité de votre marque se positionne au rang <strong>#${targetRank}</strong> face aux compétiteurs directs.
+          </p>
+          ${renderCitationsStatusBannerHtml(totalCitations)}
+        </div>
       </div>
     </div>
 
@@ -619,7 +818,7 @@ export async function generateFullReportPdf(
       </div>
     </div>
 
-    <!-- Section 1 : Citations par Modèle d'IA (avec logos officiels) -->
+    <!-- Section 1 : Citations par Modèle d'IA (avec logos officiels & couleurs du site) -->
     <div class="card-block">
       <div class="card-title">
         <span class="card-title-bar"></span>
@@ -644,10 +843,20 @@ export async function generateFullReportPdf(
               <td><strong>${m.pct}%</strong></td>
               <td>
                 <div class="progress-bar-bg">
-                  <div class="progress-bar-fill" style="width: ${m.pct}%; background: #2563EB;"></div>
+                  <div class="progress-bar-fill" style="width: ${m.pct}%; background: ${m.color};"></div>
                 </div>
               </td>
-              <td style="text-align: right; font-weight: 700; color: #0F2042;">${m.count}</td>
+              <td style="text-align: right; font-weight: 700;">
+                ${m.count === 0 ? `
+                  <span style="color: #F59E0B; font-size: 10px; font-style: italic;">Non cité</span>
+                ` : m.count >= 5 ? `
+                  <span style="color: #10B981;">${m.count}</span>
+                ` : m.count === 1 ? `
+                  <span style="color: #F97316;">${m.count}</span>
+                ` : `
+                  <span style="color: #0F2042;">${m.count}</span>
+                `}
+              </td>
             </tr>
           `).join('') : `
             <tr><td colspan="4" style="text-align: center; color: #64748B;">Aucune citation détaillée enregistrée.</td></tr>
@@ -703,12 +912,12 @@ export async function generateFullReportPdf(
     </div>
   </div>
 
-  <!-- ================= PAGE 2 : MATRICE DE MATÉRIALITÉ & POSITIONNEMENT ================= -->
+  <!-- ================= PAGE 2 : POSITIONNEMENT & MATRICE CONCURRENTIELLE ================= -->
   <div class="page">
     <div class="mckinsey-header">
       <div>
-        <div class="mckinsey-title">Positionnement Stratégique & Matrice de Matérialité</div>
-        <div class="mckinsey-subtitle">DIAGNOSTIC DE MATÉRIALITÉ — <strong>${domain}</strong></div>
+        <div class="mckinsey-title">Positionnement Stratégique & Concurrentiel</div>
+        <div class="mckinsey-subtitle">ANALYSE DE POSITIONNEMENT — <strong>${domain}</strong></div>
       </div>
       <div>
         <span class="mckinsey-badge">Quadrant d'Analyse</span>
@@ -735,17 +944,17 @@ export async function generateFullReportPdf(
       </div>
     </div>
 
-    <!-- Graphique Visuel de la Matrice de Matérialité 2x2 Type McKinsey -->
+    <!-- Graphique Visuel de la Matrice de Positionnement Concurrentiel -->
     <div class="card-block">
       <div class="card-title">
         <span class="card-title-bar"></span>
-        Matrice de Matérialité Concurrentielle (Gartner / McKinsey 2x2 Grid)
+        Matrice de Positionnement Concurrentiel
       </div>
       <p style="font-size: 9.5px; color: #64748B; margin: -4px 0 10px 0;">
         Cartographie croisée de l'empreinte algorithmique : Visibilité dans les réponses des IA (axe horizontal) vs Qualité & Pertinence GEO (axe vertical).
       </p>
       
-      ${renderMaterialityMatrixSvg(domain, targetGeoScore, matrixBrands)}
+      ${renderPositioningMatrixSvg(domain, targetGeoScore, matrixBrands)}
 
       <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 9px; color: #475569; background: #F8FAFC; padding: 8px 12px; border-radius: 6px;">
         <div>

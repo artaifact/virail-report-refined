@@ -888,7 +888,7 @@ const Competition = () => {
                 ) : null}
 
 
-                  {/* Matrice de Matérialité */}
+                  {/* Matrice de Positionnement */}
                   {(() => {
                     // Source prioritaire : materialityMatrix (endpoint dédié)
                     // Fallback : ancienne logique via competitors + benchmark_results.raw_data
@@ -1159,7 +1159,7 @@ const Competition = () => {
                     return (
                       <Card className="w-full bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
                         <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2 flex items-center justify-center gap-2" style={{ textAlign: 'center' }}>
-                          Matrice de Matérialité
+                          Matrice de Positionnement
                           <InfoTooltip {...HELP.matricePositionnement} />
                         </h3>
                         {dataPoints.length > MAX_DISPLAY && (
@@ -1349,7 +1349,7 @@ const Competition = () => {
                                 Contenu réservé aux plans supérieurs
                               </p>
                               <p style={{ fontSize: 13, color: '#64748B', textAlign: 'center', maxWidth: 320 }}>
-                                Passez à un plan supérieur pour débloquer la matrice de matérialité
+                                Passez à un plan supérieur pour débloquer la matrice de positionnement
                               </p>
                             </div>
                           )}
