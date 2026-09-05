@@ -23,6 +23,8 @@ import { NewAnalysisModal } from '@/components/NewAnalysisModal';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { HELP } from '@/lib/help-content';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { generateFullReportPdf } from '@/services/reportPdfService';
 
 // === CONSTANTES ===
 /**
@@ -436,6 +438,9 @@ function NavigationButtons({ activeView, onViewChange }: { activeView: string, o
  * Contient le graphique de citations, le carrousel de logos et les boutons de navigation
  */
 function TopSection({ activeView, onViewChange, reportData, reports, onOpenReportsModal }: { activeView: string, onViewChange: (view: string) => void, reportData: FullReportData | null, reports: ReportResponse[], onOpenReportsModal: () => void }) {
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const { toast } = useToast();
+
   const domainName = useMemo(() => {
     const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url;
     if (!url) return null;
@@ -482,15 +487,57 @@ function TopSection({ activeView, onViewChange, reportData, reports, onOpenRepor
 
   const targetGeoScore = asyncGeoScore ?? extractTargetGeoScore(reportData);
 
+  const handleExportPdf = async () => {
+    if (!reportData) return;
+    setIsExportingPdf(true);
+    toast({
+      title: "Génération du PDF en cours",
+      description: "Compilation des données de citations, d'optimisations et de veille concurrentielle...",
+    });
+    try {
+      await generateFullReportPdf(reportData);
+      toast({
+        title: "Rapport PDF prêt",
+        description: "L'aperçu et l'enregistrement PDF haute résolution ont été lancés.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Erreur d'exportation",
+        description: err?.message || "Impossible de générer le document PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   return (
     <div className="top-section relative">
-      <div className="px-1 mb-2">
-        <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight truncate">
-          {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
-        </h1>
-        {lastUpdate && (
-          <p className="text-xs text-slate-400 mt-0.5">Dernière mise à jour : {lastUpdate}</p>
-        )}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1 mb-2">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight truncate">
+            {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
+          </h1>
+          {lastUpdate && (
+            <p className="text-xs text-slate-400 mt-0.5">Dernière mise à jour : {lastUpdate}</p>
+          )}
+        </div>
+
+        {/* Bouton Télécharger le rapport complet en PDF */}
+        <button
+          type="button"
+          onClick={handleExportPdf}
+          disabled={isExportingPdf || !reportData}
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200/80 transition-all shadow-xs self-start sm:self-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Télécharger l'intégralité du rapport (Infos détaillées, Améliorer, Compétition) en PDF"
+        >
+          {isExportingPdf ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+          ) : (
+            <Download className="w-3.5 h-3.5 text-indigo-600" />
+          )}
+          <span>{isExportingPdf ? 'Génération PDF...' : 'Télécharger le rapport (PDF)'}</span>
+        </button>
       </div>
       <CitationsChart reportData={reportData} targetGeoScore={targetGeoScore} />
       <NavigationButtons activeView={activeView} onViewChange={onViewChange} />
@@ -509,26 +556,33 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
   const [pdfLoading, setPdfLoading] = useState(false);
 
   const handleDownloadPdf = async () => {
-    const reportId = reportData?.report?.id;
-    if (!reportId) return;
+    if (!reportData) return;
     setPdfLoading(true);
     try {
-      const apiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://api.viraill.com' : 'http://localhost:8000');
-      const response = await AuthService.makeAuthenticatedRequest(
-        `${apiBase}/llmo/reports/${reportId}/download?format=pdf`,
-        { method: 'GET' }
-      );
-      if (!response.ok) throw new Error('Erreur lors du téléchargement');
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `rapport-geo-${reportId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
+      await generateFullReportPdf(reportData);
+    } catch (err: any) {
+      // Fallback API direct si disponible
+      const reportId = reportData?.report?.id;
+      if (reportId) {
+        try {
+          const apiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://api.viraill.com' : 'http://localhost:8000');
+          const response = await AuthService.makeAuthenticatedRequest(
+            `${apiBase}/llmo/reports/${reportId}/download?format=pdf`,
+            { method: 'GET' }
+          );
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rapport-geo-${reportId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          }
+        } catch {}
+      }
     } finally {
       setPdfLoading(false);
     }

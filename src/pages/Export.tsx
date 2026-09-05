@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Download, Share2, FileText, Mail, Copy, ExternalLink, Calendar } from "lucide-react";
+import { Download, Share2, FileText, Mail, Copy, ExternalLink, Calendar, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useReports, useReport, getLatestReportId } from '@/hooks/useReports';
+import { generateFullReportPdf } from '@/services/reportPdfService';
 
 const Export = () => {
   usePageTitle('Export');
@@ -40,11 +42,46 @@ const Export = () => {
     });
   };
 
-  const handleExportPDF = (type: string) => {
+  const { reports } = useReports();
+  const latestReportId = getLatestReportId(reports);
+  const { report: reportData } = useReport(latestReportId);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const handleExportPDF = async (type: string) => {
+    if (!reportData) {
+      toast({
+        title: "Aucun rapport disponible",
+        description: "Veuillez d'abord générer ou sélectionner un rapport dans le tableau de bord.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExportingPdf(true);
     toast({
-      title: "Export en cours",
-      description: `Génération du rapport ${type} en PDF...`,
+      title: "Génération en cours",
+      description: `Préparation du rapport ${type} en PDF...`,
     });
+
+    try {
+      await generateFullReportPdf(reportData, null, {
+        includeCitations: type === 'complet' || type === 'resume',
+        includeRecommendations: type === 'complet' || type === 'recommandations',
+        includeCompetition: type === 'complet' || type === 'competition',
+      });
+      toast({
+        title: "Rapport PDF prêt",
+        description: `Le document ${type} a été généré avec succès.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Erreur d'exportation",
+        description: err?.message || "Impossible de générer le document PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   const handleSendByEmail = () => {
