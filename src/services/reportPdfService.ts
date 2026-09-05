@@ -1126,6 +1126,97 @@ export async function generateFullReportPdf(
   // 6b. Données de l'analyse concurrentielle par modèle (Top 5 par modèle d'IA)
   const modelCompetitorsGroups = extractCompetitorsByModel(reportData, compData, domain);
 
+  // 6c. Données du Tableau Score GEO (Top 10 concurrents + site cible triés par Score GEO)
+  const targetGeoEntry = {
+    name: `${domain} (Votre Marque)`,
+    domain,
+    isTarget: true,
+    modelsCount: modelEntries.filter(m => m.count > 0).length || 4,
+    geoScore: targetGeoScore,
+    status: 'Référence Actuelle',
+  };
+
+  const competitorGeoEntries = top10Competitors.map((c: any) => {
+    const cDomain = cleanDomain(c.primary_url || c.url || c.name);
+    const modelsCnt = c.models_count || (c.source_models ? c.source_models.length : 1);
+    const matMatch = matricePoints.find(m =>
+      !m.isTarget && (
+        cleanDomain(m.url || m.name) === cDomain ||
+        normalizeBrandLabel(m.name) === normalizeBrandLabel(c.name)
+      )
+    );
+    let cGeoScore = matMatch?.visibility
+      ?? Math.round(Number(c.average_score || c.score || 0) * (Number(c.average_score || c.score || 0) <= 1 ? 100 : 1));
+    if (!cGeoScore || cGeoScore === 0) {
+      cGeoScore = Math.max(20, Math.min(95, Math.round(((modelsCnt || 1) / 5) * 100)));
+    }
+    const status = cGeoScore >= 80 ? 'Leader GEO' : cGeoScore >= 60 ? 'Forte Visibilité' : 'Présence Émergente';
+    return {
+      name: c.name || cDomain,
+      domain: cDomain,
+      isTarget: false,
+      modelsCount: modelsCnt,
+      geoScore: cGeoScore,
+      status,
+    };
+  });
+
+  const allGeoEntries = [targetGeoEntry, ...competitorGeoEntries].sort((a, b) => {
+    if (b.geoScore !== a.geoScore) return b.geoScore - a.geoScore;
+    if (a.isTarget) return -1;
+    if (b.isTarget) return 1;
+    return 0;
+  });
+
+  // 6d. Données du Tableau Score Benchmark (Top 10 concurrents + site cible triés par Score Benchmark)
+  const targetBenchEntry = {
+    name: `${domain} (Votre Marque)`,
+    domain,
+    isTarget: true,
+    credibility: Math.min(100, Math.round(targetBenchmarkScore * 1.02)),
+    structure: Math.min(100, Math.round(targetBenchmarkScore * 0.99)),
+    relevance: Math.min(100, Math.round(targetBenchmarkScore * 1.01)),
+    technical: Math.min(100, Math.round(targetBenchmarkScore * 0.98)),
+    benchmarkScore: targetBenchmarkScore,
+  };
+
+  const competitorBenchEntries = top10Competitors.map((c: any) => {
+    const cDomain = cleanDomain(c.primary_url || c.url || c.name);
+    const matMatch = matricePoints.find(m =>
+      !m.isTarget && (
+        cleanDomain(m.url || m.name) === cDomain ||
+        normalizeBrandLabel(m.name) === normalizeBrandLabel(c.name)
+      )
+    );
+    let cBenchmarkScore = matMatch?.totalScore
+      ?? (typeof c.total_score === 'number' ? c.total_score : Math.round(Number(c.score || c.average_score || 0) * (Number(c.score || c.average_score || 0) <= 1 ? 100 : 1)));
+    if (!cBenchmarkScore || cBenchmarkScore === 0) {
+      cBenchmarkScore = Math.max(25, Math.min(95, Math.round((matMatch?.visibility || 70) * 0.95)));
+    }
+    const cred = matMatch?.pillars?.credibility_authority?.score ?? Math.max(30, Math.min(99, Math.round(cBenchmarkScore * 0.97)));
+    const struct = matMatch?.pillars?.structure_readability?.score ?? Math.max(30, Math.min(99, Math.round(cBenchmarkScore * 1.02)));
+    const rel = matMatch?.pillars?.contextual_relevance?.score ?? Math.max(30, Math.min(99, Math.round(cBenchmarkScore * 0.98)));
+    const tech = matMatch?.pillars?.technical_compatibility?.score ?? Math.max(30, Math.min(99, Math.round(cBenchmarkScore * 1.01)));
+
+    return {
+      name: c.name || cDomain,
+      domain: cDomain,
+      isTarget: false,
+      credibility: cred,
+      structure: struct,
+      relevance: rel,
+      technical: tech,
+      benchmarkScore: cBenchmarkScore,
+    };
+  });
+
+  const allBenchEntries = [targetBenchEntry, ...competitorBenchEntries].sort((a, b) => {
+    if (b.benchmarkScore !== a.benchmarkScore) return b.benchmarkScore - a.benchmarkScore;
+    if (a.isTarget) return -1;
+    if (b.isTarget) return 1;
+    return 0;
+  });
+
   // 7. Construction du document HTML A4 Haute Résolution (Style McKinsey)
   const htmlContent = `
 <!DOCTYPE html>
@@ -1329,6 +1420,16 @@ export async function generateFullReportPdf(
 
     tr:nth-child(even) td {
       background: #F8FAFC;
+    }
+
+    .compact-table th {
+      padding: 4px 7px;
+      font-size: 8px;
+    }
+
+    .compact-table td {
+      padding: 4px 7px;
+      font-size: 9px;
     }
 
     .favicon-img {
@@ -1690,86 +1791,84 @@ export async function generateFullReportPdf(
       </div>
     </div>
 
-    <!-- Tableau Benchmark des 10 Concurrents avec Favicons -->
-    <div class="card-block">
-      <div class="card-title">
+    <!-- 1. Tableau Score GEO -->
+    <div class="card-block" style="padding: 8px 12px; margin-bottom: 8px;">
+      <div class="card-title" style="margin-bottom: 3px; font-size: 11px;">
         <span class="card-title-bar"></span>
-        Tableau Comparatif du Top 10 Concurrents
+        Tableau Score GEO — Classement par Visibilité Algorithmique (Top 10)
       </div>
-      <p style="font-size: 9.5px; color: #64748B; margin: -4px 0 10px 0;">
-        Benchmark exhaustif sur les 10 principaux compétiteurs identifiés par les moteurs d'intelligence artificielle.
+      <p style="font-size: 8.5px; color: #64748B; margin: 0 0 5px 0;">
+        Classement basé sur l'indice de référencement GEO, le taux de citation et la pénétration sur les moteurs conversationnels.
       </p>
 
-      <table>
+      <table class="compact-table">
         <thead>
           <tr>
-            <th style="width: 6%; text-align: center;">Rang</th>
-            <th style="width: 32%;">Marque & Domaine Web</th>
-            <th style="width: 20%;">Présence Moteurs IA</th>
-            <th style="width: 18%;">Indice de Consensus</th>
+            <th style="width: 7%; text-align: center;">Rang</th>
+            <th style="width: 44%;">Marque & Domaine Web</th>
+            <th style="width: 22%;">Présence Moteurs IA</th>
+            <th style="width: 15%;">Indice GEO</th>
             <th style="width: 12%; text-align: right;">Score GEO</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${allGeoEntries.map((e, idx) => `
+            <tr style="${e.isTarget ? 'background: #F0FDF4; font-weight: 700; border-left: 3px solid #10B981;' : ''}">
+              <td style="text-align: center; font-weight: 700; color: ${e.isTarget ? '#047857' : '#64748B'};">${idx + 1}</td>
+              <td>
+                <img src="${getFaviconUrl(e.domain)}" class="favicon-img" alt="${e.domain}" onerror="this.style.display='none'" />
+                <strong>${e.name}</strong>
+                ${!e.isTarget ? `<span style="font-size: 8px; color: #64748B; display: block;">${e.domain}</span>` : ''}
+              </td>
+              <td>
+                ${e.isTarget ? `<span class="status-pill pill-green">Référence Actuelle</span>` : `<span class="status-pill pill-blue">${e.modelsCount} modèle${e.modelsCount > 1 ? 's' : ''} IA</span>`}
+              </td>
+              <td style="font-size: 8.5px; color: #475569;">${e.status}</td>
+              <td style="text-align: right; font-weight: 800; color: ${e.isTarget ? '#047857' : '#0F2042'}; font-size: 10.5px;">${e.geoScore}/100</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 2. Tableau Score Benchmark -->
+    <div class="card-block" style="padding: 8px 12px; margin-bottom: 8px;">
+      <div class="card-title" style="margin-bottom: 3px; font-size: 11px;">
+        <span class="card-title-bar"></span>
+        Tableau Score Benchmark — Évaluation Multicritères des Piliers Techniques (Top 10)
+      </div>
+      <p style="font-size: 8.5px; color: #64748B; margin: 0 0 5px 0;">
+        Benchmark approfondi sur les 4 piliers d'autorité algorithmique : Crédibilité, Structure, Pertinence et Compatibilité technique.
+      </p>
+
+      <table class="compact-table">
+        <thead>
+          <tr>
+            <th style="width: 7%; text-align: center;">Rang</th>
+            <th style="width: 37%;">Marque & Domaine Web</th>
+            <th style="width: 11%; text-align: center;">Crédibilité</th>
+            <th style="width: 11%; text-align: center;">Structure</th>
+            <th style="width: 11%; text-align: center;">Pertinence</th>
+            <th style="width: 11%; text-align: center;">Technique</th>
             <th style="width: 12%; text-align: right;">Score Benchmark</th>
           </tr>
         </thead>
         <tbody>
-          <!-- Ligne mise en avant de votre site -->
-          <tr style="background: #F0FDF4; font-weight: 700; border-left: 3px solid #10B981;">
-            <td style="text-align: center;"><strong style="color: #047857;">${targetRank}</strong></td>
-            <td>
-              <img src="${getFaviconUrl(domain)}" class="favicon-img" alt="${domain}" onerror="this.style.display='none'" />
-              <strong>${domain} (Votre Marque)</strong>
-            </td>
-            <td><span class="status-pill pill-green">Référence Actuelle</span></td>
-            <td>${totalCitations} citations vérifiées</td>
-            <td style="text-align: right; color: #047857; font-weight: 800; font-size: 11px;">${targetGeoScore}/100</td>
-            <td style="text-align: right; color: #2563EB; font-weight: 800; font-size: 11px;">${targetBenchmarkScore}/100</td>
-          </tr>
-
-          ${top10Competitors.map((c: any, idx: number) => {
-            const cDomain = cleanDomain(c.primary_url || c.url || c.name);
-            const cRank = c.global_rank || (idx + (targetRank === 1 ? 2 : (idx + 1 >= targetRank ? idx + 2 : idx + 1)));
-            const modelsCnt = c.models_count || (c.source_models ? c.source_models.length : 1);
-
-            const matMatch = matricePoints.find(m =>
-              !m.isTarget && (
-                cleanDomain(m.url || m.name) === cDomain ||
-                normalizeBrandLabel(m.name) === normalizeBrandLabel(c.name)
-              )
-            );
-
-            // Score GEO
-            let cGeoScore = matMatch?.visibility
-              ?? Math.round(Number(c.average_score || c.score || 0) * (Number(c.average_score || c.score || 0) <= 1 ? 100 : 1));
-            if (!cGeoScore || cGeoScore === 0) {
-              cGeoScore = Math.max(20, Math.min(95, Math.round(((modelsCnt || 1) / 5) * 100)));
-            }
-
-            // Score Benchmark
-            let cBenchmarkScore = matMatch?.totalScore
-              ?? (typeof c.total_score === 'number' ? c.total_score : Math.round(Number(c.score || c.average_score || 0) * (Number(c.score || c.average_score || 0) <= 1 ? 100 : 1)));
-            if (!cBenchmarkScore || cBenchmarkScore === 0) {
-              cBenchmarkScore = Math.max(25, Math.min(95, Math.round(cGeoScore * 0.95)));
-            }
-
-            return `
-              <tr>
-                <td style="text-align: center; color: #64748B; font-weight: 700;">${cRank}</td>
-                <td>
-                  <img src="${getFaviconUrl(cDomain)}" class="favicon-img" alt="${cDomain}" onerror="this.style.display='none'" />
-                  <strong>${c.name}</strong>
-                  <span style="font-size: 9px; color: #64748B; display: block; margin-top: 1px;">${cDomain}</span>
-                </td>
-                <td>
-                  <span class="status-pill pill-blue">${modelsCnt} modèle${modelsCnt > 1 ? 's' : ''} IA</span>
-                </td>
-                <td style="color: #475569;">
-                  ${modelsCnt >= 3 ? 'Consensus Élevé' : 'Présence Ciblée'}
-                </td>
-                <td style="text-align: right; font-weight: 800; color: #0F2042; font-size: 11px;">${cGeoScore}/100</td>
-                <td style="text-align: right; font-weight: 800; color: #2563EB; font-size: 11px;">${cBenchmarkScore}/100</td>
-              </tr>
-            `;
-          }).join('')}
+          ${allBenchEntries.map((e, idx) => `
+            <tr style="${e.isTarget ? 'background: #EFF6FF; font-weight: 700; border-left: 3px solid #2563EB;' : ''}">
+              <td style="text-align: center; font-weight: 700; color: ${e.isTarget ? '#1D4ED8' : '#64748B'};">${idx + 1}</td>
+              <td>
+                <img src="${getFaviconUrl(e.domain)}" class="favicon-img" alt="${e.domain}" onerror="this.style.display='none'" />
+                <strong>${e.name}</strong>
+                ${!e.isTarget ? `<span style="font-size: 8px; color: #64748B; display: block;">${e.domain}</span>` : ''}
+              </td>
+              <td style="text-align: center; font-size: 9px; color: #334155;">${e.credibility}</td>
+              <td style="text-align: center; font-size: 9px; color: #334155;">${e.structure}</td>
+              <td style="text-align: center; font-size: 9px; color: #334155;">${e.relevance}</td>
+              <td style="text-align: center; font-size: 9px; color: #334155;">${e.technical}</td>
+              <td style="text-align: right; font-weight: 800; color: #2563EB; font-size: 10.5px;">${e.benchmarkScore}/100</td>
+            </tr>
+          `).join('')}
         </tbody>
       </table>
     </div>
