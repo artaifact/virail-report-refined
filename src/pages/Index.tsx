@@ -20,6 +20,7 @@ import { HtmlDiffViewer } from '@/components/optimizer/HtmlDiffViewer';
 import { SchemaPreview } from '@/components/optimizer/SchemaPreview';
 import { SimulationTab } from '@/components/optimizer/SimulationTab';
 import { NewAnalysisModal } from '@/components/NewAnalysisModal';
+import { AiExplainModal } from '@/components/AiExplainModal';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { HELP } from '@/lib/help-content';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -408,7 +409,7 @@ function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReport
  * Boutons de navigation entre les deux vues principales
  * Gère les états actif/inactif avec styles différenciés
  */
-function NavigationButtons({ activeView, onViewChange }: { activeView: string, onViewChange: (view: string) => void }) {
+function NavigationButtons({ activeView, onViewChange, onOpenAiExplain }: { activeView: string, onViewChange: (view: string) => void, onOpenAiExplain?: () => void }) {
   const handleViewChange = (view: string) => {
     onViewChange(view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -429,6 +430,16 @@ function NavigationButtons({ activeView, onViewChange }: { activeView: string, o
       >
         Améliorer
       </button>
+
+      <button
+        type="button"
+        onClick={() => onOpenAiExplain?.()}
+        className="nav-btn-ai"
+        title="Synthèse et explication claire par l'IA"
+      >
+        <span className="nav-btn-ai-sparkle">✨</span>
+        <span>Expliquer par l'IA</span>
+      </button>
     </div>
   );
 }
@@ -437,7 +448,7 @@ function NavigationButtons({ activeView, onViewChange }: { activeView: string, o
  * Section haute du dashboard - Fixe
  * Contient le graphique de citations, le carrousel de logos et les boutons de navigation
  */
-function TopSection({ activeView, onViewChange, reportData, reports, onOpenReportsModal }: { activeView: string, onViewChange: (view: string) => void, reportData: FullReportData | null, reports: ReportResponse[], onOpenReportsModal: () => void }) {
+function TopSection({ activeView, onViewChange, reportData, reports, onOpenReportsModal, onOpenAiExplain }: { activeView: string, onViewChange: (view: string) => void, reportData: FullReportData | null, reports: ReportResponse[], onOpenReportsModal: () => void, onOpenAiExplain?: () => void }) {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const { toast } = useToast();
 
@@ -540,7 +551,7 @@ function TopSection({ activeView, onViewChange, reportData, reports, onOpenRepor
         </button>
       </div>
       <CitationsChart reportData={reportData} targetGeoScore={targetGeoScore} />
-      <NavigationButtons activeView={activeView} onViewChange={onViewChange} />
+      <NavigationButtons activeView={activeView} onViewChange={onViewChange} onOpenAiExplain={onOpenAiExplain} />
     </div>
   );
 }
@@ -5468,6 +5479,7 @@ const Index = () => {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
   const [isNewAnalysisModalOpen, setIsNewAnalysisModalOpen] = useState(false);
+  const [isAiExplainModalOpen, setIsAiExplainModalOpen] = useState(false);
   const { subscription } = usePayment();
   const isStarter = subscription?.plan?.id === 'solo';
 
@@ -5496,6 +5508,30 @@ const Index = () => {
   
   // Charger les données du rapport depuis l'API
   const { report: reportData, loading: reportLoading, error } = useReport(reportId);
+
+  const domainName = useMemo(() => {
+    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url;
+    if (!url) return null;
+    try { return new URL(url).hostname.replace('www.', ''); } catch { return null; }
+  }, [reportData]);
+
+  const targetGeoScore = useMemo(() => extractTargetGeoScore(reportData), [reportData]);
+
+  const totalCitations = useMemo(() => {
+    if (reportData?.analyse_citation?.total_citations !== undefined) {
+      return reportData.analyse_citation.total_citations;
+    }
+    if (!reportData?.analyses || reportData.analyses.length === 0) return 0;
+    return reportData.analyses.reduce((sum, analysis) => {
+      const geoData = analysis.modules?.audit_geo;
+      const citations = geoData?.citations || geoData?.mentions || 0;
+      return sum + Number(citations);
+    }, 0);
+  }, [reportData]);
+
+  const citationsByModel = useMemo(() => {
+    return (reportData?.analyse_citation?.citations_by_model || {}) as Record<string, number>;
+  }, [reportData]);
   
   const loading = reportsLoading || reportLoading;
 
@@ -5564,6 +5600,7 @@ const Index = () => {
           reportData={reportData}
           reports={reports}
           onOpenReportsModal={() => setIsReportsModalOpen(true)}
+          onOpenAiExplain={() => setIsAiExplainModalOpen(true)}
         />
         
         {/* Section basse avec contenu dynamique */}
@@ -5694,6 +5731,20 @@ const Index = () => {
       </Dialog>
 
       <NewAnalysisModal open={isNewAnalysisModalOpen} onOpenChange={setIsNewAnalysisModalOpen} />
+
+      {/* Modal d'explication IA */}
+      <AiExplainModal
+        open={isAiExplainModalOpen}
+        onOpenChange={setIsAiExplainModalOpen}
+        domainName={domainName}
+        geoScore={targetGeoScore}
+        totalCitations={totalCitations}
+        citationsByModel={citationsByModel}
+        onGoToAmeliorer={() => {
+          setActiveView('ameliorer');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
     </div>
   );
 };
