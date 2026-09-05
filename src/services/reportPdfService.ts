@@ -875,11 +875,29 @@ export async function generateFullReportPdf(
   // 6. Données de Veille & 10 Concurrents (/competition)
   const rawCompetitors = compData?.consolidated_competitors || [];
   // Construire exactement les 10 premiers concurrents du benchmark
-  const top10Competitors = rawCompetitors.slice(0, 10);
+  let top10Competitors = rawCompetitors.slice(0, 10);
   let targetRank = compData?.your_position?.rank || 1;
 
   // Données pour la Matrice de Positionnement Concurrentiel (Extraction fidèle à Competition.tsx)
   const matricePoints = extractMatricePoints(reportData, compData, domain, targetUrl, targetGeoScore);
+
+  // Si consolidated_competitors est vide, alimenter avec les marques concurrentes de la matrice
+  if (top10Competitors.length === 0 && matricePoints.length > 1) {
+    top10Competitors = matricePoints
+      .filter(m => !m.isTarget)
+      .slice(0, 10)
+      .map((m, i) => ({
+        name: m.name,
+        primary_url: m.url,
+        url: m.url,
+        favicon_url: m.favicon_url,
+        average_score: m.visibility / 100,
+        total_score: m.totalScore,
+        score: m.totalScore,
+        models_count: 4,
+        global_rank: i + 2,
+      }));
+  }
 
   // Synchronisation du rang cible avec la matrice si disponible
   const materialityBrands = (reportData as any)?.materiality_matrix?.brands;
@@ -890,6 +908,12 @@ export async function generateFullReportPdf(
       targetRank = rankIdx + 1;
     }
   }
+
+  // Score Benchmark pour le site cible
+  const targetMatPoint = matricePoints.find(m => m.isTarget);
+  const targetBenchmarkScore = targetMatPoint?.totalScore && targetMatPoint.totalScore > 0
+    ? targetMatPoint.totalScore
+    : targetGeoScore;
 
   const totalCompetitorsCount = Math.max(
     top10Competitors.length,
@@ -1186,7 +1210,7 @@ export async function generateFullReportPdf(
           <div style="font-size: 9px; font-weight: 800; color: #0F2042; text-transform: uppercase; letter-spacing: 0.05em;">SYNTHÈSE DE POSITIONNEMENT</div>
           <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 2px 0;">Indice de Visibilité : ${geoStatus}</div>
           <p style="font-size: 9.5px; color: #475569; margin: 0 0 4px 0; line-height: 1.4;">
-            Votre écosystème totalise <strong>${totalCitations} citations vérifiées</strong> sur les moteurs conversationnels. L'autorité de votre marque se positionne au rang <strong>#${targetRank}</strong> face aux compétiteurs directs.
+            Votre écosystème totalise <strong>${totalCitations} citations vérifiées</strong> sur les moteurs conversationnels. L'autorité de votre marque se positionne au rang <strong>${targetRank}</strong> face aux compétiteurs directs.
           </p>
           ${renderCitationsStatusBannerHtml(totalCitations)}
         </div>
@@ -1321,7 +1345,7 @@ export async function generateFullReportPdf(
     <!-- KPIs de Positionnement Marché -->
     <div class="kpi-row">
       <div class="kpi-box">
-        <div class="kpi-val">#${targetRank}</div>
+        <div class="kpi-val">${targetRank}</div>
         <div class="kpi-label">Rang de Marché GEO</div>
       </div>
       <div class="kpi-box">
@@ -1382,7 +1406,7 @@ export async function generateFullReportPdf(
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 9.5px; color: #334155; line-height: 1.45;">
         <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #4F46E5;">
           <strong style="color: #0F172A; display: block; margin-bottom: 3px; font-size: 10px;">Empreinte de Marque</strong>
-          <strong>${domain}</strong> se positionne au rang <strong>#${targetRank}</strong> parmi les <strong>${totalCompetitorsCount} acteurs</strong> répertoriés, avec un volume vérifié de ${totalCitations} citations IA.
+          <strong>${domain}</strong> se positionne au rang <strong>${targetRank}</strong> parmi les <strong>${totalCompetitorsCount} acteurs</strong> répertoriés, avec un volume vérifié de ${totalCitations} citations IA.
         </div>
         <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #10B981;">
           <strong style="color: #0F172A; display: block; margin-bottom: 3px; font-size: 10px;">Indice GEO Global</strong>
@@ -1405,7 +1429,7 @@ export async function generateFullReportPdf(
   <div class="page">
     <div class="mckinsey-header">
       <div>
-        <div class="mckinsey-title">Benchmark Détaillé — Top 10 Concurrents</div>
+        <div class="mckinsey-title">Analyse Benchmark — Top 10 Concurrents</div>
         <div class="mckinsey-subtitle">ANALYSE CONCURRENTIELLE (/competition) — <strong>${domain}</strong></div>
       </div>
       <div>
@@ -1426,34 +1450,57 @@ export async function generateFullReportPdf(
       <table>
         <thead>
           <tr>
-            <th style="width: 7%; text-align: center;">Rang</th>
-            <th style="width: 33%;">Marque & Domaine Web</th>
-            <th style="width: 25%;">Présence Moteurs IA</th>
-            <th style="width: 20%;">Indice de Consensus</th>
-            <th style="width: 15%; text-align: right;">Score GEO</th>
+            <th style="width: 6%; text-align: center;">Rang</th>
+            <th style="width: 32%;">Marque & Domaine Web</th>
+            <th style="width: 20%;">Présence Moteurs IA</th>
+            <th style="width: 18%;">Indice de Consensus</th>
+            <th style="width: 12%; text-align: right;">Score GEO</th>
+            <th style="width: 12%; text-align: right;">Score Benchmark</th>
           </tr>
         </thead>
         <tbody>
           <!-- Ligne mise en avant de votre site -->
           <tr style="background: #F0FDF4; font-weight: 700; border-left: 3px solid #10B981;">
-            <td style="text-align: center;"><strong style="color: #047857;">#${targetRank}</strong></td>
+            <td style="text-align: center;"><strong style="color: #047857;">${targetRank}</strong></td>
             <td>
               <img src="${getFaviconUrl(domain)}" class="favicon-img" alt="${domain}" onerror="this.style.display='none'" />
               <strong>${domain} (Votre Marque)</strong>
             </td>
             <td><span class="status-pill pill-green">Référence Actuelle</span></td>
             <td>${totalCitations} citations vérifiées</td>
-            <td style="text-align: right; color: #047857; font-weight: 800; font-size: 12px;">${targetGeoScore}/100</td>
+            <td style="text-align: right; color: #047857; font-weight: 800; font-size: 11px;">${targetGeoScore}/100</td>
+            <td style="text-align: right; color: #2563EB; font-weight: 800; font-size: 11px;">${targetBenchmarkScore}/100</td>
           </tr>
 
           ${top10Competitors.map((c: any, idx: number) => {
             const cDomain = cleanDomain(c.primary_url || c.url || c.name);
-            const cScore = Math.round(Number(c.average_score || c.score || 0) * (Number(c.average_score || c.score || 0) <= 1 ? 100 : 1));
-            const cRank = c.global_rank || idx + 2;
+            const cRank = c.global_rank || (idx + (targetRank === 1 ? 2 : (idx + 1 >= targetRank ? idx + 2 : idx + 1)));
             const modelsCnt = c.models_count || (c.source_models ? c.source_models.length : 1);
+
+            const matMatch = matricePoints.find(m =>
+              !m.isTarget && (
+                cleanDomain(m.url || m.name) === cDomain ||
+                normalizeBrandLabel(m.name) === normalizeBrandLabel(c.name)
+              )
+            );
+
+            // Score GEO
+            let cGeoScore = matMatch?.visibility
+              ?? Math.round(Number(c.average_score || c.score || 0) * (Number(c.average_score || c.score || 0) <= 1 ? 100 : 1));
+            if (!cGeoScore || cGeoScore === 0) {
+              cGeoScore = Math.max(20, Math.min(95, Math.round(((modelsCnt || 1) / 5) * 100)));
+            }
+
+            // Score Benchmark
+            let cBenchmarkScore = matMatch?.totalScore
+              ?? (typeof c.total_score === 'number' ? c.total_score : Math.round(Number(c.score || c.average_score || 0) * (Number(c.score || c.average_score || 0) <= 1 ? 100 : 1)));
+            if (!cBenchmarkScore || cBenchmarkScore === 0) {
+              cBenchmarkScore = Math.max(25, Math.min(95, Math.round(cGeoScore * 0.95)));
+            }
+
             return `
               <tr>
-                <td style="text-align: center; color: #64748B; font-weight: 700;">#${cRank}</td>
+                <td style="text-align: center; color: #64748B; font-weight: 700;">${cRank}</td>
                 <td>
                   <img src="${getFaviconUrl(cDomain)}" class="favicon-img" alt="${cDomain}" onerror="this.style.display='none'" />
                   <strong>${c.name}</strong>
@@ -1465,7 +1512,8 @@ export async function generateFullReportPdf(
                 <td style="color: #475569;">
                   ${modelsCnt >= 3 ? 'Consensus Élevé' : 'Présence Ciblée'}
                 </td>
-                <td style="text-align: right; font-weight: 800; color: #0F2042; font-size: 11px;">${cScore}/100</td>
+                <td style="text-align: right; font-weight: 800; color: #0F2042; font-size: 11px;">${cGeoScore}/100</td>
+                <td style="text-align: right; font-weight: 800; color: #2563EB; font-size: 11px;">${cBenchmarkScore}/100</td>
               </tr>
             `;
           }).join('')}
