@@ -271,16 +271,394 @@ function renderCitationsStatusBannerHtml(totalCitations: number): string {
 }
 
 /**
- * Construit le SVG de la Matrice de Positionnement Concurrentiel (Quadrants Stratégiques avec Favicons)
+ * Structure d'un point dans la matrice de positionnement
+ */
+interface MatricePoint {
+  name: string;
+  url: string;
+  favicon_url: string;
+  visibility: number; // 0 à 100
+  sentiment: number;  // 0.0 à 1.0
+  totalScore: number; // 0 à 100
+  mentions: number;
+  isTarget: boolean;
+  audited: boolean;
+  pillars?: Record<string, { score: number; max: number }>;
+  gaps?: string[];
+}
+
+function normalizeBrandLabel(value: string | null | undefined): string {
+  return (value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function toCanonicalUrl(value: string | null | undefined): string {
+  const raw = (value || '').trim().toLowerCase();
+  if (!raw) return '';
+  const withProtocol = /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
+  try {
+    const parsed = new URL(withProtocol);
+    const host = parsed.hostname.replace(/^www\./, '');
+    const path = parsed.pathname.replace(/\/+$/, '');
+    return `${host}${path}`;
+  } catch {
+    return raw
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/[?#].*$/, '')
+      .replace(/\/+$/, '');
+  }
+}
+
+function compareMaterialityEntries(a: any, b: any): number {
+  if (!!a?.is_target !== !!b?.is_target) return a?.is_target ? 1 : -1;
+  if (!!a?.audited !== !!b?.audited) return a?.audited ? 1 : -1;
+  const scoreA = typeof a?.total_score === 'number' ? a.total_score : -1;
+  const scoreB = typeof b?.total_score === 'number' ? b.total_score : -1;
+  if (scoreA !== scoreB) return scoreA > scoreB ? 1 : -1;
+  const visibilityA = typeof a?.visibility === 'number' ? a.visibility : -1;
+  const visibilityB = typeof b?.visibility === 'number' ? b.visibility : -1;
+  return visibilityA > visibilityB ? 1 : -1;
+}
+
+function getQuadrantInfo(point: { visibility: number; sentiment: number }) {
+  const visibilityMid = 50;
+  const sentimentMid = 0.5;
+  return point.visibility >= visibilityMid
+    ? (point.sentiment >= sentimentMid
+      ? { label: 'Leader', desc: 'Très bien positionné. Forte visibilité et perception positive par les IA.', color: '#16A34A' }
+      : { label: 'Controversial', desc: 'Visible mais mal perçu. Les IA le mentionnent souvent mais avec un sentiment négatif.', color: '#D97706' })
+    : (point.sentiment >= sentimentMid
+      ? { label: 'Niche Player', desc: 'Bien perçu mais peu visible. Les IA en parlent positivement mais rarement.', color: '#6366F1' }
+      : { label: 'Lagger', desc: 'En retard. Faible visibilité et perception négative par les IA.', color: '#DC2626' });
+}
+
+/**
+ * Extrait et équilibre les points de la Matrice de Positionnement fidèlement à Competition.tsx
+ */
+function extractMatricePoints(
+  reportData: FullReportData | null,
+  compData: CompetitorAnalysisResponse | null | undefined,
+  domain: string,
+  targetUrl: string,
+  targetGeoScore: number
+): MatricePoint[] {
+  const materialityMatrix =
+    (reportData as any)?.materiality_matrix ||
+    (reportData as any)?.report?.materiality_matrix ||
+    (reportData as any)?.llmo_report?.materiality_matrix ||
+    (compData as any)?.materiality_matrix;
+
+  const useMateriality = !!(materialityMatrix && Array.isArray(materialityMatrix.brands) && materialityMatrix.brands.length > 0);
+  const dataPoints: MatricePoint[] = [];
+  const visibilityMid = 50;
+  const sentimentMid = 0.5;
+
+  if (useMateriality) {
+    const dedupedByUrl = new Map<string, any>();
+    const dedupedByName = new Map<string, any>();
+
+    (materialityMatrix.brands as any[]).forEach((b: any) => {
+      const canonicalUrl = toCanonicalUrl(b.url);
+      const normalizedName = normalizeBrandLabel(b.name);
+
+      const urlKey = canonicalUrl || '';
+      if (urlKey) {
+        const existing = dedupedByUrl.get(urlKey);
+        if (!existing || compareMaterialityEntries(b, existing) > 0) {
+          dedupedByUrl.set(urlKey, b);
+        }
+        return;
+      }
+
+      if (normalizedName) {
+        const existing = dedupedByName.get(normalizedName);
+        if (!existing || compareMaterialityEntries(b, existing) > 0) {
+          dedupedByName.set(normalizedName, b);
+        }
+      }
+    });
+
+    const dedupedBrands = [
+      ...dedupedByUrl.values(),
+      ...dedupedByName.values(),
+    ];
+
+    dedupedBrands.forEach((b: any) => {
+      const bDomain = cleanDomain(b.url || b.name);
+      let rawVis = typeof b.visibility === 'number' ? b.visibility : 50;
+      let rawSent = typeof b.sentiment === 'number' ? b.sentiment : 0.5;
+      if (rawSent > 1) rawSent = rawSent / 100;
+      const vis = Math.max(0, Math.min(100, rawVis));
+      const sent = Math.max(0, Math.min(1, rawSent));
+      const isTarget = !!b.is_target || bDomain === domain;
+
+      dataPoints.push({
+        name: b.name || bDomain,
+        url: b.url || '',
+        favicon_url: b.favicon_url || getFaviconUrl(b.url || b.name),
+        visibility: vis,
+        sentiment: sent,
+        totalScore: typeof b.total_score === 'number' ? b.total_score : 0,
+        mentions: b.mentions || 0,
+        isTarget,
+        audited: !!b.audited || isTarget,
+        pillars: b.pillars,
+        gaps: b.gaps,
+      });
+    });
+  } else {
+    // Fallback : concurrents de compData + benchmark_results
+    const competitors = (compData as any)?.competitors || [];
+    const benchmarkRaw = (compData as any)?.benchmark_results?.raw_data;
+    const analysisUrl = compData?.url || targetUrl || '';
+
+    if (competitors.length > 0) {
+      const competitorsByUrl = new Map<string, any>();
+      for (const c of competitors) {
+        const url = c.url || '';
+        const existing = competitorsByUrl.get(url);
+        if (!existing || (c.mentions || 0) > (existing.mentions || 0)) {
+          competitorsByUrl.set(url, c);
+        }
+      }
+
+      for (const [url, comp] of competitorsByUrl) {
+        const benchEntry = benchmarkRaw?.[url];
+        const hasScore = benchEntry && typeof benchEntry.total_score === 'number';
+        const totalScore = hasScore ? benchEntry.total_score : 0;
+        let rawVis = benchEntry?.visibility ?? (comp.visibility ?? totalScore);
+        let rawSent = benchEntry?.sentiment ?? (comp.sentiment ?? comp.average_score ?? 0.5);
+        if (rawSent > 1) rawSent = rawSent / 100;
+
+        dataPoints.push({
+          name: comp.name || cleanDomain(url),
+          url,
+          favicon_url: comp.favicon_url || getFaviconUrl(url || comp.name),
+          visibility: Math.max(0, Math.min(100, rawVis)),
+          sentiment: Math.max(0, Math.min(1, rawSent)),
+          totalScore,
+          mentions: comp.mentions || 0,
+          isTarget: false,
+          audited: false,
+        });
+      }
+    } else if (compData?.consolidated_competitors && compData.consolidated_competitors.length > 0) {
+      for (const c of compData.consolidated_competitors) {
+        const url = c.primary_url || '';
+        let rawVis = Math.max(20, Math.min(95, Math.round(((c.models_count || 1) / 5) * 100)));
+        let rawSent = Number(c.average_score || 0.6);
+        if (rawSent > 1) rawSent = rawSent / 100;
+
+        dataPoints.push({
+          name: c.name || cleanDomain(url),
+          url,
+          favicon_url: c.favicon_url || getFaviconUrl(url || c.name),
+          visibility: Math.max(0, Math.min(100, rawVis)),
+          sentiment: Math.max(0, Math.min(1, rawSent)),
+          totalScore: Math.round(rawSent * 100),
+          mentions: c.mentions || 0,
+          isTarget: false,
+          audited: false,
+        });
+      }
+    }
+
+    // Site cible
+    if (analysisUrl) {
+      const targetEntry = benchmarkRaw?.[analysisUrl];
+      let rawVis = targetEntry?.visibility ?? 75;
+      let rawSent = targetEntry?.sentiment ?? (targetGeoScore / 100 || 0.7);
+      if (rawSent > 1) rawSent = rawSent / 100;
+
+      dataPoints.push({
+        name: domain,
+        url: analysisUrl,
+        favicon_url: getFaviconUrl(analysisUrl),
+        visibility: Math.max(0, Math.min(100, rawVis)),
+        sentiment: Math.max(0, Math.min(1, rawSent)),
+        totalScore: targetGeoScore,
+        mentions: 0,
+        isTarget: true,
+        audited: true,
+      });
+    }
+  }
+
+  // S'assurer que le site cible est présent et identifié
+  let targetPoint = dataPoints.find(d => d.isTarget);
+  if (!targetPoint) {
+    targetPoint = dataPoints.find(d => cleanDomain(d.url || d.name) === domain);
+    if (targetPoint) {
+      targetPoint.isTarget = true;
+      targetPoint.audited = true;
+    } else {
+      targetPoint = {
+        name: domain,
+        url: targetUrl || `https://${domain}`,
+        favicon_url: getFaviconUrl(targetUrl || domain),
+        visibility: 75,
+        sentiment: Math.max(0.2, Math.min(0.95, targetGeoScore / 100 || 0.75)),
+        totalScore: targetGeoScore,
+        mentions: 0,
+        isTarget: true,
+        audited: true,
+      };
+      dataPoints.unshift(targetPoint);
+    }
+  }
+
+  // Équilibrage sur 12 concurrents max comme sur Competition.tsx
+  const MAX_DISPLAY = 12;
+  if (dataPoints.length <= MAX_DISPLAY) {
+    return dataPoints;
+  }
+
+  const quadrantOrder = ['Leader', 'Controversial', 'Niche Player', 'Lagger'] as const;
+  const targets = dataPoints.filter((d) => d.isTarget).sort((a, b) => b.totalScore - a.totalScore);
+  const selected: MatricePoint[] = [];
+  const selectedKeys = new Set<string>();
+  const pointKey = (point: MatricePoint) => `${toCanonicalUrl(point.url)}|${normalizeBrandLabel(point.name)}`;
+  const pushIfNew = (point: MatricePoint) => {
+    const key = pointKey(point);
+    if (selectedKeys.has(key) || selected.length >= MAX_DISPLAY) return false;
+    selected.push(point);
+    selectedKeys.add(key);
+    return true;
+  };
+
+  // Garder au moins le site cible
+  if (targets.length > 0) {
+    pushIfNew(targets[0]);
+  }
+
+  const remaining = dataPoints.filter((d) => !d.isTarget);
+  const buckets: Record<(typeof quadrantOrder)[number], MatricePoint[]> = {
+    Leader: [],
+    Controversial: [],
+    'Niche Player': [],
+    Lagger: [],
+  };
+
+  remaining.forEach((point) => {
+    const label = getQuadrantInfo(point).label as (typeof quadrantOrder)[number];
+    buckets[label].push(point);
+  });
+
+  const quadrantCenters: Record<(typeof quadrantOrder)[number], { x: number; y: number }> = {
+    Leader: { x: (visibilityMid + 100) / 2, y: (sentimentMid + 1) / 2 },
+    Controversial: { x: (visibilityMid + 100) / 2, y: sentimentMid / 2 },
+    'Niche Player': { x: visibilityMid / 2, y: (sentimentMid + 1) / 2 },
+    Lagger: { x: visibilityMid / 2, y: sentimentMid / 2 },
+  };
+
+  const representativeness = (point: MatricePoint, quadrant: (typeof quadrantOrder)[number]) => {
+    const center = quadrantCenters[quadrant];
+    const dx = (point.visibility - center.x) / 100;
+    const dy = point.sentiment - center.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  quadrantOrder.forEach((quadrant) => {
+    buckets[quadrant].sort((a, b) => {
+      const aDist = representativeness(a, quadrant);
+      const bDist = representativeness(b, quadrant);
+      if (aDist !== bDist) return aDist - bDist;
+      return b.totalScore - a.totalScore;
+    });
+  });
+
+  const slots = MAX_DISPLAY - selected.length;
+  const baseQuota = Math.max(1, Math.floor(slots / quadrantOrder.length));
+  let remainingSlots = slots;
+  const perQuadrantUsed: Record<(typeof quadrantOrder)[number], number> = {
+    Leader: 0,
+    Controversial: 0,
+    'Niche Player': 0,
+    Lagger: 0,
+  };
+
+  // 1er passage
+  quadrantOrder.forEach((quadrant) => {
+    while (
+      remainingSlots > 0 &&
+      perQuadrantUsed[quadrant] < baseQuota &&
+      buckets[quadrant].length > 0
+    ) {
+      const candidate = buckets[quadrant].shift()!;
+      if (pushIfNew(candidate)) {
+        perQuadrantUsed[quadrant] += 1;
+        remainingSlots -= 1;
+      }
+    }
+  });
+
+  // 2e passage
+  while (remainingSlots > 0) {
+    let picked = false;
+    quadrantOrder.forEach((quadrant) => {
+      if (remainingSlots <= 0 || buckets[quadrant].length === 0) return;
+      const candidate = buckets[quadrant].shift()!;
+      if (pushIfNew(candidate)) {
+        perQuadrantUsed[quadrant] += 1;
+        remainingSlots -= 1;
+        picked = true;
+      }
+    });
+    if (!picked) break;
+  }
+
+  // 3e passage sécurité
+  if (selected.length < MAX_DISPLAY) {
+    remaining.forEach((point) => {
+      if (selected.length < MAX_DISPLAY) pushIfNew(point);
+    });
+  }
+
+  return selected;
+}
+
+/**
+ * Barre de légende des marques avec Favicons (identique à Competition.tsx)
+ */
+function renderBrandsLegendHtml(points: MatricePoint[]): string {
+  const items = points.map(d => {
+    const isTarget = d.isTarget;
+    return `
+      <div style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 5px; background: ${isTarget ? '#EEF2FF' : '#F8FAFC'}; border: 1px solid ${isTarget ? '#C7D2FE' : '#E2E8F0'}; margin: 2px 3px;">
+        <img src="${d.favicon_url}" alt="${d.name}" style="width: 13px; height: 13px; border-radius: 2px;" onerror="this.style.display='none'" />
+        <span style="font-size: 9px; color: ${isTarget ? '#4F46E5' : '#475569'}; font-weight: ${isTarget ? 700 : 500};">
+          ${d.name}${isTarget ? ' (Vous)' : ''}
+        </span>
+        ${d.audited ? '<span style="font-size: 8px; color: #16A34A; font-weight: 700;" title="Audité">✓</span>' : ''}
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; align-items: center; justify-content: center;">
+      <span style="font-size: 9.5px; color: #64748B; font-weight: 700; margin-right: 4px;">Marques :</span>
+      ${items}
+    </div>
+  `;
+}
+
+/**
+ * Construit le SVG de la Matrice de Positionnement Concurrentiel (Fidèle à Competition.tsx)
+ * Axe X = Visibilité (%) [0-100%]
+ * Axe Y = Sentiment [0.0-1.0]
+ * Quadrants : Niche Players, Leaders, Laggers, Controversial
  */
 function renderPositioningMatrixSvg(
-  targetDomain: string,
-  targetScore: number,
-  brands: Array<{ name: string; url?: string; favicon_url?: string; visibility: number; totalScore: number; isTarget?: boolean }>
+  points: MatricePoint[]
 ): string {
-  const w = 640;
-  const h = 390;
-  const padL = 45;
+  const w = 760;
+  const h = 420;
+  const padL = 50;
   const padR = 30;
   const padT = 30;
   const padB = 45;
@@ -289,23 +667,46 @@ function renderPositioningMatrixSvg(
   const midX = padL + plotW / 2;
   const midY = padT + plotH / 2;
 
-  // Calcul coordonnées normalisées (0-100)
-  const getX = (vis: number) => padL + (Math.max(6, Math.min(94, vis)) / 100) * plotW;
-  const getY = (score: number) => padT + plotH - (Math.max(6, Math.min(94, score)) / 100) * plotH;
+  // Calcul coordonnées (X: Visibilité 0-100, Y: Sentiment 0.0-1.0)
+  const getX = (vis: number) => padL + (Math.max(0, Math.min(100, vis)) / 100) * plotW;
+  const getY = (sent: number) => padT + plotH - Math.max(0, Math.min(1, sent)) * plotH;
+
+  // Rendu des lignes de grille X (0% à 100% tous les 10%)
+  const xGridLines = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(v => {
+    const x = getX(v);
+    const isMid = v === 50;
+    return `
+      <line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotH}" stroke="${isMid ? '#CBD5E1' : '#E5E7EB'}" stroke-width="${isMid ? 1.5 : 0.5}" stroke-dasharray="${isMid ? '0' : '3 3'}" />
+      <text x="${x}" y="${padT + plotH + 15}" text-anchor="middle" font-size="8.5" fill="#94A3B8" font-family="Inter, sans-serif">${v}%</text>
+    `;
+  }).join('');
+
+  // Rendu des lignes de grille Y (0.0 à 1.0 tous les 0.1)
+  const yGridLines = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map(s => {
+    const y = getY(s);
+    const isMid = Math.abs(s - 0.5) < 0.01;
+    return `
+      <line x1="${padL}" y1="${y}" x2="${padL + plotW}" y2="${y}" stroke="${isMid ? '#CBD5E1' : '#E5E7EB'}" stroke-width="${isMid ? 1.5 : 0.5}" stroke-dasharray="${isMid ? '0' : '3 3'}" />
+      <text x="${padL - 10}" y="${y + 3}" text-anchor="end" font-size="8.5" fill="#94A3B8" font-family="Inter, sans-serif">${s.toFixed(1)}</text>
+    `;
+  }).join('');
 
   // Rendu des points avec favicons
-  const pointsSvg = brands.slice(0, 12).map((b, idx) => {
-    const cx = getX(b.visibility || 50);
-    const cy = getY(b.totalScore || 50);
-    const isMe = b.isTarget || cleanDomain(b.url || b.name) === cleanDomain(targetDomain);
-    const favicon = b.favicon_url || getFaviconUrl(b.url || b.name);
+  const sortedPoints = [...points].sort((a, b) => (a.isTarget ? 1 : 0) - (b.isTarget ? 1 : 0));
+  const pointsSvg = sortedPoints.map((b, idx) => {
+    const cx = getX(b.visibility);
+    const cy = getY(b.sentiment);
+    const isMe = b.isTarget;
+    const favicon = b.favicon_url;
 
     if (isMe) {
       const labelText = `★ ${b.name} (Vous)`;
-      const labelWidth = labelText.length * 6.8 + 16;
-      const isRightSide = cx > padL + plotW - labelWidth - 30;
-      const labelX = isRightSide ? cx - labelWidth - 18 : cx + 18;
-      const textX = isRightSide ? cx - labelWidth - 10 : cx + 26;
+      const labelWidth = Math.max(75, labelText.length * 6.5 + 14);
+      const isRightSide = cx > padL + plotW * 0.55;
+      const pillX = isRightSide
+        ? Math.max(padL + 6, cx - labelWidth - 18)
+        : Math.min(padL + plotW - labelWidth - 6, cx + 18);
+      const pillY = Math.max(padT + 6, Math.min(padT + plotH - 24, cy - 12));
 
       return `
         <g key="target-point">
@@ -313,34 +714,37 @@ function renderPositioningMatrixSvg(
           <circle cx="${cx}" cy="${cy}" r="22" fill="#4F46E5" opacity="0.18" />
           <!-- Disque blanc de support -->
           <circle cx="${cx}" cy="${cy}" r="16" fill="#FFFFFF" stroke="#4F46E5" stroke-width="2.5" />
-          <!-- Favicon officiel de votre marque -->
-          <image href="${favicon}" x="${cx - 10}" y="${cy - 10}" width="20" height="20" preserveAspectRatio="xMidYMid meet" onerror="this.style.display='none'" />
-          <!-- Badge Nom -->
-          <rect x="${labelX}" y="${cy - 12}" width="${labelWidth}" height="24" rx="5" fill="#0F172A" />
-          <text x="${textX}" y="${cy + 4}" fill="#FFFFFF" font-size="10" font-weight="700" font-family="Inter, sans-serif">
+          <!-- Favicon officiel -->
+          <image href="${favicon}" xlink:href="${favicon}" x="${cx - 10}" y="${cy - 10}" width="20" height="20" preserveAspectRatio="xMidYMid meet" />
+          <!-- Badge Nom Cible -->
+          <rect x="${pillX}" y="${pillY}" width="${labelWidth}" height="22" rx="5" fill="#4F46E5" />
+          <text x="${pillX + labelWidth / 2}" y="${pillY + 15}" text-anchor="middle" fill="#FFFFFF" font-size="9.5" font-weight="700" font-family="Inter, sans-serif">
             ${labelText}
           </text>
         </g>
       `;
     }
 
-    const labelText = b.name;
-    const labelWidth = labelText.length * 5.8 + 14;
-    const isRightSide = cx > padL + plotW - labelWidth - 25;
-    const labelX = isRightSide ? cx - labelWidth - 16 : cx + 16;
-    const textX = isRightSide ? cx - labelWidth - 9 : cx + 22;
+    const labelText = `${b.name}${b.audited ? ' ✓' : ''}`;
+    const labelWidth = Math.max(52, labelText.length * 5.8 + 12);
+    const isRightSide = cx > padL + plotW * 0.52;
+    const pillX = isRightSide
+      ? Math.max(padL + 6, cx - labelWidth - 16)
+      : Math.min(padL + plotW - labelWidth - 6, cx + 16);
+    const yOffset = (idx % 2 === 0) ? -9 : (cy < padT + 45 ? 14 : -24);
+    const pillY = Math.max(padT + 6, Math.min(padT + plotH - 20, cy + yOffset));
 
     return `
       <g key="competitor-point-${idx}">
         <!-- Halo léger -->
-        <circle cx="${cx}" cy="${cy}" r="15" fill="#0F172A" opacity="0.05" />
+        <circle cx="${cx}" cy="${cy}" r="14" fill="#0F172A" opacity="0.05" />
         <!-- Disque blanc de support -->
-        <circle cx="${cx}" cy="${cy}" r="13" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5" />
+        <circle cx="${cx}" cy="${cy}" r="12" fill="#FFFFFF" stroke="${b.audited ? '#16A34A' : '#94A3B8'}" stroke-width="${b.audited ? 2 : 1.5}" ${b.audited ? '' : 'stroke-dasharray="3 2"'} />
         <!-- Favicon officiel du concurrent -->
-        <image href="${favicon}" x="${cx - 8}" y="${cy - 8}" width="16" height="16" preserveAspectRatio="xMidYMid meet" onerror="this.style.display='none'" />
+        <image href="${favicon}" xlink:href="${favicon}" x="${cx - 8}" y="${cy - 8}" width="16" height="16" preserveAspectRatio="xMidYMid meet" />
         <!-- Badge Nom du concurrent -->
-        <rect x="${labelX}" y="${cy - 10}" width="${labelWidth}" height="20" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" />
-        <text x="${textX}" y="${cy + 4}" fill="#1E293B" font-size="9" font-weight="600" font-family="Inter, sans-serif">
+        <rect x="${pillX}" y="${pillY}" width="${labelWidth}" height="18" rx="4" fill="#FFFFFF" stroke="${b.audited ? '#86EFAC' : '#CBD5E1'}" stroke-width="1" />
+        <text x="${pillX + labelWidth / 2}" y="${pillY + 13}" text-anchor="middle" fill="#1E293B" font-size="8.5" font-weight="600" font-family="Inter, sans-serif">
           ${labelText}
         </text>
       </g>
@@ -348,48 +752,42 @@ function renderPositioningMatrixSvg(
   }).join('');
 
   return `
-    <svg viewBox="0 0 ${w} ${h}" style="width: 100%; height: auto; max-height: 380px; background: #FFFFFF; border-radius: 8px;">
-      <!-- Quadrants background -->
-      <!-- Top Left : Niche Players / Spécialistes -->
-      <rect x="${padL}" y="${padT}" width="${plotW / 2}" height="${plotH / 2}" fill="#F0F9FF" opacity="0.75" />
-      <text x="${padL + 14}" y="${padT + 20}" fill="#0369A1" font-size="10" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
-        ACTEURS DE NICHE & SPÉCIALISTES
-      </text>
+    <svg viewBox="0 0 ${w} ${h}" style="width: 100%; height: auto; max-height: 350px; background: #FFFFFF; border-radius: 8px;">
+      <!-- Fond du graphique -->
+      <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="#FAFBFC" />
 
-      <!-- Top Right : Leaders / Références de Marché -->
-      <rect x="${midX}" y="${padT}" width="${plotW / 2}" height="${plotH / 2}" fill="#F0FDF4" opacity="0.75" />
-      <text x="${midX + 14}" y="${padT + 20}" fill="#15803D" font-size="10" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
-        LEADERS DU MARCHÉ
-      </text>
+      <!-- Zones de cadrans subtiles -->
+      <!-- Top Left : Niche Players -->
+      <rect x="${padL}" y="${padT}" width="${plotW / 2}" height="${plotH / 2}" fill="#F8FAFC" opacity="0.5" />
+      <!-- Top Right : Leaders -->
+      <rect x="${midX}" y="${padT}" width="${plotW / 2}" height="${plotH / 2}" fill="#F0FDF4" opacity="0.5" />
+      <!-- Bottom Left : Laggers -->
+      <rect x="${padL}" y="${midY}" width="${plotW / 2}" height="${plotH / 2}" fill="#FEF2F2" opacity="0.4" />
+      <!-- Bottom Right : Controversial -->
+      <rect x="${midX}" y="${midY}" width="${plotW / 2}" height="${plotH / 2}" fill="#FFFBEB" opacity="0.4" />
 
-      <!-- Bottom Left : Suiveurs / En Développement -->
-      <rect x="${padL}" y="${midY}" width="${plotW / 2}" height="${plotH / 2}" fill="#F8FAFC" opacity="0.75" />
-      <text x="${padL + 14}" y="${midY + 20}" fill="#64748B" font-size="10" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
-        EN DÉVELOPPEMENT / SUIVEURS
-      </text>
+      <!-- Grille -->
+      ${xGridLines}
+      ${yGridLines}
 
-      <!-- Bottom Right : Notoriété Vulnérable -->
-      <rect x="${midX}" y="${midY}" width="${plotW / 2}" height="${plotH / 2}" fill="#FFFBEB" opacity="0.75" />
-      <text x="${midX + 14}" y="${midY + 20}" fill="#B45309" font-size="10" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
-        NOTORIÉTÉ VULNÉRABLE
-      </text>
-
-      <!-- Axes médians pointillés -->
-      <line x1="${midX}" y1="${padT}" x2="${midX}" y2="${padT + plotH}" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
-      <line x1="${padL}" y1="${midY}" x2="${padL + plotW}" y2="${midY}" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
+      <!-- Titres des Quadrants (exactement identiques à Competition.tsx) -->
+      <text x="${padL + plotW * 0.25}" y="${padT + 22}" text-anchor="middle" font-size="13" fill="#6B7280" font-weight="700" font-family="Inter, sans-serif">Niche Players</text>
+      <text x="${padL + plotW * 0.75}" y="${padT + 22}" text-anchor="middle" font-size="13" fill="#16A34A" font-weight="700" font-family="Inter, sans-serif">Leaders</text>
+      <text x="${padL + plotW * 0.25}" y="${padT + plotH - 12}" text-anchor="middle" font-size="13" fill="#DC2626" font-weight="700" font-family="Inter, sans-serif">Laggers</text>
+      <text x="${padL + plotW * 0.75}" y="${padT + plotH - 12}" text-anchor="middle" font-size="13" fill="#D97706" font-weight="700" font-family="Inter, sans-serif">Controversial</text>
 
       <!-- Contour du graphe -->
-      <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="none" stroke="#94A3B8" stroke-width="1" />
+      <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="none" stroke="#CBD5E1" stroke-width="1" rx="4" />
 
       <!-- Labels des axes -->
-      <text x="${padL + plotW / 2}" y="${h - 12}" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="700" font-family="Inter, sans-serif">
-        VISIBILITÉ DANS LES MOTEURS IA (%) →
+      <text x="${padL + plotW / 2}" y="${h - 10}" text-anchor="middle" fill="#64748B" font-size="10" font-weight="600" font-family="Inter, sans-serif">
+        Visibility (%) →
       </text>
-      <text x="16" y="${padT + plotH / 2}" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="700" font-family="Inter, sans-serif" transform="rotate(-90 16 ${padT + plotH / 2})">
-        SCORE DE QUALITÉ GEO / 100 →
+      <text x="16" y="${padT + plotH / 2}" text-anchor="middle" fill="#64748B" font-size="10" font-weight="600" font-family="Inter, sans-serif" transform="rotate(-90 16 ${padT + plotH / 2})">
+        ← Sentiment →
       </text>
 
-      <!-- Points des marques avec favicons -->
+      <!-- Points des marques avec favicons et badges -->
       ${pointsSvg}
     </svg>
   `;
@@ -478,31 +876,26 @@ export async function generateFullReportPdf(
   const rawCompetitors = compData?.consolidated_competitors || [];
   // Construire exactement les 10 premiers concurrents du benchmark
   const top10Competitors = rawCompetitors.slice(0, 10);
-  const targetRank = compData?.your_position?.rank || 1;
-  const totalCompetitorsCount = Math.max(top10Competitors.length, compData?.global_stats?.total_competitors_found || 10);
+  let targetRank = compData?.your_position?.rank || 1;
 
-  // Données pour la Matrice de Positionnement Concurrentiel (avec favicons officiels)
-  const matrixDataFromReport = (reportData as any)?.materiality_matrix?.brands;
-  const matrixBrands = matrixDataFromReport && matrixDataFromReport.length > 0
-    ? matrixDataFromReport.map((b: any) => ({
-        name: b.name || cleanDomain(b.url),
-        url: b.url,
-        favicon_url: b.favicon_url || getFaviconUrl(b.url || b.name),
-        visibility: b.visibility || 50,
-        totalScore: b.total_score || 50,
-        isTarget: !!b.is_target,
-      }))
-    : [
-        { name: domain, url: targetUrl, favicon_url: getFaviconUrl(targetUrl || domain), visibility: 75, totalScore: targetGeoScore, isTarget: true },
-        ...top10Competitors.map((c: any, i: number) => ({
-          name: c.name || cleanDomain(c.primary_url),
-          url: c.primary_url,
-          favicon_url: c.favicon_url || getFaviconUrl(c.primary_url || c.name),
-          visibility: Math.max(20, Math.min(90, Math.round(((c.models_count || 1) / 5) * 100))),
-          totalScore: Math.round(Number(c.average_score || 0) * (Number(c.average_score || 0) <= 1 ? 100 : 1)),
-          isTarget: false,
-        }))
-      ];
+  // Données pour la Matrice de Positionnement Concurrentiel (Extraction fidèle à Competition.tsx)
+  const matricePoints = extractMatricePoints(reportData, compData, domain, targetUrl, targetGeoScore);
+
+  // Synchronisation du rang cible avec la matrice si disponible
+  const materialityBrands = (reportData as any)?.materiality_matrix?.brands;
+  if (materialityBrands && Array.isArray(materialityBrands) && materialityBrands.length > 0) {
+    const sortedMat = [...materialityBrands].sort((a: any, b: any) => (b.total_score || 0) - (a.total_score || 0));
+    const rankIdx = sortedMat.findIndex((b: any) => b.is_target || cleanDomain(b.url || b.name) === domain);
+    if (rankIdx !== -1) {
+      targetRank = rankIdx + 1;
+    }
+  }
+
+  const totalCompetitorsCount = Math.max(
+    top10Competitors.length,
+    matricePoints.length,
+    compData?.global_stats?.total_competitors_found || 10
+  );
 
   // 7. Construction du document HTML A4 Haute Résolution (Style McKinsey)
   const htmlContent = `
@@ -946,34 +1339,36 @@ export async function generateFullReportPdf(
     </div>
 
     <!-- Graphique Visuel de la Matrice de Positionnement Concurrentiel (avec Favicons) -->
-    <div class="card-block" style="padding: 14px 18px;">
+    <div class="card-block" style="padding: 12px 16px; margin-bottom: 12px;">
       <div class="card-title">
         <span class="card-title-bar"></span>
         Matrice de Positionnement Concurrentiel
       </div>
-      <p style="font-size: 9.5px; color: #64748B; margin: -4px 0 12px 0;">
-        Cartographie croisée de l'empreinte algorithmique : Visibilité dans les réponses des IA (axe horizontal) vs Qualité & Pertinence GEO (axe vertical). Chaque acteur est identifié par son favicon officiel.
+      <p style="font-size: 9.5px; color: #64748B; margin: -4px 0 10px 0;">
+        Cartographie de l'empreinte algorithmique : Visibilité dans les réponses des IA (axe horizontal) vs Sentiment & Perception de marque (axe vertical). Chaque acteur est identifié par son favicon officiel.
       </p>
-      
-      ${renderPositioningMatrixSvg(domain, targetGeoScore, matrixBrands)}
 
-      <!-- Grille d'interprétation des 4 cadrans stratégiques -->
-      <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 9px; color: #475569; background: #F8FAFC; padding: 10px 14px; border-radius: 6px; border: 1px solid #E2E8F0;">
+      ${renderBrandsLegendHtml(matricePoints)}
+      
+      ${renderPositioningMatrixSvg(matricePoints)}
+
+      <!-- Grille d'interprétation des 4 quadrants stratégiques (Fidèle à Competition.tsx) -->
+      <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 8.5px; color: #475569; background: #F8FAFC; padding: 8px 12px; border-radius: 6px; border: 1px solid #E2E8F0;">
         <div>
-          <strong style="color: #15803D;">• Cadran Leaders (Haut-Droit) :</strong>
-          Forte notoriété et socle technique de premier plan. Acteurs prioritaires recommandés par les moteurs conversationnels.
+          <strong style="color: #16A34A;">• Leaders (Haut-Droit) :</strong>
+          Très bien positionné. Forte visibilité et perception positive par les IA.
         </div>
         <div>
-          <strong style="color: #0369A1;">• Cadran Acteurs de Niche & Spécialistes (Haut-Gauche) :</strong>
-          Excellente qualité GEO technique mais déficit de volume de citations. Fort levier de conquête algorithmique.
+          <strong style="color: #6366F1;">• Niche Players (Haut-Gauche) :</strong>
+          Bien perçu mais peu visible. Les IA en parlent positivement mais rarement.
         </div>
         <div>
-          <strong style="color: #64748B;">• Cadran En Développement / Suiveurs (Bas-Gauche) :</strong>
-          Faible pénétration et socle technique à consolider sur les piliers fondamentaux.
+          <strong style="color: #DC2626;">• Laggers (Bas-Gauche) :</strong>
+          En retard. Faible visibilité et perception négative par les IA.
         </div>
         <div>
-          <strong style="color: #B45309;">• Cadran Notoriété Vulnérable (Bas-Droit) :</strong>
-          Volume de mentions important mais vulnérabilité technique face aux mises à jour algorithmiques des LLMs.
+          <strong style="color: #D97706;">• Controversial (Bas-Droit) :</strong>
+          Visible mais mal perçu. Les IA le mentionnent souvent mais avec un sentiment négatif.
         </div>
       </div>
     </div>
