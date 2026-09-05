@@ -319,22 +319,13 @@ const Competition = () => {
   return (
     <div className="min-h-screen bg-[#F5F6F7] p-3 md:p-6">
       <div className="w-full space-y-6">
-        {/* Header avec titre et bouton export PDF */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">
-              Veille concurrentielle & Benchmark IA
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Positionnement comparatif, parts de voix et analyse détaillée face aux concurrents du marché
-            </p>
-          </div>
-
+        {/* Bouton Télécharger le rapport (PDF) */}
+        <div className="flex justify-end">
           <Button
             onClick={handleExportPdf}
             disabled={isExportingPdf || !reportData}
             variant="outline"
-            className="gap-2 self-start sm:self-auto border-indigo-200 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100/70 text-xs font-semibold rounded-xl cursor-pointer disabled:opacity-50"
+            className="gap-2 border-indigo-200 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100/70 text-xs font-semibold rounded-xl cursor-pointer disabled:opacity-50 shadow-xs"
           >
             {isExportingPdf ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
