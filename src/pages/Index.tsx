@@ -21,6 +21,7 @@ import { SchemaPreview } from '@/components/optimizer/SchemaPreview';
 import { SimulationTab } from '@/components/optimizer/SimulationTab';
 import { NewAnalysisModal } from '@/components/NewAnalysisModal';
 import { AiExplainModal } from '@/components/AiExplainModal';
+import AskAIButton from '@/components/AskAIButton';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { HELP } from '@/lib/help-content';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -409,7 +410,7 @@ function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReport
  * Boutons de navigation entre les deux vues principales
  * Gère les états actif/inactif avec styles différenciés
  */
-function NavigationButtons({ activeView, onViewChange, onOpenAiExplain }: { activeView: string, onViewChange: (view: string) => void, onOpenAiExplain?: () => void }) {
+function NavigationButtons({ activeView, onViewChange, reportData }: { activeView: string, onViewChange: (view: string) => void, reportData?: FullReportData | null }) {
   const handleViewChange = (view: string) => {
     onViewChange(view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -431,15 +432,7 @@ function NavigationButtons({ activeView, onViewChange, onOpenAiExplain }: { acti
         Améliorer
       </button>
 
-      <button
-        type="button"
-        onClick={() => onOpenAiExplain?.()}
-        className="nav-btn-ai"
-        title="Synthèse et explication claire par l'IA"
-      >
-        <span className="nav-btn-ai-sparkle">✨</span>
-        <span>Expliquer par l'IA</span>
-      </button>
+      <AskAIButton reportData={reportData} />
     </div>
   );
 }
@@ -551,7 +544,7 @@ function TopSection({ activeView, onViewChange, reportData, reports, onOpenRepor
         </button>
       </div>
       <CitationsChart reportData={reportData} targetGeoScore={targetGeoScore} />
-      <NavigationButtons activeView={activeView} onViewChange={onViewChange} onOpenAiExplain={onOpenAiExplain} />
+      <NavigationButtons activeView={activeView} onViewChange={onViewChange} reportData={reportData} />
     </div>
   );
 }
