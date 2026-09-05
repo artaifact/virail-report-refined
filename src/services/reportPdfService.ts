@@ -271,82 +271,106 @@ function renderCitationsStatusBannerHtml(totalCitations: number): string {
 }
 
 /**
- * Construit le SVG de la Matrice de Positionnement Concurrentiel (Quadrants Stratégiques)
+ * Construit le SVG de la Matrice de Positionnement Concurrentiel (Quadrants Stratégiques avec Favicons)
  */
 function renderPositioningMatrixSvg(
   targetDomain: string,
   targetScore: number,
-  brands: Array<{ name: string; url?: string; visibility: number; totalScore: number; isTarget?: boolean }>
+  brands: Array<{ name: string; url?: string; favicon_url?: string; visibility: number; totalScore: number; isTarget?: boolean }>
 ): string {
-  const w = 620;
-  const h = 330;
-  const padL = 40;
-  const padR = 25;
-  const padT = 25;
-  const padB = 40;
+  const w = 640;
+  const h = 390;
+  const padL = 45;
+  const padR = 30;
+  const padT = 30;
+  const padB = 45;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
   const midX = padL + plotW / 2;
   const midY = padT + plotH / 2;
 
   // Calcul coordonnées normalisées (0-100)
-  const getX = (vis: number) => padL + (Math.max(5, Math.min(95, vis)) / 100) * plotW;
-  const getY = (score: number) => padT + plotH - (Math.max(5, Math.min(95, score)) / 100) * plotH;
+  const getX = (vis: number) => padL + (Math.max(6, Math.min(94, vis)) / 100) * plotW;
+  const getY = (score: number) => padT + plotH - (Math.max(6, Math.min(94, score)) / 100) * plotH;
 
-  // Rendu des points
-  const pointsSvg = brands.slice(0, 12).map(b => {
+  // Rendu des points avec favicons
+  const pointsSvg = brands.slice(0, 12).map((b, idx) => {
     const cx = getX(b.visibility || 50);
     const cy = getY(b.totalScore || 50);
     const isMe = b.isTarget || cleanDomain(b.url || b.name) === cleanDomain(targetDomain);
+    const favicon = b.favicon_url || getFaviconUrl(b.url || b.name);
 
     if (isMe) {
+      const labelText = `★ ${b.name} (Vous)`;
+      const labelWidth = labelText.length * 6.8 + 16;
+      const isRightSide = cx > padL + plotW - labelWidth - 30;
+      const labelX = isRightSide ? cx - labelWidth - 18 : cx + 18;
+      const textX = isRightSide ? cx - labelWidth - 10 : cx + 26;
+
       return `
-        <g>
-          <circle cx="${cx}" cy="${cy}" r="14" fill="#6366F1" opacity="0.15" />
-          <circle cx="${cx}" cy="${cy}" r="8" fill="#4F46E5" stroke="#FFFFFF" stroke-width="2.5" />
-          <rect x="${cx + 10}" y="${cy - 12}" width="${b.name.length * 7 + 16}" height="20" rx="4" fill="#0F172A" />
-          <text x="${cx + 18}" y="${cy + 2}" fill="#FFFFFF" font-size="10" font-weight="700" font-family="Inter, sans-serif">
-            ★ ${b.name} (Vous)
+        <g key="target-point">
+          <!-- Halo & Aura -->
+          <circle cx="${cx}" cy="${cy}" r="22" fill="#4F46E5" opacity="0.18" />
+          <!-- Disque blanc de support -->
+          <circle cx="${cx}" cy="${cy}" r="16" fill="#FFFFFF" stroke="#4F46E5" stroke-width="2.5" />
+          <!-- Favicon officiel de votre marque -->
+          <image href="${favicon}" x="${cx - 10}" y="${cy - 10}" width="20" height="20" preserveAspectRatio="xMidYMid meet" onerror="this.style.display='none'" />
+          <!-- Badge Nom -->
+          <rect x="${labelX}" y="${cy - 12}" width="${labelWidth}" height="24" rx="5" fill="#0F172A" />
+          <text x="${textX}" y="${cy + 4}" fill="#FFFFFF" font-size="10" font-weight="700" font-family="Inter, sans-serif">
+            ${labelText}
           </text>
         </g>
       `;
     }
 
+    const labelText = b.name;
+    const labelWidth = labelText.length * 5.8 + 14;
+    const isRightSide = cx > padL + plotW - labelWidth - 25;
+    const labelX = isRightSide ? cx - labelWidth - 16 : cx + 16;
+    const textX = isRightSide ? cx - labelWidth - 9 : cx + 22;
+
     return `
-      <g>
-        <circle cx="${cx}" cy="${cy}" r="5.5" fill="#64748B" stroke="#FFFFFF" stroke-width="1.5" />
-        <rect x="${cx + 8}" y="${cy - 9}" width="${b.name.length * 5.5 + 10}" height="16" rx="3" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" />
-        <text x="${cx + 13}" y="${cy + 3}" fill="#334155" font-size="9" font-weight="600" font-family="Inter, sans-serif">
-          ${b.name}
+      <g key="competitor-point-${idx}">
+        <!-- Halo léger -->
+        <circle cx="${cx}" cy="${cy}" r="15" fill="#0F172A" opacity="0.05" />
+        <!-- Disque blanc de support -->
+        <circle cx="${cx}" cy="${cy}" r="13" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5" />
+        <!-- Favicon officiel du concurrent -->
+        <image href="${favicon}" x="${cx - 8}" y="${cy - 8}" width="16" height="16" preserveAspectRatio="xMidYMid meet" onerror="this.style.display='none'" />
+        <!-- Badge Nom du concurrent -->
+        <rect x="${labelX}" y="${cy - 10}" width="${labelWidth}" height="20" rx="4" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" />
+        <text x="${textX}" y="${cy + 4}" fill="#1E293B" font-size="9" font-weight="600" font-family="Inter, sans-serif">
+          ${labelText}
         </text>
       </g>
     `;
   }).join('');
 
   return `
-    <svg viewBox="0 0 ${w} ${h}" style="width: 100%; height: auto; max-height: 290px; background: #FFFFFF; border-radius: 8px;">
+    <svg viewBox="0 0 ${w} ${h}" style="width: 100%; height: auto; max-height: 380px; background: #FFFFFF; border-radius: 8px;">
       <!-- Quadrants background -->
       <!-- Top Left : Niche Players / Spécialistes -->
-      <rect x="${padL}" y="${padT}" width="${plotW / 2}" height="${plotH / 2}" fill="#F0F9FF" opacity="0.7" />
-      <text x="${padL + 12}" y="${padT + 18}" fill="#0369A1" font-size="9.5" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
+      <rect x="${padL}" y="${padT}" width="${plotW / 2}" height="${plotH / 2}" fill="#F0F9FF" opacity="0.75" />
+      <text x="${padL + 14}" y="${padT + 20}" fill="#0369A1" font-size="10" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
         ACTEURS DE NICHE & SPÉCIALISTES
       </text>
 
       <!-- Top Right : Leaders / Références de Marché -->
-      <rect x="${midX}" y="${padT}" width="${plotW / 2}" height="${plotH / 2}" fill="#F0FDF4" opacity="0.7" />
-      <text x="${midX + 12}" y="${padT + 18}" fill="#15803D" font-size="9.5" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
+      <rect x="${midX}" y="${padT}" width="${plotW / 2}" height="${plotH / 2}" fill="#F0FDF4" opacity="0.75" />
+      <text x="${midX + 14}" y="${padT + 20}" fill="#15803D" font-size="10" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
         LEADERS DU MARCHÉ
       </text>
 
       <!-- Bottom Left : Suiveurs / En Développement -->
-      <rect x="${padL}" y="${midY}" width="${plotW / 2}" height="${plotH / 2}" fill="#F8FAFC" opacity="0.7" />
-      <text x="${padL + 12}" y="${midY + 18}" fill="#64748B" font-size="9.5" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
+      <rect x="${padL}" y="${midY}" width="${plotW / 2}" height="${plotH / 2}" fill="#F8FAFC" opacity="0.75" />
+      <text x="${padL + 14}" y="${midY + 20}" fill="#64748B" font-size="10" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
         EN DÉVELOPPEMENT / SUIVEURS
       </text>
 
       <!-- Bottom Right : Notoriété Vulnérable -->
-      <rect x="${midX}" y="${midY}" width="${plotW / 2}" height="${plotH / 2}" fill="#FFFBEB" opacity="0.7" />
-      <text x="${midX + 12}" y="${midY + 18}" fill="#B45309" font-size="9.5" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
+      <rect x="${midX}" y="${midY}" width="${plotW / 2}" height="${plotH / 2}" fill="#FFFBEB" opacity="0.75" />
+      <text x="${midX + 14}" y="${midY + 20}" fill="#B45309" font-size="10" font-weight="800" font-family="Inter, sans-serif" letter-spacing="0.05em">
         NOTORIÉTÉ VULNÉRABLE
       </text>
 
@@ -358,14 +382,14 @@ function renderPositioningMatrixSvg(
       <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="none" stroke="#94A3B8" stroke-width="1" />
 
       <!-- Labels des axes -->
-      <text x="${padL + plotW / 2}" y="${h - 10}" text-anchor="middle" fill="#475569" font-size="10" font-weight="700" font-family="Inter, sans-serif">
+      <text x="${padL + plotW / 2}" y="${h - 12}" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="700" font-family="Inter, sans-serif">
         VISIBILITÉ DANS LES MOTEURS IA (%) →
       </text>
-      <text x="15" y="${padT + plotH / 2}" text-anchor="middle" fill="#475569" font-size="10" font-weight="700" font-family="Inter, sans-serif" transform="rotate(-90 15 ${padT + plotH / 2})">
+      <text x="16" y="${padT + plotH / 2}" text-anchor="middle" fill="#475569" font-size="10.5" font-weight="700" font-family="Inter, sans-serif" transform="rotate(-90 16 ${padT + plotH / 2})">
         SCORE DE QUALITÉ GEO / 100 →
       </text>
 
-      <!-- Points des marques -->
+      <!-- Points des marques avec favicons -->
       ${pointsSvg}
     </svg>
   `;
@@ -440,32 +464,7 @@ export async function generateFullReportPdf(
   const frequentlyMentioned = reportData?.analyse_citation?.competitors_frequently_mentioned || [];
   const sourcesList = Array.isArray(frequentlyMentioned) ? frequentlyMentioned.slice(0, 10) : [];
 
-  // 5. Piliers GEO & Recommandations (Améliorer)
-  const categories = [
-    { key: 'html_semantique', label: 'Structure HTML & Sémantique', description: 'Balisage hiérarchique, balises sémantiques et clarté structurelle.' },
-    { key: 'donnees_structurees', label: 'Données Structurées (Schema.org)', description: 'JSON-LD, balises Schema.org et données typées exploitables par les LLM.' },
-    { key: 'accessibilite_crawlers', label: 'Accessibilité Crawlers IA', description: 'Robots.txt, directives LLM, vitesse de réponse et sitemaps.' },
-    { key: 'optimisation_contenu', label: 'Qualité & Richesse du Contenu', description: 'Densité informationnelle, complétude et réponses directes aux requêtes.' },
-    { key: 'metadonnees_techniques', label: 'Métadonnées & Directives IA', description: 'Balises meta description, Open Graph et llms.txt.' },
-    { key: 'conformite_standards', label: 'Standards Web & Performance', description: 'Accessibilité W3C, performance web et compatibilité multi-moteur.' },
-  ];
-
-  const getCategoryScore = (audit: any, key: string): number | null => {
-    const val = audit?.[key];
-    if (typeof val === 'number') return val;
-    if (typeof val === 'object' && val !== null && typeof val.score === 'number') return val.score;
-    return null;
-  };
-
-  const pillarsScores = categories.map(cat => {
-    const scores = (reportData.analyses || [])
-      .map((a: any) => getCategoryScore(a.modules?.audit_geo, cat.key))
-      .filter((s): s is number => typeof s === 'number' && s > 0);
-    const avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-    return { ...cat, score: avg };
-  }).filter(c => c.score > 0);
-
-  // Plan d'actions
+  // 5. Plan d'actions prioritaires GEO
   let planActionItems: string[] = [];
   for (const analysis of reportData.analyses || []) {
     const pa = analysis.modules?.audit_geo?.plan_action_geo;
@@ -482,21 +481,23 @@ export async function generateFullReportPdf(
   const targetRank = compData?.your_position?.rank || 1;
   const totalCompetitorsCount = Math.max(top10Competitors.length, compData?.global_stats?.total_competitors_found || 10);
 
-  // Données pour la Matrice de Positionnement Concurrentiel
+  // Données pour la Matrice de Positionnement Concurrentiel (avec favicons officiels)
   const matrixDataFromReport = (reportData as any)?.materiality_matrix?.brands;
   const matrixBrands = matrixDataFromReport && matrixDataFromReport.length > 0
     ? matrixDataFromReport.map((b: any) => ({
         name: b.name || cleanDomain(b.url),
         url: b.url,
+        favicon_url: b.favicon_url || getFaviconUrl(b.url || b.name),
         visibility: b.visibility || 50,
         totalScore: b.total_score || 50,
         isTarget: !!b.is_target,
       }))
     : [
-        { name: domain, url: targetUrl, visibility: 75, totalScore: targetGeoScore, isTarget: true },
+        { name: domain, url: targetUrl, favicon_url: getFaviconUrl(targetUrl || domain), visibility: 75, totalScore: targetGeoScore, isTarget: true },
         ...top10Competitors.map((c: any, i: number) => ({
           name: c.name || cleanDomain(c.primary_url),
           url: c.primary_url,
+          favicon_url: c.favicon_url || getFaviconUrl(c.primary_url || c.name),
           visibility: Math.max(20, Math.min(90, Math.round(((c.models_count || 1) / 5) * 100))),
           totalScore: Math.round(Number(c.average_score || 0) * (Number(c.average_score || 0) <= 1 ? 100 : 1)),
           isTarget: false,
@@ -944,65 +945,59 @@ export async function generateFullReportPdf(
       </div>
     </div>
 
-    <!-- Graphique Visuel de la Matrice de Positionnement Concurrentiel -->
-    <div class="card-block">
+    <!-- Graphique Visuel de la Matrice de Positionnement Concurrentiel (avec Favicons) -->
+    <div class="card-block" style="padding: 14px 18px;">
       <div class="card-title">
         <span class="card-title-bar"></span>
         Matrice de Positionnement Concurrentiel
       </div>
-      <p style="font-size: 9.5px; color: #64748B; margin: -4px 0 10px 0;">
-        Cartographie croisée de l'empreinte algorithmique : Visibilité dans les réponses des IA (axe horizontal) vs Qualité & Pertinence GEO (axe vertical).
+      <p style="font-size: 9.5px; color: #64748B; margin: -4px 0 12px 0;">
+        Cartographie croisée de l'empreinte algorithmique : Visibilité dans les réponses des IA (axe horizontal) vs Qualité & Pertinence GEO (axe vertical). Chaque acteur est identifié par son favicon officiel.
       </p>
       
       ${renderPositioningMatrixSvg(domain, targetGeoScore, matrixBrands)}
 
-      <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 9px; color: #475569; background: #F8FAFC; padding: 8px 12px; border-radius: 6px;">
+      <!-- Grille d'interprétation des 4 cadrans stratégiques -->
+      <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 9px; color: #475569; background: #F8FAFC; padding: 10px 14px; border-radius: 6px; border: 1px solid #E2E8F0;">
         <div>
           <strong style="color: #15803D;">• Cadran Leaders (Haut-Droit) :</strong>
-          Forte notoriété et socle technique de premier plan. Cible prioritaire de pérennisation.
+          Forte notoriété et socle technique de premier plan. Acteurs prioritaires recommandés par les moteurs conversationnels.
         </div>
         <div>
-          <strong style="color: #0369A1;">• Cadran Spécialistes (Haut-Gauche) :</strong>
-          Excellente qualité GEO mais déficit de volume de citations à combler.
+          <strong style="color: #0369A1;">• Cadran Acteurs de Niche & Spécialistes (Haut-Gauche) :</strong>
+          Excellente qualité GEO technique mais déficit de volume de citations. Fort levier de conquête algorithmique.
+        </div>
+        <div>
+          <strong style="color: #64748B;">• Cadran En Développement / Suiveurs (Bas-Gauche) :</strong>
+          Faible pénétration et socle technique à consolider sur les piliers fondamentaux.
+        </div>
+        <div>
+          <strong style="color: #B45309;">• Cadran Notoriété Vulnérable (Bas-Droit) :</strong>
+          Volume de mentions important mais vulnérabilité technique face aux mises à jour algorithmiques des LLMs.
         </div>
       </div>
     </div>
 
-    <!-- Audit des 6 Piliers d'Optimisation (Améliorer) -->
+    <!-- Synthèse Stratégique du Positionnement Marché -->
     <div class="card-block">
       <div class="card-title">
         <span class="card-title-bar"></span>
-        Évaluation des 6 Piliers Techniques GEO
+        Diagnostic Stratégique de Positionnement Face aux Concurrents
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 32%;">Pilier Algorithmique</th>
-            <th style="width: 44%;">Périmètre & Recommandation</th>
-            <th style="width: 14%;">Score</th>
-            <th style="width: 10%; text-align: right;">Appréciation</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${pillarsScores.map(p => {
-            const pStatus = p.score >= 75 ? 'pill-green' : p.score >= 50 ? 'pill-blue' : 'pill-amber';
-            const pLabel = p.score >= 75 ? 'Robuste' : p.score >= 50 ? 'Conforme' : 'À renforcer';
-            return `
-              <tr>
-                <td><strong>${p.label}</strong></td>
-                <td style="font-size: 9.5px; color: #64748B;">${p.description}</td>
-                <td>
-                  <div style="font-weight: 700; margin-bottom: 2px;">${p.score}/100</div>
-                  <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" style="width: ${p.score}%; background: ${p.score >= 75 ? '#10B981' : p.score >= 50 ? '#2563EB' : '#F59E0B'};"></div>
-                  </div>
-                </td>
-                <td style="text-align: right;"><span class="status-pill ${pStatus}">${pLabel}</span></td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 9.5px; color: #334155; line-height: 1.45;">
+        <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #4F46E5;">
+          <strong style="color: #0F172A; display: block; margin-bottom: 3px; font-size: 10px;">Empreinte de Marque</strong>
+          <strong>${domain}</strong> se positionne au rang <strong>#${targetRank}</strong> parmi les <strong>${totalCompetitorsCount} acteurs</strong> répertoriés, avec un volume vérifié de ${totalCitations} citations IA.
+        </div>
+        <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #10B981;">
+          <strong style="color: #0F172A; display: block; margin-bottom: 3px; font-size: 10px;">Indice GEO Global</strong>
+          Score de <strong>${targetGeoScore}/100</strong>, attestant d'une intégration avancée sur les moteurs conversationnels face aux leaders du marché.
+        </div>
+        <div style="background: #F8FAFC; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #0EA5E9;">
+          <strong style="color: #0F172A; display: block; margin-bottom: 3px; font-size: 10px;">Leviers Concurrentiels</strong>
+          La consolidation des sources citées et le renforcement des données structurées permettront de pérenniser votre avantage face aux suiveurs.
+        </div>
+      </div>
     </div>
 
     <div class="footer-bar">
