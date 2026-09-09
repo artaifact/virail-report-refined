@@ -407,7 +407,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     { id: 'robots' as const, label: 'robots.txt', has: !!robotsContent, tooltip: HELP.robotsTxt },
     { id: 'htmldiff' as const, label: 'Comparaison HTML', has: !!optimizedHtmlContent, tooltip: HELP.htmlDiff },
     { id: 'simulation' as const, label: 'Simulation', has: hasSimulationData, tooltip: HELP.aiSimulation, beta: true },
-    { id: 'agentic' as const, label: '🤖 Protocoles Agentiques (M2M)', has: true, tooltip: "Spécifications OpenAPI 3.1, A2A, ARD, x402 et pack de remédiation machine", beta: true },
+    { id: 'agentic' as const, label: 'Protocoles Agentiques (M2M)', has: true, tooltip: "Spécifications OpenAPI 3.1, A2A, ARD, x402 et pack de remédiation machine" },
   ];
 
   // Composant réutilisable : carte fichier technique
@@ -527,6 +527,9 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                     cursor: hasContent ? 'pointer' : 'default',
                   }}
                 >
+                  {tab.id === 'agentic' && (
+                    <Cpu size={13} style={{ display: 'inline-block', marginRight: '6px', verticalAlign: '-1px', color: isActive ? '#1A3AFF' : '#64748B' }} />
+                  )}
                   {tab.label}
                   {(tab as any).beta && (
                     <span
