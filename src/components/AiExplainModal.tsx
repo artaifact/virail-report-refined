@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Sparkles,
+  MessageSquareText,
   Brain,
   CheckCircle2,
   TrendingUp,
@@ -89,7 +89,7 @@ export function AiExplainModal({
           <DialogHeader>
             <div className="flex items-center gap-2 mb-2">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100/70 text-indigo-700 border border-indigo-200/60">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                <MessageSquareText className="w-3.5 h-3.5 text-indigo-600" />
                 Synthèse Exécutive IA
               </span>
               <span className="text-xs text-slate-400 font-medium">· Audit GEO & Moteurs LLM</span>

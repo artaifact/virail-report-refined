@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import {
-  Sparkles,
+  MessageSquareText,
   ChevronDown,
   Copy,
   Check,
@@ -526,7 +526,7 @@ export default function AskAIButton({
             className={`${styles.askAiButton} ${size === 'sm' ? styles.askAiButtonSm : ''}`}
           >
             <span className={styles.askAiIconBadge}>
-              <Sparkles size={size === 'sm' ? 11 : 13} strokeWidth={2.2} />
+              <MessageSquareText size={size === 'sm' ? 12 : 14} strokeWidth={2.2} />
             </span>
             <span className={styles.askAiLabel}>Expliquer par l'IA</span>
             <ChevronDown size={11} strokeWidth={2} className={styles.askAiChevron} />
@@ -549,7 +549,7 @@ export default function AskAIButton({
                 className={`${styles.askAiItem} ${styles.askAiItemFeatured}`}
               >
                 <div className={`${styles.askAiItemIcon} ${styles.askAiItemIconPrimary}`}>
-                  <Sparkles size={13} strokeWidth={2} />
+                  <MessageSquareText size={13} strokeWidth={2} />
                 </div>
                 <div className={styles.askAiItemText}>
                   <span className={styles.askAiItemTitle}>

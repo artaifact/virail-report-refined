@@ -518,10 +518,10 @@ function TopSection({ activeView, onViewChange, reportData, reports, onOpenRepor
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1 mb-2">
         <div className="min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight truncate">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">
               {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
             </h1>
-            <AskAIButton reportData={reportData} size="sm" onOpenAiModal={onOpenAiExplain} />
+            <AskAIButton reportData={reportData} size="sm" onOpenAiModal={onOpenAiExplain} className="flex-shrink-0" />
           </div>
           {lastUpdate && (
             <p className="text-xs text-slate-400 mt-1">Dernière mise à jour : {lastUpdate}</p>
