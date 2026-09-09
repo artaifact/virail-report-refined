@@ -198,6 +198,13 @@
   transition: transform 0.15s ease;
 }
 
+.askAiLogoImg {
+  width: 16px !important;
+  height: 16px !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
 .askAiItem:hover .askAiItemIcon {
   transform: scale(1.05);
 }

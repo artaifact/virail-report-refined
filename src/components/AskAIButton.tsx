@@ -31,6 +31,7 @@ interface ChatTarget {
   name: string;
   label: string;
   sub: string;
+  logo: string;
   url: (prompt: string) => string;
 }
 
@@ -40,6 +41,7 @@ const CHAT_TARGETS: ChatTarget[] = [
     name: 'ChatGPT',
     label: 'Ouvrir dans ChatGPT',
     sub: 'Analyser l\'audit complet dans ChatGPT',
+    logo: '/prompt-model-openai-for-light.svg',
     url: (prompt) =>
       `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`,
   },
@@ -48,6 +50,7 @@ const CHAT_TARGETS: ChatTarget[] = [
     name: 'Claude',
     label: 'Ouvrir dans Claude',
     sub: 'Analyser l\'audit complet dans Claude',
+    logo: '/prompt-model-claude.svg',
     url: (prompt) =>
       `https://claude.ai/new?q=${encodeURIComponent(prompt)}`,
   },
@@ -56,6 +59,7 @@ const CHAT_TARGETS: ChatTarget[] = [
     name: 'Perplexity',
     label: 'Ouvrir dans Perplexity',
     sub: 'Interroger Perplexity sur ce rapport',
+    logo: '/prompt-model-perplexity.svg',
     url: (prompt) =>
       `https://www.perplexity.ai/search?q=${encodeURIComponent(prompt)}`,
   },
@@ -603,32 +607,40 @@ export default function AskAIButton({
           </DropdownMenuItem>
 
           <div className={styles.askAiSeparator} />
-          <div className={styles.askAiMenuHeader}>Ouvrir dans un chatbot</div>
+          <div className="flex items-center justify-between px-2.5 py-1">
+            <span className={styles.askAiMenuHeader}>Ouvrir dans un chatbot</span>
+            <div className="flex items-center -space-x-1 opacity-80">
+              <img src="/prompt-model-openai-for-light.svg" alt="ChatGPT" className="w-3.5 h-3.5 rounded-full bg-slate-100 p-0.5 object-contain" />
+              <img src="/prompt-model-claude.svg" alt="Claude" className="w-3.5 h-3.5 rounded-full bg-slate-100 p-0.5 object-contain" />
+              <img src="/prompt-model-perplexity.svg" alt="Perplexity" className="w-3.5 h-3.5 rounded-full bg-slate-100 p-0.5 object-contain" />
+            </div>
+          </div>
 
-          {CHAT_TARGETS.map((t) => {
-            const Icon = t.id === 'perplexity' ? Search : Bot;
-            return (
-              <DropdownMenuItem
-                key={t.id}
-                onSelect={(e) => {
-                  e.preventDefault();
-                  handleOpenChat(t);
-                }}
-                className={styles.askAiItem}
-              >
-                <div className={styles.askAiItemIcon}>
-                  <Icon size={13} strokeWidth={2} />
-                </div>
-                <div className={styles.askAiItemText}>
-                  <span className={styles.askAiItemTitle}>
-                    {t.label}
-                    <ExternalLink size={11} className="text-slate-400 ml-auto" />
-                  </span>
-                  <span className={styles.askAiItemSub}>{t.sub}</span>
-                </div>
-              </DropdownMenuItem>
-            );
-          })}
+          {CHAT_TARGETS.map((t) => (
+            <DropdownMenuItem
+              key={t.id}
+              onSelect={(e) => {
+                e.preventDefault();
+                handleOpenChat(t);
+              }}
+              className={styles.askAiItem}
+            >
+              <div className={styles.askAiItemIcon}>
+                <img
+                  src={t.logo}
+                  alt={t.name}
+                  className={styles.askAiLogoImg}
+                />
+              </div>
+              <div className={styles.askAiItemText}>
+                <span className={styles.askAiItemTitle}>
+                  {t.label}
+                  <ExternalLink size={11} className="text-slate-400 ml-auto" />
+                </span>
+                <span className={styles.askAiItemSub}>{t.sub}</span>
+              </div>
+            </DropdownMenuItem>
+          ))}
 
           <div className={styles.askAiSeparator} />
           <div className={styles.askAiMenuHeader}>Intégrations</div>
