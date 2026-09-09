@@ -1,3 +1,4 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import './Index.css';
@@ -26,6 +27,8 @@ import {
   Check,
   ChevronRight,
   Info,
+  CheckCircle,
+  X,
 } from 'lucide-react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useReport, useReports, getLatestReportId } from '@/hooks/useReports';
