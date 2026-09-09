@@ -31,6 +31,7 @@ import {
   PlusCircle,
   Target,
   TrendingUp,
+  Bot,
   FileText,
   LayoutGrid,
 } from "lucide-react"
@@ -112,6 +113,12 @@ export function AppSidebar() {
             url: "/competition",
             icon: Target,
             badge: undefined as string | undefined,
+          },
+          {
+            title: "Éligibilité Agentique",
+            url: "/agentic",
+            icon: Bot,
+            badge: "M2M" as string | undefined,
           },
 
         ],

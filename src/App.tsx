@@ -33,6 +33,7 @@ import GoogleCallback from "./pages/GoogleCallback";
 import Diagnostic from "./pages/Diagnostic";
 import GlobalSearch from "./components/GlobalSearch";
 import OptimizationAgent from "./pages/OptimizationAgent";
+import AgenticCockpit from "./pages/AgenticCockpit";
 import ApiDemo from "./pages/ApiDemo";
 import TechnicalOptimization from "./pages/TechnicalOptimization";
 import TextualOptimization from "./pages/TextualOptimization";
@@ -101,6 +102,7 @@ function MainLayout() {
             <Route path="/admin/subscriptions-docs" element={<AdminRoute><AdminSubscriptionDocs /></AdminRoute>} />
             <Route path="/admin/plans" element={<AdminRoute><AdminPlans /></AdminRoute>} />
             <Route path="/competition" element={<Competition />} />
+            <Route path="/agentic" element={<AgenticCockpit />} />
             <Route path="/sites-optimization" element={<SiteOptimization />} />
             <Route path="/optimisation/technique" element={<TechnicalOptimization />} />
             <Route path="/optimisation/textuelle" element={<TextualOptimization />} />
