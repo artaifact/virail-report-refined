@@ -521,7 +521,7 @@ function TopSection({ activeView, onViewChange, reportData, reports, onOpenRepor
             <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight truncate">
               {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
             </h1>
-            <AskAIButton reportData={reportData} size="sm" />
+            <AskAIButton reportData={reportData} size="sm" onOpenAiModal={onOpenAiExplain} />
           </div>
           {lastUpdate && (
             <p className="text-xs text-slate-400 mt-1">Dernière mise à jour : {lastUpdate}</p>

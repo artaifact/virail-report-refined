@@ -5,13 +5,24 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import {
+  Sparkles,
+  ChevronDown,
+  Copy,
+  Check,
+  FileText,
+  ExternalLink,
+  Cpu,
+  Bot,
+  Search,
+} from 'lucide-react';
 import styles from '../App.module.css';
 
 /**
  * AskAIButton — pattern "LLM landing" (type Apify Store).
- * Bouton ✨ dans le header : ouvre un dropdown permettant à un visiteur
- * de se faire expliquer la page par ChatGPT / Claude / Perplexity,
- * de copier la page en Markdown pour LLM, ou de récupérer la config MCP.
+ * Bouton discret dans le header : ouvre un dropdown permettant à un visiteur
+ * de se faire expliquer la page par une IA, de copier la page en Markdown pour LLM,
+ * ou de récupérer la config MCP.
  *
  * Prérequis : une version Markdown de la page servie en .md (text/markdown).
  * Les deep-links passent l'URL du .md (pas le HTML) : les chatbots la fetchent
@@ -121,32 +132,39 @@ export function buildDetailedReportMarkdown(reportData: any): string {
     .map(([model, count]) => `- **${model}** : ${count} citation(s)`)
     .join('\n');
 
-  const recsLines = recommendations.slice(0, 6)
-    .map((rec, i) => `${i + 1}. ${rec}`)
-    .join('\n');
+  const recLines = recommendations.length > 0
+    ? recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')
+    : `- Maintenir et enrichir les contenus sources à haute valeur ajoutée.`;
 
-  const compLines = competitors.slice(0, 5)
-    .map((comp) => `- ${comp}`)
-    .join('\n');
+  const compLines = competitors.length > 0
+    ? competitors.map((c) => `- ${c}`).join('\n')
+    : `- Analyse concurrentielle en cours.`;
 
-  return `# Rapport d'Audit GEO & Visibilité IA — ${domain}
+  return `# Rapport d'Audit GEO (Generative Engine Optimization) — ${domain || 'Site Web'}
+*Date d'audit : ${date}*
 
-## 1. Synthèse Exécutive
-- **Domaine audité** : ${url || domain}
-- **Score GEO Global** : ${geoScore}/100
-- **Volume de Citations Détectées** : ${totalCitations}
-- **Date de l'audit** : ${date}
+---
 
-## 2. Citations par Moteur Génératif (LLM)
-${modelLines || '- Aucune citation spécifique enregistrée.'}
+## 1. Synthèse Globale
+- **Score GEO Global** : ${geoScore} / 100
+- **Total Citations IA** : ${totalCitations}
+- **URL analysée** : ${url || 'N/A'}
 
-## 3. Piliers d'Optimisation & Diagnostic Technique
-- **Accessibilité Robots LLM** : Vérification des accès crawlers IA (GPTBot, ClaudeBot, PerplexityBot).
-- **Balisage Sémantique & JSON-LD** : Présence de balisages Schema.org pour réponses directes.
-- **Autorité Thématique & Entités** : Couverture sémantique et fraîcheur de l'information.
+---
 
-${recsLines ? `## 4. Recommandations Prioritaires (Plan d'Actions)\n${recsLines}\n` : ''}
-${compLines ? `## 5. Concurrents Directement Cités dans les Moteurs IA\n${compLines}\n` : ''}
+## 2. Citations par Moteur LLM
+${modelLines || '- Aucune citation spécifique détectée.'}
+
+---
+
+## 3. Recommandations Stratégiques Prioritaires
+${recLines}
+
+---
+
+## 4. Concurrents Fréquemment Cités
+${compLines}
+
 ---
 *Généré par Viraill — Plateforme d'analyse et d'optimisation GEO (Generative Engine Optimization).*
 `;
@@ -160,6 +178,7 @@ interface AskAIButtonProps {
   reportData?: any;
   size?: 'default' | 'sm';
   className?: string;
+  onOpenAiModal?: () => void;
 }
 
 export default function AskAIButton({
@@ -170,6 +189,7 @@ export default function AskAIButton({
   reportData,
   size = 'default',
   className = '',
+  onOpenAiModal,
 }: AskAIButtonProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -234,16 +254,48 @@ export default function AskAIButton({
             aria-label="Se faire expliquer cette page par une IA"
             className={`${styles.askAiButton} ${size === 'sm' ? styles.askAiButtonSm : ''}`}
           >
-            <span aria-hidden="true">✨</span>
+            <span className={styles.askAiIconBadge}>
+              <Sparkles size={size === 'sm' ? 11 : 13} strokeWidth={2.2} />
+            </span>
             <span className={styles.askAiLabel}>Expliquer par l'IA</span>
+            <ChevronDown size={11} strokeWidth={2} className={styles.askAiChevron} />
           </button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent
-          align="end"
-          sideOffset={8}
+          align="start"
+          sideOffset={6}
           className={styles.askAiMenu}
         >
+          {onOpenAiModal && (
+            <>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  setOpen(false);
+                  onOpenAiModal();
+                }}
+                className={`${styles.askAiItem} ${styles.askAiItemFeatured}`}
+              >
+                <div className={`${styles.askAiItemIcon} ${styles.askAiItemIconPrimary}`}>
+                  <Sparkles size={13} strokeWidth={2} />
+                </div>
+                <div className={styles.askAiItemText}>
+                  <span className={styles.askAiItemTitle}>
+                    Synthèse Exécutive IA
+                    <span className={styles.askAiItemBadge}>Instantané</span>
+                  </span>
+                  <span className={styles.askAiItemSub}>
+                    Explication GEO interactive du score et des citations
+                  </span>
+                </div>
+              </DropdownMenuItem>
+              <div className={styles.askAiSeparator} />
+            </>
+          )}
+
+          <div className={styles.askAiMenuHeader}>Export & LLMs externes</div>
+
           <DropdownMenuItem
             onSelect={(e) => {
               e.preventDefault();
@@ -251,12 +303,17 @@ export default function AskAIButton({
             }}
             className={`${styles.askAiItem} ${copied ? styles.askAiItemCopied : ''}`}
           >
-            <span className={styles.askAiItemTitle}>
-              {copied ? '✓ Copié en Markdown' : 'Copier la page pour un LLM'}
-            </span>
-            <span className={styles.askAiItemSub}>
-              {copied ? 'Collez-le directement dans votre IA' : 'Format Markdown optimisé pour contexte IA'}
-            </span>
+            <div className={styles.askAiItemIcon}>
+              {copied ? <Check size={13} strokeWidth={2.2} /> : <Copy size={13} strokeWidth={2} />}
+            </div>
+            <div className={styles.askAiItemText}>
+              <span className={styles.askAiItemTitle}>
+                {copied ? 'Copié en Markdown !' : 'Copier le rapport pour un LLM'}
+              </span>
+              <span className={styles.askAiItemSub}>
+                {copied ? 'À coller directement dans votre IA favorite' : 'Markdown optimisé pour contexte prompt'}
+              </span>
+            </div>
           </DropdownMenuItem>
 
           <DropdownMenuItem asChild className={styles.askAiItem}>
@@ -265,32 +322,61 @@ export default function AskAIButton({
               target="_blank"
               rel="noopener"
             >
-              <span className={styles.askAiItemTitle}>Voir la version texte (LLM)</span>
-              <span className={styles.askAiItemSub}>Documentation complète /llms-full.txt ↗</span>
+              <div className={styles.askAiItemIcon}>
+                <FileText size={13} strokeWidth={2} />
+              </div>
+              <div className={styles.askAiItemText}>
+                <span className={styles.askAiItemTitle}>
+                  Version texte brute
+                  <ExternalLink size={11} className="text-slate-400 ml-auto" />
+                </span>
+                <span className={styles.askAiItemSub}>Documentation LLM complète (/llms-full.txt)</span>
+              </div>
             </a>
           </DropdownMenuItem>
 
           <div className={styles.askAiSeparator} />
+          <div className={styles.askAiMenuHeader}>Ouvrir dans un chatbot</div>
 
-          {CHAT_TARGETS.map((t) => (
-            <DropdownMenuItem key={t.id} asChild className={styles.askAiItem}>
-              <a
-                href={t.url(targetContent, defaultPrompt)}
-                target="_blank"
-                rel="noopener"
-              >
-                <span className={styles.askAiItemTitle}>{t.label}</span>
-                <span className={styles.askAiItemSub}>{t.sub} ↗</span>
-              </a>
-            </DropdownMenuItem>
-          ))}
+          {CHAT_TARGETS.map((t) => {
+            const Icon = t.id === 'perplexity' ? Search : Bot;
+            return (
+              <DropdownMenuItem key={t.id} asChild className={styles.askAiItem}>
+                <a
+                  href={t.url(targetContent, defaultPrompt)}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <div className={styles.askAiItemIcon}>
+                    <Icon size={13} strokeWidth={2} />
+                  </div>
+                  <div className={styles.askAiItemText}>
+                    <span className={styles.askAiItemTitle}>
+                      {t.label}
+                      <ExternalLink size={11} className="text-slate-400 ml-auto" />
+                    </span>
+                    <span className={styles.askAiItemSub}>{t.sub}</span>
+                  </div>
+                </a>
+              </DropdownMenuItem>
+            );
+          })}
 
           <div className={styles.askAiSeparator} />
+          <div className={styles.askAiMenuHeader}>Intégrations</div>
 
           <DropdownMenuItem asChild className={styles.askAiItem}>
             <a href={mcp} target="_blank" rel="noopener">
-              <span className={styles.askAiItemTitle}>Connecter via MCP</span>
-              <span className={styles.askAiItemSub}>Installer le serveur @crypto-yannso/viraill-mcp ↗</span>
+              <div className={styles.askAiItemIcon}>
+                <Cpu size={13} strokeWidth={2} />
+              </div>
+              <div className={styles.askAiItemText}>
+                <span className={styles.askAiItemTitle}>
+                  Connecteur MCP
+                  <ExternalLink size={11} className="text-slate-400 ml-auto" />
+                </span>
+                <span className={styles.askAiItemSub}>Serveur Model Context Protocol Viraill</span>
+              </div>
             </a>
           </DropdownMenuItem>
         </DropdownMenuContent>
