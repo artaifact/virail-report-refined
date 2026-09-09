@@ -1,4 +1,4 @@
-import { runAgenticScan } from '@/services/agenticService';
+import { runAgenticScan, getLatestAgenticAudit } from '@/services/agenticService';
 import React, { useState, useEffect, useMemo } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import './Index.css';
@@ -58,6 +58,8 @@ export const extractAgenticScore = (reportData: FullReportData | null): number |
     raw.agentic_readiness?.score,
     raw.report?.agentic_readiness?.score,
     raw.scan_data?.score,
+    raw.llmo_report?.agentic_score,
+    raw.agentic_scan?.score,
   ];
   for (const c of directCandidates) {
     if (c !== undefined && c !== null && c !== '') {
@@ -4072,14 +4074,32 @@ const Index = () => {
       }
     } catch {}
 
-    runAgenticScan(url, false)
-      .then((res) => {
-        if (!isMounted || !res || res.score === undefined) return;
-        setAgenticScore(res.score);
-        try {
-          const hostname = new URL(url).hostname.replace('www.', '');
-          localStorage.setItem(`viraill_agentic_score_${hostname}`, String(res.score));
-        } catch {}
+    const reportId = (reportData as any)?.report?.id || (reportData as any)?.llmo_report?.id;
+
+    // 1. Chercher d'abord en BDD
+    getLatestAgenticAudit(url)
+      .then((dbAudit) => {
+        if (!isMounted) return;
+        if (dbAudit && dbAudit.score !== undefined) {
+          setAgenticScore(dbAudit.score);
+          try {
+            const hostname = new URL(url).hostname.replace('www.', '');
+            localStorage.setItem(`viraill_agentic_score_${hostname}`, String(dbAudit.score));
+          } catch {}
+          return;
+        }
+
+        // 2. Sinon lancer scan et sauvegarder en BDD
+        runAgenticScan(url, false, undefined, reportId)
+          .then((res) => {
+            if (!isMounted || !res || res.score === undefined) return;
+            setAgenticScore(res.score);
+            try {
+              const hostname = new URL(url).hostname.replace('www.', '');
+              localStorage.setItem(`viraill_agentic_score_${hostname}`, String(res.score));
+            } catch {}
+          })
+          .catch(() => {});
       })
       .catch(() => {});
 

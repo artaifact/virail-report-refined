@@ -12,7 +12,7 @@ import {
   CreditCard,
   FileCode2,
 } from 'lucide-react';
-import { runAgenticScan, getX402Manifest, AgenticScanResult } from '@/services/agenticService';
+import { runAgenticScan, getLatestAgenticAudit, getX402Manifest, AgenticScanResult } from '@/services/agenticService';
 import { AgenticScoreGauge } from '@/components/agentic/AgenticScoreGauge';
 import { AgenticPillarsView } from '@/components/agentic/AgenticPillarsView';
 import { AgenticChannelsMatrix } from '@/components/agentic/AgenticChannelsMatrix';
@@ -176,7 +176,13 @@ export default function AgenticCockpit() {
       {result && !loading && (
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Gauge Summary */}
-          <AgenticScoreGauge score={result.score} targetUrl={result.target_url} />
+          <AgenticScoreGauge
+            score={result.score}
+            targetUrl={result.target_url}
+            auditId={result.audit_id}
+            savedInDb={Boolean(result.saved_in_db || result.audit_id)}
+            createdAt={result.created_at}
+          />
 
           {/* 5 Pillars */}
           <div className="space-y-3">

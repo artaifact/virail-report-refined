@@ -1,13 +1,22 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, AlertCircle, CheckCircle2, Database } from 'lucide-react';
 
 interface AgenticScoreGaugeProps {
   score: number;
   targetUrl: string;
+  auditId?: number;
+  savedInDb?: boolean;
+  createdAt?: string;
 }
 
-export const AgenticScoreGauge: React.FC<AgenticScoreGaugeProps> = ({ score, targetUrl }) => {
+export const AgenticScoreGauge: React.FC<AgenticScoreGaugeProps> = ({
+  score,
+  targetUrl,
+  auditId,
+  savedInDb,
+  createdAt,
+}) => {
   const circumference = 2 * Math.PI * 68; // r = 68
   const offset = circumference - (Math.min(100, Math.max(0, score)) / 100) * circumference;
 
@@ -30,6 +39,16 @@ export const AgenticScoreGauge: React.FC<AgenticScoreGaugeProps> = ({ score, tar
     desc = 'Lisibilité partielle. Risque d\'arbitrage négatif sur critères stricts de tarification ou de paiement M2M.';
     Icon = CheckCircle2;
   }
+
+  const formattedDate = createdAt
+    ? new Date(createdAt).toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null;
 
   return (
     <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-5 sm:p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm font-sans">
@@ -84,6 +103,20 @@ export const AgenticScoreGauge: React.FC<AgenticScoreGaugeProps> = ({ score, tar
           <span className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700">
             {targetUrl}
           </span>
+          {(savedInDb || auditId) && (
+            <Badge
+              variant="outline"
+              className="px-2.5 py-1 text-xs font-medium flex items-center gap-1.5 rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+            >
+              <Database className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              <span>Stocké en BDD{auditId ? ` (#${auditId})` : ''}</span>
+            </Badge>
+          )}
+          {formattedDate && (
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">
+              Audit du {formattedDate}
+            </span>
+          )}
         </div>
 
         <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">

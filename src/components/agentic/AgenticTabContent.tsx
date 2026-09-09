@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, RefreshCw, Cpu, Layers, FileCode2 } from 'lucide-react';
-import { runAgenticScan, AgenticScanResult } from '@/services/agenticService';
+import { runAgenticScan, getLatestAgenticAudit, AgenticScanResult } from '@/services/agenticService';
 import { AgenticScoreGauge } from './AgenticScoreGauge';
 import { AgenticPillarsView } from './AgenticPillarsView';
 import { AgenticChannelsMatrix } from './AgenticChannelsMatrix';
@@ -10,22 +10,34 @@ import { AgenticSkeletonLoader } from './AgenticSkeletonLoader';
 
 interface AgenticTabContentProps {
   reportUrl?: string;
+  reportId?: number;
 }
 
-export const AgenticTabContent: React.FC<AgenticTabContentProps> = ({ reportUrl }) => {
+export const AgenticTabContent: React.FC<AgenticTabContentProps> = ({ reportUrl, reportId }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<AgenticScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const targetUrl = reportUrl || 'https://stripe.com';
 
-  const executeScan = async () => {
+  const executeScan = async (forceFreshScan: boolean = false) => {
     if (!targetUrl) return;
     setLoading(true);
     setError(null);
 
     try {
-      const data = await runAgenticScan(targetUrl, true);
+      // Si on ne force pas le re-scan, on cherche d'abord la dernière analyse en BDD
+      if (!forceFreshScan) {
+        const cachedInDb = await getLatestAgenticAudit(targetUrl);
+        if (cachedInDb && cachedInDb.score !== undefined) {
+          setResult(cachedInDb);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Sinon, on lance le scan complet avec persistance BDD automatique
+      const data = await runAgenticScan(targetUrl, true, undefined, reportId);
       setResult(data);
     } catch (err: any) {
       console.error('[AgenticTabContent] Error:', err);
@@ -37,7 +49,7 @@ export const AgenticTabContent: React.FC<AgenticTabContentProps> = ({ reportUrl 
 
   useEffect(() => {
     if (reportUrl) {
-      executeScan();
+      executeScan(false);
     }
   }, [reportUrl]);
 
@@ -53,18 +65,18 @@ export const AgenticTabContent: React.FC<AgenticTabContentProps> = ({ reportUrl 
             </h3>
           </div>
           <p className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 mt-1 max-w-2xl font-normal leading-relaxed">
-            Vérification de la conformité de <span className="font-medium text-slate-700 dark:text-slate-300">{targetUrl}</span> face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achats).
+            Vérification de la conformité de <span className="font-medium text-slate-700 dark:text-slate-300">{targetUrl}</span> face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achats). Persistance automatique en base de données.
           </p>
         </div>
 
         <Button
           size="sm"
-          onClick={executeScan}
+          onClick={() => executeScan(true)}
           disabled={loading}
           className="gap-2 rounded-xl px-4 py-2 text-xs font-semibold bg-[#1A3AFF] hover:bg-[#1530D9] text-white shadow-sm transition-all h-auto flex-shrink-0 cursor-pointer disabled:opacity-50"
         >
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          {loading ? 'Analyse en cours...' : 'Relancer l\'audit'}
+          {loading ? 'Analyse en cours...' : "Relancer l'audit"}
         </Button>
       </div>
 
@@ -75,7 +87,7 @@ export const AgenticTabContent: React.FC<AgenticTabContentProps> = ({ reportUrl 
           <Button
             size="sm"
             variant="outline"
-            onClick={executeScan}
+            onClick={() => executeScan(true)}
             className="rounded-lg h-7 text-xs border border-rose-200 text-rose-700 bg-white hover:bg-rose-50"
           >
             Réessayer
@@ -92,7 +104,13 @@ export const AgenticTabContent: React.FC<AgenticTabContentProps> = ({ reportUrl 
       {!loading && result && (
         <div className="space-y-6">
           {/* Gauge Summary */}
-          <AgenticScoreGauge score={result.score} targetUrl={result.target_url} />
+          <AgenticScoreGauge
+            score={result.score}
+            targetUrl={result.target_url}
+            auditId={result.audit_id}
+            savedInDb={Boolean(result.saved_in_db || result.audit_id)}
+            createdAt={result.created_at}
+          />
 
           {/* 5 Pillars */}
           <div className="space-y-3">
