@@ -17,6 +17,7 @@ import { AgenticScoreGauge } from '@/components/agentic/AgenticScoreGauge';
 import { AgenticPillarsView } from '@/components/agentic/AgenticPillarsView';
 import { AgenticChannelsMatrix } from '@/components/agentic/AgenticChannelsMatrix';
 import { AgenticRemediationViewer } from '@/components/agentic/AgenticRemediationViewer';
+import { AgenticSkeletonLoader } from '@/components/agentic/AgenticSkeletonLoader';
 
 const PRESETS = [
   { name: 'Stripe', url: 'https://stripe.com' },
@@ -68,75 +69,75 @@ export default function AgenticCockpit() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl space-y-8">
+    <div className="container mx-auto p-4 sm:p-6 max-w-7xl space-y-6 font-sans">
       {/* Top Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-background to-secondary/10 border border-border p-8">
-        <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-xs font-semibold text-primary">
+      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-sm">
+        <div className="max-w-3xl space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/50 border border-blue-200/60 dark:border-blue-900/40 text-xs font-semibold text-[#1A3AFF] dark:text-blue-400">
             <Cpu className="w-3.5 h-3.5" />
             <span>Audit d'Éligibilité Machine & Protocoles Agentiques (M2M)</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-            Cockpit d'Éligibilité & Distribution <span className="text-primary">Agentique</span>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            Cockpit d'Éligibilité & Distribution <span className="text-[#1A3AFF]">Agentique</span>
           </h1>
 
-          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+          <p className="text-xs sm:text-[13.5px] text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
             Auditez la découvrabilité et l'achetabilité machine de votre plateforme face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achat).
-            Détectez les risques de <strong>disqualification silencieuse</strong> sur les 5 piliers et générez le pack de remédiation technique instantané.
+            Détectez les risques de <strong className="font-semibold text-slate-700 dark:text-slate-300">disqualification silencieuse</strong> sur les 5 piliers et générez le pack de remédiation technique instantané.
           </p>
         </div>
       </div>
 
       {/* Control Card */}
-      <Card className="border border-border/80 bg-card shadow-sm">
-        <CardContent className="p-6 space-y-4">
-          <form onSubmit={handleScan} className="flex flex-col sm:flex-row gap-3">
+      <Card className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <CardContent className="p-4 sm:p-5 space-y-3.5">
+          <form onSubmit={handleScan} className="flex flex-col sm:flex-row gap-2.5">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 type="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="Entrez l'URL à auditer (ex: https://votre-saas.com)"
                 required
-                className="pl-10 h-12 text-sm font-mono bg-background border-border"
+                className="pl-10 h-11 text-xs sm:text-sm font-mono bg-slate-50/50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 rounded-xl"
               />
             </div>
 
             <Button
               type="submit"
               disabled={loading}
-              className="h-12 px-7 font-bold text-sm bg-primary text-primary-foreground shadow-md hover:opacity-95 gap-2"
+              className="h-11 px-6 rounded-xl font-semibold text-xs sm:text-[13px] bg-[#1A3AFF] hover:bg-[#1530D9] text-white shadow-sm transition-all gap-2 flex-shrink-0 cursor-pointer disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              {loading ? 'Audit en cours...' : "Lancer l'audit agentique"}
+              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              {loading ? 'Audit en cours...' : 'Lancer l\'audit agentique'}
             </Button>
           </form>
 
           {/* Quick Presets & Remediate Switch */}
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-1 text-xs">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-muted-foreground">Exemples rapides :</span>
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-slate-400 text-xs font-medium">Exemples rapides :</span>
               {PRESETS.map((p) => (
                 <button
                   key={p.name}
                   type="button"
                   onClick={() => setUrl(p.url)}
-                  className="px-2.5 py-1 rounded-full bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-all font-medium text-[11px]"
+                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50/80 hover:bg-white text-slate-600 hover:text-slate-900 transition-all font-medium text-xs cursor-pointer dark:bg-slate-800/40 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   {p.name}
                 </button>
               ))}
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <Switch
                 id="toggle-remediate"
                 checked={remediate}
                 onCheckedChange={setRemediate}
               />
-              <Label htmlFor="toggle-remediate" className="text-xs text-muted-foreground cursor-pointer">
+              <Label htmlFor="toggle-remediate" className="text-xs text-slate-500 dark:text-slate-400 cursor-pointer font-normal">
                 Générer le Pack de Remédiation
               </Label>
             </div>
@@ -146,73 +147,66 @@ export default function AgenticCockpit() {
 
       {/* Error display */}
       {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-600 dark:text-rose-400 text-sm flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-between">
           <span>{error}</span>
-          <Button size="sm" variant="outline" onClick={() => handleScan()}>Réessayer</Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleScan()}
+            className="rounded-lg h-7 text-xs border border-rose-200 text-rose-700 bg-white hover:bg-rose-50"
+          >
+            Réessayer
+          </Button>
         </div>
       )}
 
-      {/* Loading Radar */}
+      {/* Skeleton Loading State */}
       {loading && (
-        <Card className="border border-border/80 bg-card/60 p-8 text-center space-y-4">
-          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
-          <div className="space-y-1">
-            <h3 className="text-base font-bold text-foreground">Sondage Multi-Probes en cours d'exécution...</h3>
-            <p className="text-xs text-muted-foreground">
-              Vérification de /llms.txt, spécification OpenAPI 3.1, balises JSON-LD et challenge x402 Base USDC.
-            </p>
-          </div>
-        </Card>
+        <AgenticSkeletonLoader />
       )}
 
       {/* Results View */}
       {result && !loading && (
-        <div className="space-y-8 animate-in fade-in duration-300">
+        <div className="space-y-6 animate-in fade-in duration-300">
           {/* Gauge Summary */}
           <AgenticScoreGauge score={result.score} targetUrl={result.target_url} />
 
           {/* 5 Pillars */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                <Layers className="w-4 h-4 text-primary" />
-                Diagnostic Opérationnel sur les 5 Piliers d'Éligibilité
-              </h2>
-            </div>
+            <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+              <Layers className="w-4 h-4 text-[#1A3AFF]" />
+              Diagnostic Opérationnel sur les 5 Piliers d'Éligibilité
+            </h3>
             <AgenticPillarsView pillars={result.pillars} />
           </div>
 
           {/* 8 Channels Matrix */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-primary" />
-                Matrice de Présence sur les 8 Canaux de Distribution Agentique
-              </h2>
-            </div>
+            <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+              <Cpu className="w-4 h-4 text-[#1A3AFF]" />
+              Matrice de Présence sur les 8 Canaux de Distribution Agentique
+            </h3>
             <AgenticChannelsMatrix channelAudit={result.channel_audit} />
           </div>
 
           {/* Remediation Pack */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                <FileCode2 className="w-5 h-5 text-primary" />
-                Pack de Remédiation Technique Clé en Main
-              </h2>
-            </div>
+            <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+              <FileCode2 className="w-4 h-4 text-[#1A3AFF]" />
+              Pack de Remédiation Technique Clé en Main
+            </h3>
             <AgenticRemediationViewer remediationPack={result.remediation_pack} />
           </div>
 
           {/* x402 Playground */}
-          <Card className="border border-border/80 bg-card shadow-sm p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+          <Card className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
               <div>
-                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-primary" />
+                <h4 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                  <CreditCard className="w-4 h-4 text-[#1A3AFF]" />
                   Banc d'Essai du Handshake x402 (Micro-Paiements Machine Base USDC)
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                </h4>
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
                   Visualisez comment un agent autonome reçoit le challenge HTTP 402 et exécute son paiement M2M.
                 </p>
               </div>
@@ -222,7 +216,7 @@ export default function AgenticCockpit() {
                 variant="outline"
                 onClick={handleTestX402}
                 disabled={x402Loading}
-                className="gap-2 text-xs"
+                className="rounded-lg px-3 py-1.5 text-xs font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all gap-2 h-auto dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 {x402Loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
                 Tester le Handshake Live

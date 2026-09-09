@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { CheckCircle2, XCircle, AlertCircle, FileText, Code2, ShoppingCart, CreditCard, Network } from 'lucide-react';
 import { AgenticPillar } from '@/services/agenticService';
 
@@ -37,7 +37,7 @@ const PILLAR_CONFIG: Record<string, { title: string; desc: string; icon: any }> 
 
 export const AgenticPillarsView: React.FC<AgenticPillarsViewProps> = ({ pillars }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 font-sans">
       {Object.entries(PILLAR_CONFIG).map(([key, config]) => {
         const pillar = pillars[key] || { score: 0, max: 20, checks: [] };
         const Icon = config.icon;
@@ -48,60 +48,61 @@ export const AgenticPillarsView: React.FC<AgenticPillarsViewProps> = ({ pillars 
         else if (pct >= 40) progressColor = 'bg-amber-500';
 
         return (
-          <Card key={key} className="border border-border/80 bg-card/60 backdrop-blur-sm shadow-sm flex flex-col justify-between">
-            <CardHeader className="pb-2">
+          <Card
+            key={key}
+            className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between p-4 space-y-3"
+          >
+            {/* Header */}
+            <div>
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-[#1A3AFF] dark:text-blue-400 flex-shrink-0">
                     <Icon className="w-4 h-4" />
                   </div>
-                  <div>
-                    <CardTitle className="text-sm font-bold text-foreground">
+                  <div className="min-w-0">
+                    <h4 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 tracking-tight truncate">
                       {config.title}
-                    </CardTitle>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug font-normal">
                       {config.desc}
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-muted text-foreground flex-shrink-0">
+                <span className="text-xs font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex-shrink-0">
                   {pillar.score} / {pillar.max} pts
                 </span>
               </div>
-            </CardHeader>
 
-            <CardContent className="pt-2 space-y-3">
               {/* Progress */}
-              <div className="w-full bg-muted/40 h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-3">
                 <div
                   className={`h-full ${progressColor} transition-all duration-700 ease-out`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
+            </div>
 
-              {/* Checks */}
-              <ul className="space-y-1.5 text-xs text-muted-foreground">
-                {pillar.checks.map((chk, i) => {
-                  const isOk = chk.startsWith('✅') || chk.includes('[OK]') || chk.startsWith('+');
-                  const isWarn = chk.startsWith('⚠️') || chk.includes('[WARN]');
-                  // Clean any leading emoji or bracket status from display
-                  const cleanText = chk.replace(/^([✅❌⚠️]|\[OK\]|\[FAIL\]|\[WARN\])\s*/gu, '').trim();
+            {/* Checks */}
+            <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 font-normal pt-1">
+              {pillar.checks.map((chk, i) => {
+                const isOk = chk.startsWith('✅') || chk.includes('[OK]') || chk.startsWith('+');
+                const isWarn = chk.startsWith('⚠️') || chk.includes('[WARN]');
+                const cleanText = chk.replace(/^([✅❌⚠️]|\[OK\]|\[FAIL\]|\[WARN\])\s*/gu, '').trim();
 
-                  return (
-                    <li key={i} className="flex items-start gap-1.5 leading-snug">
-                      {isOk ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                      ) : isWarn ? (
-                        <AlertCircle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-                      ) : (
-                        <XCircle className="w-3.5 h-3.5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      )}
-                      <span className={isOk ? 'text-foreground/90 font-medium' : ''}>{cleanText}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </CardContent>
+                return (
+                  <li key={i} className="flex items-start gap-1.5 leading-snug">
+                    {isOk ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    ) : isWarn ? (
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="w-3.5 h-3.5 text-rose-500 flex-shrink-0 mt-0.5" />
+                    )}
+                    <span className={isOk ? 'text-slate-900 dark:text-slate-200 font-medium' : ''}>{cleanText}</span>
+                  </li>
+                );
+              })}
+            </ul>
           </Card>
         );
       })}

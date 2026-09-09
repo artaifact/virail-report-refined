@@ -32,9 +32,9 @@ export const AgenticScoreGauge: React.FC<AgenticScoreGaugeProps> = ({ score, tar
   }
 
   return (
-    <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 rounded-2xl bg-card border border-border/80 shadow-sm">
+    <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-5 sm:p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm font-sans">
       {/* Gauge SVG */}
-      <div className="relative w-40 h-40 flex-shrink-0 flex items-center justify-center">
+      <div className="relative w-36 h-36 flex-shrink-0 flex items-center justify-center">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
           <circle
             cx="80"
@@ -43,7 +43,7 @@ export const AgenticScoreGauge: React.FC<AgenticScoreGaugeProps> = ({ score, tar
             fill="none"
             stroke="currentColor"
             strokeWidth="10"
-            className="text-muted/20"
+            className="text-slate-100 dark:text-slate-800"
           />
           <circle
             cx="80"
@@ -59,37 +59,37 @@ export const AgenticScoreGauge: React.FC<AgenticScoreGaugeProps> = ({ score, tar
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-4xl font-extrabold tracking-tight text-foreground font-mono">
+          <span className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-mono">
             {score}
           </span>
-          <span className="text-xs text-muted-foreground font-semibold">/100</span>
+          <span className="text-[11px] text-slate-400 font-medium">/100</span>
         </div>
       </div>
 
       {/* Details & Alert */}
-      <div className="flex-1 space-y-3 text-center md:text-left">
+      <div className="flex-1 space-y-2.5 text-center md:text-left">
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
           <Badge
             variant={badgeVariant}
-            className="px-3 py-1 text-xs font-semibold tracking-wide flex items-center gap-1.5"
+            className="px-2.5 py-1 text-xs font-medium tracking-wide flex items-center gap-1.5 rounded-lg border"
             style={{
-              backgroundColor: score >= 80 ? 'rgba(16, 185, 129, 0.15)' : score >= 50 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-              color: score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#f43f5e',
-              border: `1px solid ${score >= 80 ? 'rgba(16, 185, 129, 0.3)' : score >= 50 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
+              backgroundColor: score >= 80 ? 'rgba(16, 185, 129, 0.1)' : score >= 50 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+              color: score >= 80 ? '#059669' : score >= 50 ? '#d97706' : '#e11d48',
+              borderColor: score >= 80 ? 'rgba(16, 185, 129, 0.25)' : score >= 50 ? 'rgba(245, 158, 11, 0.25)' : 'rgba(244, 63, 94, 0.25)',
             }}
           >
             <Icon className="w-3.5 h-3.5" />
             {label}
           </Badge>
-          <span className="text-xs font-mono text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-md border border-border/40">
+          <span className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700">
             {targetUrl}
           </span>
         </div>
 
-        <h3 className="text-lg font-bold text-foreground">
+        <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
           Score Global d'Éligibilité Machine-to-Machine
         </h3>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
           {desc}
         </p>
       </div>
