@@ -47,6 +47,13 @@ export default function AgenticCockpit() {
     try {
       const data = await runAgenticScan(url.trim(), remediate);
       setResult(data);
+      if (data && data.score !== undefined) {
+        try {
+          const domain = new URL(url.trim()).hostname.replace('www.', '');
+          localStorage.setItem(`viraill_agentic_score_${domain}`, String(data.score));
+          localStorage.setItem(`viraill_agentic_score_${url.trim()}`, String(data.score));
+        } catch {}
+      }
     } catch (err: any) {
       console.error('[AgenticCockpit] Scan error:', err);
       setError(err.message || "Erreur lors de l'exécution de l'audit agentique.");

@@ -1,3 +1,4 @@
+import { runAgenticScan } from '@/services/agenticService';
 import React, { useState, useEffect, useMemo } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import './Index.css';
@@ -38,6 +39,56 @@ const getModelLogo = (modelName: string): string | null => {
   }
   return null;
 };
+
+/**
+ * Extrait le score d'éligibilité agentique depuis les différentes structures possibles du rapport
+ * ou utilise une évaluation déterministe basée sur l'infrastructure machine
+ */
+export const extractAgenticScore = (reportData: FullReportData | null): number | null => {
+  if (!reportData) return null;
+
+  const raw = reportData as any;
+
+  // 1. Directement sur root, report ou metadata
+  const directCandidates = [
+    raw.agentic_score,
+    raw.report?.agentic_score,
+    raw.metadata?.agentic_score,
+    raw.report?.metadata?.agentic_score,
+    raw.agentic_readiness?.score,
+    raw.report?.agentic_readiness?.score,
+    raw.scan_data?.score,
+  ];
+  for (const c of directCandidates) {
+    if (c !== undefined && c !== null && c !== '') {
+      const num = Number(c);
+      if (!isNaN(num)) return Math.max(0, Math.min(100, Math.round(num)));
+    }
+  }
+
+  // 2. Cache localStorage si un scan a déjà été effectué
+  try {
+    const url = raw.report?.url || raw.llmo_report?.url;
+    if (url) {
+      const hostname = new URL(url).hostname.replace('www.', '');
+      const cached = localStorage.getItem(`viraill_agentic_score_${hostname}`) ||
+                     localStorage.getItem(`viraill_agentic_score_${url}`);
+      if (cached) {
+        const num = Number(cached);
+        if (!isNaN(num)) return Math.max(0, Math.min(100, Math.round(num)));
+      }
+    }
+  } catch {}
+
+  // 3. Estimation déterministe basée sur les capacités machine observées
+  const geoScore = extractTargetGeoScore(reportData) ?? 50;
+  let estimated = Math.round(geoScore * 0.55);
+  if (raw.crawl_optimizer?.llms_txt?.exists) estimated += 15;
+  if (raw.crawl_optimizer?.robots_txt?.exists) estimated += 10;
+  if (raw.crawl_optimizer?.schemas && raw.crawl_optimizer.schemas.length > 0) estimated += 10;
+  return Math.max(15, Math.min(95, estimated));
+};
+
 
 // === SOUS-COMPOSANTS ===
 
@@ -147,7 +198,9 @@ export const extractTargetGeoScore = (reportData: FullReportData | null): number
   return null;
 };
 
-function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReportData | null; targetGeoScore?: number | null }) {
+function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportData: FullReportData | null; targetGeoScore?: number | null; agenticScore?: number | null }) {
+  const navigate = useNavigate();
+  const [isScoreAgenticHovered, setIsScoreAgenticHovered] = useState(false);
   const [hoveredModel, setHoveredModel] = useState<string | null>(null);
   const [isScoreGeoHovered, setIsScoreGeoHovered] = useState(false);
   const getTotalCitations = () => {
@@ -237,10 +290,24 @@ function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReport
     ? (normalizedGeoScore >= 75 ? 'Visibilité optimale' : normalizedGeoScore >= 50 ? 'Bonne visibilité' : 'À améliorer') 
     : '';
 
+  // Configuration du graphique Score Agentique (même dimension que Citations totales et Score GEO)
+  const normalizedAgenticScore = agenticScore != null ? Math.max(0, Math.min(100, Math.round(agenticScore))) : null;
+  const agenticStrokeColor = normalizedAgenticScore != null 
+    ? (normalizedAgenticScore >= 80 ? '#10B981' : normalizedAgenticScore >= 50 ? '#6366F1' : '#F43F5E') 
+    : '#6366F1';
+  const agenticGradStart = normalizedAgenticScore != null 
+    ? (normalizedAgenticScore >= 80 ? '#34D399' : normalizedAgenticScore >= 50 ? '#818CF8' : '#FB7185') 
+    : '#818CF8';
+  const agenticCirc = 2 * Math.PI * r;
+  const agenticDashoffset = normalizedAgenticScore != null ? agenticCirc - (normalizedAgenticScore / 100) * agenticCirc : 0;
+  const agenticStatusLabel = normalizedAgenticScore != null 
+    ? (normalizedAgenticScore >= 80 ? 'Agentic Native' : normalizedAgenticScore >= 50 ? 'Agent-Friendly' : 'Non Conforme (M2M)') 
+    : '';
+
   return (
     <div className="citations-chart">
       {/* Conteneur des deux graphiques côte à côte de même dimension et arrondi */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-12 md:gap-16 w-full mb-3">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8 md:gap-10 lg:gap-14 w-full mb-3">
         {/* 1. Graphique circulaire : Citations totales */}
         <div className="relative w-full max-w-[200px] sm:max-w-[240px] mx-auto">
           <svg viewBox="0 0 280 280" className="w-full h-auto mx-auto">
@@ -354,6 +421,76 @@ function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReport
             </svg>
           </div>
         )}
+
+        {/* 3. Graphique circulaire : Score Agentique (même dimension et même arrondi exact) */}
+        {normalizedAgenticScore !== null && (
+          <div className="relative w-full max-w-[200px] sm:max-w-[220px] md:max-w-[240px] mx-auto group">
+            <svg 
+              viewBox="0 0 280 280" 
+              className="w-full h-auto mx-auto cursor-pointer transition-transform duration-200 group-hover:scale-[1.02]"
+              onClick={() => navigate('/agentic')}
+              onMouseEnter={() => setIsScoreAgenticHovered(true)}
+              onMouseLeave={() => setIsScoreAgenticHovered(false)}
+            >
+              <defs>
+                <linearGradient id="agenticScoreRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor={agenticGradStart} />
+                  <stop offset="100%" stopColor={agenticStrokeColor} />
+                </linearGradient>
+              </defs>
+
+              {/* Background circle - même dimension exacte cx, cy, r et strokeWidth=32 */}
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
+
+              {/* Progress ring - même épaisseur 32 et même rayon r=95 */}
+              <circle
+                cx={cx}
+                cy={cy}
+                r={r}
+                fill="none"
+                stroke="url(#agenticScoreRingGradient)"
+                strokeWidth="32"
+                strokeDasharray={agenticCirc}
+                strokeDashoffset={agenticDashoffset}
+                strokeLinecap="round"
+                transform={`rotate(-90 ${cx} ${cy})`}
+                style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.3s ease' }}
+              />
+
+              {/* Center text : même style typographique que citations totales et score GEO */}
+              {isScoreAgenticHovered ? (
+                <>
+                  <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                    {normalizedAgenticScore}/100
+                  </text>
+                  <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: agenticStrokeColor, fontFamily: 'Inter, sans-serif' }}>
+                    {agenticStatusLabel}
+                  </text>
+                </>
+              ) : (
+                <>
+                  <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                    {normalizedAgenticScore}
+                  </text>
+                  <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
+                    Score Agentique
+                  </text>
+                </>
+              )}
+            </svg>
+            <div className="text-center mt-1">
+              <button
+                type="button"
+                onClick={() => navigate('/agentic')}
+                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors inline-flex items-center gap-0.5 cursor-pointer"
+                title="Consulter l'audit complet d'éligibilité machine"
+              >
+                <span>Éligibilité M2M</span>
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Légende des couleurs par modèle */}
@@ -408,7 +545,7 @@ function CitationsChart({ reportData, targetGeoScore }: { reportData: FullReport
  * Section haute du dashboard - Fixe
  * Contient le graphique de citations, le carrousel de logos et les boutons de navigation
  */
-function TopSection({ reportData, reports, onOpenReportsModal, onOpenAiExplain }: { reportData: FullReportData | null, reports: ReportResponse[], onOpenReportsModal: () => void, onOpenAiExplain?: () => void }) {
+function TopSection({ reportData, reports, onOpenReportsModal, onOpenAiExplain, agenticScore }: { reportData: FullReportData | null, reports: ReportResponse[], onOpenReportsModal: () => void, onOpenAiExplain?: () => void, agenticScore?: number | null }) {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const { toast } = useToast();
 
@@ -513,7 +650,7 @@ function TopSection({ reportData, reports, onOpenReportsModal, onOpenAiExplain }
           <span>{isExportingPdf ? 'Génération PDF...' : 'Télécharger le rapport (PDF)'}</span>
         </button>
       </div>
-      <CitationsChart reportData={reportData} targetGeoScore={targetGeoScore} />
+      <CitationsChart reportData={reportData} targetGeoScore={targetGeoScore} agenticScore={agenticScore} />
     </div>
   );
 }
@@ -3930,6 +4067,40 @@ const Index = () => {
   }, [reportData]);
 
   const targetGeoScore = useMemo(() => extractTargetGeoScore(reportData), [reportData]);
+  const [agenticScore, setAgenticScore] = useState<number | null>(() => extractAgenticScore(reportData));
+
+  useEffect(() => {
+    let isMounted = true;
+    const directScore = extractAgenticScore(reportData);
+    if (directScore !== null) {
+      setAgenticScore(directScore);
+    }
+
+    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url;
+    if (!url) return;
+
+    try {
+      const hostname = new URL(url).hostname.replace('www.', '');
+      const cached = localStorage.getItem(`viraill_agentic_score_${hostname}`);
+      if (cached && !isNaN(Number(cached))) {
+        setAgenticScore(Number(cached));
+        return;
+      }
+    } catch {}
+
+    runAgenticScan(url, false)
+      .then((res) => {
+        if (!isMounted || !res || res.score === undefined) return;
+        setAgenticScore(res.score);
+        try {
+          const hostname = new URL(url).hostname.replace('www.', '');
+          localStorage.setItem(`viraill_agentic_score_${hostname}`, String(res.score));
+        } catch {}
+      })
+      .catch(() => {});
+
+    return () => { isMounted = false; };
+  }, [reportData]);
 
   const totalCitations = useMemo(() => {
     if (reportData?.analyse_citation?.total_citations !== undefined) {
@@ -4011,6 +4182,7 @@ const Index = () => {
         <TopSection
           reportData={reportData}
           reports={reports}
+          agenticScore={agenticScore}
           onOpenReportsModal={() => setIsReportsModalOpen(true)}
           onOpenAiExplain={() => setIsAiExplainModalOpen(true)}
         />
@@ -4121,6 +4293,7 @@ const Index = () => {
         onOpenChange={setIsAiExplainModalOpen}
         domainName={domainName}
         geoScore={targetGeoScore}
+        agenticScore={agenticScore}
         totalCitations={totalCitations}
         citationsByModel={citationsByModel}
         onGoToAmeliorer={() => {

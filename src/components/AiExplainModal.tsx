@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   MessageSquareText,
+  Cpu,
   Brain,
   CheckCircle2,
   TrendingUp,
@@ -27,6 +28,7 @@ interface AiExplainModalProps {
   onOpenChange: (open: boolean) => void;
   domainName?: string | null;
   geoScore?: number | null;
+  agenticScore?: number | null;
   totalCitations?: number;
   citationsByModel?: Record<string, number>;
   onGoToAmeliorer?: () => void;
@@ -60,6 +62,7 @@ export function AiExplainModal({
   onOpenChange,
   domainName = 'votre domaine',
   geoScore,
+  agenticScore,
   totalCitations = 0,
   citationsByModel = {},
   onGoToAmeliorer,
@@ -106,7 +109,7 @@ export function AiExplainModal({
         {/* Corps modal */}
         <div className="p-6 space-y-6">
           {/* Bandeau d'évaluation rapide (Score + Citations) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {/* Score Card */}
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
               <div className="flex items-center justify-between text-xs font-medium text-slate-500 mb-1">
@@ -137,6 +140,40 @@ export function AiExplainModal({
                 )}
                 {scoreLevel === 'unknown' && (
                   <span className="text-slate-500">Score en cours de calcul</span>
+                )}
+              </div>
+            </div>
+
+            {/* Agentic Score Card */}
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs font-medium text-slate-500 mb-1">
+                <span>Éligibilité Agentique</span>
+                <Cpu className="w-4 h-4 text-[#1A3AFF]" />
+              </div>
+              <div className="flex items-baseline gap-2 my-1">
+                <span className="text-3xl font-extrabold text-slate-900">
+                  {agenticScore != null ? agenticScore : '--'}
+                </span>
+                <span className="text-xs text-slate-400 font-medium">/ 100</span>
+              </div>
+              <div className="text-xs">
+                {agenticScore != null && agenticScore >= 80 && (
+                  <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Agentic Native
+                  </span>
+                )}
+                {agenticScore != null && agenticScore >= 50 && agenticScore < 80 && (
+                  <span className="inline-flex items-center gap-1 text-amber-700 font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Agent-Friendly
+                  </span>
+                )}
+                {agenticScore != null && agenticScore < 50 && (
+                  <span className="inline-flex items-center gap-1 text-rose-700 font-semibold">
+                    <AlertTriangle className="w-3.5 h-3.5" /> Non Conforme (M2M)
+                  </span>
+                )}
+                {agenticScore == null && (
+                  <span className="text-slate-500">Scan en cours</span>
                 )}
               </div>
             </div>
