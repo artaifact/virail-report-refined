@@ -1,5 +1,4 @@
 import { runAgenticScan, getLatestAgenticAudit } from '@/services/agenticService';
-import { AgenticOverviewCard } from '@/components/agentic/AgenticOverviewCard';
 import React, { useState, useEffect, useMemo } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import './Index.css';
@@ -4192,9 +4191,7 @@ const Index = () => {
           onOpenAiExplain={() => setIsAiExplainModalOpen(true)}
         />
 
-        {/* Carte KPI Éligibilité Agentique & 5 mini-barres de progression */}
-        <AgenticOverviewCard reportData={reportData} agenticScore={agenticScore} />
-        
+
         {/* Section basse avec contenu dynamique */}
         <div className="bottom-section">
           {loading && reportId ? (
