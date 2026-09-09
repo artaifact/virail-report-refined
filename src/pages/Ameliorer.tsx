@@ -5,6 +5,7 @@ import './Index.css';
 import { Button } from '@/components/ui/button';
 import {
   Wand2,
+  Cpu,
   ExternalLink,
   CheckCircle2,
   AlertCircle,
@@ -38,6 +39,7 @@ import { ScoreCard } from '@/components/dashboard/ScoreCard';
 import { HtmlDiffViewer } from '@/components/optimizer/HtmlDiffViewer';
 import { SchemaPreview } from '@/components/optimizer/SchemaPreview';
 import { SimulationTab } from '@/components/optimizer/SimulationTab';
+import { AgenticRemediationSection } from '@/components/agentic/AgenticRemediationSection';
 import { HELP } from '@/lib/help-content';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
@@ -59,7 +61,7 @@ import {
 } from '@/lib/api';
 
 function InfosDetailleesView({ reportData }: { reportData: FullReportData | null }) {
-  const [activeOptTab, setActiveOptTab] = useState<'overview' | 'schemas' | 'meta' | 'llms' | 'robots' | 'htmldiff' | 'simulation'>('overview');
+  const [activeOptTab, setActiveOptTab] = useState<'overview' | 'schemas' | 'meta' | 'llms' | 'robots' | 'htmldiff' | 'simulation' | 'agentic'>('overview');
   const [copied, setCopied] = useState<string | null>(null);
 
   // === BULK OPTIMIZATION STATE ===
@@ -392,6 +394,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     llms:     { icon: FileText, badge: 'TXT' },
     robots:   { icon: Shield, badge: 'TXT' },
     htmldiff: { icon: FileCode, badge: 'HTML' },
+    agentic:  { icon: Cpu, badge: 'M2M' },
   };
 
   const hasSimulationData = !!(co || scores.length > 0 || coSchemasAdded.length > 0 || coEnrichments.length > 0 || coRecommendations.length > 0);
@@ -404,6 +407,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     { id: 'robots' as const, label: 'robots.txt', has: !!robotsContent, tooltip: HELP.robotsTxt },
     { id: 'htmldiff' as const, label: 'Comparaison HTML', has: !!optimizedHtmlContent, tooltip: HELP.htmlDiff },
     { id: 'simulation' as const, label: 'Simulation', has: hasSimulationData, tooltip: HELP.aiSimulation, beta: true },
+    { id: 'agentic' as const, label: '🤖 Protocoles Agentiques (M2M)', has: true, tooltip: "Spécifications OpenAPI 3.1, A2A, ARD, x402 et pack de remédiation machine", beta: true },
   ];
 
   // Composant réutilisable : carte fichier technique
@@ -1266,6 +1270,11 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
           </div>
         );
       })()}
+
+      {/* ═══ ONGLET PROTOCOLES AGENTIQUES (M2M) ═══ */}
+      {activeOptTab === 'agentic' && (
+        <AgenticRemediationSection reportData={reportData} />
+      )}
 
       {/* ═══ MODAL DETAIL PAGE ═══ */}
       <Dialog open={!!selectedPageUrl} onOpenChange={(open) => { if (!open) { setSelectedPageUrl(null); setSelectedPageRaw(null); } }}>
