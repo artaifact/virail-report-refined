@@ -70,7 +70,7 @@ export const extractAgenticScore = (reportData: FullReportData | null): number |
 
   // 2. Cache localStorage si un scan a déjà été effectué
   try {
-    const url = raw.report?.url || raw.llmo_report?.url;
+    const url = raw.report?.url || raw.llmo_report?.url || raw.url || raw.analyse_citation?.client_site_url;
     if (url) {
       const hostname = new URL(url).hostname.replace('www.', '');
       const cached = localStorage.getItem(`viraill_agentic_score_${hostname}`) ||
@@ -536,7 +536,7 @@ function TopSection({ reportData, reports, onOpenReportsModal, onOpenAiExplain, 
   const { toast } = useToast();
 
   const domainName = useMemo(() => {
-    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url;
+    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || (reportData as any)?.url || (reportData as any)?.analyse_citation?.client_site_url;
     if (!url) return null;
     try { return new URL(url).hostname.replace('www.', ''); } catch { return null; }
   }, [reportData]);
@@ -4047,7 +4047,7 @@ const Index = () => {
   const { report: reportData, loading: reportLoading, error } = useReport(reportId);
 
   const domainName = useMemo(() => {
-    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url;
+    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || (reportData as any)?.url || (reportData as any)?.analyse_citation?.client_site_url;
     if (!url) return null;
     try { return new URL(url).hostname.replace('www.', ''); } catch { return null; }
   }, [reportData]);
@@ -4062,7 +4062,7 @@ const Index = () => {
       setAgenticScore(directScore);
     }
 
-    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url;
+    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || (reportData as any)?.url || (reportData as any)?.analyse_citation?.client_site_url;
     if (!url) return;
 
     try {

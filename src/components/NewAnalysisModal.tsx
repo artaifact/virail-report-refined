@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { startAnalysisStreamWithContext } from "@/lib/api";
+import { runAgenticScan } from '@/services/agenticService';
 import { useToast } from "@/hooks/use-toast";
 import { Globe, Search, BarChart3 } from "lucide-react";
 import { modelLogos } from "@/components/ModelLogosCarousel";
@@ -48,6 +49,11 @@ export function NewAnalysisModal({ open, onOpenChange }: NewAnalysisModalProps) 
 
       // Fermer le modal immédiatement pour montrer la notification de streaming
       onOpenChange(false);
+
+      // Lancer en tâche de fond l'audit d'éligibilité agentique & persistance BDD
+      runAgenticScan(formattedUrl, true).catch((err) => {
+        console.warn('[NewAnalysisModal] Agentic background scan error:', err);
+      });
 
       // Lancer l'analyse avec le contexte de streaming
       const result = await startAnalysisStreamWithContext(formattedUrl, streaming);
