@@ -4,7 +4,7 @@ import './Index.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
-import { Info, ChevronRight, Cpu, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle } from 'lucide-react';
+import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle } from 'lucide-react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useReport, useReports, getLatestReportId } from '@/hooks/useReports';
 import { useSelectedReport } from '@/contexts/SelectedReportContext';
@@ -27,7 +27,6 @@ import { HELP } from '@/lib/help-content';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { generateFullReportPdf } from '@/services/reportPdfService';
-import { AgenticTabContent } from '@/components/agentic/AgenticTabContent';
 
 // === CONSTANTES ===
 /**
@@ -2413,7 +2412,7 @@ function AuditGeoSection({ reportData }: { reportData: FullReportData | null }) 
 }
 
 function InfosDetailleesView({ reportData }: { reportData: FullReportData | null }) {
-  const [activeOptTab, setActiveOptTab] = useState<'overview' | 'agentic' | 'schemas' | 'meta' | 'llms' | 'robots' | 'htmldiff' | 'simulation'>('overview');
+  const [activeOptTab, setActiveOptTab] = useState<'overview' | 'schemas' | 'meta' | 'llms' | 'robots' | 'htmldiff' | 'simulation'>('overview');
   const [copied, setCopied] = useState<string | null>(null);
 
   // === BULK OPTIMIZATION STATE ===
@@ -2741,7 +2740,6 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   };
 
   const fileTabsMeta: Record<string, { icon: any; badge: string }> = {
-    agentic:  { icon: Cpu, badge: 'M2M' },
     schemas:  { icon: Code, badge: 'JSON-LD' },
     meta:     { icon: Globe, badge: 'HTML' },
     llms:     { icon: FileText, badge: 'TXT' },
@@ -2753,7 +2751,6 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
   const tabs = [
     { id: 'overview' as const, label: 'Vue d\'ensemble', tooltip: HELP.overviewTab },
-    { id: 'agentic' as const, label: 'Éligibilité Agentique', has: true, tooltip: 'Audit d\'éligibilité machine, 5 piliers et protocoles x402 / OpenAPI' },
     { id: 'schemas' as const, label: 'Schémas JSON-LD', has: !!schemaContent, tooltip: HELP.jsonLdSchemas },
     { id: 'meta' as const, label: 'Balises Meta & Enrichissements', has: !!(metaTagsContent || openGraphContent || coEnrichments.length > 0), tooltip: HELP.metaTags },
     { id: 'llms' as const, label: 'llms.txt', has: !!(llmsContent || llmsFullContent), tooltip: HELP.llmsTxt },
@@ -2917,9 +2914,6 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
       </div>
 
       {/* ═══ CONTENU DES ONGLETS ═══ */}
-      {activeOptTab === 'agentic' && (
-        <AgenticTabContent reportUrl={reportData?.report?.url} />
-      )}
       {activeOptTab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
