@@ -4,7 +4,7 @@ import './Index.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
-import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle } from 'lucide-react';
+import { Info, ChevronRight, Cpu, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle } from 'lucide-react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useReport, useReports, getLatestReportId } from '@/hooks/useReports';
 import { useSelectedReport } from '@/contexts/SelectedReportContext';
@@ -2741,6 +2741,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   };
 
   const fileTabsMeta: Record<string, { icon: any; badge: string }> = {
+    agentic:  { icon: Cpu, badge: 'M2M' },
     schemas:  { icon: Code, badge: 'JSON-LD' },
     meta:     { icon: Globe, badge: 'HTML' },
     llms:     { icon: FileText, badge: 'TXT' },
@@ -2752,7 +2753,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
   const tabs = [
     { id: 'overview' as const, label: 'Vue d\'ensemble', tooltip: HELP.overviewTab },
-    { id: 'agentic' as const, label: '🤖 Éligibilité Agentique', has: true, tooltip: 'Audit d\'éligibilité machine, 5 piliers et protocoles x402 / OpenAPI' },
+    { id: 'agentic' as const, label: 'Éligibilité Agentique', has: true, tooltip: 'Audit d\'éligibilité machine, 5 piliers et protocoles x402 / OpenAPI' },
     { id: 'schemas' as const, label: 'Schémas JSON-LD', has: !!schemaContent, tooltip: HELP.jsonLdSchemas },
     { id: 'meta' as const, label: 'Balises Meta & Enrichissements', has: !!(metaTagsContent || openGraphContent || coEnrichments.length > 0), tooltip: HELP.metaTags },
     { id: 'llms' as const, label: 'llms.txt', has: !!(llmsContent || llmsFullContent), tooltip: HELP.llmsTxt },

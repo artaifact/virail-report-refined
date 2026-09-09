@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
-  Zap,
   Search,
   Loader2,
-  Sparkles,
-  Bot,
-  ShieldAlert,
-  Coins,
-  ArrowRight,
-  Terminal,
+  Cpu,
+  Layers,
+  CreditCard,
+  FileCode2,
 } from 'lucide-react';
 import { runAgenticScan, getX402Manifest, AgenticScanResult } from '@/services/agenticService';
 import { AgenticScoreGauge } from '@/components/agentic/AgenticScoreGauge';
@@ -24,10 +20,9 @@ import { AgenticRemediationViewer } from '@/components/agentic/AgenticRemediatio
 
 const PRESETS = [
   { name: 'Stripe', url: 'https://stripe.com' },
-  { name: 'OpenAI', url: 'https://openai.com' },
-  { name: 'Anthropic', url: 'https://anthropic.com' },
-  { name: 'GitHub', url: 'https://github.com' },
-  { name: 'Viraill Core', url: 'https://viraill-core-api.fly.dev' },
+  { name: 'Resend', url: 'https://resend.com' },
+  { name: 'Cloudflare', url: 'https://cloudflare.com' },
+  { name: 'Shopify', url: 'https://shopify.com' },
 ];
 
 export default function AgenticCockpit() {
@@ -37,9 +32,9 @@ export default function AgenticCockpit() {
   const [result, setResult] = useState<AgenticScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // x402 simulator state
-  const [x402Output, setX402Output] = useState<string | null>(null);
+  // x402 live test
   const [x402Loading, setX402Loading] = useState<boolean>(false);
+  const [x402Output, setX402Output] = useState<string | null>(null);
 
   const handleScan = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -53,7 +48,7 @@ export default function AgenticCockpit() {
       setResult(data);
     } catch (err: any) {
       console.error('[AgenticCockpit] Scan error:', err);
-      setError(err.message || 'Erreur lors du scan agentique.');
+      setError(err.message || "Erreur lors de l'exécution de l'audit agentique.");
     } finally {
       setLoading(false);
     }
@@ -75,11 +70,11 @@ export default function AgenticCockpit() {
   return (
     <div className="container mx-auto p-6 max-w-7xl space-y-8">
       {/* Top Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-background to-secondary/10 border border-border p-8">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-background to-secondary/10 border border-border p-8">
         <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-xs font-bold text-primary">
-            <Bot className="w-3.5 h-3.5" />
-            <span>AGENTIC COMMERCE & MACHINE READINESS // ENGINE V4.1</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-xs font-semibold text-primary">
+            <Cpu className="w-3.5 h-3.5" />
+            <span>Audit d'Éligibilité Machine & Protocoles Agentiques (M2M)</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
@@ -87,7 +82,7 @@ export default function AgenticCockpit() {
           </h1>
 
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Auditez n'importe quel site face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achat).
+            Auditez la découvrabilité et l'achetabilité machine de votre plateforme face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achat).
             Détectez les risques de <strong>disqualification silencieuse</strong> sur les 5 piliers et générez le pack de remédiation technique instantané.
           </p>
         </div>
@@ -114,8 +109,8 @@ export default function AgenticCockpit() {
               disabled={loading}
               className="h-12 px-7 font-bold text-sm bg-primary text-primary-foreground shadow-md hover:opacity-95 gap-2"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-              {loading ? 'Audit en cours...' : 'Lancer l\'audit agentique'}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              {loading ? 'Audit en cours...' : "Lancer l'audit agentique"}
             </Button>
           </form>
 
@@ -162,7 +157,7 @@ export default function AgenticCockpit() {
         <Card className="border border-border/80 bg-card/60 p-8 text-center space-y-4">
           <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
           <div className="space-y-1">
-            <h3 className="text-base font-bold text-foreground">Radar Multi-Probes en cours d'exécution...</h3>
+            <h3 className="text-base font-bold text-foreground">Sondage Multi-Probes en cours d'exécution...</h3>
             <p className="text-xs text-muted-foreground">
               Vérification de /llms.txt, spécification OpenAPI 3.1, balises JSON-LD et challenge x402 Base USDC.
             </p>
@@ -179,7 +174,8 @@ export default function AgenticCockpit() {
           {/* 5 Pillars */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Layers className="w-4 h-4 text-primary" />
                 Diagnostic Opérationnel sur les 5 Piliers d'Éligibilité
               </h2>
             </div>
@@ -189,7 +185,8 @@ export default function AgenticCockpit() {
           {/* 8 Channels Matrix */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-primary" />
                 Matrice de Présence sur les 8 Canaux de Distribution Agentique
               </h2>
             </div>
@@ -200,7 +197,7 @@ export default function AgenticCockpit() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
+                <FileCode2 className="w-5 h-5 text-primary" />
                 Pack de Remédiation Technique Clé en Main
               </h2>
             </div>
@@ -212,7 +209,7 @@ export default function AgenticCockpit() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
               <div>
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-primary" />
+                  <CreditCard className="w-4 h-4 text-primary" />
                   Banc d'Essai du Handshake x402 (Micro-Paiements Machine Base USDC)
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -227,7 +224,7 @@ export default function AgenticCockpit() {
                 disabled={x402Loading}
                 className="gap-2 text-xs"
               >
-                {x402Loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Coins className="w-3.5 h-3.5" />}
+                {x402Loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
                 Tester le Handshake Live
               </Button>
             </div>

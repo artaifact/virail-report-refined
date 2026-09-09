@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw, Sparkles, Bot, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Loader2, RefreshCw, Cpu, Layers, FileCode2 } from 'lucide-react';
 import { runAgenticScan, AgenticScanResult } from '@/services/agenticService';
 import { AgenticScoreGauge } from './AgenticScoreGauge';
 import { AgenticPillarsView } from './AgenticPillarsView';
@@ -46,13 +46,13 @@ export const AgenticTabContent: React.FC<AgenticTabContentProps> = ({ reportUrl 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20">
         <div>
           <div className="flex items-center gap-2">
-            <Bot className="w-5 h-5 text-primary" />
+            <Cpu className="w-4 h-4 text-primary" />
             <h2 className="text-base font-bold text-foreground">
               Audit d'Éligibilité Machine & Protocoles Agentiques (M2M)
             </h2>
           </div>
           <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
-            Vérifiez si <strong>{targetUrl}</strong> est achetable, découvrable et recommandé par les flottes d'agents autonomes (Claude Code, Cursor, Perplexity, agents d'achats).
+            Vérification de la conformité de <strong>{targetUrl}</strong> face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achats).
           </p>
         </div>
 
@@ -72,7 +72,7 @@ export const AgenticTabContent: React.FC<AgenticTabContentProps> = ({ reportUrl 
         <div className="py-16 text-center space-y-3 border rounded-2xl bg-card/40 backdrop-blur-sm">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
           <p className="text-sm font-medium text-foreground">Sondage des 5 piliers & des 8 canaux agentiques en cours...</p>
-          <p className="text-xs text-muted-foreground">Test de /llms.txt, spécification OpenAPI 3.1, balises JSON-LD et protocole x402.</p>
+          <p className="text-xs text-muted-foreground">Vérification de /llms.txt, spécification OpenAPI 3.1, balises JSON-LD et protocole x402.</p>
         </div>
       )}
 
@@ -93,7 +93,7 @@ export const AgenticTabContent: React.FC<AgenticTabContentProps> = ({ reportUrl 
           {/* 5 Pillars */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-primary" />
+              <Layers className="w-4 h-4 text-primary" />
               Diagnostic des 5 Piliers d'Éligibilité Machine
             </h3>
             <AgenticPillarsView pillars={result.pillars} />
@@ -102,7 +102,7 @@ export const AgenticTabContent: React.FC<AgenticTabContentProps> = ({ reportUrl 
           {/* 8 Channels Matrix */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-primary" />
+              <Cpu className="w-4 h-4 text-primary" />
               Présence sur les 8 Canaux de Distribution Agentique
             </h3>
             <AgenticChannelsMatrix channelAudit={result.channel_audit} />
@@ -112,8 +112,8 @@ export const AgenticTabContent: React.FC<AgenticTabContentProps> = ({ reportUrl 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                Pack de Remédiation Clé en Main (Prêt au Déploiement)
+                <FileCode2 className="w-4 h-4 text-primary" />
+                Pack de Remédiation Technique (Prêt au Déploiement)
               </h3>
             </div>
             <AgenticRemediationViewer remediationPack={result.remediation_pack} />

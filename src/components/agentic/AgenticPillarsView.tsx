@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, XCircle, AlertCircle, FileText, Code2, ShoppingCart, Coins, Network } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, FileText, Code2, ShoppingCart, CreditCard, Network } from 'lucide-react';
 import { AgenticPillar } from '@/services/agenticService';
 
 interface AgenticPillarsViewProps {
@@ -10,12 +9,12 @@ interface AgenticPillarsViewProps {
 
 const PILLAR_CONFIG: Record<string, { title: string; desc: string; icon: any }> = {
   crawl_doc: {
-    title: "1. Ingestion & Doc Machine",
+    title: "1. Ingestion & Documentation Machine",
     desc: "/llms.txt, route miroir .md, négociation Accept: text/markdown",
     icon: FileText,
   },
   json_interfaces: {
-    title: "2. Contrats & Interfaces Données",
+    title: "2. Contrats & Interfaces de Données",
     desc: "OpenAPI 3.1 publique typée, grille tarifaire /api/pricing.json",
     icon: Code2,
   },
@@ -25,13 +24,13 @@ const PILLAR_CONFIG: Record<string, { title: string; desc: string; icon: any }> 
     icon: ShoppingCart,
   },
   m2m_settlement: {
-    title: "4. Règlement M2M (x402)",
+    title: "4. Règlement M2M (Protocole x402)",
     desc: "Handshake HTTP 402, rails de micro-paiement Base USDC (EIP-3009)",
-    icon: Coins,
+    icon: CreditCard,
   },
   distribution_channels: {
     title: "5. Canaux de Distribution",
-    desc: "Indexation sur les 8 registres et protocoles d'agents IA",
+    desc: "Indexation sur les 8 registres et protocoles d'agents",
     icon: Network,
   },
 };
@@ -83,9 +82,10 @@ export const AgenticPillarsView: React.FC<AgenticPillarsViewProps> = ({ pillars 
               {/* Checks */}
               <ul className="space-y-1.5 text-xs text-muted-foreground">
                 {pillar.checks.map((chk, i) => {
-                  const isOk = chk.startsWith('✅');
-                  const isWarn = chk.startsWith('⚠️');
-                  const cleanText = chk.replace(/^[✅❌⚠️]\s*/, '');
+                  const isOk = chk.startsWith('✅') || chk.includes('[OK]') || chk.startsWith('+');
+                  const isWarn = chk.startsWith('⚠️') || chk.includes('[WARN]');
+                  // Clean any leading emoji or bracket status from display
+                  const cleanText = chk.replace(/^([✅❌⚠️]|\[OK\]|\[FAIL\]|\[WARN\])\s*/gu, '').trim();
 
                   return (
                     <li key={i} className="flex items-start gap-1.5 leading-snug">

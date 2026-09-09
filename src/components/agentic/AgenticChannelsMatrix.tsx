@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Box, Terminal, Bot, Search, Sparkles, Github, Coins, FileCode } from 'lucide-react';
+import { Check, X, Terminal, Boxes, Workflow, Globe, Sliders, GitBranch, CreditCard, FileCode } from 'lucide-react';
 
 interface AgenticChannelsMatrixProps {
   channelAudit: Record<string, boolean>;
@@ -12,7 +12,7 @@ const CHANNELS_DATA = [
     id: '1_agent_skills',
     num: '01',
     name: 'Agent Skills (SKILL.md)',
-    desc: 'Package npx skills add ou descriptor /skill.md pour assistants de code.',
+    desc: 'Package npx skills add ou descripteur SKILL.md pour assistants de code.',
     icon: Terminal,
   },
   {
@@ -20,42 +20,42 @@ const CHANNELS_DATA = [
     num: '02',
     name: 'Registres MCP (Anthropic)',
     desc: 'Serveur Model Context Protocol pour Claude Desktop, Cursor et Smithery.',
-    icon: Box,
+    icon: Boxes,
   },
   {
     id: '3_a2a_agent_card',
     num: '03',
     name: 'Protocole Google A2A',
     desc: 'Agent Card standardisée sur /.well-known/agent.json pour échanges inter-agents.',
-    icon: Bot,
+    icon: Workflow,
   },
   {
     id: '4_ard_discovery',
     num: '04',
     name: 'ARD Discovery (DNS IA)',
     desc: 'Déclaration DNS des ressources sur /.well-known/agentic-resources.json.',
-    icon: Search,
+    icon: Globe,
   },
   {
     id: '5_prompt_wizard',
     num: '05',
     name: 'Zero-Config Prompts',
     desc: 'Prompts prêts à coller dans Claude Code / Cursor sans documentation.',
-    icon: Sparkles,
+    icon: Sliders,
   },
   {
     id: '6_awesome_lists',
     num: '06',
     name: 'Awesome Lists GitHub',
     desc: 'Indexation sur les répertoires GitHub constituant le corpus RAG des LLMs.',
-    icon: Github,
+    icon: GitBranch,
   },
   {
     id: '7_bazaar_x402',
     num: '07',
     name: 'Bazaars On-Chain',
     desc: 'Enregistrement sur x402scan et CDP Bazaar pour transactions autonomes USDC.',
-    icon: Coins,
+    icon: CreditCard,
   },
   {
     id: '8_inrepo_contexts',

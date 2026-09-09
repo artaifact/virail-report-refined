@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Copy, Download, FileCode, Sparkles } from 'lucide-react';
+import { Check, Copy, Download } from 'lucide-react';
 import { AgenticRemediationPack } from '@/services/agenticService';
 
 interface AgenticRemediationViewerProps {
@@ -40,7 +40,7 @@ export const AgenticRemediationViewer: React.FC<AgenticRemediationViewerProps> =
   if (fileKeys.length === 0) {
     return (
       <div className="p-8 text-center text-sm text-muted-foreground border rounded-xl bg-card/50">
-        Aucun pack de remédiation généré. Cochez l'option "Générer le Pack de Remédiation" lors du scan.
+        Aucun pack de remédiation généré. Activez l'option "Générer le Pack de Remédiation" lors de l'audit.
       </div>
     );
   }
@@ -73,7 +73,7 @@ export const AgenticRemediationViewer: React.FC<AgenticRemediationViewerProps> =
             className="h-7 text-xs gap-1.5 px-2.5 font-medium"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? 'Copié !' : 'Copier'}
+            {copied ? 'Copié' : 'Copier'}
           </Button>
 
           <Button
@@ -90,7 +90,7 @@ export const AgenticRemediationViewer: React.FC<AgenticRemediationViewerProps> =
 
       {/* Code Viewer */}
       <div className="relative bg-[#0b0f17] p-4 max-h-[460px] overflow-y-auto font-mono text-xs text-slate-200 leading-relaxed">
-        <pre className="overflow-x-auto whitespace-pre-wrap word-break-break-all">
+        <pre className="overflow-x-auto whitespace-pre-wrap break-all">
           <code>{currentContent}</code>
         </pre>
       </div>

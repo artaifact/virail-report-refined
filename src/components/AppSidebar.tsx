@@ -31,7 +31,7 @@ import {
   PlusCircle,
   Target,
   TrendingUp,
-  Bot,
+  Cpu,
   FileText,
   LayoutGrid,
 } from "lucide-react"
@@ -117,7 +117,7 @@ export function AppSidebar() {
           {
             title: "Éligibilité Agentique",
             url: "/agentic",
-            icon: Bot,
+            icon: Cpu,
             badge: "M2M" as string | undefined,
           },
 
