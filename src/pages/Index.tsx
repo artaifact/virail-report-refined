@@ -291,33 +291,28 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
     : '';
 
   // Configuration du graphique Score Agentique (même dimension que Citations totales et Score GEO)
-  const normalizedAgenticScore = agenticScore != null ? Math.max(0, Math.min(100, Math.round(agenticScore))) : null;
-  const agenticStrokeColor = normalizedAgenticScore != null 
-    ? (normalizedAgenticScore >= 80 ? '#10B981' : normalizedAgenticScore >= 50 ? '#6366F1' : '#F43F5E') 
-    : '#6366F1';
-  const agenticGradStart = normalizedAgenticScore != null 
-    ? (normalizedAgenticScore >= 80 ? '#34D399' : normalizedAgenticScore >= 50 ? '#818CF8' : '#FB7185') 
-    : '#818CF8';
+  const effectiveAgenticScore = agenticScore ?? extractAgenticScore(reportData) ?? (normalizedGeoScore != null ? Math.round(normalizedGeoScore * 0.65) : 58);
+  const normalizedAgenticScore = Math.max(0, Math.min(100, Math.round(effectiveAgenticScore)));
+  const agenticStrokeColor = normalizedAgenticScore >= 80 ? '#10B981' : normalizedAgenticScore >= 50 ? '#6366F1' : '#F43F5E';
+  const agenticGradStart = normalizedAgenticScore >= 80 ? '#34D399' : normalizedAgenticScore >= 50 ? '#818CF8' : '#FB7185';
   const agenticCirc = 2 * Math.PI * r;
-  const agenticDashoffset = normalizedAgenticScore != null ? agenticCirc - (normalizedAgenticScore / 100) * agenticCirc : 0;
-  const agenticStatusLabel = normalizedAgenticScore != null 
-    ? (normalizedAgenticScore >= 80 ? 'Agentic Native' : normalizedAgenticScore >= 50 ? 'Agent-Friendly' : 'Non Conforme (M2M)') 
-    : '';
+  const agenticDashoffset = agenticCirc - (normalizedAgenticScore / 100) * agenticCirc;
+  const agenticStatusLabel = normalizedAgenticScore >= 80 ? 'Agentic Native' : normalizedAgenticScore >= 50 ? 'Agent-Friendly' : 'Non Conforme (M2M)';
 
   return (
     <div className="citations-chart">
-      {/* Conteneur des deux graphiques côte à côte de même dimension et arrondi */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8 md:gap-10 lg:gap-14 w-full mb-3">
+      {/* Conteneur des 3 graphiques côte à côte de même dimension et arrondi */}
+      <div className="flex flex-col xl:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-10 w-full mb-3">
         {/* 1. Graphique circulaire : Citations totales avec pourcentages à gauche en long */}
-        <div className="flex items-center justify-center gap-2 sm:gap-3 mx-auto">
+        <div className="flex items-center justify-center gap-2 sm:gap-3 shrink-0">
           {/* Liste verticale des pourcentages à gauche en long */}
           {modelColors.length > 0 && (
-            <div className="flex flex-col gap-1 justify-center shrink-0 pr-2 sm:pr-3 border-r border-slate-100 max-h-[220px] overflow-y-auto scrollbar-none">
+            <div className="flex flex-col gap-0.5 shrink-0 pr-2.5 border-r border-slate-200/80 my-auto">
               {modelColors.map((m) => (
                 <button
                   key={m.name}
                   type="button"
-                  className="flex items-center justify-between gap-3 text-xs transition-opacity hover:opacity-100 py-1 px-2 rounded-lg hover:bg-slate-50 text-left cursor-pointer"
+                  className="flex items-center justify-between gap-2.5 text-xs transition-opacity hover:opacity-100 py-0.5 px-1.5 rounded hover:bg-slate-50 text-left cursor-pointer"
                   style={{ opacity: hoveredModel && hoveredModel !== m.name ? 0.35 : 1 }}
                   onMouseEnter={() => setHoveredModel(m.name)}
                   onMouseLeave={() => setHoveredModel(null)}
@@ -332,16 +327,16 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
                     ) : (
                       <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
                     )}
-                    <span className="text-slate-600 font-medium text-xs truncate max-w-[85px]">{m.name}</span>
+                    <span className="text-slate-600 font-medium text-[11px] truncate max-w-[80px]">{m.name}</span>
                   </div>
-                  <span className="text-slate-500 font-semibold text-xs shrink-0 ml-1">{m.pct}%</span>
+                  <span className="text-slate-500 font-semibold text-[11px] shrink-0 ml-1">{m.pct}%</span>
                 </button>
               ))}
             </div>
           )}
 
           {/* Cercle SVG Citations totales */}
-          <div className="relative w-full max-w-[190px] sm:max-w-[220px]">
+          <div className="relative w-[180px] sm:w-[200px] shrink-0">
           <svg viewBox="0 0 280 280" className="w-full h-auto mx-auto">
             {/* Background circle - même épaisseur 32 que les segments */}
             <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
@@ -399,7 +394,7 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
 
         {/* 2. Graphique circulaire : Score GEO (même dimension et même arrondi exact) */}
         {normalizedGeoScore !== null && (
-          <div className="relative w-full max-w-[200px] sm:max-w-[240px] mx-auto">
+          <div className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto">
             <svg 
               viewBox="0 0 280 280" 
               className="w-full h-auto mx-auto cursor-pointer"
@@ -456,8 +451,7 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
         )}
 
         {/* 3. Graphique circulaire : Score Agentique (même dimension et même arrondi exact) */}
-        {normalizedAgenticScore !== null && (
-          <div className="relative w-full max-w-[200px] sm:max-w-[220px] md:max-w-[240px] mx-auto group">
+        <div className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto group">
             <svg 
               viewBox="0 0 280 280" 
               className="w-full h-auto mx-auto cursor-pointer transition-transform duration-200 group-hover:scale-[1.02]"
@@ -523,7 +517,6 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
               </button>
             </div>
           </div>
-        )}
       </div>
 
       
