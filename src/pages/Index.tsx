@@ -308,8 +308,40 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
     <div className="citations-chart">
       {/* Conteneur des deux graphiques côte à côte de même dimension et arrondi */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8 md:gap-10 lg:gap-14 w-full mb-3">
-        {/* 1. Graphique circulaire : Citations totales */}
-        <div className="relative w-full max-w-[200px] sm:max-w-[240px] mx-auto">
+        {/* 1. Graphique circulaire : Citations totales avec pourcentages à gauche en long */}
+        <div className="flex items-center justify-center gap-2 sm:gap-3 mx-auto">
+          {/* Liste verticale des pourcentages à gauche en long */}
+          {modelColors.length > 0 && (
+            <div className="flex flex-col gap-1 justify-center shrink-0 pr-2 sm:pr-3 border-r border-slate-100 max-h-[220px] overflow-y-auto scrollbar-none">
+              {modelColors.map((m) => (
+                <button
+                  key={m.name}
+                  type="button"
+                  className="flex items-center justify-between gap-3 text-xs transition-opacity hover:opacity-100 py-1 px-2 rounded-lg hover:bg-slate-50 text-left cursor-pointer"
+                  style={{ opacity: hoveredModel && hoveredModel !== m.name ? 0.35 : 1 }}
+                  onMouseEnter={() => setHoveredModel(m.name)}
+                  onMouseLeave={() => setHoveredModel(null)}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {getModelLogo(m.name) ? (
+                      <img
+                        src={getModelLogo(m.name)!}
+                        alt={m.name}
+                        className="w-3.5 h-3.5 object-contain flex-shrink-0 rounded-sm"
+                      />
+                    ) : (
+                      <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
+                    )}
+                    <span className="text-slate-600 font-medium text-xs truncate max-w-[85px]">{m.name}</span>
+                  </div>
+                  <span className="text-slate-500 font-semibold text-xs shrink-0 ml-1">{m.pct}%</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Cercle SVG Citations totales */}
+          <div className="relative w-full max-w-[190px] sm:max-w-[220px]">
           <svg viewBox="0 0 280 280" className="w-full h-auto mx-auto">
             {/* Background circle - même épaisseur 32 que les segments */}
             <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
@@ -362,6 +394,7 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
               </>
             )}
           </svg>
+        </div>
         </div>
 
         {/* 2. Graphique circulaire : Score GEO (même dimension et même arrondi exact) */}
@@ -493,49 +526,7 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
         )}
       </div>
 
-      {/* Légende des couleurs par modèle */}
-      {modelColors.length > 0 && (() => {
-        const half = Math.ceil(modelColors.length / 2);
-        const rows = [modelColors.slice(0, half), modelColors.slice(half)].filter(r => r.length > 0);
-        const renderItem = (m: typeof modelColors[0]) => (
-          <button
-            key={m.name}
-            type="button"
-            className="flex items-center gap-1.5 text-xs transition-opacity"
-            style={{ opacity: hoveredModel && hoveredModel !== m.name ? 0.35 : 1 }}
-            onMouseEnter={() => setHoveredModel(m.name)}
-            onMouseLeave={() => setHoveredModel(null)}
-          >
-            {getModelLogo(m.name) ? (
-              <img
-                src={getModelLogo(m.name)!}
-                alt={m.name}
-                className="w-4 h-4 object-contain flex-shrink-0 rounded-sm"
-              />
-            ) : (
-              <span className="inline-block w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
-            )}
-            <span className="text-slate-600 font-medium">{m.name}</span>
-            <span className="text-slate-400">{m.pct}%</span>
-          </button>
-        );
-        return (
-          <>
-            {/* Mobile : 2 items par ligne */}
-            <div className="sm:hidden grid grid-cols-2 gap-x-4 gap-y-2 mt-1 px-2 w-full">
-              {modelColors.map(renderItem)}
-            </div>
-            {/* Desktop : layout en 2 lignes inchangé */}
-            <div className="hidden sm:flex flex-col items-center gap-y-2 mt-1 px-2">
-              {rows.map((row, i) => (
-                <div key={i} className="flex justify-center gap-x-3">
-                  {row.map(renderItem)}
-                </div>
-              ))}
-            </div>
-          </>
-        );
-      })()}
+      
     </div>
   );
 }
