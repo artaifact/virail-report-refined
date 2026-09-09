@@ -34,6 +34,7 @@ import {
   Cpu,
   FileText,
   LayoutGrid,
+  Wand2,
 } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
 import { usePayment } from '@/contexts/PaymentContext'
@@ -112,6 +113,12 @@ export function AppSidebar() {
             title: "Concurrentielle",
             url: "/competition",
             icon: Target,
+            badge: undefined as string | undefined,
+          },
+          {
+            title: "Améliorer",
+            url: "/ameliorer",
+            icon: Wand2,
             badge: undefined as string | undefined,
           },
           {

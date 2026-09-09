@@ -38,6 +38,7 @@ import ApiDemo from "./pages/ApiDemo";
 import TechnicalOptimization from "./pages/TechnicalOptimization";
 import TextualOptimization from "./pages/TextualOptimization";
 import SiteOptimization from "./pages/SiteOptimization";
+import Ameliorer from "./pages/Ameliorer";
 import Pricing from "./pages/Pricing";
 import PaymentTest from "./pages/PaymentTest";
 import PaymentSuccess from "./pages/PaymentSuccess";
@@ -102,6 +103,7 @@ function MainLayout() {
             <Route path="/admin/subscriptions-docs" element={<AdminRoute><AdminSubscriptionDocs /></AdminRoute>} />
             <Route path="/admin/plans" element={<AdminRoute><AdminPlans /></AdminRoute>} />
             <Route path="/competition" element={<Competition />} />
+            <Route path="/ameliorer" element={<Ameliorer />} />
             <Route path="/agentic" element={<AgenticCockpit />} />
             <Route path="/sites-optimization" element={<SiteOptimization />} />
             <Route path="/optimisation/technique" element={<TechnicalOptimization />} />
