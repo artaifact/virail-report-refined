@@ -158,6 +158,8 @@ interface AskAIButtonProps {
   mcpConfigUrl?: string;
   origin?: string;
   reportData?: any;
+  size?: 'default' | 'sm';
+  className?: string;
 }
 
 export default function AskAIButton({
@@ -166,6 +168,8 @@ export default function AskAIButton({
   mcpConfigUrl,
   origin = 'https://viraill.com',
   reportData,
+  size = 'default',
+  className = '',
 }: AskAIButtonProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -222,13 +226,13 @@ export default function AskAIButton({
   const targetContent = detailedMarkdown ? detailedMarkdown.slice(0, 1800) : md;
 
   return (
-    <div className={styles.askAiWrapper}>
+    <div className={`${styles.askAiWrapper} ${className}`.trim()}>
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
             aria-label="Se faire expliquer cette page par une IA"
-            className={styles.askAiButton}
+            className={`${styles.askAiButton} ${size === 'sm' ? styles.askAiButtonSm : ''}`}
           >
             <span aria-hidden="true">✨</span>
             <span className={styles.askAiLabel}>Expliquer par l'IA</span>

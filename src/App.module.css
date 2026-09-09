@@ -55,6 +55,17 @@
   color: inherit;
 }
 
+.askAiButtonSm {
+  padding: 5px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  gap: 5px;
+}
+
+.askAiButtonSm .askAiLabel {
+  font-size: 12px;
+}
+
 /* Menu Dropdown via Portal Radix UI — Flotte toujours au premier plan absolu */
 .askAiMenu {
   min-width: 300px !important;
