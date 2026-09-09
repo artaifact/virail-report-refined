@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
   Search,
   Loader2,
@@ -12,16 +11,10 @@ import {
   Layers,
   CreditCard,
   FileCode2,
-  Database,
-  Clock,
-  ExternalLink,
-  RefreshCw,
-  Sparkles,
 } from 'lucide-react';
 import {
   runAgenticScan,
   getLatestAgenticAudit,
-  getAgenticHistory,
   getX402Manifest,
   AgenticScanResult,
 } from '@/services/agenticService';
@@ -39,73 +32,37 @@ const PRESETS = [
   { name: 'Shopify', url: 'https://shopify.com' },
 ];
 
-interface AgenticHistoryItem {
-  id: number;
-  target_url: string;
-  domain: string;
-  brand_name?: string;
-  score: number;
-  created_at?: string;
-}
-
 export default function AgenticCockpit() {
   const [url, setUrl] = useState<string>('https://tally.so');
   const [remediate, setRemediate] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
-  const [historyLoading, setHistoryLoading] = useState<boolean>(false);
   const [result, setResult] = useState<AgenticScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<AgenticHistoryItem[]>([]);
 
   // x402 live test
   const [x402Loading, setX402Loading] = useState<boolean>(false);
   const [x402Output, setX402Output] = useState<string | null>(null);
 
-  // Charger l'historique depuis PostgreSQL
-  const fetchHistory = async () => {
-    setHistoryLoading(true);
-    try {
-      const items = await getAgenticHistory(20);
-      setHistory(items || []);
-      return items;
-    } catch (e) {
-      console.warn('[AgenticCockpit] Failed to fetch history:', e);
-      return [];
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
-
-  // Restauration automatique de l'analyse au montage ou après actualisation (F5)
+  // Restauration automatique de l'analyse au chargement ou après actualisation (F5)
   useEffect(() => {
     let isMounted = true;
+    const lastUrl = localStorage.getItem('viraill_last_agentic_url') || url;
 
-    const initCockpit = async () => {
-      const items = await fetchHistory();
+    if (lastUrl) {
+      setUrl(lastUrl);
+      setLoading(true);
 
-      // Vérifier si une URL était précédemment consultée en mémoire locale
-      const lastUrl = localStorage.getItem('viraill_last_agentic_url');
-      const targetUrlToLoad = lastUrl || (items && items.length > 0 ? items[0].target_url : url);
-
-      if (targetUrlToLoad) {
-        setUrl(targetUrlToLoad);
-
-        // Charger instantanément l'audit depuis la BDD
-        setLoading(true);
-        try {
-          const cached = await getLatestAgenticAudit(targetUrlToLoad);
+      getLatestAgenticAudit(lastUrl)
+        .then((cached) => {
           if (isMounted && cached && cached.score !== undefined) {
             setResult(cached);
           }
-        } catch (e) {
-          console.warn('[AgenticCockpit] Auto-load failed:', e);
-        } finally {
+        })
+        .catch(() => {})
+        .finally(() => {
           if (isMounted) setLoading(false);
-        }
-      }
-    };
-
-    initCockpit();
+        });
+    }
 
     return () => {
       isMounted = false;
@@ -133,33 +90,9 @@ export default function AgenticCockpit() {
           localStorage.setItem(`viraill_agentic_score_${targetUrl}`, String(data.score));
         } catch {}
       }
-
-      // Rafraîchir la liste de l'historique BDD
-      await fetchHistory();
     } catch (err: any) {
       console.error('[AgenticCockpit] Scan error:', err);
       setError(err.message || "Erreur lors de l'exécution de l'audit agentique.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Sélection rapide d'une analyse dans l'historique de la BDD
-  const handleSelectHistoryItem = async (item: AgenticHistoryItem) => {
-    setUrl(item.target_url);
-    localStorage.setItem('viraill_last_agentic_url', item.target_url);
-    setLoading(true);
-    setError(null);
-
-    try {
-      const cached = await getLatestAgenticAudit(item.target_url);
-      if (cached && cached.score !== undefined) {
-        setResult(cached);
-      } else {
-        await handleScan(undefined, item.target_url);
-      }
-    } catch (e) {
-      await handleScan(undefined, item.target_url);
     } finally {
       setLoading(false);
     }
@@ -179,270 +112,177 @@ export default function AgenticCockpit() {
   };
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 max-w-7xl space-y-6 font-sans">
-      {/* Top Banner */}
-      <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-sm">
-        <div className="max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/50 border border-blue-200/60 dark:border-blue-900/40 text-xs font-semibold text-[#1A3AFF] dark:text-blue-400">
-            <Cpu className="w-3.5 h-3.5" />
-            <span>Audit d'Éligibilité Machine & Protocoles Agentiques (M2M)</span>
-          </div>
-
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Cockpit d'Éligibilité & Distribution <span className="text-[#1A3AFF]">Agentique</span>
-          </h1>
-
-          <p className="text-xs sm:text-[13.5px] text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
-            Auditez la découvrabilité et l'achetabilité machine de votre plateforme face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achat).
-            Toutes les analyses sont <strong className="font-semibold text-slate-700 dark:text-slate-300">automatiquement conservées en base de données</strong> et restent consultables après actualisation.
-          </p>
-        </div>
-      </div>
-
-      {/* Control Card */}
-      <Card className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-        <CardContent className="p-4 sm:p-5 space-y-3.5">
-          <form onSubmit={(e) => handleScan(e)} className="flex flex-col sm:flex-row gap-2.5">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="Entrez l'URL à auditer (ex: https://tally.so)"
-                required
-                className="pl-10 h-11 text-xs sm:text-sm font-mono bg-slate-50/50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 rounded-xl"
-              />
+    <div className="dashboard-container ux-dashboard font-sans" style={{ minHeight: '100vh', padding: '24px 20px' }}>
+      <div className="space-y-6">
+        {/* Top Banner */}
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-sm">
+          <div className="max-w-3xl space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/50 border border-blue-200/60 dark:border-blue-900/40 text-xs font-semibold text-[#1A3AFF] dark:text-blue-400">
+              <Cpu className="w-3.5 h-3.5" />
+              <span>Audit d'Éligibilité Machine & Protocoles Agentiques (M2M)</span>
             </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="h-11 px-6 rounded-xl font-semibold text-xs sm:text-[13px] bg-[#1A3AFF] hover:bg-[#1530D9] text-white shadow-sm transition-all gap-2 flex-shrink-0 cursor-pointer disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-              {loading ? 'Audit en cours...' : "Lancer l'audit agentique"}
-            </Button>
-          </form>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              Cockpit d'Éligibilité & Distribution <span className="text-[#1A3AFF]">Agentique</span>
+            </h1>
 
-          {/* Quick Presets & Remediate Switch */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5 text-xs">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-slate-400 text-xs font-medium">Exemples rapides :</span>
-              {PRESETS.map((p) => (
-                <button
-                  key={p.name}
-                  type="button"
-                  onClick={() => {
-                    setUrl(p.url);
-                    handleScan(undefined, p.url);
-                  }}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50/80 hover:bg-white text-slate-600 hover:text-slate-900 transition-all font-medium text-xs cursor-pointer dark:bg-slate-800/40 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Switch
-                id="toggle-remediate"
-                checked={remediate}
-                onCheckedChange={setRemediate}
-              />
-              <Label htmlFor="toggle-remediate" className="text-xs text-slate-500 dark:text-slate-400 cursor-pointer font-normal">
-                Générer le Pack de Remédiation
-              </Label>
-            </div>
+            <p className="text-xs sm:text-[13.5px] text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
+              Auditez la découvrabilité et l'achetabilité machine de votre plateforme face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achat).
+              Détectez les risques de <strong className="font-semibold text-slate-700 dark:text-slate-300">disqualification silencieuse</strong> sur les 5 piliers et générez le pack de remédiation technique instantané.
+            </p>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Database History Section (Analyses stockées en base de données) */}
-      <Card className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
-          <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100">
-              Analyses enregistrées en Base de Données
-            </span>
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
-              {history.length} en BDD
-            </span>
-          </div>
-
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={fetchHistory}
-            disabled={historyLoading}
-            className="h-7 text-xs text-slate-500 hover:text-slate-900 gap-1.5 px-2"
-          >
-            <RefreshCw className={`w-3 h-3 ${historyLoading ? 'animate-spin' : ''}`} />
-            <span>Actualiser</span>
-          </Button>
         </div>
 
-        <CardContent className="p-4 sm:p-5">
-          {history.length === 0 ? (
-            <div className="text-center py-6 text-xs text-slate-400">
-              Aucune analyse stockée pour le moment. Lancez un audit ci-dessus pour l'enregistrer en BDD.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {history.map((item) => {
-                const isSelected = result?.target_url === item.target_url || result?.audit_id === item.id;
-                const formattedDate = item.created_at
-                  ? new Date(item.created_at).toLocaleString('fr-FR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : null;
-
-                const scoreColor = item.score >= 80 ? '#059669' : item.score >= 50 ? '#d97706' : '#e11d48';
-                const scoreBg = item.score >= 80 ? 'rgba(16, 185, 129, 0.1)' : item.score >= 50 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(244, 63, 94, 0.1)';
-
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleSelectHistoryItem(item)}
-                    className={`text-left p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                      isSelected
-                        ? 'border-[#1A3AFF] bg-blue-50/40 dark:bg-blue-950/20 shadow-xs'
-                        : 'border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/60'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2 w-full">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-xs text-slate-900 dark:text-slate-100 truncate">
-                            {item.brand_name || item.domain}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono">#{item.id}</span>
-                        </div>
-                        <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                          {item.target_url}
-                        </p>
-                      </div>
-
-                      <div
-                        className="px-2 py-0.5 rounded-lg text-xs font-mono font-bold flex-shrink-0"
-                        style={{ color: scoreColor, backgroundColor: scoreBg }}
-                      >
-                        {item.score}/100
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/60 w-full">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {formattedDate || 'Récemment'}
-                      </span>
-                      <span className="text-[#1A3AFF] dark:text-blue-400 font-medium hover:underline flex items-center gap-0.5 text-[11px]">
-                        {isSelected ? 'Sélectionné' : 'Charger'}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Error display */}
-      {error && (
-        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-between">
-          <span>{error}</span>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleScan()}
-            className="rounded-lg h-7 text-xs border border-rose-200 text-rose-700 bg-white hover:bg-rose-50"
-          >
-            Réessayer
-          </Button>
-        </div>
-      )}
-
-      {/* Skeleton Loading State */}
-      {loading && <AgenticSkeletonLoader />}
-
-      {/* Results View */}
-      {result && !loading && (
-        <div className="space-y-6 animate-in fade-in duration-300">
-          {/* Gauge Summary */}
-          <AgenticScoreGauge
-            score={result.score}
-            targetUrl={result.target_url}
-            auditId={result.audit_id}
-            savedInDb={Boolean(result.saved_in_db || result.audit_id)}
-            createdAt={result.created_at}
-          />
-
-          {/* 5 Pillars */}
-          <div className="space-y-3">
-            <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-              <Layers className="w-4 h-4 text-[#1A3AFF]" />
-              Diagnostic Opérationnel sur les 5 Piliers d'Éligibilité
-            </h3>
-            <AgenticPillarsView pillars={result.pillars} />
-          </div>
-
-          {/* 8 Channels Matrix */}
-          <div className="space-y-3">
-            <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-              <Cpu className="w-4 h-4 text-[#1A3AFF]" />
-              Matrice de Présence sur les 8 Canaux de Distribution Agentique
-            </h3>
-            <AgenticChannelsMatrix channelAudit={result.channel_audit} />
-          </div>
-
-          {/* Remediation Pack */}
-          <div className="space-y-3">
-            <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-              <FileCode2 className="w-4 h-4 text-[#1A3AFF]" />
-              Pack de Remédiation Technique Clé en Main
-            </h3>
-            <AgenticRemediationViewer remediationPack={result.remediation_pack} />
-          </div>
-
-          {/* x402 Playground */}
-          <Card className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
-              <div>
-                <h4 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                  <CreditCard className="w-4 h-4 text-[#1A3AFF]" />
-                  Banc d'Essai du Handshake x402 (Micro-Paiements Machine Base USDC)
-                </h4>
-                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
-                  Visualisez comment un agent autonome reçoit le challenge HTTP 402 et exécute son paiement M2M.
-                </p>
+        {/* Control Card */}
+        <Card className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <CardContent className="p-4 sm:p-5 space-y-3.5">
+            <form onSubmit={(e) => handleScan(e)} className="flex flex-col sm:flex-row gap-2.5">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="Entrez l'URL à auditer (ex: https://tally.so)"
+                  required
+                  className="pl-10 h-11 text-xs sm:text-sm font-mono bg-slate-50/50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 rounded-xl"
+                />
               </div>
 
               <Button
-                size="sm"
-                variant="outline"
-                onClick={handleTestX402}
-                disabled={x402Loading}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all gap-2 h-auto dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
+                type="submit"
+                disabled={loading}
+                className="h-11 px-6 rounded-xl font-semibold text-xs sm:text-[13px] bg-[#1A3AFF] hover:bg-[#1530D9] text-white shadow-sm transition-all gap-2 flex-shrink-0 cursor-pointer disabled:opacity-50"
               >
-                {x402Loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
-                Tester le Handshake Live
+                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                {loading ? 'Audit en cours...' : "Lancer l'audit agentique"}
               </Button>
+            </form>
+
+            {/* Quick Presets & Remediate Switch */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5 text-xs">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-slate-400 text-xs font-medium">Exemples rapides :</span>
+                {PRESETS.map((p) => (
+                  <button
+                    key={p.name}
+                    type="button"
+                    onClick={() => {
+                      setUrl(p.url);
+                      handleScan(undefined, p.url);
+                    }}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50/80 hover:bg-white text-slate-600 hover:text-slate-900 transition-all font-medium text-xs cursor-pointer dark:bg-slate-800/40 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="toggle-remediate"
+                  checked={remediate}
+                  onCheckedChange={setRemediate}
+                />
+                <Label htmlFor="toggle-remediate" className="text-xs text-slate-500 dark:text-slate-400 cursor-pointer font-normal">
+                  Générer le Pack de Remédiation
+                </Label>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Error display */}
+        {error && (
+          <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-between">
+            <span>{error}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleScan()}
+              className="rounded-lg h-7 text-xs border border-rose-200 text-rose-700 bg-white hover:bg-rose-50"
+            >
+              Réessayer
+            </Button>
+          </div>
+        )}
+
+        {/* Skeleton Loading State */}
+        {loading && <AgenticSkeletonLoader />}
+
+        {/* Results View */}
+        {result && !loading && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {/* Gauge Summary */}
+            <AgenticScoreGauge
+              score={result.score}
+              targetUrl={result.target_url}
+              auditId={result.audit_id}
+              savedInDb={Boolean(result.saved_in_db || result.audit_id)}
+              createdAt={result.created_at}
+            />
+
+            {/* 5 Pillars */}
+            <div className="space-y-3">
+              <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                <Layers className="w-4 h-4 text-[#1A3AFF]" />
+                Diagnostic Opérationnel sur les 5 Piliers d'Éligibilité
+              </h3>
+              <AgenticPillarsView pillars={result.pillars} />
             </div>
 
-            {x402Output && (
-              <pre className="bg-[#0b0f17] p-4 rounded-xl text-xs font-mono text-emerald-400 overflow-x-auto max-h-52 whitespace-pre-wrap">
-                <code>{x402Output}</code>
-              </pre>
-            )}
-          </Card>
-        </div>
-      )}
+            {/* 8 Channels Matrix */}
+            <div className="space-y-3">
+              <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                <Cpu className="w-4 h-4 text-[#1A3AFF]" />
+                Matrice de Présence sur les 8 Canaux de Distribution Agentique
+              </h3>
+              <AgenticChannelsMatrix channelAudit={result.channel_audit} />
+            </div>
+
+            {/* Remediation Pack */}
+            <div className="space-y-3">
+              <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                <FileCode2 className="w-4 h-4 text-[#1A3AFF]" />
+                Pack de Remédiation Technique Clé en Main
+              </h3>
+              <AgenticRemediationViewer remediationPack={result.remediation_pack} />
+            </div>
+
+            {/* x402 Playground */}
+            <Card className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
+                <div>
+                  <h4 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                    <CreditCard className="w-4 h-4 text-[#1A3AFF]" />
+                    Banc d'Essai du Handshake x402 (Micro-Paiements Machine Base USDC)
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
+                    Visualisez comment un agent autonome reçoit le challenge HTTP 402 et exécute son paiement M2M.
+                  </p>
+                </div>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleTestX402}
+                  disabled={x402Loading}
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all gap-2 h-auto dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
+                >
+                  {x402Loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                  Tester le Handshake Live
+                </Button>
+              </div>
+
+              {x402Output && (
+                <pre className="bg-[#0b0f17] p-4 rounded-xl text-xs font-mono text-emerald-400 overflow-x-auto max-h-52 whitespace-pre-wrap">
+                  <code>{x402Output}</code>
+                </pre>
+              )}
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
