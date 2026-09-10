@@ -31,7 +31,7 @@ import {
   BadgeDollarSign,
   PlusCircle,
   TrendingUp,
-  Bot,
+  Cpu,
   BookOpen,
   Layers,
   Sparkles,
@@ -124,7 +124,7 @@ export function AppSidebar() {
           {
             title: "Éligibilité Agentique",
             url: "/agentic",
-            icon: Bot,
+            icon: Cpu,
             badge: "M2M" as string | undefined,
           },
         ],

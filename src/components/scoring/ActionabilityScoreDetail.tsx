@@ -4,13 +4,13 @@ import {
   ShieldCheck, 
   Sparkles, 
   ArrowRight, 
-  Bot, 
+  Search, 
   TrendingUp, 
   Layers, 
   BookOpen, 
-  Wrench,
-  Maximize2,
-  ChevronRight
+  Wrench, 
+  Maximize2, 
+  ChevronRight 
 } from 'lucide-react';
 import { UnifiedActionabilityScore } from '@/types/scoring';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -159,7 +159,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
               </Badge>
             </div>
             <CardTitle className="text-base font-semibold text-foreground flex items-center gap-1.5">
-              <Bot className="w-4 h-4 text-muted-foreground" />
+              <Search className="w-4 h-4 text-muted-foreground" />
               <span>Être trouvé & cité</span>
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground mt-1">

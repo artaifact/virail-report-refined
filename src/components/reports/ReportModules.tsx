@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronDown, ChevronRight, CheckCircle, Star, AlertCircle, Bot, Users, BarChart3, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronRight, CheckCircle, Star, AlertCircle, Eye, Users, BarChart3, Sparkles } from "lucide-react";
 import { useState } from "react";
 import type { MappedReportData } from "../../types/llmo-report";
 
@@ -17,7 +17,7 @@ const ReportModules = ({ mappedData }: ReportModulesProps) => {
     {
       id: "perception",
       title: "Perception IA",
-      icon: <Bot className="w-5 h-5 text-slate-700" />,
+      icon: <Eye className="w-5 h-5 text-slate-700" />,
       status: "completed",
       color: "from-blue-500 to-blue-600",
       hasData: mappedData.perceptions.length > 0,

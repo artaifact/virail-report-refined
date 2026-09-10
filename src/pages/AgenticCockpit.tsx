@@ -11,7 +11,7 @@ import {
   Layers,
   CreditCard,
   FileCode2,
-  Bot,
+  Workflow,
   Play,
   Sparkles,
   Scale,
@@ -157,42 +157,42 @@ export default function AgenticCockpit() {
         {/* Top Banner */}
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-sm">
           <div className="max-w-3xl space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/50 border border-blue-200/60 dark:border-blue-900/40 text-xs font-semibold text-[#1A3AFF] dark:text-blue-400">
-              <Cpu className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted border border-border text-xs font-semibold text-foreground">
+              <Cpu className="w-3.5 h-3.5 text-muted-foreground" />
               <span>Audit d'Éligibilité Machine & Protocoles Agentiques (M2M)</span>
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              Cockpit d'Éligibilité & Distribution <span className="text-[#1A3AFF]">Agentique</span>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              Cockpit d'Éligibilité & Distribution <span className="text-foreground">Agentique</span>
             </h1>
 
-            <p className="text-xs sm:text-[13.5px] text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
+            <p className="text-xs sm:text-[13.5px] text-muted-foreground leading-relaxed font-normal">
               Auditez la découvrabilité et l'achetabilité machine de votre plateforme face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achat).
-              Détectez les risques de <strong className="font-semibold text-slate-700 dark:text-slate-300">disqualification silencieuse</strong> sur les 5 piliers et générez le pack de remédiation technique instantané.
+              Détectez les risques de <strong className="font-semibold text-foreground">disqualification silencieuse</strong> sur les 5 piliers et générez le pack de remédiation technique instantané.
             </p>
           </div>
         </div>
 
         {/* Control Card */}
-        <Card className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <Card className="rounded-xl border border-border bg-card shadow-sm">
           <CardContent className="p-4 sm:p-5 space-y-3.5">
             <form onSubmit={(e) => handleScan(e)} className="flex flex-col sm:flex-row gap-2.5">
               <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="Entrez l'URL à auditer (ex: https://tally.so)"
                   required
-                  className="pl-10 h-11 text-xs sm:text-sm font-mono bg-slate-50/50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 rounded-xl"
+                  className="pl-10 h-11 text-xs sm:text-sm font-mono bg-muted/40 border-border rounded-xl"
                 />
               </div>
 
               <Button
                 type="submit"
                 disabled={loading}
-                className="h-11 px-6 rounded-xl font-semibold text-xs sm:text-[13px] bg-[#1A3AFF] hover:bg-[#1530D9] text-white shadow-sm transition-all gap-2 flex-shrink-0 cursor-pointer disabled:opacity-50"
+                className="h-11 px-6 rounded-xl font-semibold text-xs sm:text-[13px] bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all gap-2 flex-shrink-0 cursor-pointer disabled:opacity-50"
               >
                 {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
                 {loading ? 'Audit en cours...' : "Lancer l'audit agentique"}
@@ -265,7 +265,7 @@ export default function AgenticCockpit() {
             {/* 5 Pillars */}
             <div className="space-y-3">
               <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                <Layers className="w-4 h-4 text-[#1A3AFF]" />
+                <Layers className="w-4 h-4 text-muted-foreground" />
                 Diagnostic Opérationnel sur les 5 Piliers d'Éligibilité
               </h3>
               <AgenticPillarsView pillars={result.pillars} />
@@ -274,7 +274,7 @@ export default function AgenticCockpit() {
             {/* 8 Channels Matrix */}
             <div className="space-y-3">
               <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                <Cpu className="w-4 h-4 text-[#1A3AFF]" />
+                <Cpu className="w-4 h-4 text-muted-foreground" />
                 Matrice de Présence sur les 8 Canaux de Distribution Agentique
               </h3>
               <AgenticChannelsMatrix channelAudit={result.channel_audit} />
@@ -285,7 +285,7 @@ export default function AgenticCockpit() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                    <Bot className="w-4 h-4 text-[#1A3AFF]" />
+                    <Workflow className="w-4 h-4 text-muted-foreground" />
                     Banc d'Essai de Parcours Réels d'Agents (Agent Journey Replay)
                   </h3>
                   <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -314,16 +314,17 @@ export default function AgenticCockpit() {
                     <button
                       key={intent.id}
                       type="button"
-                      onClick={() => handleRunJourney(intent.id)}
-                      disabled={journeyLoading}
-                      className={`p-3 rounded-xl text-left border transition-all cursor-pointer ${
+                      onClick={() => setSelectedIntent(intent.id)}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-primary bg-muted/60 shadow-xs ring-1 ring-primary/20'
-                          : 'border-border bg-card hover:border-slate-300'
+                          ? 'border-slate-900 dark:border-slate-100 bg-muted/40 shadow-xs ring-1 ring-slate-900/10 dark:ring-slate-100/10'
+                          : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-1 mb-1.5">
-                        <intent.icon className="w-4 h-4 text-muted-foreground" />
+                        <div className={`p-1.5 rounded-lg border text-muted-foreground ${isSelected ? 'bg-background border-border' : 'bg-muted/50 border-border/50'}`}>
+                          {<intent.icon className="w-4 h-4" />}
+                        </div>
                         {isSelected && (
                           <span className="px-1.5 py-0.5 rounded text-[9px] font-medium uppercase tracking-wider bg-primary text-primary-foreground">
                             Actif
@@ -344,7 +345,7 @@ export default function AgenticCockpit() {
               {/* Journey Loading / Results */}
               {journeyLoading ? (
                 <Card className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center space-y-3">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-[#1A3AFF] animate-pulse mx-auto">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-muted text-foreground animate-pulse mx-auto">
                     <Loader2 className="w-6 h-6 animate-spin" />
                   </div>
                   <div className="space-y-1">
@@ -365,7 +366,7 @@ export default function AgenticCockpit() {
               ) : (
                 <Card className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-6 text-center">
                   <div className="max-w-md mx-auto space-y-2">
-                    <Sparkles className="w-6 h-6 text-[#1A3AFF] mx-auto opacity-80" />
+                    <Sparkles className="w-6 h-6 text-muted-foreground mx-auto opacity-80" />
                     <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                       Visualisez en direct les étapes de raisonnement des agents
                     </div>
@@ -375,7 +376,7 @@ export default function AgenticCockpit() {
                     <Button
                       size="sm"
                       onClick={() => handleRunJourney(selectedIntent)}
-                      className="mt-2 h-8 px-4 text-xs font-semibold bg-[#1A3AFF] hover:bg-[#1530D9] text-white cursor-pointer"
+                      className="mt-2 h-8 px-4 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
                     >
                       <Play className="w-3 h-3 mr-1.5" /> Lancer le parcours "{CURATED_INTENTS.find(i => i.id === selectedIntent)?.label}"
                     </Button>
@@ -387,7 +388,7 @@ export default function AgenticCockpit() {
             {/* Remediation Pack */}
             <div className="space-y-3">
               <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                <FileCode2 className="w-4 h-4 text-[#1A3AFF]" />
+                <FileCode2 className="w-4 h-4 text-muted-foreground" />
                 Pack de Remédiation Technique Clé en Main
               </h3>
               <AgenticRemediationViewer remediationPack={result.remediation_pack} />
@@ -398,7 +399,7 @@ export default function AgenticCockpit() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
                 <div>
                   <h4 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                    <CreditCard className="w-4 h-4 text-[#1A3AFF]" />
+                    <CreditCard className="w-4 h-4 text-muted-foreground" />
                     Banc d'Essai du Handshake x402 (Micro-Paiements Machine Base USDC)
                   </h4>
                   <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">

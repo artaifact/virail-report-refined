@@ -13,7 +13,6 @@ import {
   FileText,
   ExternalLink,
   Cpu,
-  Bot,
   Search,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';

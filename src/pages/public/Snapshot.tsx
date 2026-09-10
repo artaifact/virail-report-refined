@@ -14,7 +14,6 @@ import {
   Lock,
   Zap,
   Globe,
-  Bot,
   Layers,
   FileCode,
 } from 'lucide-react';
@@ -111,7 +110,7 @@ export const Snapshot: React.FC = () => {
       {/* Hero & Barre de Scan */}
       <div className="max-w-4xl mx-auto px-4 pt-12 sm:pt-16 pb-10 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-6 animate-fade-in">
-          <Bot size={13} />
+          <Sparkles size={13} />
           <span>Audit Public d'Actionnabilité & Citations IA</span>
         </div>
 
