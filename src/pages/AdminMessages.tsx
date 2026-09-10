@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { AdminService } from '@/services/adminService';
 import { AdminMessage } from '@/types/admin';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { AlertCircle, Mail, Search, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 const AdminMessages: React.FC = () => {
+  usePageTitle('Admin - Messages');
   const [messages, setMessages] = useState<AdminMessage[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -60,10 +62,10 @@ const AdminMessages: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground px-6 py-8">
+    <div className="min-h-screen bg-background text-foreground px-3 py-4 sm:px-4 md:px-6 md:py-8">
       <div className="max-w-6xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Messages (Admin)</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Messages (Admin)</h1>
           <p className="text-muted-foreground">Gestion des messages: recherche, filtres, pagination</p>
         </div>
 
@@ -112,7 +114,7 @@ const AdminMessages: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               <Button onClick={() => { setPage(1); loadMessages(); }} disabled={loading} className="bg-primary text-primary-foreground">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2 text-blue-600" /> : null}
                 Appliquer
               </Button>
               <Button variant="outline" onClick={resetFilters} className="border-border">Réinitialiser</Button>
@@ -137,18 +139,18 @@ const AdminMessages: React.FC = () => {
             ) : (
               <div className="divide-y divide-border">
                 {messages.map((m) => (
-                  <div key={m.id} className="py-3 flex items-start justify-between gap-4 cursor-pointer hover:bg-muted/40 transition-colors" onClick={() => openMessage(m)}>
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center">
+                  <div key={m.id} className="py-3 flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4 cursor-pointer hover:bg-muted/40 transition-colors" onClick={() => openMessage(m)}>
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center">
                         <Mail className="h-4 w-4 text-foreground" />
                       </div>
-                      <div>
-                        <div className="font-semibold text-foreground">{m.subject || '(Sans sujet)'}</div>
-                        <div className="text-sm text-muted-foreground">{m.first_name} {m.last_name} • {m.email}</div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-foreground truncate">{m.subject || '(Sans sujet)'}</div>
+                        <div className="text-sm text-muted-foreground truncate">{m.first_name} {m.last_name} • {m.email}</div>
                         <div className="text-sm text-muted-foreground line-clamp-2 mt-1">{m.message}</div>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex sm:flex-col items-center sm:items-end gap-2 ml-12 sm:ml-0">
                       <div className="flex gap-2">
                         {m.status ? <Badge variant="outline" className="border-border">{m.status}</Badge> : null}
                         {m.priority ? <Badge variant="outline" className="border-border">{m.priority}</Badge> : null}
@@ -159,7 +161,7 @@ const AdminMessages: React.FC = () => {
                 ))}
               </div>
             )}
-            <div className="flex items-center justify-between pt-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>Par page</span>
                 <Select value={String(perPage)} onValueChange={(v) => { setPerPage(Number(v)); setPage(1); }}>
@@ -183,7 +185,7 @@ const AdminMessages: React.FC = () => {
         
         {selectedMessage && (
           <Dialog open={!!selectedMessage} onOpenChange={() => setSelectedMessage(null)}>
-            <DialogContent className="bg-card border-border max-w-2xl">
+            <DialogContent className="bg-card border-border w-[95vw] max-w-2xl">
               <DialogHeader>
                 <DialogTitle className="text-foreground">{selectedMessage.subject || '(Sans sujet)'}</DialogTitle>
                 <DialogDescription className="text-muted-foreground">

@@ -36,35 +36,26 @@ export function usePayment() {
       setError(null);
 
       // Charger les plans
-     //console.log('🔄 Chargement des plans...');
       const plansData = await apiService.getPlans();
-     //console.log('✅ Plans chargés:', plansData);
       setPlans(plansData.plans || []);
 
       // Charger l'abonnement actuel
       try {
-       //console.log('🔄 Chargement de l\'abonnement...');
         const subscriptionData = await apiService.getCurrentSubscription();
-       //console.log('✅ Abonnement chargé:', subscriptionData);
         setSubscription(subscriptionData.subscription || null);
       } catch (err) {
-       //console.log('❌ Aucun abonnement actif:', err);
         setSubscription(null);
       }
 
       // Charger l'utilisation
       try {
-       //console.log('🔄 Chargement des quotas d\'usage...');
         const usageData = await apiService.getUsageLimits();
-       //console.log('✅ Quotas d\'usage chargés:', usageData);
         setUsage(usageData);
       } catch (err) {
-       //console.log('❌ Impossible de charger l\'utilisation:', err);
         setUsage(null);
       }
 
     } catch (err) {
-      console.error('Erreur lors du chargement des données de paiement:', err);
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
       setLoading(false);

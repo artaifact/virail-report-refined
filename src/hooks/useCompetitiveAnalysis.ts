@@ -46,13 +46,12 @@ export const useCompetitiveAnalysis = () => {
         savedAnalyses: analyses
       }));
     } catch (error) {
-      console.error('Erreur lors du chargement des analyses sauvegardées:', error);
+      console.error("Erreur lors du chargement des analyses sauvegardées:", error);
     }
   }, []);
 
   const startAnalysis = useCallback(async (url: string): Promise<any> => {
     let progressInterval: NodeJS.Timeout | null = null;
-   //console.log('🚀 Démarrage de l\'analyse concurrentielle pour:', url);
 
     setState(prev => ({
       ...prev,
@@ -62,34 +61,41 @@ export const useCompetitiveAnalysis = () => {
     }));
 
     try {
-     //console.log('🔐 Vérification de la connexion...');
       // Vérifier si l'utilisateur est connecté
       const isAuthenticated = AuthService.isAuthenticated();
-     //console.log('✅ Authentification vérifiée:', isAuthenticated);
 
       if (!isAuthenticated) {
-        throw new Error('Vous devez être connecté pour lancer une analyse concurrentielle. Veuillez vous connecter et réessayer.');
+        setState(prev => ({
+          ...prev,
+          isAnalyzing: false,
+          error: 'Vous devez être connecté pour lancer une analyse',
+        }));
+        return null;
       }
 
-     //console.log('🔍 Vérification des quotas...');
+      if (canUseFeature && !canUseFeature('competitor_analysis')) {
+        setState(prev => ({
+          ...prev,
+          isAnalyzing: false,
+          error: "Quota d'analyses concurrentielles dépassé",
+        }));
+        return null;
+      }
+
 
       // Vérifier que les quotas sont disponibles
-     //console.log('🔍 Vérification de la disponibilité des quotas...');
       let attempts = 0;
       const maxAttempts = 3;
 
       while (!usageLimits && attempts < maxAttempts) {
-       //console.log(`⚠️ UsageLimits non disponibles (tentative ${attempts + 1}/${maxAttempts}), attente...`);
 
         // Note: Les cookies access_token et refresh_token sont HttpOnly
         // donc ils ne sont pas lisibles depuis JavaScript côté frontend
         // La vérification d'authentification se fait via AuthService.isAuthenticated()
-       //console.log('🔐 Vérification d\'authentification via AuthService...');
 
         // Re-vérifier l'authentification à chaque tentative
         const stillAuthenticated = AuthService.isAuthenticated();
         if (!stillAuthenticated) {
-         //console.log('🚨 Session expirée détectée, reconnexion nécessaire');
           throw new Error('Votre session a expiré. Veuillez vous reconnecter.');
         }
 
@@ -98,8 +104,6 @@ export const useCompetitiveAnalysis = () => {
       }
 
       if (!usageLimits) {
-       //console.log('❌ Impossible de charger les quotas après plusieurs tentatives');
-       //console.log('🔄 Tentative de rechargement forcé...');
 
         // Essayer une dernière fois avec un appel direct à l'API
         try {
@@ -110,24 +114,18 @@ export const useCompetitiveAnalysis = () => {
 
           if (directResponse.ok) {
             const directData = await directResponse.json();
-           //console.log('✅ Données quotas récupérées directement:', directData);
             // Ne pas continuer car on ne peut pas modifier l'état ici
           } else {
-            console.error('❌ Échec de récupération directe des quotas:', directResponse.status);
           }
         } catch (directError) {
-          console.error('❌ Erreur lors de récupération directe:', directError);
         }
       }
 
-     //console.log('📊 État des usageLimits:', usageLimits);
 
       // Vérifier que nous avons bien les données de quotas
       if (!usageLimits || !usageLimits.can_use_competitor_analysis) {
-       //console.log('⚠️ Données de quotas manquantes, tentative de diagnostic...');
 
         // Diagnostic détaillé
-       //console.log('🔍 Diagnostic quotas:', {
        //   usageLimits: !!usageLimits,
        //   hasCompetitorAnalysis: !!(usageLimits?.can_use_competitor_analysis),
        //   competitorAnalysis: usageLimits?.can_use_competitor_analysis,
@@ -135,16 +133,12 @@ export const useCompetitiveAnalysis = () => {
        // });
 
         // Essayer quand même
-       //console.log('🔄 Tentative malgré données manquantes...');
       }
 
       // Vérifier les quotas avant de lancer l'analyse
       const isAllowed = canUseFeature('competitor_analysis');
       const featureLimits = getFeatureLimits('competitor_analysis');
 
-     //console.log('✅ Résultat canUseFeature:', isAllowed);
-     //console.log('📊 Détails des quotas:', featureLimits);
-     //console.log('📋 État complet:', {
      //   isAllowed,
      //   type: typeof isAllowed,
      //   usageLimitsLoaded: !!usageLimits,
@@ -160,7 +154,6 @@ export const useCompetitiveAnalysis = () => {
       const bypassQuotaCheck = !usageLimits && !featureLimits;
 
       if (!finalAllowed && !bypassQuotaCheck) {
-       //console.log('❌ Accès refusé aux analyses concurrentielles');
         const reason = featureLimits?.reason ||
                       (usageLimits?.can_use_competitor_analysis?.reason) ||
                       'Limite d\'analyses concurrentielles atteinte';
@@ -168,9 +161,7 @@ export const useCompetitiveAnalysis = () => {
       }
 
       if (bypassQuotaCheck) {
-       //console.log('⚠️ Bypass vérification quotas côté frontend - backend gérera les quotas');
       } else {
-       //console.log('✅ Vérification des quotas réussie, lancement de l\'analyse...');
       }
 
       // Simulation du progrès
@@ -181,9 +172,7 @@ export const useCompetitiveAnalysis = () => {
         }));
       }, 300);
 
-     //console.log('🔧 Appel de runCompetitiveAnalysis...');
       const result = await runCompetitiveAnalysis(url);
-     //console.log('✅ Analyse terminée avec succès:', result);
 
       clearInterval(progressInterval);
 
@@ -200,8 +189,6 @@ export const useCompetitiveAnalysis = () => {
 
       return result;
     } catch (error) {
-      console.error('❌ Erreur lors de l\'analyse:', error);
-
       // Nettoyer l'intervalle de progression
       if (progressInterval) {
         clearInterval(progressInterval);
@@ -212,20 +199,22 @@ export const useCompetitiveAnalysis = () => {
       setState(prev => ({
         ...prev,
         isAnalyzing: false,
+        hasAnalysis: false,
         error: errorMessage,
         progress: 0
       }));
 
-      // Afficher plus d'informations sur l'erreur
-      console.error('📋 Détails de l\'erreur:', {
-        message: errorMessage,
-        type: error instanceof Error ? error.constructor.name : 'Unknown',
-        stack: error instanceof Error ? error.stack : undefined
-      });
-
-      throw error;
+      return null;
     }
   }, [canUseFeature, getFeatureLimits, usageLimits, loadSavedAnalyses]);
+
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null }));
+  }, []);
+
+  const updateProgress = useCallback((val: number) => {
+    setState(prev => ({ ...prev, progress: Math.max(0, Math.min(100, val)) }));
+  }, []);
 
   const loadAnalysis = useCallback(async (id: string) => {
     try {
@@ -234,10 +223,10 @@ export const useCompetitiveAnalysis = () => {
         setState(prev => ({
           ...prev,
           currentAnalysis: analysis,
-          hasAnalysis: true
+          hasAnalysis: true,
+          error: null
         }));
 
-        // Si les données enrichies manquent (mini_llm_results), tenter une récupération enrichie supplémentaire
         const hasMini = (analysis as any)?.mini_llm_results && Array.isArray((analysis as any).mini_llm_results);
         if (!hasMini) {
           try {
@@ -253,10 +242,13 @@ export const useCompetitiveAnalysis = () => {
             // ignore
           }
         }
+      } else {
+        setState(prev => ({ ...prev, error: 'Analysis not found' }));
       }
       return analysis;
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'analyse:', error);
+      const msg = error instanceof Error ? error.message : 'Analysis not found';
+      setState(prev => ({ ...prev, error: msg }));
       return null;
     }
   }, []);
@@ -266,13 +258,13 @@ export const useCompetitiveAnalysis = () => {
       await deleteCompetitiveAnalysis(id);
       setState(prev => ({
         ...prev,
+        savedAnalyses: prev.savedAnalyses.filter(a => a.id !== id),
         currentAnalysis: prev.currentAnalysis?.id === id ? null : prev.currentAnalysis,
         hasAnalysis: prev.currentAnalysis?.id === id ? false : prev.hasAnalysis
       }));
-      // Recharger les analyses après suppression
       await loadSavedAnalyses();
     } catch (error) {
-      console.error('Erreur lors de la suppression de l\'analyse:', error);
+      console.error("Erreur lors de la suppression de l'analyse:", error);
     }
   }, [loadSavedAnalyses]);
 
@@ -291,12 +283,19 @@ export const useCompetitiveAnalysis = () => {
     await loadSavedAnalyses();
   }, [loadSavedAnalyses]);
 
+  const usageInfo = getFeatureLimits ? getFeatureLimits('competitor_analysis' as any) : undefined;
+
   return {
     ...state,
     startAnalysis,
     loadAnalysis,
     deleteAnalysis,
     resetAnalysis,
-    refreshSavedAnalyses
+    refreshSavedAnalyses,
+    refreshAnalyses: refreshSavedAnalyses,
+    clearError,
+    updateProgress,
+    usageInfo,
+    setState,
   };
 };

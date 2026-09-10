@@ -1,6 +1,8 @@
 import React from 'react';
 import { RecommendationData } from '../../types/llmo-report';
 import { ThumbsUp, MessageSquare, Eye, Lightbulb, TrendingUp } from 'lucide-react';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { HELP } from '@/lib/help-content';
 
 interface RecommendationSectionProps {
   recommendations: RecommendationData[];
@@ -34,9 +36,12 @@ export const RecommendationSection: React.FC<RecommendationSectionProps> = ({ re
             <ThumbsUp className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Probabilité de Recommandation
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Probabilité de Recommandation
+              </h3>
+              <InfoTooltip {...HELP.probabiliteRecommandation} />
+            </div>
             <p className="text-sm text-gray-600">
               Score moyen: {averageScore}/100 • {recommendations.length} analyse{recommendations.length > 1 ? 's' : ''}
             </p>
@@ -118,6 +123,7 @@ const RecommendationCard: React.FC<{ recommendation: RecommendationData }> = ({ 
             <h6 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
               Éléments Citables
+              <InfoTooltip {...HELP.elementsQCitables} side="right" />
             </h6>
             <p className="text-blue-700 text-sm leading-relaxed">
               {recommendation.citableElements}
@@ -130,6 +136,7 @@ const RecommendationCard: React.FC<{ recommendation: RecommendationData }> = ({ 
             <h6 className="font-medium text-green-800 mb-2 flex items-center gap-2">
               <Eye className="w-4 h-4" />
               Visibilité LLM
+              <InfoTooltip {...HELP.visibiliteLLM} side="right" />
             </h6>
             <p className="text-green-700 text-sm leading-relaxed">
               {recommendation.llmVisibility}

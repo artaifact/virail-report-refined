@@ -5,10 +5,34 @@
 
 // Configuration
 // En développement, utiliser les chemins relatifs pour profiter du proxy Vite (port 8081)
-const API_BASE_URL = import.meta.env.DEV
-  ? ''
-  : (import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com');
+const getApiBaseUrl = () => {
+  // Si VITE_API_BASE_URL est défini explicitement, toujours l'utiliser
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // En développement sans URL explicite, utiliser un chemin relatif pour le proxy Vite
+  const mode = import.meta.env.MODE || import.meta.env.NODE_ENV || 'development';
+  if (mode === 'development' || import.meta.env.DEV) {
+    return '';
+  }
+  
+  // En production sans URL explicite, utiliser l'URL par défaut
+  return 'https://api.viraill.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000');
+const API_TIMEOUT_ANALYSIS = 120 * 60 * 1000; // 2h pour les analyses longues
+
+const ANALYSIS_ENDPOINTS = [
+  '/llmo/analyze',
+  '/llmo/run',
+  '/competitor',
+  '/analysis',
+  '/optimize',
+  '/crawl',
+];
 
 // Types pour les réponses API
 export interface ApiResponse<T = any> {
@@ -113,18 +137,20 @@ class ApiService {
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<T> {
+    const isAnalysis = ANALYSIS_ENDPOINTS.some(p => endpoint.includes(p));
+    const timeout = isAnalysis ? API_TIMEOUT_ANALYSIS : this.timeout;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
       const method = (options.method || 'GET').toUpperCase();
       const isGetLike = method === 'GET' || method === 'HEAD';
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...options,
+        method,
         credentials: 'include', // Important pour les cookies JWT
         headers: {
-          // Ne pas envoyer Content-Type pour GET/HEAD (évite un préflight CORS inutile)
-          ...(isGetLike ? {} : { 'Content-Type': 'application/json' }),
+          'Content-Type': 'application/json',
           ...(options.headers || {}),
         },
         signal: controller.signal,
@@ -142,7 +168,6 @@ class ApiService {
           if (isSilentEndpoint) {
             // Pour les endpoints silencieux, retourner null ou une valeur par défaut
             // plutôt que de lancer une erreur
-            console.warn(`Endpoint ${endpoint} retourne 401 - session probablement expirée`);
             throw new Error('UNAUTHORIZED_SILENT');
           }
           
@@ -158,17 +183,28 @@ class ApiService {
           );
         }
 
-        const errorText = await response.text();
+        let errorData: any = null;
+        try {
+          errorData = await response.json();
+        } catch {
+          try {
+            const errorText = await response.text();
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { detail: { message: `Erreur HTTP: ${response.status}` } };
+          }
+        }
 
-        const errorData = await response.json().catch(() => ({
-          detail: { message: `Erreur HTTP: ${response.status}` }
-        }));
+        const detail = errorData?.detail;
+        const message =
+          typeof detail === 'string'
+            ? detail
+            : Array.isArray(detail)
+            ? detail.map((d: any) => `${d.loc?.join('.')} — ${d.msg}`).join(', ')
+            : detail?.message ||
+              `Erreur API: ${response.status}`;
 
-        throw new Error(
-          errorData.detail?.message ||
-          errorData.detail ||
-          `Erreur API: ${response.status}`
-        );
+        throw new Error(message);
       }
 
       const data = await response.json();
@@ -177,7 +213,7 @@ class ApiService {
       clearTimeout(timeoutId);
       
       if (error instanceof Error) {
-        if (error.name === 'AbortError') {
+        if (error.name === 'AbortError' || error.message === 'AbortError' || error.message.toLowerCase().includes('abort')) {
           throw new Error('Délai d\'attente dépassé');
         }
         throw error;
@@ -340,19 +376,12 @@ class ApiService {
   }> {
     return this.request('/api/v1/subscriptions/', {
       method: 'POST',
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         plan_id: planId,
         success_url: successUrl,
         cancel_url: cancelUrl,
         auto_renew: true,
-        payment_method: {
-          type: "card",
-          card_number: "4242424242424242",
-          exp_month: "12",
-          exp_year: "2030",
-          cvc: "123",
-          name: "Test User"
-        }
+        payment_method: null,
       }),
     });
   }
@@ -450,8 +479,8 @@ class ApiService {
         if (error.message.includes('Page crashed') || error.message.includes('crashed')) {
           throw new Error(`Le site ${url} est incompatible avec notre analyseur. Essayez un autre site ou contactez le support.`);
         }
-        if (error.message.includes('timeout') || error.message.includes('TimeoutError')) {
-          throw new Error(`Le site ${url} met trop de temps à répondre. Essayez plus tard.`);
+        if (error.message.toLowerCase().includes('timeout') || error.message.includes('TimeoutError') || error.message.includes('Page.goto')) {
+          throw new Error(`Le site ${url} est inaccessible ou met trop de temps à répondre. Le site bloque peut-être l'accès automatisé (protection anti-bot, Cloudflare, etc.).`);
         }
         if (error.message.includes('net::ERR_BLOCKED_BY_CLIENT') || error.message.includes('blocked')) {
           throw new Error(`Le site ${url} bloque notre analyseur. Le site utilise probablement des protections anti-bot.`);
@@ -486,7 +515,7 @@ class ApiService {
     created_at: string;
   }> {
     try {
-      return await this.request('/api/v1/competitors/analyze', {
+      return await this.request('/api/v3/competitors/analyze', {
         method: 'POST',
         body: JSON.stringify({
           url,
@@ -500,8 +529,8 @@ class ApiService {
         if (error.message.includes('Page crashed') || error.message.includes('crashed')) {
           throw new Error(`Le site ${url} est incompatible avec notre analyseur. Essayez un autre site ou contactez le support.`);
         }
-        if (error.message.includes('timeout') || error.message.includes('TimeoutError')) {
-          throw new Error(`Le site ${url} met trop de temps à répondre. Essayez plus tard.`);
+        if (error.message.toLowerCase().includes('timeout') || error.message.includes('TimeoutError') || error.message.includes('Page.goto')) {
+          throw new Error(`Le site ${url} est inaccessible ou met trop de temps à répondre. Le site bloque peut-être l'accès automatisé (protection anti-bot, Cloudflare, etc.).`);
         }
         if (error.message.includes('net::ERR_BLOCKED_BY_CLIENT') || error.message.includes('blocked')) {
           throw new Error(`Le site ${url} bloque notre analyseur. Le site utilise probablement des protections anti-bot.`);
@@ -543,8 +572,8 @@ class ApiService {
         if (error.message.includes('Page crashed') || error.message.includes('crashed')) {
           throw new Error(`Le site ${url} est incompatible avec notre analyseur. Essayez un autre site ou contactez le support.`);
         }
-        if (error.message.includes('timeout') || error.message.includes('TimeoutError')) {
-          throw new Error(`Le site ${url} met trop de temps à répondre. Essayez plus tard.`);
+        if (error.message.toLowerCase().includes('timeout') || error.message.includes('TimeoutError') || error.message.includes('Page.goto')) {
+          throw new Error(`Le site ${url} est inaccessible ou met trop de temps à répondre. Le site bloque peut-être l'accès automatisé (protection anti-bot, Cloudflare, etc.).`);
         }
         if (error.message.includes('net::ERR_BLOCKED_BY_CLIENT') || error.message.includes('blocked')) {
           throw new Error(`Le site ${url} bloque notre analyseur. Le site utilise probablement des protections anti-bot.`);

@@ -1,2541 +1,4406 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { TrendingUp, TrendingDown, AlertTriangle, Clock, Zap, Shield, Target, BarChart3, Calendar, ArrowRight, CheckCircle, XCircle, Minus, CheckSquare, Brain, FileText, Globe, Globe2, Users, Activity, Plus, Loader2, Sparkles, Star, Rocket, Download, Building2, HelpCircle } from "lucide-react";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart, CartesianGrid, BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Cell } from "recharts";
-import { useNavigate } from "react-router-dom";
-import { AuthService } from "@/services/authService";
-import { useReports, useReport } from "@/hooks/useReports";
-import { mapLLMOReportData } from "@/lib/llmo-mapper";
-import { useTextualOptimization } from "@/hooks/useTextualOptimization";
-import UsageLimits from "@/components/UsageLimits";
-import SourcesAnalytics from "@/components/SourcesAnalytics";
+import { runAgenticScan, getLatestAgenticAudit } from '@/services/agenticService';
+import React, { useState, useEffect, useMemo } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import './Index.css';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { listCompetitorAnalyses, getCompetitorAnalysisById, extractDomain, formatScore, getScoreColor, CompetitorAnalysisResponse, CompetitorAnalysisSummary } from '@/services/competitorAnalysisService';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle, BarChart3, Users, LayoutDashboard } from 'lucide-react';
+import { useSearchParams, useLocation, useNavigate, Link } from 'react-router-dom';
+import { computeUnifiedScore } from '@/utils/scoreEngine';
+import { useReport, useReports, getLatestReportId } from '@/hooks/useReports';
+import { useSelectedReport } from '@/contexts/SelectedReportContext';
+import { AuthService } from '@/services/authService';
+import type { FullReportData, ReportResponse, BulkJobProgress, BulkPageResult, BulkResultsResponse, BulkJobSummary } from '@/lib/api';
+import { startBulkOptimization, getBulkProgress, getBulkPages, getBulkResults, cancelBulkJob, fetchPageOptimization, listBulkJobs } from '@/lib/api';
+import { cn } from '@/lib/utils';
+import { listCompetitorAnalyses, getCompetitorAnalysisById, getCompetitorAnalysisFromReport, extractDomain, CompetitorAnalysisResponse, mapApiResponseToCompetitorAnalysisResponse, mapAnalyseConcurrentielleV1ToResponse } from '@/services/competitorAnalysisService';
+import { deduplicateCompetitors, normalizeBrandName, normalizeDomain } from '@/utils/entityNormalizer';
+import { modelLogos } from '@/components/ModelLogosCarousel';
+import { usePayment } from '@/hooks/usePayment';
+import { ScoreCard } from '@/components/dashboard/ScoreCard';
+import { CausalImpactTimeline } from '@/components/causal/CausalImpactTimeline';
+import { ActionabilityScoreDetail } from '@/components/scoring/ActionabilityScoreDetail';
+import { ActionabilityScoreModal } from '@/components/scoring/ActionabilityScoreModal';
+import { NewAnalysisModal } from '@/components/NewAnalysisModal';
+import { AiExplainModal } from '@/components/AiExplainModal';
+import AskAIButton from '@/components/AskAIButton';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { HELP } from '@/lib/help-content';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { generateFullReportPdf } from '@/services/reportPdfService';
 
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffTime = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+// === CONSTANTES ===
+/**
+ * Récupère le logo d'un modèle avec une recherche par mot-clé
+ */
+const getModelLogo = (modelName: string): string | null => {
+  if (!modelName) return null;
+  const name = modelName.toLowerCase();
 
-  if (diffDays === 0) return "Aujourd'hui";
-  if (diffDays === 1) return "Hier";
-  return `Il y a ${diffDays} jours`;
+  for (const [key, path] of Object.entries(modelLogos)) {
+    if (name.includes(key)) return path;
+  }
+  return null;
 };
 
-const Index = () => {
-  const navigate = useNavigate();
-  const [recentAnalyses, setRecentAnalyses] = useState([]);
-  const [loadingAnalyses, setLoadingAnalyses] = useState(true);
-  const [errorAnalyses, setErrorAnalyses] = useState<string | null>(null);
-  const [selectedAnalysisId, setSelectedAnalysisId] = useState("");
-  const [competitorAnalyses, setCompetitorAnalyses] = useState<CompetitorAnalysisSummary[]>([]);
-  const [selectedCompetitorAnalysis, setSelectedCompetitorAnalysis] = useState<CompetitorAnalysisResponse | null>(null);
-  const [loadingCompetitiveAnalyses, setLoadingCompetitiveAnalyses] = useState(true);
-  const [selectedLLMModel, setSelectedLLMModel] = useState("openai/gpt-5");
-  const { reports, loading: reportsLoading } = useReports();
-  const [selectedGeoAnalysisId, setSelectedGeoAnalysisId] = useState("");
-  const { report: selectedGeoReport, loading: selectedGeoReportLoading } = useReport(selectedGeoAnalysisId);
-  const { optimizations, isLoading: optimizationsLoading } = useTextualOptimization();
-  const [selectedOptimizationId, setSelectedOptimizationId] = useState("");
-  const [selectedSourceAnalysisId, setSelectedSourceAnalysisId] = useState("");
-  const [selectedSourceAnalysis, setSelectedSourceAnalysis] = useState<CompetitorAnalysisResponse | null>(null);
-  const [loadingSourceAnalysis, setLoadingSourceAnalysis] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'improve'>('details');
-  const [expandedActions, setExpandedActions] = useState<{ [key: number]: boolean }>({});
+/**
+ * Extrait le score d'éligibilité agentique depuis les différentes structures possibles du rapport
+ * ou utilise une évaluation déterministe basée sur l'infrastructure machine
+ */
+export const extractAgenticScore = (reportData: FullReportData | null): number | null => {
+  if (!reportData) return null;
 
-  const toggleActions = (index: number) => {
-    setExpandedActions(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
-  };
+  const raw = reportData as any;
 
-  // Fonction pour générer les améliorations depuis le guide d'implémentation
-  const generateImprovementsFromGuide = () => {
-    // Récupérer les données depuis l'API comme dans LLMODashboard
-    const analyses = selectedGeoReport?.analyses || [];
-    const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-4-sonnet'];
-    let perf: any | null = null;
-
-    // Fonction pour extraire les données de performance depuis l'analyse
-    const extractPerformanceFromAnalysis = (analysis: any) => {
-      if (!analysis) return null;
-
-      // Recherche dans modules.audit_geo.performance_impact
-      const geoPackage = analysis.modules?.audit_geo;
-      if (!geoPackage) {
-        return null;
-      }
-
-      const perfData = geoPackage.performance_impact;
-      if (perfData) {
-        return perfData;
-      }
-
-      return null;
-    };
-
-    // Chercher les données de performance dans les analyses préférées
-    for (const model of preferredModels) {
-      const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
-      const extracted = extractPerformanceFromAnalysis(a);
-      if (extracted) {
-        perf = extracted;
-        break;
-      }
-    }
-
-    if (!perf) {
-      for (const a of analyses) {
-        const extracted = extractPerformanceFromAnalysis(a);
-        if (extracted) {
-          perf = extracted;
-          break;
-        }
-      }
-    }
-
-    // Chercher le guide d'implémentation
-    let guideData: any = null;
-    for (const model of preferredModels) {
-      const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
-      const extracted = extractGuideFromAnalysis(a);
-      if (extracted) {
-        guideData = extracted.guide;
-        break;
-      }
-    }
-
-    if (!guideData) {
-      for (const a of analyses) {
-        const extracted = extractGuideFromAnalysis(a);
-        if (extracted) {
-          guideData = extracted.guide;
-          break;
-        }
-      }
-    }
-
-    // Helpers pour rechercher dynamiquement le guide d'implémentation dans la structure réelle
-    // Deep search pour une clé type implementation_guide (avec alias possibles)
-    function deepFindImplementationGuide(node: any): any | null {
-      if (!node) return null;
-      if (typeof node !== 'object') return null;
-      if (Array.isArray(node)) {
-        for (const item of node) {
-          const res = deepFindImplementationGuide(item);
-          if (res) return res;
-        }
-        return null;
-      }
-      const possibleKeys = [
-        'implementation_guide',
-        'implementationGuide',
-        'guide_implementation',
-        'guideImplementation',
-        'implementation',
-        'guide'
-      ];
-      for (const key of possibleKeys) {
-        if (node[key]) {
-          return node[key];
-        }
-      }
-      for (const [k, v] of Object.entries(node)) {
-        const res = deepFindImplementationGuide(v);
-        if (res) return res;
-      }
-      return null;
-    }
-
-    // Fonction pour extraire le guide d'implémentation depuis une analyse
-    function extractGuideFromAnalysis(analysis: any) {
-      if (!analysis) return null;
-
-      // Recherche dans modules.audit_geo.implementation_guide
-      const geoPackage = analysis.modules?.audit_geo;
-      if (!geoPackage) {
-        return null;
-      }
-      let guide: any = null;
-      if ((geoPackage as any).implementation_guide) {
-        guide = (geoPackage as any).implementation_guide;
-      }
-      if (!guide) {
-        guide = deepFindImplementationGuide(geoPackage);
-      }
-      if (!guide) {
-        return null;
-      }
-      const source = (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé'] || 'inconnu';
-      return { guide, source };
-    }
-
-    // Extraire toutes les améliorations directement du guide d'implémentation
-    const improvements = [];
-
-    if (guideData && guideData.etapes_implementation) {
-
-      // Mapping des étapes vers les améliorations
-      const stepMapping = {
-        'optimisation_metadonnees': {
-          title: "Optimisation des métadonnées",
-          icon: Brain,
-          color: "text-blue-600"
-        },
-        'structure_semantique': {
-          title: "Structure sémantique",
-          icon: FileText,
-          color: "text-purple-600"
-        },
-        'mots_cles_ia': {
-          title: "Mots-clés IA",
-          icon: Target,
-          color: "text-green-600"
-        },
-        'contenu_contextuel': {
-          title: "Contenu contextuel",
-          icon: Globe,
-          color: "text-indigo-600"
-        },
-        'donnees_structurees': {
-          title: "Données structurées",
-          icon: Shield,
-          color: "text-orange-600"
-        }
-      };
-
-      // Créer une amélioration pour chaque étape du guide
-      for (const [stepKey, stepData] of Object.entries(guideData.etapes_implementation)) {
-        if (typeof stepData === 'object' && stepData !== null) {
-          const step = stepData as any;
-          const mapping = stepMapping[stepKey] || {
-            title: step.titre || stepKey,
-            icon: Brain,
-            color: "text-gray-600"
-          };
-
-          improvements.push({
-            title: mapping.title,
-            description: step.description || "Action d'optimisation pour l'IA",
-            improvement: step.priorite === 'Élevée' ? '40-60%' : step.priorite === 'Moyenne' ? '25-40%' : '15-30%',
-            icon: mapping.icon,
-            color: mapping.color,
-            actions: step.actions || [],
-            priorite: step.priorite || 'Moyenne',
-            effort: step.effort || 'Moyen',
-            duree: step.duree_estimee || '1-2 semaines'
-          });
-        }
-      }
-    }
-
-    // Si pas de guide, utiliser les données par défaut
-    if (improvements.length === 0) {
-      improvements.push(
-        {
-          title: "Visibilité moteurs génératifs",
-          description: perf?.visibilite_moteurs_generatifs?.description || "Amélioration de la visibilité dans ChatGPT, Perplexity, etc.",
-          improvement: perf?.visibilite_moteurs_generatifs?.amélioration || "35-50%",
-          icon: Brain,
-          color: "text-blue-600",
-          actions: ["Optimiser les métadonnées pour les moteurs génératifs", "Améliorer la structure sémantique du contenu"]
-        },
-        {
-          title: "Indexation IA",
-          description: perf?.indexation_ia?.description || "Meilleure indexation par les crawlers IA",
-          improvement: perf?.indexation_ia?.amélioration || "40-60%",
-          icon: Globe,
-          color: "text-green-600",
-          actions: ["Implémenter Schema.org pour l'indexation", "Optimiser robots.txt pour les crawlers IA"]
-        },
-        {
-          title: "Compréhension du contenu",
-          description: perf?.comprehension_contenu?.description || "Amélioration de la compréhension du contenu par l'IA",
-          improvement: perf?.comprehension_contenu?.amélioration || "30-45%",
-          icon: FileText,
-          color: "text-purple-600",
-          actions: ["Enrichir le contenu avec des entités nommées", "Améliorer la hiérarchie des titres H1-H6"]
-        },
-        {
-          title: "Autorité sémantique",
-          description: perf?.autorite_semantique?.description || "Renforcement de l'autorité sémantique du site",
-          improvement: perf?.autorite_semantique?.amélioration || "25-40%",
-          icon: Shield,
-          color: "text-orange-600",
-          actions: ["Ajouter des liens de confiance vers des sources autoritaires", "Implémenter des données structurées de confiance"]
-        }
-      );
-    }
-
-    return improvements;
-  };
-
-  // Debug: Vérifier selectedGeoReport
-  useEffect(() => {
-    // Monitoring selectedGeoReport changes
-  }, [selectedGeoReport, selectedGeoAnalysisId, selectedGeoReportLoading]);
-
-  // Charger les analyses concurrentielles
-  useEffect(() => {
-    const loadCompetitorAnalyses = async () => {
-      try {
-        setLoadingCompetitiveAnalyses(true);
-        const analyses = await listCompetitorAnalyses();
-        setCompetitorAnalyses(analyses);
-
-        // Charger automatiquement la première analyse
-        if (analyses.length > 0) {
-          const firstAnalysis = await getCompetitorAnalysisById(analyses[0].analysis_id);
-          setSelectedCompetitorAnalysis(firstAnalysis);
-        }
-      } catch (error) {
-        // Erreur silencieuse lors du chargement
-      } finally {
-        setLoadingCompetitiveAnalyses(false);
-      }
-    };
-
-    loadCompetitorAnalyses();
-  }, []);
-
-  // Gérer le changement d'analyse concurrentielle
-  const handleCompetitorAnalysisChange = async (analysisId: string) => {
-    try {
-      const analysis = await getCompetitorAnalysisById(Number(analysisId));
-      setSelectedCompetitorAnalysis(analysis);
-    } catch (error) {
-     
-    }
-  };
-
-  // Effet pour gérer le chargement des analyses GEO
-  useEffect(() => {
-    if (!reportsLoading && reports.length > 0 && !selectedGeoAnalysisId) {
-      setSelectedGeoAnalysisId(reports[0].id);
-    }
-  }, [reports, reportsLoading, selectedGeoAnalysisId]);
-
-  // Effet pour gérer le chargement des optimisations
-  useEffect(() => {
-    if (!optimizationsLoading && optimizations.length > 0 && !selectedOptimizationId) {
-      setSelectedOptimizationId(String(optimizations[0].id));
-    }
-  }, [optimizations, optimizationsLoading, selectedOptimizationId]);
-
-  // Effet pour gérer la sélection automatique d'une analyse concurrentielle pour la section Sources
-  useEffect(() => {
-    if (!loadingCompetitiveAnalyses && competitorAnalyses.length > 0 && !selectedSourceAnalysisId) {
-      setSelectedSourceAnalysisId(competitorAnalyses[0].analysis_id.toString());
-    }
-  }, [competitorAnalyses, loadingCompetitiveAnalyses, selectedSourceAnalysisId]);
-
-  // Effet pour charger l'analyse concurrentielle sélectionnée pour la section Sources
-  useEffect(() => {
-    const loadSelectedSourceAnalysis = async () => {
-      if (selectedSourceAnalysisId) {
-        try {
-          setLoadingSourceAnalysis(true);
-
-          const analysis = await getCompetitorAnalysisById(Number(selectedSourceAnalysisId));
-          setSelectedSourceAnalysis(analysis);
-        } catch (error) {
-          setSelectedSourceAnalysis(null);
-        } finally {
-          setLoadingSourceAnalysis(false);
-        }
-      } else {
-        setSelectedSourceAnalysis(null);
-      }
-    };
-
-    loadSelectedSourceAnalysis();
-  }, [selectedSourceAnalysisId]);
-
-  // Synchroniser la sélection entre les sections GEO et concurrentielle
-  useEffect(() => {
-    if (selectedSourceAnalysis && selectedSourceAnalysis.analysis_id) {
-      // Mettre à jour la section Analyse concurrentielle avec les mêmes données
-      setSelectedCompetitorAnalysis(selectedSourceAnalysis);
-    }
-  }, [selectedSourceAnalysis]);
-
-  // Enhanced LLMO-focused data
-  const llmoMetrics = {
-    globalScore: 74,
-    semanticCoherence: 82,
-    tokenizationEase: 68,
-    conceptualClarity: 76,
-    aiRecommendationRate: 85
-  };
-
-  useEffect(() => {
-    const fetchRecentAnalyses = async () => {
-      try {
-        setLoadingAnalyses(true);
-        setErrorAnalyses(null);
-
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
-        const response = await AuthService.makeAuthenticatedRequest(`${API_BASE_URL}/llmo/reports`);
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.detail || 'Erreur lors de la récupération des rapports.');
-        }
-
-        const data = await response.json();
-
-        const formattedAnalyses = data.reports.map((report) => ({
-          id: report.id,
-          url: new URL(report.url).hostname.replace('www.', ''),
-          score: report.score_produit_analyse ?? '--',
-          date: formatDate(report.created_at)
-        }));
-
-        setRecentAnalyses(formattedAnalyses);
-      } catch (err) {
-        setErrorAnalyses(err instanceof Error ? err.message : "Une erreur inconnue est survenue.");
-      } finally {
-        setLoadingAnalyses(false);
-      }
-    };
-
-    fetchRecentAnalyses();
-  }, []);
-
-  const llmoInsights = [
-    {
-      title: "Structure sémantique optimisée",
-      description: "Vos contenus utilisent une hiérarchie claire qui facilite la compréhension IA",
-      impact: "positive",
-      metric: "+12%"
-    },
-    {
-      title: "Vocabulaire technique à améliorer",
-      description: "Certains termes spécialisés nécessitent plus de contexte",
-      impact: "warning",
-      metric: "-8%"
-    },
-    {
-      title: "Cohérence conceptuelle forte",
-      description: "Les concepts clés sont bien définis et reliés logiquement",
-      impact: "positive",
-      metric: "+15%"
-    }
+  // 1. Directement sur root, report ou metadata
+  const directCandidates = [
+    raw.agentic_score,
+    raw.report?.agentic_score,
+    raw.metadata?.agentic_score,
+    raw.report?.metadata?.agentic_score,
+    raw.agentic_readiness?.score,
+    raw.report?.agentic_readiness?.score,
+    raw.scan_data?.score,
+    raw.llmo_report?.agentic_score,
+    raw.agentic_scan?.score,
   ];
+  for (const c of directCandidates) {
+    if (c !== undefined && c !== null && c !== '') {
+      const num = Number(c);
+      if (!isNaN(num)) return Math.max(0, Math.min(100, Math.round(num)));
+    }
+  }
 
-  // Enhanced chart data for LLMO metrics over time
-  const llmoTrendData = Array.from({ length: 30 }, (_, i) => ({
-    day: i + 1,
-    llmoScore: 65 + Math.sin(i * 0.2) * 10 + Math.random() * 5,
-    semanticScore: 70 + Math.cos(i * 0.15) * 8 + Math.random() * 4,
-    tokenization: 60 + Math.sin(i * 0.25) * 12 + Math.random() * 6
-  }));
+  // 2. Cache localStorage si un scan a déjà été effectué
+  try {
+    const url = raw.report?.url || raw.llmo_report?.url || raw.url || raw.analyse_citation?.client_site_url;
+    if (url) {
+      const hostname = new URL(url).hostname.replace('www.', '');
+      const cached = localStorage.getItem(`viraill_agentic_score_${hostname}`) ||
+        localStorage.getItem(`viraill_agentic_score_${url}`);
+      if (cached) {
+        const num = Number(cached);
+        if (!isNaN(num)) return Math.max(0, Math.min(100, Math.round(num)));
+      }
+    }
+  } catch { }
 
-  const chartConfig = {
-    llmoScore: {
-      label: "Score LLMO",
-      color: "#6B7280"
-    },
-    semanticScore: {
-      label: "Cohérence Sémantique",
-      color: "#9CA3AF"
-    },
-    tokenization: {
-      label: "Tokenisation",
-      color: "#D1D5DB"
+  // 3. Estimation déterministe basée sur les capacités machine observées
+  const geoScore = extractTargetGeoScore(reportData) ?? 50;
+  let estimated = Math.round(geoScore * 0.55);
+  if (raw.crawl_optimizer?.llms_txt?.exists) estimated += 15;
+  if (raw.crawl_optimizer?.robots_txt?.exists) estimated += 10;
+  if (raw.crawl_optimizer?.schemas && raw.crawl_optimizer.schemas.length > 0) estimated += 10;
+  return Math.max(15, Math.min(95, estimated));
+};
+
+
+// === SOUS-COMPOSANTS ===
+
+
+/**
+ * Graphique circulaire SVG affichant les citations
+ * Design multicolore avec segments orange, vert et accents colorés
+ */
+const MODEL_COLORS: Record<string, string> = {
+  'ChatGPT': '#86CEAC',
+  'Perplexity': '#8ECFD9',
+  'Gemini': '#93B5E1',
+  'Claude': '#E0C08A',
+  'Mistral': '#F0B88A',
+  'DeepSeek': '#A5A7E0',
+  'Meta AI': '#88B5E8',
+  'Qwen': '#B8A3DB',
+  'Grok': '#E8A0A0',
+};
+const MODEL_COLORS_FALLBACK = ['#B5A8D8', '#DBA8C4', '#8DD0C4', '#E0C68A', '#A5A7E0', '#8BC5E0'];
+
+/**
+ * Extrait le score target_geo_score depuis les différentes structures possibles du rapport
+ */
+export const extractTargetGeoScore = (reportData: FullReportData | null): number | null => {
+  if (!reportData) return null;
+
+  const raw = reportData as any;
+
+  // 1. Directement sur root ou report
+  const directCandidates = [
+    raw.target_geo_score,
+    raw.report?.target_geo_score,
+    raw.llmo_report?.target_geo_score,
+    raw.metadata?.target_geo_score,
+    raw.report?.metadata?.target_geo_score,
+    raw.target_positioning?.target_geo_score,
+    raw.report?.target_positioning?.target_geo_score,
+  ];
+  for (const c of directCandidates) {
+    if (c !== undefined && c !== null && c !== '') {
+      const num = Number(c);
+      if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+    }
+  }
+
+  // 2. Dans analyse_concurrentielle_v3 ou competitor_analysis ou analyse_concurrentielle_v1
+  const compCandidates = [
+    raw.analyse_concurrentielle_v3?.target_positioning?.target_geo_score,
+    raw.analyse_concurrentielle_v3?.target_geo_score,
+    raw.competitor_analysis?.target_positioning?.target_geo_score,
+    raw.competitor_analysis?.target_geo_score,
+    raw.analyse_concurrentielle_v1?.target_positioning?.target_geo_score,
+    raw.analyse_concurrentielle_v1?.target_geo_score,
+  ];
+  for (const c of compCandidates) {
+    if (c !== undefined && c !== null && c !== '') {
+      const num = Number(c);
+      if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+    }
+  }
+
+  // 3. Mapping via mapAnalyseConcurrentielleV1ToResponse si analyse_concurrentielle_v1 ou competitor_analysis existe
+  const compData = raw.analyse_concurrentielle_v1 || raw.competitor_analysis;
+  if (compData) {
+    try {
+      const mapped = mapAnalyseConcurrentielleV1ToResponse(raw.report?.id || 0, compData);
+      const score = mapped?.target_positioning?.target_geo_score;
+      if (score !== undefined && score !== null && score !== '') {
+        const num = Number(score);
+        if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+      }
+    } catch { }
+  }
+
+  // 4. Score produit analysé (report.score_produit_analyse)
+  const scoreProduit = raw.report?.score_produit_analyse ?? raw.score_produit_analyse;
+  if (scoreProduit !== undefined && scoreProduit !== null) {
+    const num = Number(scoreProduit);
+    if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+  }
+
+  // 5. Moyenne depuis les modules d'analyses (audit_geo.score_global_geo)
+  if (Array.isArray(raw.analyses) && raw.analyses.length > 0) {
+    const geoScores = raw.analyses
+      .map((a: any) => a.modules?.audit_geo?.score_global_geo)
+      .filter((s: any) => typeof s === 'number' && !isNaN(s));
+    if (geoScores.length > 0) {
+      const avg = geoScores.reduce((sum: number, val: number) => sum + val, 0) / geoScores.length;
+      return avg > 0 && avg <= 1 ? Math.round(avg * 100) : Math.round(avg);
+    }
+  }
+
+  // 6. Crawl optimizer overall score
+  const crawlOptScore = raw.crawl_optimizer?.score?.overall ?? (raw as any)?.crawl_optimizer?.analyze?.score?.overall;
+  if (crawlOptScore !== undefined && crawlOptScore !== null) {
+    const num = Number(crawlOptScore);
+    if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+  }
+
+  // 7. Metadata score
+  if (raw.report?.metadata?.score !== undefined && raw.report?.metadata?.score !== null) {
+    const num = Number(raw.report.metadata.score);
+    if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
+  }
+
+  return null;
+};
+
+function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportData: FullReportData | null; targetGeoScore?: number | null; agenticScore?: number | null }) {
+  const navigate = useNavigate();
+  const [isScoreAgenticHovered, setIsScoreAgenticHovered] = useState(false);
+  const [hoveredModel, setHoveredModel] = useState<string | null>(null);
+  const [isScoreGeoHovered, setIsScoreGeoHovered] = useState(false);
+  const [isWheelHovered, setIsWheelHovered] = useState(false);
+  const getTotalCitations = () => {
+    if (reportData?.analyse_citation?.total_citations !== undefined) {
+      return reportData.analyse_citation.total_citations;
+    }
+    if (!reportData?.analyses || reportData.analyses.length === 0) return 0;
+    const totalFromApi = reportData.analyses.reduce((sum, analysis) => {
+      const geoData = analysis.modules?.audit_geo;
+      const citations = geoData?.citations || geoData?.mentions || 0;
+      return sum + Number(citations);
+    }, 0);
+    return totalFromApi > 0 ? totalFromApi : 0;
+  };
+
+  const totalCitations = getTotalCitations();
+  const citationsByModel = (reportData?.analyse_citation?.citations_by_model || {}) as Record<string, number>;
+
+  // Regrouper par nom commercial et trier par citations desc
+  const grouped = useMemo(() => {
+    const map: Record<string, number> = {};
+    Object.entries(citationsByModel).forEach(([raw, count]) => {
+      const name = getModelLogo(raw) ? raw : raw;
+      const commercial = (() => {
+        const n = raw.toLowerCase().trim();
+        if (n.includes('sonar')) return 'Perplexity';
+        if (n.includes('claude')) return 'Claude';
+        if (n.startsWith('gpt') || n === 'chatgpt') return 'ChatGPT';
+        if (n.includes('gemini') || n === 'ai overview' || n === 'ai-overview') return 'Gemini';
+        if (n.includes('mistral') || n.includes('mixtral')) return 'Mistral';
+        if (n.includes('deepseek')) return 'DeepSeek';
+        if (n.includes('llama')) return 'Meta AI';
+        if (n.includes('qwen')) return 'Qwen';
+        if (n.includes('grok')) return 'Grok';
+        return raw;
+      })();
+      map[commercial] = (map[commercial] || 0) + (count as number);
+    });
+    return Object.entries(map)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [citationsByModel]);
+
+  const cx = 140, cy = 140, r = 95;
+  const totalSweep = 360;
+
+  const polarToCartesian = (angle: number, radius: number) => {
+    const rad = (angle * Math.PI) / 180;
+    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
+  };
+
+  const describeArc = (start: number, end: number, arcR: number) => {
+    if (end - start >= 360) end = start + 359.99;
+    const s = polarToCartesian(start, arcR);
+    const e = polarToCartesian(end, arcR);
+    const large = end - start > 180 ? 1 : 0;
+    return `M ${s.x} ${s.y} A ${arcR} ${arcR} 0 ${large} 1 ${e.x} ${e.y}`;
+  };
+
+  const hasModels = grouped.length > 0 && totalCitations > 0;
+  const activeModels = grouped.filter(m => m.count > 0);
+  let fallbackIdx = 0;
+  let currentAngle = -90;
+
+  // Recalculate colors for legend (need to mirror segment logic)
+  let legendFallbackIdx = 0;
+  const modelColors = hasModels ? activeModels.map((model) => ({
+    name: model.name,
+    count: model.count,
+    color: MODEL_COLORS[model.name] || MODEL_COLORS_FALLBACK[legendFallbackIdx++ % MODEL_COLORS_FALLBACK.length],
+    pct: totalCitations > 0 ? Math.round((model.count / totalCitations) * 100) : 0,
+  })) : [];
+
+  const hoveredData = hoveredModel ? modelColors.find(m => m.name === hoveredModel) : null;
+
+  const handleCitationsWheel = (e: React.WheelEvent) => {
+    if (modelColors.length === 0) return;
+    const currentIndex = modelColors.findIndex(m => m.name === hoveredModel);
+    const direction = e.deltaY > 0 ? 1 : -1;
+    let nextIndex = currentIndex === -1 ? 0 : currentIndex + direction;
+    if (nextIndex < 0) nextIndex = modelColors.length - 1;
+    if (nextIndex >= modelColors.length) nextIndex = 0;
+    setHoveredModel(modelColors[nextIndex].name);
+  };
+
+  // Configuration du graphique Score GEO (même dimension que Citations totales)
+  const normalizedGeoScore = targetGeoScore != null ? Math.max(0, Math.min(100, Math.round(targetGeoScore))) : null;
+  const geoStrokeColor = normalizedGeoScore != null
+    ? (normalizedGeoScore >= 75 ? '#10B981' : normalizedGeoScore >= 50 ? '#6366F1' : '#F59E0B')
+    : '#10B981';
+  const geoGradStart = normalizedGeoScore != null
+    ? (normalizedGeoScore >= 75 ? '#34D399' : normalizedGeoScore >= 50 ? '#818CF8' : '#FBBF24')
+    : '#34D399';
+  const geoCirc = 2 * Math.PI * r;
+  const geoDashoffset = normalizedGeoScore != null ? geoCirc - (normalizedGeoScore / 100) * geoCirc : 0;
+  const geoStatusLabel = normalizedGeoScore != null
+    ? (normalizedGeoScore >= 75 ? 'Visibilité optimale' : normalizedGeoScore >= 50 ? 'Bonne visibilité' : 'À améliorer')
+    : '';
+
+  // Configuration du graphique Score Agentique (même dimension que Citations totales et Score GEO)
+  const effectiveAgenticScore = agenticScore ?? extractAgenticScore(reportData) ?? (normalizedGeoScore != null ? Math.round(normalizedGeoScore * 0.65) : 58);
+  const normalizedAgenticScore = Math.max(0, Math.min(100, Math.round(effectiveAgenticScore)));
+  const agenticStrokeColor = normalizedAgenticScore >= 80 ? '#10B981' : normalizedAgenticScore >= 50 ? '#6366F1' : '#F43F5E';
+  const agenticGradStart = normalizedAgenticScore >= 80 ? '#34D399' : normalizedAgenticScore >= 50 ? '#818CF8' : '#FB7185';
+  const agenticCirc = 2 * Math.PI * r;
+  const agenticDashoffset = agenticCirc - (normalizedAgenticScore / 100) * agenticCirc;
+  const agenticStatusLabel = normalizedAgenticScore >= 80 ? 'Agentic Native' : normalizedAgenticScore >= 50 ? 'Agent-Friendly' : 'Non Conforme (M2M)';
+
+  return (
+    <div className="citations-chart">
+      {/* Conteneur des 3 graphiques côte à côte de même dimension et arrondi */}
+      <div className="flex flex-col xl:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-10 w-full mb-3">
+        {/* 1. Graphique circulaire : Citations totales (nom et pourcentage révélés uniquement sur la roue) */}
+        <div
+          className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto group"
+          onMouseEnter={() => {
+            setIsWheelHovered(true);
+            if (!hoveredModel && activeModels.length > 0) {
+              setHoveredModel(activeModels[0].name);
+            }
+          }}
+          onMouseLeave={() => {
+            setIsWheelHovered(false);
+            setHoveredModel(null);
+          }}
+          onWheel={handleCitationsWheel}
+        >
+          {/* Menu flottant des modèles : visible UNIQUEMENT quand on va sur la roue */}
+          {modelColors.length > 0 && (
+            <div
+              className={`hidden lg:flex flex-col gap-0.5 absolute right-[calc(100%+14px)] top-1/2 -translate-y-1/2 z-30 p-2 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-xl min-w-[135px] transition-all duration-200 ${isWheelHovered ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
+                }`}
+            >
+              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1 pb-1 mb-0.5 border-b border-slate-100 dark:border-slate-800">
+                Modèles IA
+              </div>
+              {modelColors.map((m) => {
+                const isThisHovered = hoveredModel === m.name;
+                return (
+                  <button
+                    key={m.name}
+                    type="button"
+                    className="flex items-center justify-between gap-2 text-xs transition-colors py-0.5 px-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left cursor-pointer"
+                    style={{ opacity: hoveredModel && !isThisHovered ? 0.4 : 1 }}
+                    onMouseEnter={() => setHoveredModel(m.name)}
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {getModelLogo(m.name) ? (
+                        <img
+                          src={getModelLogo(m.name)!}
+                          alt={m.name}
+                          className="w-3.5 h-3.5 object-contain flex-shrink-0 rounded-sm"
+                        />
+                      ) : (
+                        <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
+                      )}
+                      <span className="text-slate-700 dark:text-slate-200 font-medium text-[11px] truncate max-w-[75px]">{m.name}</span>
+                    </div>
+                    <span className="text-[11px] shrink-0 ml-1 font-semibold text-slate-900 dark:text-slate-100">
+                      {m.pct}%
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Cercle SVG Citations totales */}
+          <svg
+            viewBox="0 0 280 280"
+            className="w-full h-auto mx-auto cursor-pointer"
+          >
+            {/* Background circle - même épaisseur 32 que les segments */}
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
+
+            {/* Model segments */}
+            {hasModels && activeModels.map((model, i) => {
+              const fraction = model.count / totalCitations;
+              const segSweep = fraction * totalSweep;
+              const segStart = currentAngle;
+              const segEnd = segStart + segSweep;
+              currentAngle = segEnd;
+              const color = MODEL_COLORS[model.name] || MODEL_COLORS_FALLBACK[fallbackIdx++ % MODEL_COLORS_FALLBACK.length];
+              const isHovered = hoveredModel === model.name;
+              return (
+                <path
+                  key={model.name}
+                  d={describeArc(segStart, segEnd, r)}
+                  fill="none" stroke={color} strokeWidth="32" strokeLinecap="butt"
+                  opacity={hoveredModel && !isHovered ? 0.35 : 1}
+                  style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+                  onMouseEnter={() => setHoveredModel(model.name)}
+                />
+              );
+            })}
+
+            {/* Si pas de modèles, cercle gris */}
+            {!hasModels && totalCitations > 0 && (
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#CBD5E1" strokeWidth="32" opacity={0.5} />
+            )}
+
+            {/* Center text: pourcentage affiché au survol/scroll, ou nombre total par défaut */}
+            {hoveredData ? (
+              <>
+                <text x={cx} y={cy - 4} textAnchor="middle" style={{ fontSize: '38px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                  {hoveredData.pct}%
+                </text>
+                <text x={cx} y={cy + 18} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 600, fill: hoveredData.color || '#334155', fontFamily: 'Inter, sans-serif' }}>
+                  {hoveredData.name}
+                </text>
+                <text x={cx} y={cy + 34} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 500, fill: '#64748B', fontFamily: 'Inter, sans-serif' }}>
+                  {hoveredData.count} citation{hoveredData.count > 1 ? 's' : ''}
+                </text>
+              </>
+            ) : (
+              <>
+                <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                  {totalCitations}
+                </text>
+                <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
+                  Citations totales
+                </text>
+              </>
+            )}
+          </svg>
+        </div>
+
+        {/* 2. Graphique circulaire : Score GEO (même dimension et même arrondi exact) */}
+        {normalizedGeoScore !== null && (
+          <div className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto">
+            <svg
+              viewBox="0 0 280 280"
+              className="w-full h-auto mx-auto cursor-pointer"
+              onMouseEnter={() => setIsScoreGeoHovered(true)}
+              onMouseLeave={() => setIsScoreGeoHovered(false)}
+            >
+              <defs>
+                <linearGradient id="geoScoreRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor={geoGradStart} />
+                  <stop offset="100%" stopColor={geoStrokeColor} />
+                </linearGradient>
+              </defs>
+
+              {/* Background circle - même dimension exacte cx, cy, r et strokeWidth=32 */}
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
+
+              {/* Progress ring - même épaisseur 32 et même rayon r=95 */}
+              <circle
+                cx={cx}
+                cy={cy}
+                r={r}
+                fill="none"
+                stroke="url(#geoScoreRingGradient)"
+                strokeWidth="32"
+                strokeDasharray={geoCirc}
+                strokeDashoffset={geoDashoffset}
+                strokeLinecap="round"
+                transform={`rotate(-90 ${cx} ${cy})`}
+                style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.3s ease' }}
+              />
+
+              {/* Center text : même style typographique que citations totales */}
+              {isScoreGeoHovered ? (
+                <>
+                  <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                    {normalizedGeoScore}/100
+                  </text>
+                  <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: geoStrokeColor, fontFamily: 'Inter, sans-serif' }}>
+                    {geoStatusLabel}
+                  </text>
+                </>
+              ) : (
+                <>
+                  <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                    {normalizedGeoScore}
+                  </text>
+                  <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
+                    Score GEO
+                  </text>
+                </>
+              )}
+            </svg>
+          </div>
+        )}
+
+        {/* 3. Graphique circulaire : Score Agentique (même dimension et même arrondi exact) */}
+        <div className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto group">
+          <svg
+            viewBox="0 0 280 280"
+            className="w-full h-auto mx-auto cursor-pointer transition-transform duration-200 group-hover:scale-[1.02]"
+            onClick={() => navigate('/agentic')}
+            onMouseEnter={() => setIsScoreAgenticHovered(true)}
+            onMouseLeave={() => setIsScoreAgenticHovered(false)}
+          >
+            <defs>
+              <linearGradient id="agenticScoreRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor={agenticGradStart} />
+                <stop offset="100%" stopColor={agenticStrokeColor} />
+              </linearGradient>
+            </defs>
+
+            {/* Background circle - même dimension exacte cx, cy, r et strokeWidth=32 */}
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
+
+            {/* Progress ring - même épaisseur 32 et même rayon r=95 */}
+            <circle
+              cx={cx}
+              cy={cy}
+              r={r}
+              fill="none"
+              stroke="url(#agenticScoreRingGradient)"
+              strokeWidth="32"
+              strokeDasharray={agenticCirc}
+              strokeDashoffset={agenticDashoffset}
+              strokeLinecap="round"
+              transform={`rotate(-90 ${cx} ${cy})`}
+              style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.3s ease' }}
+            />
+
+            {/* Center text : même style typographique que citations totales et score GEO */}
+            {isScoreAgenticHovered ? (
+              <>
+                <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                  {normalizedAgenticScore}/100
+                </text>
+                <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: agenticStrokeColor, fontFamily: 'Inter, sans-serif' }}>
+                  {agenticStatusLabel}
+                </text>
+              </>
+            ) : (
+              <>
+                <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                  {normalizedAgenticScore}
+                </text>
+                <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
+                  Score Agentique
+                </text>
+              </>
+            )}
+          </svg>
+          <div className="text-center mt-1">
+            <button
+              type="button"
+              onClick={() => navigate('/agentic')}
+              className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors inline-flex items-center gap-0.5 cursor-pointer"
+              title="Consulter l'audit complet d'éligibilité machine"
+            >
+              <span>Éligibilité M2M</span>
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+  );
+}
+
+
+/**
+ * Section haute du dashboard - Fixe
+ * Contient le graphique de citations, le carrousel de logos et les boutons de navigation
+ */
+function TopSection({ reportData, reports, onOpenReportsModal, onOpenAiExplain, agenticScore }: { reportData: FullReportData | null, reports: ReportResponse[], onOpenReportsModal: () => void, onOpenAiExplain?: () => void, agenticScore?: number | null }) {
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const { toast } = useToast();
+
+  const domainName = useMemo(() => {
+    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || (reportData as any)?.url || (reportData as any)?.analyse_citation?.client_site_url;
+    if (!url) return null;
+    try { return new URL(url).hostname.replace('www.', ''); } catch { return null; }
+  }, [reportData]);
+
+  const lastUpdate = useMemo(() => {
+    const d = (reportData as any)?.report?.updated_at || (reportData as any)?.report?.created_at;
+    if (!d) return null;
+    const parsed = new Date(d);
+    if (isNaN(parsed.getTime())) return null;
+    return parsed.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  }, [reportData]);
+
+  // Récupération synchrone ou asynchrone du score target_geo_score
+  const [asyncGeoScore, setAsyncGeoScore] = useState<number | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const directScore = extractTargetGeoScore(reportData);
+    if (directScore !== null) {
+      setAsyncGeoScore(directScore);
+      return;
+    }
+
+    const reportId = (reportData as any)?.report?.id || (reportData as any)?.llmo_report?.id;
+    if (!reportId) return;
+
+    getCompetitorAnalysisFromReport(reportId)
+      .then((res) => {
+        if (!isMounted || !res) return;
+        const s = res.target_positioning?.target_geo_score;
+        if (s !== undefined && s !== null) {
+          const num = Number(s);
+          if (!isNaN(num)) {
+            setAsyncGeoScore(num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num));
+          }
+        }
+      })
+      .catch(() => { });
+
+    return () => { isMounted = false; };
+  }, [reportData]);
+
+  const targetGeoScore = asyncGeoScore ?? extractTargetGeoScore(reportData);
+
+  const handleExportPdf = async () => {
+    if (!reportData) return;
+    setIsExportingPdf(true);
+    toast({
+      title: "Génération du PDF en cours",
+      description: "Compilation des données de citations, d'optimisations et de veille concurrentielle...",
+    });
+    try {
+      await generateFullReportPdf(reportData);
+      toast({
+        title: "Rapport PDF prêt",
+        description: "L'aperçu et l'enregistrement PDF haute résolution ont été lancés.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Erreur d'exportation",
+        description: err?.message || "Impossible de générer le document PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
   return (
-    <div className="flex-1 min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-900 dark:via-slate-800/50 dark:to-slate-900 text-foreground">
-      {/* Main Content */}
-      <div className="px-4 sm:px-6 md:px-8 py-6 space-y-6 max-w-6xl mx-auto">
+    <div className="top-section relative">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1 mb-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">
+              {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
+            </h1>
+            <AskAIButton reportData={reportData} size="sm" onOpenAiModal={onOpenAiExplain} className="flex-shrink-0" />
+          </div>
+          {lastUpdate && (
+            <p className="text-xs text-slate-400 mt-1">Dernière mise à jour : {lastUpdate}</p>
+          )}
+        </div>
 
-        {/* Section principale avec système d'onglets */}
-        <Card className="bg-white dark:bg-slate-800 shadow-lg border-2 border-blue-100/50 dark:border-slate-700 backdrop-blur-sm">
-          <CardHeader className="pb-1 pt-4 px-3 sm:px-6 bg-white dark:bg-slate-800 border-b border-blue-100/50 dark:border-slate-700">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 flex-1 w-full">
-                <CardTitle className="text-lg sm:text-xl md:text-2xl font-normal text-foreground break-words">
-                  {selectedGeoReport?.report?.url 
-                    ? `Votre analyse GEO de ${extractDomain(selectedGeoReport.report.url)}` 
-                    : 'Aucune analyse disponible'}
-                </CardTitle>
-                {/* Select Organisation */}
-                {!loadingCompetitiveAnalyses && competitorAnalyses.length > 0 && (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-                    <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Organisation:</span>
-                    <Select value={selectedSourceAnalysisId} onValueChange={setSelectedSourceAnalysisId}>
-                      <SelectTrigger className="bg-card w-full sm:w-64">
-                        <SelectValue placeholder="Choisir une analyse" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {competitorAnalyses.map((analysis) => {
-                          const domain = extractDomain(analysis.url);
-                          const date = new Date(analysis.created_at).toLocaleDateString('fr-FR');
-                          return (
-                            <SelectItem key={analysis.analysis_id} value={analysis.analysis_id.toString()}>
-                              <div className="flex items-center gap-3 py-1">
-                                <div>
-                                  <span className="font-medium text-sm text-foreground">{domain}</span>
-                                  <div className="text-xs text-muted-foreground">{date} • {analysis.total_competitors_found} concurrents</div>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+        {/* Bouton Télécharger le rapport complet en PDF */}
+        <button
+          type="button"
+          onClick={handleExportPdf}
+          disabled={isExportingPdf || !reportData}
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200/80 transition-all shadow-xs self-start sm:self-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Télécharger l'intégralité du rapport (Infos détaillées, Améliorer, Compétition) en PDF"
+        >
+          {isExportingPdf ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+          ) : (
+            <Download className="w-3.5 h-3.5 text-indigo-600" />
+          )}
+          <span>{isExportingPdf ? 'Génération PDF...' : 'Télécharger le rapport (PDF)'}</span>
+        </button>
+      </div>
+      <CitationsChart reportData={reportData} targetGeoScore={targetGeoScore} agenticScore={agenticScore} />
+    </div>
+  );
+}
+
+/**
+ * Tableau des recommandations SEO avec barres de progression
+ */
+function RecommendationsTable({ reportData }: { reportData: FullReportData | null }) {
+  const [selectedRec, setSelectedRec] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({});
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!reportData) return;
+    setPdfLoading(true);
+    try {
+      await generateFullReportPdf(reportData);
+    } catch (err: any) {
+      // Fallback API direct si disponible
+      const reportId = reportData?.report?.id;
+      if (reportId) {
+        try {
+          const apiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://api.viraill.com' : 'http://localhost:8000');
+          const response = await AuthService.makeAuthenticatedRequest(
+            `${apiBase}/llmo/reports/${reportId}/download?format=pdf`,
+            { method: 'GET' }
+          );
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rapport-geo-${reportId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+          }
+        } catch { }
+      }
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  // Extraire les scores GEO moyens par catégorie depuis toutes les analyses
+  const getGeoScores = () => {
+    if (!reportData?.analyses || reportData.analyses.length === 0) return [];
+
+    const categories = [
+      { key: 'html_semantique', label: 'Structure HTML', description: 'Qualité du balisage HTML et hiérarchie sémantique' },
+      { key: 'donnees_structurees', label: 'Données structurées', description: 'Schema.org, JSON-LD et métadonnées enrichies' },
+      { key: 'accessibilite_crawlers', label: 'Accessibilité IA', description: 'Compatibilité avec les crawlers et bots IA' },
+      { key: 'optimisation_contenu', label: 'Qualité du contenu', description: 'Pertinence, richesse et structure du contenu' },
+      { key: 'metadonnees_techniques', label: 'Métadonnées', description: 'Balises meta, Open Graph et directives LLM' },
+      { key: 'conformite_standards', label: 'Standards web', description: 'Conformité aux standards et bonnes pratiques' },
+    ];
+
+    // Extraire le score: supporte audit_geo[key] (number) ou audit_geo[key].score (object)
+    const getScore = (audit: any, key: string): number | null => {
+      const val = audit?.[key];
+      if (typeof val === 'number') return val;
+      if (typeof val === 'object' && val !== null && typeof val.score === 'number') return val.score;
+      return null;
+    };
+
+    return categories.map(cat => {
+      const scores = reportData.analyses
+        .map((a: any) => getScore(a.modules?.audit_geo, cat.key))
+        .filter((s: any): s is number => typeof s === 'number' && s > 0);
+      const avg = scores.length > 0 ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : 0;
+      return {
+        element: cat.label,
+        description: cat.description,
+        score: avg,
+        modelScores: reportData.analyses
+          .filter((a: any) => getScore(a.modules?.audit_geo, cat.key) !== null)
+          .map((a: any) => ({ model: a.llm_name, score: Math.round(getScore(a.modules.audit_geo, cat.key) || 0) })),
+      };
+    }).filter(c => c.score > 0);
+  };
+
+  // Extraire le plan d'action depuis audit_geo (supporte string[] et object[])
+  const getPlanAction = () => {
+    if (!reportData?.analyses || reportData.analyses.length === 0) return [];
+    for (const analysis of reportData.analyses) {
+      if (analysis.modules?.audit_geo?.plan_action_geo && Array.isArray(analysis.modules.audit_geo.plan_action_geo)) {
+        return analysis.modules.audit_geo.plan_action_geo.map((item: any) => {
+          if (typeof item === 'string') return item;
+          return item.action || String(item);
+        });
+      }
+    }
+    return [];
+  };
+
+  const geoScores = getGeoScores();
+  const planAction = getPlanAction();
+
+  if (geoScores.length === 0) {
+    return (
+      <div className="recommendations-table" style={{ boxShadow: 'none', border: '1px solid #F1F5F9', padding: '24px', borderRadius: '16px' }}>
+        <div style={{ textAlign: 'center', color: '#64748B', padding: '40px' }}>
+          Aucune donnée GEO disponible pour ce rapport.
+        </div>
+      </div>
+    );
+  }
+
+  const recommendations = geoScores;
+
+  const handleRowClick = (rec: any) => {
+    setSelectedRec(rec);
+    setIsDialogOpen(true);
+  };
+
+  const getPriorityColor = (priority: string) => {
+    if (!priority) return '#6B7280';
+    const p = priority.toLowerCase();
+    if (p.includes('critique') || p.includes('haute') || p.includes('high')) return '#EF4444';
+    if (p.includes('moyenne') || p.includes('medium')) return '#F97316';
+    if (p.includes('basse') || p.includes('low')) return '#10B981';
+    return '#6B7280';
+  };
+
+  // Données du Guide d'implémentation - Package d'Optimisation GEO (même source que ImplementationGuide)
+  const getGuideData = () => {
+    type GuideFile = { label: string; content: string; filename: string; type: string };
+    const emptyResult = { scoreActuel: 58, scoreCible: 83, guide: null as any, files: [] as GuideFile[] };
+    if (!reportData?.analyses || reportData.analyses.length === 0) return emptyResult;
+
+    const auditGeoData = reportData.analyses.find((analysis: any) =>
+      analysis.modules?.audit_geo?.package_optimisation_geo
+    )?.modules?.audit_geo;
+    const pkg = auditGeoData?.package_optimisation_geo;
+    if (!pkg) return { ...emptyResult, scoreActuel: auditGeoData?.score_global_geo ?? 58 };
+
+    const guide = pkg.implementation_guide || null;
+    const tf = pkg.technical_files as Record<string, { content: string; filename: string; description: string }> | undefined;
+
+    // Construire la liste des fichiers depuis technical_files (prioritaire) ou anciens champs plats
+    const files: GuideFile[] = [];
+    const techFilesDefs = [
+      { key: 'schema_org_json', label: 'Schema.org JSON-LD', type: 'application/json' },
+      { key: 'llms_txt', label: 'LLMs.txt', type: 'text/plain' },
+      { key: 'robots_txt', label: 'Robots.txt', type: 'text/plain' },
+      { key: 'meta_tags', label: 'Meta Tags HTML', type: 'text/html' },
+      { key: 'open_graph', label: 'Open Graph Tags', type: 'text/html' },
+    ];
+    techFilesDefs.forEach(def => {
+      const entry = tf?.[def.key];
+      if (entry?.content) {
+        files.push({ label: def.label, content: entry.content, filename: entry.filename, type: def.type });
+      }
+    });
+
+    // Fallback: anciens champs plats si technical_files absent
+    if (files.length === 0) {
+      const flatDefs = [
+        { key: 'llms_txt_content', label: 'llms.txt', filename: 'llms.txt', type: 'text/plain' },
+        { key: 'robots_txt_content', label: 'robots.txt', filename: 'robots.txt', type: 'text/plain' },
+        { key: 'meta_tags_snippet', label: 'Meta Tags', filename: 'meta-tags.html', type: 'text/html' },
+        { key: 'open_graph_tags', label: 'Open Graph', filename: 'open-graph.html', type: 'text/html' },
+      ];
+      flatDefs.forEach(def => {
+        if (pkg[def.key]) files.push({ label: def.label, content: pkg[def.key], filename: def.filename, type: def.type });
+      });
+    }
+
+    return {
+      scoreActuel: guide?.score_geo_actuel ?? auditGeoData?.score_global_geo ?? 58,
+      scoreCible: guide?.score_geo_cible ?? pkg.package_metadata?.estimated_improvement?.score_estime ?? 83,
+      guide,
+      files,
+    };
+  };
+  const guideData = getGuideData();
+
+  const downloadFile = (content: string, filename: string, type: string) => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Progression du Guide (même clé localStorage que ImplementationGuide)
+  const guideStorageKey = reportData?.report?.id != null ? `implementation-guide-progress-${reportData.report.id}` : 'implementation-guide-progress-default';
+  const [guideStepProgress, setGuideStepProgress] = useState<Record<string, { status: string; progress: number; checkedActions?: Record<number, boolean> }>>(() => {
+    try {
+      const saved = localStorage.getItem(guideStorageKey);
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+
+  useEffect(() => {
+    if (isDialogOpen) {
+      try {
+        const saved = localStorage.getItem(guideStorageKey);
+        if (saved) setGuideStepProgress(JSON.parse(saved));
+      } catch { /* ignore */ }
+    }
+  }, [isDialogOpen, guideStorageKey]);
+
+  const getGuideStepStatus = (stepId: string) => guideStepProgress[stepId] || { status: 'Non commencé', progress: 0 };
+  const updateGuideStepStatus = (stepId: string, status: string) => {
+    const progressMap: Record<string, number> = { 'Non commencé': 0, 'En cours': 50, 'Terminé': 100 };
+    const next = { ...guideStepProgress, [stepId]: { ...getGuideStepStatus(stepId), status, progress: progressMap[status] ?? 0 } };
+    setGuideStepProgress(next);
+    try { localStorage.setItem(guideStorageKey, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+  const toggleGuideAction = (stepId: string, actionIndex: number) => {
+    const current = getGuideStepStatus(stepId);
+    const checked = { ...(current.checkedActions || {}), [actionIndex]: !(current.checkedActions || {})[actionIndex] };
+    const total = Object.keys(checked).length;
+    const done = Object.values(checked).filter(Boolean).length;
+    let status = current.status;
+    if (done === total && total > 0) status = 'Terminé';
+    else if (done > 0 && current.status === 'Non commencé') status = 'En cours';
+    const progress = total > 0 ? Math.round((done / total) * 100) : (status === 'Terminé' ? 100 : status === 'En cours' ? 50 : 0);
+    const next = { ...guideStepProgress, [stepId]: { ...current, checkedActions: checked, status, progress } };
+    setGuideStepProgress(next);
+    try { localStorage.setItem(guideStorageKey, JSON.stringify(next)); } catch { /* ignore */ }
+  };
+  const guideEtapes: any[] = guideData.guide?.etapes_implementation ? Object.values(guideData.guide.etapes_implementation) : [];
+  const guideTotalSteps = guideEtapes.length;
+  const guideGlobalProgress = (() => {
+    if (guideTotalSteps === 0) return 0;
+    const sum = guideEtapes.reduce((acc: number, etape: any, idx: number) => {
+      const stepId = `etape-${idx}-${etape.titre || `step-${idx}`}`;
+      return acc + getGuideStepStatus(stepId).progress;
+    }, 0);
+    return Math.round(sum / guideTotalSteps);
+  })();
+  const guideCompletedSteps = Object.values(guideStepProgress).filter(s => s.status === 'Terminé').length;
+  const guideInProgressSteps = Object.values(guideStepProgress).filter(s => s.status === 'En cours').length;
+
+  return (
+    <>
+      <div className="recommendations-table border border-slate-100 rounded-2xl p-4 md:p-6 shadow-none">
+
+        {/* Desktop: table layout */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full border-separate" style={{ borderSpacing: '0' }}>
+            <thead>
+              <tr>
+                <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100">
+                  <div className="flex items-center gap-1.5">CATÉGORIE<InfoTooltip {...HELP.scoreGEO} side="right" /></div>
+                </th>
+                <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100">DESCRIPTION</th>
+                <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100 w-[35%]">SCORE</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recommendations.map((rec, index) => (
+                <tr
+                  key={index}
+                  onClick={() => handleRowClick(rec)}
+                  className="cursor-pointer transition-colors hover:bg-slate-50"
+                >
+                  <td className={`py-5 text-[15px] text-slate-700 font-medium ${index === recommendations.length - 1 ? '' : 'border-b border-slate-100'}`}>
+                    <div className="flex items-center gap-2">
+                      {rec.element}
+                      <Info size={14} className="text-slate-400" />
+                    </div>
+                  </td>
+                  <td className={`py-5 text-sm text-slate-500 ${index === recommendations.length - 1 ? '' : 'border-b border-slate-100'}`}>
+                    {rec.description}
+                  </td>
+                  <td className={`py-5 ${index === recommendations.length - 1 ? '' : 'border-b border-slate-100'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${rec.score}%`,
+                            backgroundColor: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444',
+                          }}
+                        />
+                      </div>
+                      <span
+                        className="text-sm font-bold min-w-[40px]"
+                        style={{ color: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444' }}
+                      >{rec.score}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile: card layout */}
+        <div className="md:hidden flex flex-col gap-3">
+          {recommendations.map((rec, index) => (
+            <div
+              key={index}
+              onClick={() => handleRowClick(rec)}
+              className="cursor-pointer p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-semibold text-slate-700">{rec.element}</span>
+                <Info size={14} className="text-slate-400" />
+              </div>
+              <p className="text-xs text-slate-500 mb-3">{rec.description}</p>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${rec.score}%`,
+                      backgroundColor: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444',
+                    }}
+                  />
+                </div>
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444' }}
+                >{rec.score}%</span>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-2 pt-1 px-3 sm:px-6">
-            {/* Jauge de performance circulaire */}
-            <div className="flex items-center justify-center py-6">
-              <div className="relative w-32 h-32 sm:w-40 sm:h-40">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-100/50 to-indigo-100/50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-full blur-xl"></div>
-                <svg className="relative w-32 h-32 sm:w-40 sm:h-40 transform -rotate-90" viewBox="0 0 120 120">
-                  {/* Cercle de fond */}
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="50"
-                    stroke="#e0e7ff"
-                    className="dark:stroke-slate-700"
-                    strokeWidth="8"
-                    fill="none"
-                  />
-                  {/* Cercle de progression avec gradient */}
-                  <defs>
-                    <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#3b82f6" />
-                      <stop offset="100%" stopColor="#10b981" />
-                    </linearGradient>
-                  </defs>
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="50"
-                    stroke="url(#scoreGradient)"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 50}`}
-                    strokeDashoffset={`${2 * Math.PI * 50 * (1 - (selectedGeoReport?.analyses?.[0]?.modules?.audit_geo?.score_global_geo || 0) / 100)}`}
-                    strokeLinecap="round"
-                    className="transition-all duration-1000 ease-out drop-shadow-lg"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                      {selectedGeoReport?.analyses?.[0]?.modules?.audit_geo?.score_global_geo 
-                        ? Math.round(selectedGeoReport.analyses[0].modules.audit_geo.score_global_geo) + '%'
-                        : '0%'}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1 font-medium">Score GEO</div>
+          ))}
+        </div>
+
+      </div>
+
+      {/* Bouton Rapport PDF */}
+      {reportData?.report?.id && (
+        <div
+          onClick={(e) => { e.stopPropagation(); handleDownloadPdf(); }}
+          className={`mt-3 px-4 py-3 md:px-6 md:py-4 border border-slate-100 rounded-2xl flex justify-between items-center transition-colors hover:bg-slate-50 ${pdfLoading ? 'cursor-wait opacity-60' : 'cursor-pointer'}`}
+        >
+          <div className="flex items-center gap-3">
+            <Download size={18} className="text-slate-800" />
+            <div>
+              <span className="text-sm font-semibold text-slate-900">Rapport PDF</span>
+              <span className="text-xs text-slate-500 ml-2 hidden sm:inline">Télécharger le rapport complet</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {pdfLoading ? (
+              <span className="text-[13px] text-slate-500">Téléchargement...</span>
+            ) : (
+              <span className="text-[13px] font-semibold text-slate-800 bg-slate-100 px-3 py-1 rounded-lg">PDF</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de détails avec Guide d'Implémentation intégré */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto">
+          {selectedRec && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <DialogHeader>
+                <DialogTitle style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>
+                  {selectedRec.element}
+                </DialogTitle>
+                <DialogDescription style={{ fontSize: '14px', color: '#64748B', marginTop: '4px' }}>
+                  {selectedRec.description}
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* Score moyen */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
+                <div style={{ fontSize: '36px', fontWeight: 800, color: '#0F172A' }}>{selectedRec.score}<span style={{ fontSize: '18px', color: '#94A3B8' }}>%</span></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '6px' }}>Score moyen tous modèles</div>
+                  <div style={{ height: '8px', background: '#E2E8F0', borderRadius: '999px' }}>
+                    <div style={{ width: `${selectedRec.score}%`, height: '100%', background: '#1E293B', borderRadius: '999px', transition: 'width 0.5s ease' }} />
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Boutons d'onglets */}
-            <div className="flex items-center justify-center gap-3 flex-wrap pb-4">
-              <Button
-                variant={activeTab === 'details' ? 'default' : 'outline'}
-                className={`px-6 sm:px-8 py-2.5 text-sm sm:text-base font-medium transition-all ${
-                  activeTab === 'details' 
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white shadow-md hover:shadow-lg scale-105' 
-                    : 'bg-white/80 dark:bg-slate-700/80 border-2 border-blue-200 dark:border-slate-600 text-foreground hover:bg-blue-50/50 dark:hover:bg-slate-600/50 hover:border-blue-300 dark:hover:border-slate-500'
-                }`}
-                onClick={() => setActiveTab('details')}
-              >
-                Infos détaillées
-              </Button>
-              <Button
-                variant={activeTab === 'improve' ? 'default' : 'outline'}
-                className={`px-6 sm:px-8 py-2.5 text-sm sm:text-base font-medium transition-all ${
-                  activeTab === 'improve' 
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white shadow-md hover:shadow-lg scale-105' 
-                    : 'bg-white/80 dark:bg-slate-700/80 border-2 border-blue-200 dark:border-slate-600 text-foreground hover:bg-blue-50/50 dark:hover:bg-slate-600/50'
-                }`}
-                onClick={() => setActiveTab('improve')}
-              >
-                Améliorer
-              </Button>
-            </div>
-
-            {/* Contenu conditionnel selon l'onglet actif */}
-            {activeTab === 'details' && (
-              <>
-                <div className="mb-6 max-w-4xl mx-auto px-2 sm:px-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
-                    <h3 className="text-sm font-medium text-muted-foreground">Score GEO par Modèle IA</h3>
-                    <div className="text-xs text-muted-foreground">Scores d'optimisation génératif</div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                        <CardTitle className="text-sm sm:text-base text-foreground font-semibold flex items-center gap-2">
-                          Sources
-                          <div className="relative">
-                            <div
-                              className="w-3 h-3 bg-muted-foreground rounded-full flex items-center justify-center cursor-help hover:bg-primary transition-colors"
-                              onMouseEnter={() => setShowTooltip(true)}
-                              onMouseLeave={() => setShowTooltip(false)}
-                            >
-                              <span className="text-white text-xs font-bold">i</span>
-                            </div>
-
-                            {/* Tooltip */}
-                            {showTooltip && (
-                              <div className="absolute left-0 top-4 z-50 w-64 sm:w-72 p-2 bg-white rounded-lg shadow-lg border border-gray-200">
-                                <div className="text-xs">
-                                  <p className="font-medium text-gray-900 mb-1">Évolution de Votre Score Global</p>
-                                  <p className="text-gray-600 leading-relaxed">
-                                    Ce graphique montre l'<span className="font-medium">évolution réelle de votre score</span> au fil du temps
-                                    selon les différents modèles IA. Plus le score est élevé, plus votre site est performant dans les analyses concurrentielles.
-                                  </p>
-                                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                                    <div className="flex items-center gap-1">
-                                      <img src="/prompt-model-openai-for-light.svg" alt="GPT-5" className="w-3 h-3" />
-                                      <span className="text-gray-500 text-xs">GPT-5</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <img src="/prompt-model-claude.svg" alt="Claude 4" className="w-3 h-3" />
-                                      <span className="text-gray-500 text-xs">Claude 4</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <img src="/prompt-model-gemini.svg" alt="Gemini" className="w-3 h-3" />
-                                      <span className="text-gray-500 text-xs">Gemini</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                {/* Flèche du tooltip */}
-                                <div className="absolute left-3 -top-1 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
-                              </div>
-                            )}
-                          </div>
-                        </CardTitle>
-              
+              {/* Scores par modèle */}
+              {selectedRec.modelScores && selectedRec.modelScores.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score par modèle</div>
+                  <div className="flex flex-col gap-2.5">
+                    {selectedRec.modelScores.map((ms: any, idx: number) => (
+                      <div key={idx} className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 min-w-[100px] sm:min-w-[160px] shrink-0">
+                          {getModelLogo(ms.model) ? (
+                            <img src={getModelLogo(ms.model)!} alt={ms.model} className="w-4 h-4 object-contain" />
+                          ) : null}
+                          <span className="text-[13px] text-slate-700 font-medium truncate">{ms.model}</span>
+                        </div>
+                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
+                          <div className="h-full bg-slate-800 rounded-full transition-all duration-500" style={{ width: `${ms.score}%` }} />
+                        </div>
+                        <span className="text-[13px] font-bold text-slate-900 min-w-[40px] text-right">{ms.score}%</span>
                       </div>
-
-                  {/* Légende visible et lisible */}
-                  <div className="mb-4 p-3 sm:p-4 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-lg border border-blue-100/50 dark:border-slate-700">
-                    <div className="flex flex-wrap gap-3 sm:gap-6 justify-center">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src="/prompt-model-openai-for-light.svg"
-                          alt="OpenAI"
-                          className="w-6 h-6 object-contain"
-                        />
-                        <span className="text-sm font-semibold text-foreground">GPT-5</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src="/prompt-model-claude.svg"
-                          alt="Claude"
-                          className="w-6 h-6 object-contain"
-                        />
-                        <span className="text-sm font-semibold text-foreground">Claude 4</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src="/prompt-model-gemini.svg"
-                          alt="Gemini"
-                          className="w-6 h-6 object-contain"
-                        />
-                        <span className="text-sm font-semibold text-foreground">Gemini 2.5</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src="/Mistral.png"
-                          alt="Mistral"
-                          className="w-6 h-6 object-contain"
-                        />
-                        <span className="text-sm font-semibold text-foreground">Mistral 3.1</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src="/prompt-model-perplexity.svg"
-                          alt="Perplexity"
-                          className="w-6 h-6 object-contain"
-                        />
-                        <span className="text-sm font-semibold text-foreground">Sonar</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="h-[20rem] sm:h-[28rem] md:h-[32rem] w-full relative overflow-hidden bg-white/30 dark:bg-slate-800/30 backdrop-blur-sm rounded-lg border border-blue-100/50 dark:border-slate-700 p-2 sm:p-4 md:p-6">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={(() => {
-                          // Extraire les scores GEO par modèle depuis selectedGeoReport
-                          if (!selectedGeoReport?.analyses || selectedGeoReport.analyses.length === 0) {
-                            return [];
-                          }
-
-                          // Fonction pour normaliser le nom du modèle
-                          const normalizeModelName = (llmName: string): string => {
-                            const nameLower = llmName.toLowerCase();
-                            if (nameLower.includes('gpt') || nameLower.includes('openai')) {
-                              return 'GPT-5';
-                            } else if (nameLower.includes('claude')) {
-                              return 'Claude 4';
-                            } else if (nameLower.includes('gemini')) {
-                              return 'Gemini 2.5';
-                            } else if (nameLower.includes('mistral') || nameLower.includes('mixtral')) {
-                              return 'Mistral 3.1';
-                            } else if (nameLower.includes('sonar') || nameLower.includes('perplexity')) {
-                              return 'Sonar';
-                            }
-                            return llmName;
-                          };
-
-                          // Extraire les scores GEO par modèle
-                          const modelScores: Array<{ model: string; score: number }> = [];
-
-                          selectedGeoReport.analyses.forEach((analysis: any) => {
-                            const llmName = analysis.llm_name || '';
-                            const scoreGeo = analysis.modules?.audit_geo?.score_global_geo;
-                            
-                            if (scoreGeo !== undefined && scoreGeo !== null) {
-                              const normalizedModel = normalizeModelName(llmName);
-                              modelScores.push({
-                                model: normalizedModel,
-                                score: Math.round(scoreGeo)
-                              });
-                            }
-                          });
-
-                          // Trier par score décroissant
-                          modelScores.sort((a, b) => b.score - a.score);
-                          
-                          return modelScores;
-                        })()}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                      >
-                        <defs>
-                          {/* Gradients pour les lignes */}
-                          <linearGradient id="gpt5-line-gradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
-                            <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.4} />
-                          </linearGradient>
-                          <linearGradient id="claude4-line-gradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#dc2626" stopOpacity={0.8} />
-                            <stop offset="100%" stopColor="#dc2626" stopOpacity={0.4} />
-                          </linearGradient>
-                          <linearGradient id="gemini25-line-gradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#059669" stopOpacity={0.8} />
-                            <stop offset="100%" stopColor="#059669" stopOpacity={0.4} />
-                          </linearGradient>
-                          <linearGradient id="mistral31-line-gradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.8} />
-                            <stop offset="100%" stopColor="#7c3aed" stopOpacity={0.4} />
-                          </linearGradient>
-                          <linearGradient id="sonar-line-gradient" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#db2777" stopOpacity={0.8} />
-                            <stop offset="100%" stopColor="#db2777" stopOpacity={0.4} />
-                          </linearGradient>
-                        </defs>
-
-                        <XAxis
-                          dataKey="model"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{
-                            fontSize: 12,
-                            fill: '#6b7280',
-                            fontWeight: 500,
-                            fontFamily: 'system-ui, -apple-system, sans-serif'
-                          }}
-                          tickMargin={10}
-                          angle={-45}
-                          textAnchor="end"
-                          height={80}
-                        />
-                        <YAxis
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{
-                            fontSize: 12,
-                            fill: '#6b7280',
-                            fontWeight: 500,
-                            fontFamily: 'system-ui, -apple-system, sans-serif'
-                          }}
-                          domain={[0, 100]}
-                          tickFormatter={(value) => `${value}`}
-                          tickMargin={10}
-                          label={{ value: 'Score GEO', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6b7280', fontSize: '13px', fontWeight: 500 } }}
-                        />
-                        <ChartTooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0]?.payload;
-                              const score = Number(payload[0]?.value) || 0;
-                              const model = data?.model || '';
-                              
-                              return (
-                                <div className="bg-white rounded-lg shadow-lg p-3 min-w-[180px] border border-gray-200">
-                                  <p className="font-semibold text-gray-900 mb-2 text-sm">
-                                    {model}
-                                  </p>
-                                  <p className="font-bold text-gray-900 text-base">
-                                    Score: {score}/100
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Line
-                          type="linear"
-                          dataKey="score"
-                          stroke="#3b82f6"
-                          strokeWidth={2.5}
-                          dot={{ fill: '#3b82f6', r: 5, strokeWidth: 2, stroke: '#fff' }}
-                          activeDot={{ r: 7, stroke: '#3b82f6', strokeWidth: 2, fill: '#fff' }}
-                          connectNulls={true}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                <Card className="bg-white dark:bg-slate-800 shadow-md border border-blue-100/60 dark:border-slate-700">
-                  <CardHeader className="pb-4 px-3 sm:px-6 bg-white dark:bg-slate-800 border-b border-blue-100/40 dark:border-slate-700">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <CardTitle className="text-base sm:text-lg text-foreground font-semibold">
-                        Analyse concurrentielle
-                      </CardTitle>
-
-                      {/* Select Modèle LLM à droite du titre */}
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-                        <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Modèle:</span>
-                        <Select value={selectedLLMModel} onValueChange={setSelectedLLMModel}>
-                          <SelectTrigger className="bg-card w-full sm:w-48">
-                            <SelectValue placeholder="Modèle" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="openai/gpt-5">
-                              <div className="flex items-center gap-2">
-                                <img src="/prompt-model-openai-for-light.svg" alt="OpenAI" className="w-4 h-4" />
-                                <span className="font-medium">GPT-5</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="anthropic/claude-sonnet-4">
-                              <div className="flex items-center gap-2">
-                                <img src="/prompt-model-claude.svg" alt="Claude" className="w-4 h-4" />
-                                <span className="font-medium">Claude 4 Sonnet</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="google/gemini-2.5-pro">
-                              <div className="flex items-center gap-2">
-                                <img src="/prompt-model-gemini.svg" alt="Gemini" className="w-4 h-4" />
-                                <span className="font-medium">Gemini 2.5 Pro</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="mistralai/mistral-medium-3.1">
-                              <div className="flex items-center gap-2">
-                                <img src="/Mistral.png" alt="Mistral" className="w-4 h-4" />
-                                <span className="font-medium">Mistral 3.1</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="perplexity/sonar">
-                              <div className="flex items-center gap-2">
-                                <img src="/prompt-model-perplexity.svg" alt="Perplexity" className="w-4 h-4" />
-                                <span className="font-medium">Sonar</span>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+              {/* Plan d'action lié */}
+              {planAction.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Plan d'action</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {planAction.filter((a: string) => a.toLowerCase().includes(selectedRec.element.toLowerCase().split(' ')[0]) || a.toLowerCase().includes(selectedRec.element.toLowerCase().split(' ').pop()!)).slice(0, 4).map((action: string, idx: number) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 14px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
+                        <ChevronRight size={14} style={{ color: '#94A3B8', marginTop: '2px', flexShrink: 0 }} />
+                        <span style={{ fontSize: '13px', color: '#475569', lineHeight: '1.5' }}>{action}</span>
                       </div>
+                    ))}
+                    {planAction.filter((a: string) => a.toLowerCase().includes(selectedRec.element.toLowerCase().split(' ')[0]) || a.toLowerCase().includes(selectedRec.element.toLowerCase().split(' ').pop()!)).length === 0 && (
+                      <div style={{ fontSize: '13px', color: '#94A3B8', fontStyle: 'italic' }}>
+                        Aucune action spécifique trouvée pour cette catégorie.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Guide d'Implémentation intégré */}
+              {guideEtapes.length > 0 && (
+                <div>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)',
+                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    marginBottom: '12px',
+                    border: '1px solid #C7D2FE',
+                    textAlign: 'center',
+                  }}>
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#4338CA' }}>
+                      Implémentation automatique bientôt disponible
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', paddingTop: '16px', borderTop: '1px solid #F1F5F9' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 400, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Guide d'Implémentation</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '60px', height: '4px', background: '#F1F5F9', borderRadius: '999px' }}>
+                        <div style={{ width: `${guideGlobalProgress}%`, height: '100%', background: '#1E293B', borderRadius: '999px', transition: 'width 0.5s ease' }} />
+                      </div>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>{guideGlobalProgress}%</span>
                     </div>
+                  </div>
 
-                  </CardHeader>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {guideEtapes.map((etape: any, idx: number) => {
+                      const stepId = `etape-${idx}-${etape.titre || `step-${idx}`}`;
+                      const stepStatus = getGuideStepStatus(stepId);
+                      const actions: string[] = etape.actions || [];
+                      const checkedCount = Object.values(stepStatus.checkedActions || {}).filter(Boolean).length;
+                      const isExpanded = !!expandedSteps[stepId];
+                      const allDone = actions.length > 0 && checkedCount === actions.length;
 
-                  <CardContent className="px-3 sm:px-6">
-                    {loadingCompetitiveAnalyses ? (
-                      <div className="text-center py-8">
-                        <div className="flex items-center justify-center gap-2 mb-4">
-                          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                          <span className="text-muted-foreground">Chargement des analyses...</span>
-                        </div>
-                      </div>
-                    ) : competitorAnalyses.length === 0 ? (
-                      <div className="text-center py-8">
-                        <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
-                          <Users className="w-8 h-8 text-muted-foreground" />
-                        </div>
-                        <h3 className="font-semibold text-foreground mb-2">Pas d'analyse</h3>
-                        <p className="text-muted-foreground text-sm mb-4">
-                          Aucune analyse concurrentielle n'a été trouvée dans votre base de données.
-                        </p>
-                        <Button
-                          onClick={() => navigate('/competition')}
-                          className="bg-primary hover:opacity-90 text-primary-foreground"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Créer une analyse
-                        </Button>
-                      </div>
-                    ) : selectedCompetitorAnalysis || true ? (
-                      <div className="space-y-4">
-                        {(() => {
-                          let analysis = selectedCompetitorAnalysis;
-
-                          // Si pas d'analyse, créer des données de test temporaires
-                          if (!analysis) {
-                            analysis = {
-                              analysis_id: 42,
-                              url: "https://alan.com",
-                              title: "Alan - Test",
-                              description: "Test description",
-                              created_at: "2025-09-18T10:56:52.671130",
-                              target_positioning: {
-                                overall_rank: 3,
-                                total_competitors: 15,
-                                market_position: "🥈 Challenger fort",
-                                target_global_score: 87.1,
-                                target_llmo_score: 86.2,
-                                target_geo_score: 83.7,
-                                target_benchmark_score: 91.4,
-                                model_rankings: {
-                                  "openai/gpt-4.1-mini": {
-                                    rank: 1,
-                                    score: 95.0,
-                                    total_competitors: 6
-                                  }
-                                },
-                                competitive_advantages: [
-                                  "Excellence en optimisation IA (LLMO)",
-                                  "Performance technique supérieure"
-                                ],
-                                improvement_areas: [
-                                  "Améliorer le référencement génératif"
-                                ]
-                              },
-                              global_stats: {
-                                total_competitors_found: 13,
-                                total_models_executed: 3
-                              },
-                              consolidated_competitors: [
-                                { name: "Competitor 1" },
-                                { name: "Competitor 2" },
-                                { name: "Competitor 3" }
-                              ],
-                              models_analysis: [
-                                {
-                                  model_info: {
-                                    provider: "gpt-4o",
-                                    display_name: "🤖 openai/gpt-4.1-mini (gpt-4o)",
-                                    execution_time_ms: 9066,
-                                    status: "completed",
-                                    competitors_found: 5,
-                                    average_score: 0.84
-                                  },
-                                  competitors: [
-                                    {
-                                      name: "April",
-                                      url: "https://www.april.fr",
-                                      similarity_score: 0.9,
-                                      confidence_level: 1.0,
-                                      model_rank: 1
-                                    },
-                                    {
-                                      name: "Malakoff Humanis",
-                                      url: "https://www.malakoffhumanis.com",
-                                      similarity_score: 0.85,
-                                      confidence_level: 1.0,
-                                      model_rank: 2
-                                    }
-                                  ]
-                                }
-                              ]
-                            } as any;
-                          }
-
-                          const domain = extractDomain(analysis.url);
-                          const competitorsCount = analysis.consolidated_competitors?.length || 0;
-
-                          // Utiliser les données réelles ou des valeurs de test si les données sont manquantes
-                          const targetScore = analysis.target_positioning?.target_global_score || 87.1;
-                          const userRank = analysis.target_positioning?.overall_rank || 4;
-                          const totalCompetitors = analysis.target_positioning?.total_competitors || 14;
-                          const totalCompetitorsFound = analysis.global_stats?.total_competitors_found || 13;
-
-                          // Debug: vérifier les données
-                          
-                          return (
-                            <>
-                              {/* En-tête Top 5 Concurrents */}
-                              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                                
-                                
-                              </div>
-
-                              {/* Métriques de l'analyse concurrentielle */}
-                              {/* <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-muted p-4 rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Target className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-sm font-medium text-muted-foreground">Score Global</span>
+                      return (
+                        <div key={idx} style={{ borderRadius: '10px', border: '1px solid #F1F5F9', overflow: 'hidden' }}>
+                          <div
+                            onClick={() => setExpandedSteps(prev => ({ ...prev, [stepId]: !prev[stepId] }))}
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', cursor: 'pointer', background: isExpanded ? '#FFFFFF' : '#F8FAFC', transition: 'background 0.2s ease' }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                              {allDone ? (
+                                <CheckCircle2 size={14} style={{ color: '#10B981', flexShrink: 0 }} />
+                              ) : checkedCount > 0 ? (
+                                <Clock size={14} style={{ color: '#F97316', flexShrink: 0 }} />
+                              ) : (
+                                <Circle size={14} style={{ color: '#CBD5E1', flexShrink: 0 }} />
+                              )}
+                              <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>{etape.titre || `Étape ${idx + 1}`}</span>
+                              {etape.priorite && (
+                                <span style={{ fontSize: '10px', fontWeight: 600, color: getPriorityColor(etape.priorite), background: '#F1F5F9', padding: '2px 6px', borderRadius: '999px' }}>
+                                  {etape.priorite}
+                                </span>
+                              )}
                             </div>
-                            <div className="text-2xl font-bold text-foreground">
-                              {Math.round(targetScore)}/100
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Rang {userRank}/{totalCompetitors}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {etape.duree_estimee && (
+                                <span style={{ fontSize: '11px', color: '#94A3B8' }}>{etape.duree_estimee}</span>
+                              )}
+                              <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>{checkedCount}/{actions.length}</span>
+                              <ChevronRight size={12} style={{ color: '#94A3B8', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
                             </div>
                           </div>
-                          
-                          <div className="bg-muted p-4 rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Users className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-sm font-medium text-muted-foreground">Concurrents</span>
-                            </div>
-                            <div className="text-2xl font-bold text-foreground">
-                              {totalCompetitorsFound}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {analysis.global_stats?.total_models_executed || 0} modèles IA
-                            </div>
-                          </div>
-                        </div> */}
 
-                              {/* Concurrents par modèle LLM */}
-                              {(() => {
-                                // Normaliser le modèle sélectionné pour la recherche
-                                const normalizeForSearch = (model: string): string[] => {
-                                  const lower = model.toLowerCase();
-                                  const variants: string[] = [lower];
-                                  
-                                  // Extraire les variantes possibles
-                                  if (lower.includes('/')) {
-                                    const parts = lower.split('/');
-                                    variants.push(parts[0]); // provider
-                                    variants.push(parts[1]); // name
-                                    variants.push(parts[1].split('-')[0]); // premier mot du nom
-                                  } else {
-                                    variants.push(lower.split('-')[0]); // premier mot
-                                  }
-                                  
-                                  // Ajouter des alias communs
-                                  if (lower.includes('gpt-5') || lower.includes('gpt5')) {
-                                    variants.push('gpt-5', 'gpt5', 'openai/gpt-5');
-                                  }
-                                  if (lower.includes('claude') || lower.includes('sonnet')) {
-                                    variants.push('claude-4-sonnet', 'claude-sonnet-4', 'anthropic/claude-4-sonnet');
-                                  }
-                                  if (lower.includes('gemini')) {
-                                    variants.push('gemini-2.5-pro', 'google/gemini-2.5-pro');
-                                  }
-                                  if (lower.includes('mistral') || lower.includes('mixtral')) {
-                                    variants.push('mixtral-3.1', 'mistral-3.1', 'mistralai/mistral-medium-3.1');
-                                  }
-                                  if (lower.includes('sonar') || lower.includes('perplexity')) {
-                                    variants.push('sonar', 'perplexity/sonar');
-                                  }
-                                  
-                                  return [...new Set(variants)]; // Supprimer les doublons
-                                };
-
-                                const searchVariants = normalizeForSearch(selectedLLMModel || '');
-                                
-                                // Trouver l'analyse du modèle sélectionné (robuste aux alias provider/model_name)
-                                const modelAnalysis = analysis.models_analysis?.find((ma) => {
-                                  const prov = (ma.model_info?.provider || '').toLowerCase();
-                                  const name = (ma.model_info?.model_name || '').toLowerCase();
-                                  const disp = (ma.model_info?.display_name || '').toLowerCase();
-                                  
-                                  // Vérifier toutes les variantes
-                                  return searchVariants.some(variant => 
-                                    prov === variant ||
-                                    name === variant ||
-                                    disp === variant ||
-                                    prov.includes(variant) ||
-                                    name.includes(variant) ||
-                                    disp.includes(variant) ||
-                                    variant.includes(prov) ||
-                                    variant.includes(name) ||
-                                    variant.includes(disp)
-                                  );
-                                });
-
-                                // Debug: logger les informations pour diagnostiquer
-                                
-
-                                // Si aucun modèle spécifique trouvé, utiliser tous les concurrents consolidés
-                                if (!modelAnalysis || !modelAnalysis.competitors || modelAnalysis.competitors.length === 0) {
-                                  // Fallback: afficher les concurrents consolidés si disponibles
-                                  const fallbackCompetitors = analysis.consolidated_competitors || [];
-                                  
-                                  if (fallbackCompetitors.length > 0) {
+                          {isExpanded && (
+                            <div style={{ padding: '0 14px 14px', borderTop: '1px solid #F1F5F9' }}>
+                              {etape.description && (
+                                <p style={{ fontSize: '12px', color: '#64748B', margin: '10px 0 8px', lineHeight: '1.5' }}>{etape.description}</p>
+                              )}
+                              {actions.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                  {actions.map((action: string, aIdx: number) => {
+                                    const isChecked = !!(stepStatus.checkedActions || {})[aIdx];
                                     return (
-                                      <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                          <h4 className="text-sm font-medium text-neutral-600">
-                                            Top 5 Concurrents
-                                          </h4>
-                                          <Badge variant="outline" className="text-xs">
-                                            {fallbackCompetitors.length} concurrents
-                                          </Badge>
-                                        </div>
-
-                                        {fallbackCompetitors.slice(0, 5).map((competitor, index) => {
-                                          const score = Math.round(competitor.average_score * 100);
-                                          const scoreColor = score >= 80 ? 'text-green-600' :
-                                            score >= 60 ? 'text-yellow-600' : 'text-red-600';
-                                            return (
-                                              <div key={index} className="flex items-center justify-between p-3 bg-white/70 dark:bg-slate-700/70 backdrop-blur-sm rounded-lg border border-blue-100/50 dark:border-slate-600 hover:shadow-md hover:border-blue-200 dark:hover:border-slate-500 transition-all">
-                                                <div className="flex items-center gap-3">
-                                                  <div className="w-8 h-8 bg-blue-50 dark:bg-slate-600 rounded-lg flex items-center justify-center border border-blue-200/50 dark:border-slate-500">
-                                                    <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">#{competitor.global_rank || index + 1}</span>
-                                                  </div>
-                                                <div>
-                                                  <span className="text-sm font-medium text-foreground">{competitor.name}</span>
-                                                  <div className="text-xs text-muted-foreground">
-                                                    {extractDomain(competitor.primary_url)}
-                                                  </div>
-                                                </div>
-                                              </div>
-                                              <div className="text-right">
-                                                <Badge variant="outline" className={`text-xs ${scoreColor} border-2`}>
-                                                  Score: {score}/100
-                                                </Badge>
-                                                {competitor.source_models && competitor.source_models.length > 0 && (
-                                                  <div className="text-xs text-muted-foreground mt-1">
-                                                    {competitor.source_models.length} modèle{competitor.source_models.length > 1 ? 's' : ''}
-                                                  </div>
-                                                )}
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
+                                      <label key={aIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer', padding: '6px 8px', borderRadius: '6px', background: isChecked ? '#F0FDF4' : '#F8FAFC', transition: 'background 0.2s ease' }}>
+                                        <input
+                                          type="checkbox"
+                                          checked={isChecked}
+                                          onChange={() => toggleGuideAction(stepId, aIdx)}
+                                          style={{ marginTop: '2px', accentColor: '#1E293B' }}
+                                        />
+                                        <span style={{ fontSize: '12px', color: isChecked ? '#94A3B8' : '#475569', textDecoration: isChecked ? 'line-through' : 'none', lineHeight: '1.5' }}>
+                                          {action}
+                                        </span>
+                                      </label>
                                     );
-                                  }
-                                  
-                                  return (
-                                    <div className="text-center py-6 bg-muted rounded-lg">
-                                      <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center mx-auto mb-3">
-                                        <Users className="w-6 h-6 text-muted-foreground" />
+                                  })}
+                                </div>
+                              )}
+                              {etape.verification && etape.verification.length > 0 && (
+                                <div style={{ marginTop: '10px' }}>
+                                  <span style={{ fontSize: '10px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vérification</span>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', marginTop: '4px' }}>
+                                    {etape.verification.map((v: string, vIdx: number) => (
+                                      <div key={vIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '11px', color: '#64748B' }}>
+                                        <ChevronRight size={10} style={{ color: '#CBD5E1', marginTop: '2px', flexShrink: 0 }} />
+                                        <span>{v}</span>
                                       </div>
-                                      <p className="text-muted-foreground text-sm">
-                                        Aucun concurrent trouvé pour ce modèle
-                                      </p>
-                                      <p className="text-muted-foreground text-xs mt-2">
-                                        Modèles disponibles: {analysis.models_analysis?.map(m => m.model_info?.display_name || m.model_info?.model_name).join(', ') || 'Aucun'}
-                                      </p>
-                                    </div>
-                                  );
-                                }
-
-                                return (
-                                  <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                      <h4 className="text-sm font-medium text-neutral-600">
-                                        Top 5 Concurrents - {modelAnalysis.model_info.display_name.replace('🤖 ', '')}
-                                      </h4>
-                                      <Badge variant="outline" className="text-xs">
-                                        Score moyen: {(modelAnalysis.model_info.average_score * 100).toFixed(0)}/100
-                                      </Badge>
-                                    </div>
-
-                                    {modelAnalysis.competitors.slice(0, 5).map((competitor, index) => {
-                                      const score = Math.round(competitor.similarity_score * 100);
-                                      const scoreColor = score >= 80 ? 'text-green-600' :
-                                        score >= 60 ? 'text-yellow-600' : 'text-red-600';
-                                      return (
-                                        <div key={index} className="flex items-center justify-between p-3 bg-white/70 dark:bg-slate-700/70 backdrop-blur-sm rounded-lg border border-blue-100/50 dark:border-slate-600 hover:shadow-md hover:border-blue-200 dark:hover:border-slate-500 transition-all">
-                                          <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-blue-50 dark:bg-slate-600 rounded-lg flex items-center justify-center border border-blue-200/50 dark:border-slate-500">
-                                              <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">#{competitor.model_rank}</span>
-                                            </div>
-                                            <div>
-                                              <span className="text-sm font-medium text-foreground">{competitor.name}</span>
-                                              <div className="text-xs text-muted-foreground">
-                                                {extractDomain(competitor.url)}
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div className="text-right">
-                                            <Badge variant="outline" className={`text-xs ${scoreColor} border-2`}>
-                                              Score: {score}/100
-                                            </Badge>
-                                            <div className="text-xs text-muted-foreground mt-1">
-                                              Confiance: {(competitor.confidence_level * 100).toFixed(0)}%
-                                            </div>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-
-                                    {/* Stats du modèle */}
-                                    {/* <div className="bg-neutral-50 p-3 rounded-lg">
-                                <div className="grid grid-cols-3 gap-4 text-center">
-                                  <div>
-                                    <div className="text-sm font-semibold text-neutral-900">
-                                      {modelAnalysis.model_info.competitors_found}
-                                    </div>
-                                    <div className="text-xs text-neutral-600">Trouvés</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-semibold text-neutral-900">
-                                      {(modelAnalysis.model_info.execution_time_ms / 1000).toFixed(1)}s
-                                    </div>
-                                    <div className="text-xs text-neutral-600">Durée</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-semibold text-neutral-900">
-                                      {modelAnalysis.model_info.status === 'completed' ? '✅' : '⏳'}
-                                    </div>
-                                    <div className="text-xs text-neutral-600">Statut</div>
+                                    ))}
                                   </div>
                                 </div>
-                              </div> */}
-                                  </div>
-                                );
-                              })()}
-
-                              {/* Action */}
-                              <div className="pt-4 flex justify-center">
-                                <Button
-                                  onClick={() => navigate(`/competition`)}
-                                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg transition-colors w-full sm:w-auto"
-                                >
-                                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                                  <span className="hidden sm:inline">Voir l'analyse concurrentielle complète</span>
-                                  <span className="sm:hidden">Voir l'analyse</span>
-                                </Button>
-                              </div>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    ) : null}
-                  </CardContent>
-                </Card>
-
-                {/* Analyse Benchmark */}
-                {selectedCompetitorAnalysis && (selectedCompetitorAnalysis as any).benchmark_results?.benchmark && (
-                  <Card className="bg-white dark:bg-slate-800 shadow-md border border-blue-100/60 dark:border-slate-700">
-                    <CardHeader className="bg-white dark:bg-slate-800 border-b border-blue-100/40 dark:border-slate-700">
-                      <CardTitle className="text-base sm:text-lg text-foreground font-semibold flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5" />
-                        Analyse Benchmark
-                      </CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                        {(selectedCompetitorAnalysis as any).benchmark_results.benchmark.comparaison}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-foreground">
-                      <div className="space-y-4">
-                        {/* Classement complet */}
-                        <div>
-                          <h4 className="font-semibold text-foreground mb-3">Classement complet</h4>
-                          <div className="space-y-2 max-h-96 overflow-y-auto">
-                            {(selectedCompetitorAnalysis as any).benchmark_results.benchmark.classement.map((entry: any, idx: number) => {
-                              const competitor = (selectedCompetitorAnalysis as any).consolidated_competitors?.find((c: any) => c.primary_url === entry.url || c.url === entry.url);
-                              const isYourSite = entry.url === selectedCompetitorAnalysis.url;
-                              return (
-                                <div 
-                                  key={idx}
-                                  className={`flex items-center justify-between p-3 rounded-lg border ${
-                                    isYourSite 
-                                      ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700' 
-                                      : idx < 3
-                                        ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700'
-                                        : 'bg-white dark:bg-slate-700 border-blue-100 dark:border-slate-600'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold ${
-                                      isYourSite ? 'bg-blue-500 dark:bg-blue-600 text-white' : 
-                                      idx === 0 ? 'bg-yellow-400 dark:bg-yellow-500 text-yellow-900 dark:text-yellow-100' :
-                                      idx === 1 ? 'bg-gray-300 dark:bg-gray-600 text-gray-900 dark:text-gray-100' :
-                                      idx === 2 ? 'bg-amber-400 dark:bg-amber-500 text-amber-900 dark:text-amber-100' :
-                                      'bg-blue-50 dark:bg-slate-600 text-blue-700 dark:text-blue-300'
-                                    }`}>
-                                      {isYourSite ? '👤' : idx + 1}
-                                    </div>
-                                    <div>
-                                      <div className="font-medium text-foreground">
-                                        {isYourSite ? 'Votre site' : (competitor?.name || extractDomain(entry.url))}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">{extractDomain(entry.url)}</div>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <Badge variant="outline" className="text-sm font-semibold">
-                                      {entry.score}/100
-                                    </Badge>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-             
-                
-
-                <div className="max-w-4xl mx-auto px-2 sm:px-4">
-                  <div className="grid gap-4 sm:gap-6 lg:grid-cols-1">
-                  {/* Sources Analytics (à gauche) */}
-                  <Card className="bg-white shadow-md border border-blue-100/60">
-                    <CardHeader className="pb-2 px-3 sm:px-6 bg-white border-b border-blue-100/40">
-                     
-                    </CardHeader>
-
-                    <CardContent className="py-3 px-3 sm:px-6">
-                      {/* Graphique Évolution du Chat */}
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-3">
-                          {loadingSourceAnalysis ? (
-                            <div className="text-xs text-muted-foreground flex items-center gap-2">
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                              Chargement de l'analyse...
-                            </div>
-                          ) : selectedSourceAnalysis ? (
-                            <div className="text-xs text-muted-foreground">
-                              {extractDomain(selectedSourceAnalysis.url)} • {new Date(selectedSourceAnalysis.created_at).toLocaleDateString('fr-FR')}
-                            </div>
-                          ) : (
-                            <div className="text-xs text-muted-foreground">
-                              Aucune analyse sélectionnée
+                              )}
                             </div>
                           )}
                         </div>
-
-                        {(() => {
-                          // Utiliser les VRAIES données d'évolution depuis target_positioning.trends_by_model
-                          let selectedAnalysis = selectedSourceAnalysis;
-                          let chartData = [];
-                          let availableModels = [];
-                          let modelColors = {
-                            'openai/gpt-5': '#3b82f6',
-                            'anthropic/claude-sonnet-4': '#f59e0b',
-                            'google/gemini-2.5-pro': '#10b981',
-                            'mistralai/mistral-medium-3.1': '#6366f1',
-                            'perplexity/sonar': '#8b5cf6',
-                            'gpt-5': '#3b82f6',
-                            'claude-4-sonnet': '#f59e0b',
-                            'gemini-2.5-pro': '#10b981',
-                            'mixtral-3.1': '#6366f1',
-                            'sonar': '#8b5cf6'
-                          };
-
-                          const trends = (selectedAnalysis as any)?.target_positioning?.trends_by_model;
-                          if (trends) {
-                            // Récupérer tous les points de données de tous les modèles
-                            const allPoints = [];
-                            const modelTrends = {};
-
-                            Object.entries(trends).forEach(([modelKey, modelData]) => {
-                              availableModels.push(modelKey);
-                              modelTrends[modelKey] = {
-                                delta_30d: (modelData as any).delta_30d || 0,
-                                count: (modelData as any).count || 0
-                              };
-
-                              if ((modelData as any).points && (modelData as any).points.length > 0) {
-                                (modelData as any).points.forEach((point: any) => {
-                                  allPoints.push({
-                                    timestamp: new Date(point.t),
-                                    model: modelKey,
-                                    global_score: point.global_score,
-                                    llmo_score: point.llmo_score,
-                                    geo_score: point.geo_score,
-                                    benchmark_score: point.benchmark_score,
-                                    delta_30d: (modelData as any).delta_30d
-                                  });
-                                });
-                              }
-                            });
-
-                            // Trier par timestamp et grouper par date
-                            allPoints.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-
-                            // Grouper par jour et créer les données du graphique
-                            const pointsByDate = {};
-                            allPoints.forEach(point => {
-                              const dateKey = point.timestamp.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '');
-                              if (!pointsByDate[dateKey]) {
-                                pointsByDate[dateKey] = {};
-                              }
-                              // Stocker seulement le global_score
-                              pointsByDate[dateKey][point.model] = point.global_score;
-                            });
-
-                            // Convertir en format chartData et trier par date croissante
-                            chartData = Object.entries(pointsByDate)
-                              .sort(([dateA], [dateB]) => {
-                                // Convertir les dates pour trier correctement
-                                const [dayA, monthA] = dateA.split(' ');
-                                const [dayB, monthB] = dateB.split(' ');
-                                const year = new Date().getFullYear();
-
-                                const dateObjA = new Date(`${dayA} ${monthA} ${year}`);
-                                const dateObjB = new Date(`${dayB} ${monthB} ${year}`);
-
-                                return dateObjA.getTime() - dateObjB.getTime();
-                              })
-                              .map(([date, scores]) => {
-                                const dataPoint = { date };
-                                Object.entries(scores).forEach(([key, score]) => {
-                                  dataPoint[key] = score;
-                                });
-                                return dataPoint;
-                              });
-
-                            // Si pas assez de données, ajouter des points interpolés sur 30 jours
-                            if (chartData.length < 7) {
-                              const firstPoint = chartData[0] || {};
-
-                              // Générer des dates du plus ancien au plus récent
-                              for (let i = 0; i < 7; i++) {
-                                const date = new Date();
-                                date.setDate(date.getDate() - (6 - i)); // Du plus ancien au plus récent
-                                const dateStr = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '');
-
-                                const dataPoint = { date: dateStr };
-                                availableModels.forEach(model => {
-                                  const baseScore = firstPoint[model] || 75;
-                                  const delta = modelTrends[model]?.delta_30d || 0;
-
-                                  // Appliquer le delta sur la progression temporelle (30 jours)
-                                  const variation = (Math.random() - 0.5) * 8 + (delta * i * 0.04); // Réduit pour 30 jours
-
-                                  dataPoint[model] = Math.max(60, Math.min(95, baseScore + variation));
-                                });
-                                chartData.push(dataPoint);
-                              }
-                            }
-                          } else {
-                            // Fallback si pas de données d'évolution
-                            chartData = [];
-                          }
-
-
-                          return (
-                            <>
-                              {/* Légende de l'évolution - Scores Global & GEO */}
-                             
-                            </>
-                          );
-                        })()}
-                      </div>
-
-                      {/* Graphique en Barres Empilées par Modèle */}
-
-                      {/* Graphique Évolution - Ultra Dynamique - COMMENTÉ */}
-                      {/* tttttt */}
-
-
-                      {/* Tableau des Modèles IA Utilisés */}
-                      <div className="overflow-x-auto rounded-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-blue-100/50 dark:border-slate-700 shadow-sm">
-                        <table className="w-full min-w-[600px]">
-                          <thead className="bg-blue-50/40 dark:bg-slate-700/40 border-b border-blue-100/40 dark:border-slate-600">
-                            <tr>
-                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
-                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Modèle IA</th>
-                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
-                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Concurrents</th>
-                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Score Moyen</th>
-                              <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Temps</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white/50 dark:bg-slate-800/50 divide-y divide-blue-100/30 dark:divide-slate-700">
-                            {(() => {
-                              if (!selectedSourceAnalysis?.models_analysis || selectedSourceAnalysis.models_analysis.length === 0) {
-                                return (
-                                  <tr>
-                                    <td colSpan={6} className="px-4 py-8 text-center text-neutral-500 dark:text-neutral-400 italic">
-                                      <span>Aucune donnée de modèle disponible</span>
-                                    </td>
-                                  </tr>
-                                );
-                              }
-
-                              return selectedSourceAnalysis.models_analysis.map((modelAnalysis, index) => {
-                                const modelInfo = modelAnalysis.model_info;
-                                const competitorsCount = modelAnalysis.competitors?.length || 0;
-                                const avgScore = Math.round((modelInfo.average_score || 0) * 100);
-                                const executionTime = Math.round((modelInfo.execution_time_ms || 0) / 1000 * 100) / 100;
-
-                                // Déterminer le nom d'affichage et l'icône
-                                let displayName = modelInfo.display_name || modelInfo.provider;
-                                let statusColor = 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300';
-                                let statusText = 'Complété';
-
-                                if (modelInfo.status !== 'completed') {
-                                  statusColor = 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300';
-                                  statusText = 'Erreur';
-                                }
-
-                                // Raccourcir le nom si trop long
-                                if (displayName.length > 25) {
-                                  displayName = displayName.substring(0, 22) + '...';
-                                }
-
-                                return (
-                                  <tr key={index} className="hover:bg-blue-50/40 dark:hover:bg-slate-700/40 transition-colors">
-                                    <td className="px-2 sm:px-4 py-3 text-sm text-foreground">{index + 1}</td>
-                                    <td className="px-2 sm:px-4 py-3 text-sm">
-                                      <div className="flex items-center gap-2">
-                                        <img
-                                          src={(() => {
-                                            const prov = (modelInfo.provider || '').toLowerCase();
-                                            const name = (modelInfo.model_name || '').toLowerCase();
-                                            if (prov.includes('mistral') || name.includes('mistral')) return '/Mistral.png';
-                                            const id = prov.includes('openai') || name.includes('gpt')
-                                              ? 'openai-for-light'
-                                              : prov.includes('anthropic') || name.includes('claude')
-                                                ? 'claude'
-                                                : prov.includes('google') || name.includes('gemini')
-                                                  ? 'gemini'
-                                                  : prov.includes('perplexity') || name.includes('sonar')
-                                                    ? 'perplexity'
-                                                    : 'claude';
-                                            return `/prompt-model-${id}.svg`;
-                                          })()}
-                                          alt="Model"
-                                          className="w-4 h-4 sm:w-5 sm:h-5"
-                                        />
-                                        <div>
-                                          <div className="font-medium text-foreground text-xs sm:text-sm">{displayName}</div>
-                                          <div className="text-xs text-muted-foreground hidden sm:block">{modelInfo.provider}</div>
-                                        </div>
-                                      </div>
-                                    </td>
-                                    <td className="px-2 sm:px-4 py-3 text-sm">
-                                      <Badge className={`${statusColor} text-xs font-medium`}>
-                                        {statusText}
-                                      </Badge>
-                                    </td>
-                                    <td className="px-2 sm:px-4 py-3 text-sm text-foreground text-center font-medium">
-                                      {competitorsCount}
-                                    </td>
-                                    <td className="px-2 sm:px-4 py-3 text-sm text-foreground text-center">
-                                      <span className="font-semibold">{avgScore}/100</span>
-                                    </td>
-                                    <td className="px-2 sm:px-4 py-3 text-sm text-muted-foreground text-center">
-                                      {executionTime}s
-                                    </td>
-                                  </tr>
-                                );
-                              });
-                            })()}
-                          </tbody>
-                        </table>
-                      </div>
-                     
-                    </CardContent>
-                  </Card>
-
-
-                  {/* Analyse concurrentielle (à droite) */}
-                
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Contenu de l'onglet Améliorer */}
-            {activeTab === 'improve' && (
-              <div className="space-y-4 sm:space-y-6 px-2 sm:px-4 bg-gradient-to-br from-amber-50/20 to-orange-50/20 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg p-4">
-                {/* Section Impact - Améliorations estimées */}
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-1 h-8 bg-amber-500 dark:bg-amber-400 rounded-full"></div>
-                    <h3 className="text-sm font-semibold text-foreground">Impact - Améliorations estimées</h3>
-                  </div>
-
-                  {(() => {
-                    // Récupérer les données depuis l'API comme dans LLMODashboard
-                  
-                    const analyses = selectedGeoReport?.analyses || [];
-                    const preferredModels = ['gpt-5', 'gpt-4o', 'claude-4-sonnet', 'claude-4-sonnet'];
-                    let perf: any | null = null;
-
-                    // Fonction pour extraire les données de performance depuis l'analyse
-                    const extractPerformanceFromAnalysis = (analysis: any): any | null => {
-                      if (!analysis) return null;
-                      const geoPackage = analysis?.modules?.audit_geo;
-                      if (!geoPackage) return null;
-
-                      // Chercher performance_impact directement
-                      if (geoPackage.performance_impact) return geoPackage.performance_impact;
-
-                      // Chercher dans package_metadata
-                      if (geoPackage.package_metadata?.performance_impact) return geoPackage.package_metadata.performance_impact;
-
-                      // Chercher en profondeur
-                      const deepFindPerformanceImpact = (node: any): any | null => {
-                        if (!node) return null;
-                        if (typeof node !== 'object') return null;
-                        if (Array.isArray(node)) {
-                          for (const item of node) {
-                            const res = deepFindPerformanceImpact(item);
-                            if (res) return res;
-                          }
-                          return null;
-                        }
-
-                        const possibleKeys = ['performance_impact', 'performanceImpact', 'impact_performance', 'impactPerformance'];
-                        for (const k of possibleKeys) {
-                          if (Object.prototype.hasOwnProperty.call(node, k)) {
-                            return node[k];
-                          }
-                        }
-
-                        for (const key of Object.keys(node)) {
-                          const res = deepFindPerformanceImpact(node[key]);
-                          if (res) return res;
-                        }
-                        return null;
-                      };
-
-                      return deepFindPerformanceImpact(geoPackage);
-                    };
-
-                    // Chercher les données de performance
-                    ////console.log('[Index] Recherche des données de performance...');
-                    for (const model of preferredModels) {
-                      const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
-                      perf = extractPerformanceFromAnalysis(a);
-                      if (perf) {
-                        break;
-                      }
-                    }
-
-                    if (!perf) {
-                      for (const a of analyses) {
-                        const tmp = extractPerformanceFromAnalysis(a);
-                        if (tmp) {
-                          perf = tmp;
-                          break;
-                        }
-                      }
-                    }
-
-
-                    // Chercher le guide d'implémentation
-                    let guideData: any = null;
-                    for (const model of preferredModels) {
-                      const a = analyses.find(x => (x as any).llm_name === model || (x as any)['llm_utilisé'] === model);
-                      const extracted = extractGuideFromAnalysis(a);
-                      if (extracted) {
-                        guideData = extracted.guide;
-                        break;
-                      }
-                    }
-
-                    if (!guideData) {
-                      for (const a of analyses) {
-                        const extracted = extractGuideFromAnalysis(a);
-                        if (extracted) {
-                          guideData = extracted.guide;
-                          break;
-                        }
-                      }
-                    }
-
-                    // Helpers pour rechercher dynamiquement le guide d'implémentation dans la structure réelle
-                    // Deep search pour une clé type implementation_guide (avec alias possibles)
-                    function deepFindImplementationGuide(node: any): any | null {
-                      if (!node) return null;
-                      if (typeof node !== 'object') return null;
-                      if (Array.isArray(node)) {
-                        for (const item of node) {
-                          const res = deepFindImplementationGuide(item);
-                          if (res) return res;
-                        }
-                        return null;
-                      }
-                      const possibleKeys = [
-                        'implementation_guide',
-                        'implementationGuide',
-                        'guide_implementation',
-                        'guideImplementation',
-                        'implementation',
-                        'guide'
-                      ];
-                      for (const k of possibleKeys) {
-                        if (Object.prototype.hasOwnProperty.call(node, k)) {
-                          return (node as any)[k];
-                        }
-                      }
-                      for (const key of Object.keys(node)) {
-                        const res = deepFindImplementationGuide((node as any)[key]);
-                        if (res) return res;
-                      }
-                      return null;
-                    }
-
-                    // Trouver le module GEO (clé variable/tolérante) dans un conteneur donné
-                    function findGeoPackageModule(container: Record<string, any> | undefined | null, contextLabel: string): any | null {
-                      if (!container) return null;
-                      // 1) priorité à la clé exacte 7_package_optimisation_geo
-                      if ((container as any)['7_package_optimisation_geo']) {
-                        return (container as any)['7_package_optimisation_geo'];
-                      }
-                      // 2) alias courants
-                      const aliasCandidates = [
-                        'package_optimisation_geo',
-                        'geo_optimization_package',
-                        'audit_geo',
-                        'geo',
-                      ];
-                      for (const candidate of aliasCandidates) {
-                        if ((container as any)[candidate]) {
-                          return (container as any)[candidate];
-                        }
-                      }
-                      // 3) regex fallback
-                      const keys = Object.keys(container);
-                      const regexMatch = keys.find(k => /7\s*[_-]?\s*package.*optimisation.*geo/i.test(k) || /package.*optimisation.*geo/i.test(k) || /geo.*optim/i.test(k));
-                      if (regexMatch) {
-                        return (container as any)[regexMatch];
-                      }
-                      return null;
-                    }
-
-                    // Trouver le module GEO en inspectant d'abord rapport_détaillé, puis modules
-                    function findGeoFromAnalysis(analysis: any): any | null {
-                      // 1) rapport_détaillé
-                      const detailed = (analysis as any)?.['rapport_détaillé'] || (analysis as any)?.rapport_detaille || (analysis as any)?.rapport;
-                      const fromDetailed = findGeoPackageModule(detailed, 'rapport_détaillé');
-                      if (fromDetailed) return fromDetailed;
-
-                      // 1b) si rapport_détaillé contient des sous-objets par modèle, tenter chaque entrée
-                      if (detailed && typeof detailed === 'object' && !Array.isArray(detailed)) {
-                        for (const key of Object.keys(detailed)) {
-                          const sub = (detailed as any)[key];
-                          const found = findGeoPackageModule(sub, `rapport_détaillé.${key}`);
-                          if (found) return found;
-                        }
-                      }
-                      if (Array.isArray(detailed)) {
-                        for (let i = 0; i < detailed.length; i++) {
-                          const found = findGeoPackageModule(detailed[i], `rapport_détaillé[${i}]`);
-                          if (found) return found;
-                        }
-                      }
-                      // 2) modules
-                      const fromModules = findGeoPackageModule((analysis as any)?.modules, 'modules');
-                      if (fromModules) return fromModules;
-                      return null;
-                    }
-
-                    // Extrait le guide pour une analyse donnée, avec source
-                    function extractGuideFromAnalysis(analysis: any): { guide: any, source: string } | null {
-                      if (!analysis) return null;
-                      const geoPackage = findGeoFromAnalysis(analysis);
-                      if (!geoPackage) {
-                        return null;
-                      }
-                      let guide: any = null;
-                      if ((geoPackage as any).implementation_guide) {
-                        guide = (geoPackage as any).implementation_guide;
-                      }
-                      if (!guide) {
-                        guide = deepFindImplementationGuide(geoPackage);
-                      }
-                      if (!guide) {
-                        return null;
-                      }
-                      const source = (analysis as any)?.llm_name || (analysis as any)?.['llm_utilisé'] || 'inconnu';
-                      return { guide, source };
-                    }
-
-                    // Fonction pour extraire les actions spécifiques du guide
-                    const getGuideActions = (category: string) => {
-                      if (!guideData) {
-                        return [];
-                      }
-
-
-                      // Chercher les actions par catégorie dans le guide
-                      const actions = [];
-
-                      // Recherche dans les étapes d'implémentation
-                      const steps = guideData.etapes_implementation || guideData.etapes || guideData.steps;
-
-                      if (steps && typeof steps === 'object') {
-                        for (const [key, step] of Object.entries(steps)) {
-                          if (typeof step === 'object' && step !== null) {
-                            const stepObj = step as any;
-                            if (stepObj.actions && Array.isArray(stepObj.actions)) {
-
-                              // Mapping spécifique basé sur votre structure JSON
-                              const keyLower = key.toLowerCase();
-                              const categoryLower = category.toLowerCase();
-
-                              // Visibilité moteurs génératifs
-                              if (category === 'visibilité' && (
-                                keyLower.includes('metadonnees') ||
-                                keyLower.includes('metadonnées') ||
-                                keyLower.includes('mots_cles') ||
-                                keyLower.includes('mots-clés') ||
-                                keyLower.includes('optimisation')
-                              )) {
-                                return stepObj.actions.slice(0, 2);
-                              }
-
-                              // Indexation IA
-                              if (category === 'indexation' && (
-                                keyLower.includes('donnees_structurees') ||
-                                keyLower.includes('données_structurées') ||
-                                keyLower.includes('structurees') ||
-                                keyLower.includes('structurées') ||
-                                keyLower.includes('json-ld')
-                              )) {
-                                return stepObj.actions.slice(0, 2);
-                              }
-
-                              // Compréhension du contenu
-                              if (category === 'comprehension' && (
-                                keyLower.includes('structure_semantique') ||
-                                keyLower.includes('structure_sémantique') ||
-                                keyLower.includes('contenu_contextuel') ||
-                                keyLower.includes('contextuel') ||
-                                keyLower.includes('semantique') ||
-                                keyLower.includes('sémantique')
-                              )) {
-                                return stepObj.actions.slice(0, 2);
-                              }
-
-                              // Autorité sémantique
-                              if (category === 'autorité' && (
-                                keyLower.includes('autorite') ||
-                                keyLower.includes('autorité') ||
-                                keyLower.includes('semantique') ||
-                                keyLower.includes('sémantique') ||
-                                keyLower.includes('structure_semantique') ||
-                                keyLower.includes('structure_sémantique')
-                              )) {
-                                return stepObj.actions.slice(0, 2);
-                              }
-                            }
-                          }
-                        }
-                      }
-
-                      // Recherche directe dans les actions
-                      if (guideData.actions && Array.isArray(guideData.actions)) {
-                        guideData.actions.forEach((action: any) => {
-                          if (typeof action === 'string' && action.toLowerCase().includes(category.toLowerCase())) {
-                            actions.push(action);
-                          }
-                        });
-                      }
-
-                      // Si aucune action spécifique trouvée, retourner les premières actions disponibles
-                      if (actions.length === 0 && steps && typeof steps === 'object') {
-                        for (const [key, step] of Object.entries(steps)) {
-                          if (typeof step === 'object' && step !== null) {
-                            const stepObj = step as any;
-                            if (stepObj.actions && Array.isArray(stepObj.actions) && stepObj.actions.length > 0) {
-                              return stepObj.actions.slice(0, 2);
-                            }
-                          }
-                        }
-                      }
-
-                      return actions.slice(0, 2); // Limiter à 2 actions par catégorie
-                    };
-
-                    // Extraire toutes les améliorations directement du guide d'implémentation
-                    const improvements = [];
-
-                    if (guideData && guideData.etapes_implementation) {
-
-                      // Mapping des étapes vers les améliorations
-                      const stepMapping = {
-                        'optimisation_metadonnees': {
-                          title: "Optimisation des métadonnées",
-                          icon: Brain,
-                          color: "text-blue-600"
-                        },
-                        'structure_semantique': {
-                          title: "Structure sémantique",
-                          icon: FileText,
-                          color: "text-purple-600"
-                        },
-                        'mots_cles_ia': {
-                          title: "Mots-clés IA",
-                          icon: Target,
-                          color: "text-green-600"
-                        },
-                        'contenu_contextuel': {
-                          title: "Contenu contextuel",
-                          icon: Globe,
-                          color: "text-indigo-600"
-                        },
-                        'donnees_structurees': {
-                          title: "Données structurées",
-                          icon: Shield,
-                          color: "text-orange-600"
-                        }
-                      };
-
-                      // Créer une amélioration pour chaque étape du guide
-                      for (const [stepKey, stepData] of Object.entries(guideData.etapes_implementation)) {
-                        if (typeof stepData === 'object' && stepData !== null) {
-                          const step = stepData as any;
-                          const mapping = stepMapping[stepKey] || {
-                            title: step.titre || stepKey,
-                            icon: Brain,
-                            color: "text-gray-600"
-                          };
-
-                          improvements.push({
-                            title: mapping.title,
-                            description: step.description || "Action d'optimisation pour l'IA",
-                            improvement: step.priorite === 'Élevée' ? '40-60%' : step.priorite === 'Moyenne' ? '25-40%' : '15-30%',
-                            icon: mapping.icon,
-                            color: mapping.color,
-                            actions: step.actions || [],
-                            priorite: step.priorite || 'Moyenne',
-                            effort: step.effort || 'Moyen',
-                            duree: step.duree_estimee || '1-2 semaines'
-                          });
-                        }
-                      }
-                    }
-
-                    // Si aucune donnée exploitable, afficher un état vide au lieu de mocks
-                    if (improvements.length === 0) {
-                      return (
-                        <div className="p-4 bg-muted rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-card text-muted-foreground">
-                              <HelpCircle className="w-4 h-4" />
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <h5 className="font-medium text-foreground text-sm">Aucune amélioration estimée disponible</h5>
-                              </div>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                Importez une analyse contenant un guide d'implémentation pour voir des actions recommandées.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
                       );
-                    }
+                    })}
+                  </div>
 
-                    return improvements.map((item, index) => (
-                      <div key={index} className="p-3 sm:p-4 bg-white/70 dark:bg-slate-700/70 backdrop-blur-sm rounded-lg shadow-sm hover:shadow-md transition-shadow border border-blue-100/50 dark:border-slate-600">
-                        <div className="flex items-start gap-2 sm:gap-3">
-                          <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center bg-card ${item.color} flex-shrink-0`}>
-                            <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-                              <h5 className="font-medium text-foreground text-sm break-words">{item.title}</h5>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {item.priorite && (
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-xs ${item.priorite === 'Élevée' ? 'bg-red-50 text-red-700' :
-                                        item.priorite === 'Moyenne' ? 'bg-yellow-50 text-yellow-700' :
-                                          'bg-gray-50 text-gray-700'
-                                      }`}
-                                  >
-                                    {item.priorite}
-                                  </Badge>
-                                )}
-                                <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
-                                  +{item.improvement}
-                                </Badge>
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground leading-relaxed mb-2">{item.description}</p>
-
-                            {/* Informations supplémentaires du guide */}
-                            {(item.effort || item.duree) && (
-                              <div className="flex items-center gap-4 mb-3 text-xs text-muted-foreground">
-                                {item.effort && (
-                                  <span className="flex items-center gap-1">
-                                    <Activity className="w-3 h-3" />
-                                    Effort: {item.effort}
-                                  </span>
-                                )}
-                                {item.duree && (
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {item.duree}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Actions du guide d'implémentation */}
-                            <div className="mt-3 pt-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <h6 className="text-xs font-medium text-foreground">Actions recommandées :</h6>
-                                {item.actions && item.actions.length > 0 && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => toggleActions(index)}
-                                    className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
-                                  >
-                                    {expandedActions[index] ? (
-                                      <>
-                                        <Minus className="w-3 h-3 mr-1" />
-                                        Masquer
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Plus className="w-3 h-3 mr-1" />
-                                        Voir ({item.actions.length})
-                                      </>
-                                    )}
-                                  </Button>
-                                )}
-                              </div>
-
-                              {expandedActions[index] && item.actions && item.actions.length > 0 && (
-                                <ul className="space-y-1">
-                                  {item.actions.map((action: string, actionIndex: number) => (
-                                    <li key={actionIndex} className="flex items-start gap-2">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0"></div>
-                                      <span className="text-xs text-muted-foreground leading-relaxed">{action}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-
-                              {(!item.actions || item.actions.length === 0) && (
-                                <div className="flex items-start gap-2">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-2 flex-shrink-0"></div>
-                                  <span className="text-xs text-muted-foreground leading-relaxed">Aucune action spécifique trouvée dans le guide d'implémentation</span>
-                                </div>
-                              )}
+                  {/* Fichiers téléchargeables */}
+                  {guideData.files && guideData.files.length > 0 && (
+                    <div style={{ marginTop: '12px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fichiers</div>
+                      <div style={{ display: 'grid', gap: '6px' }} className="grid-cols-1 sm:grid-cols-2">
+                        {guideData.files.map((file, fIdx) => (
+                          <div
+                            key={fIdx}
+                            onClick={() => downloadFile(file.content, file.filename, file.type)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #F1F5F9', cursor: 'pointer', transition: 'background 0.2s ease' }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                          >
+                            <Download size={12} style={{ color: '#64748B', flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontSize: '12px', fontWeight: 600, color: '#0F172A' }}>{file.label}</div>
+                              <div style={{ fontSize: '10px', color: '#94A3B8' }}>{file.filename}</div>
                             </div>
                           </div>
-                        </div>
+                        ))}
                       </div>
-                    ));
-                  })()}
+                    </div>
+                  )}
                 </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
+/**
+ * Composant Accordéon réutilisable
+ */
+function AccordionItem({ id, title, isOpen, onToggle, children }: { id: string, title: string, isOpen: boolean, onToggle: (id: string) => void, children?: React.ReactNode }) {
+  return (
+    <div
+      className={`accordion-item ${isOpen ? 'accordion-open' : ''}`}
+      style={{
+        border: `1px solid ${isOpen ? '#CBD5F5' : '#E2E8F0'}`,
+        borderRadius: '10px',
+        background: isOpen ? '#FFFFFF' : '#F7F9FC',
+        overflow: 'hidden'
+      }}
+    >
+      <button
+        className="accordion-header"
+        onClick={() => onToggle(id)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '14px 20px',
+          background: isOpen ? '#FFFFFF' : '#F7F9FC',
+          border: 'none',
+          outline: 'none',
+          cursor: 'pointer',
+          transition: 'background 0.2s ease'
+        }}
+      >
+        <span style={{ fontSize: '15px', fontWeight: 600, color: '#1F2937', textAlign: 'left' }}>{title}</span>
+        <span className="accordion-icon" style={{ fontSize: '12px', color: '#94A3B8', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>▼</span>
+      </button>
 
-                  {/* Tableau des recommandations spécifiques */}
-                 <div className="overflow-x-auto rounded-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm shadow-sm border border-blue-100/50 dark:border-slate-700">
-                   <table className="w-full min-w-[800px]">
-                     <thead className="bg-gradient-to-r from-amber-50/60 to-orange-50/40 dark:from-amber-900/40 dark:to-orange-900/40">
-                       <tr>
-                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
-                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Priorité</th>
-                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Impact</th>
-                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Effort</th>
-                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">Pourquoi</th>
-                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Prochaine action</th>
-                         <th className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Statut</th>
-                       </tr>
-                     </thead>
-                           <tbody className="bg-white/50 dark:bg-slate-800/50 divide-y divide-amber-100/30 dark:divide-slate-700">
-                        {(() => {
-                          // Récupérer les données depuis l'API comme dans LLMODashboard
-                          const analysisWithGeoPlan = selectedGeoReport?.analyses?.find(analysis =>
-                            analysis.modules?.audit_geo?.plan_action_geo &&
-                            Array.isArray(analysis.modules.audit_geo.plan_action_geo) &&
-                            analysis.modules.audit_geo.plan_action_geo.length > 0
-                          );
+      {isOpen && children && (
+        <div
+          className="accordion-content"
+          style={{
+            padding: '0 20px 20px 20px',
+            background: '#FFFFFF',
+            borderTop: '1px solid #E2E8F0'
+          }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
 
-                          const geoData = analysisWithGeoPlan?.modules?.audit_geo;
-                          const planActions = geoData?.plan_action_geo || [];
+/**
+ * Composant de carte d'étape dynamique et interactive
+ */
+function DynamicStepCard({
+  etape,
+  idx,
+  stepId,
+  stepStatus,
+  updateStepStatus,
+  toggleAction,
+  updateStepNotes,
+  getPriorityColor
+}: {
+  etape: any;
+  idx: number;
+  stepId: string;
+  stepStatus: any;
+  updateStepStatus: (stepId: string, status: string) => void;
+  toggleAction: (stepId: string, actionIndex: number, totalActionsCount: number) => void;
+  updateStepNotes: (stepId: string, notes: string) => void;
+  getPriorityColor: (priority: string) => string;
+}) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [showNotes, setShowNotes] = useState(false);
+  const [notesInput, setNotesInput] = useState(stepStatus.notes || '');
+  const [isCelebrating, setIsCelebrating] = useState(false);
 
-                          // État vide si aucune analyse disponible
-                          const hasAnalyses = (selectedGeoReport?.analyses?.length || 0) > 0;
-                          if (!hasAnalyses) {
-                            return (
-                              <tr>
-                                <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted-foreground">
-                                  Aucune analyse disponible
-                                </td>
-                              </tr>
-                            );
-                          }
+  // Animation de célébration quand une étape est terminée
+  useEffect(() => {
+    if (stepStatus.progress === 100 && stepStatus.status === 'Terminé') {
+      setIsCelebrating(true);
+      const timer = setTimeout(() => setIsCelebrating(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [stepStatus.progress, stepStatus.status]);
 
-                          // État vide si pas de données GEO exploitables
-                          if (!geoData) {
-                            return (
-                              <tr>
-                                <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted-foreground">
-                                  Aucune recommandation disponible pour le moment
-                                </td>
-                              </tr>
-                            );
-                          }
+  const progressColor = stepStatus.progress === 100 ? '#10B981' : stepStatus.progress >= 50 ? '#F97316' : '#EF4444';
+  const StatusIcon = stepStatus.status === 'Terminé' ? CheckCircle : stepStatus.status === 'En cours' ? PlayCircle : Circle;
 
-                          // Fonctions de calcul comme dans LLMODashboard
-                          const getImpact = (score: number) => {
-                            if (score < 20) return 5; // Impact maximum - score très faible
-                            if (score < 40) return 4; // Impact élevé - score faible
-                            if (score < 60) return 3; // Impact moyen - score moyen
-                            if (score < 80) return 2; // Impact faible - score bon
-                            return 1; // Impact très faible - score excellent
-                          };
+  // Calculer le nombre d'actions cochées
+  const checkedActions = stepStatus.checkedActions || {};
+  const totalActions = etape.actions?.length || 0;
+  const completedActions = Object.values(checkedActions).filter(Boolean).length;
+  const actionsProgress = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 0;
 
-                          const getEffort = (action: string) => {
-                            if (action.includes('JSON-LD') || action.includes('Schema.org') || action.includes('structurées')) return 5; // Effort maximum
-                            if (action.includes('HTML') || action.includes('balises') || action.includes('hiérarchie')) return 4; // Effort élevé
-                            if (action.includes('métadonnées') || action.includes('Open Graph')) return 3; // Effort moyen
-                            if (action.includes('robots.txt') || action.includes('sitemap')) return 2; // Effort faible
-                            if (action.includes('répétitions') || action.includes('lisibilité')) return 4; // Effort élevé pour le contenu
-                            return 3; // Effort par défaut
-                          };
+  return (
+    <div
+      style={{
+        padding: '12px 14px',
+        background: '#FFFFFF',
+        borderRadius: '6px',
+        border: '1px solid #E2E8F0',
+        boxShadow: isExpanded ? '0 1px 3px rgba(0,0,0,0.04)' : '0 1px 2px rgba(0,0,0,0.02)',
+        transition: 'all 0.2s ease',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Effet de confettis pour la célébration */}
+      {isCelebrating && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: 'none',
+          zIndex: 10,
+          background: 'radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.1) 0%, transparent 70%)',
+          animation: 'pulse 0.6s ease-out'
+        }} />
+      )}
 
-                          const getStatus = (score: number) => {
-                            if (score < 20) return {
-                              label: 'Critique',
-                              color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
-                              description: 'Action urgente requise'
-                            };
-                            if (score < 40) return {
-                              label: 'Urgent',
-                              color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300',
-                              description: 'Priorité haute'
-                            };
-                            if (score < 60) return {
-                              label: 'À améliorer',
-                              color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300',
-                              description: 'Amélioration nécessaire'
-                            };
-                            if (score < 80) return {
-                              label: 'Correct',
-                              color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300',
-                              description: 'Peut être optimisé'
-                            };
-                            return {
-                              label: 'Excellent',
-                              color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300',
-                              description: 'Performance optimale'
-                            };
-                          };
+      {/* En-tête de l'étape avec badge de numéro */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+          {/* Badge numéro avec icône de statut */}
+          <div style={{
+            width: '24px',
+            height: '24px',
+            borderRadius: '50%',
+            background: '#E2E8F0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#64748B',
+            fontWeight: 600,
+            fontSize: '12px',
+            flexShrink: 0,
+            transition: 'all 0.2s ease',
+            position: 'relative'
+          }}>
+            {stepStatus.status === 'Terminé' ? (
+              <CheckCircle size={14} style={{ color: '#64748B' }} />
+            ) : (
+              <span>{idx + 1}</span>
+            )}
+          </div>
 
-                        // Priorités avec leurs données correspondantes depuis l'API
-                        const priorities = [
-                          {
-                            id: 1,
-                            name: 'Schema.org',
-                            action: planActions[2] || 'Intégrer des données structurées Schema.org',
-                            score: geoData?.donnees_score || 0,
-                            why: 'LLM lisent mieux les données structurées'
-                          },
-                          {
-                            id: 2,
-                            name: 'Hn & sections',
-                            action: planActions[1] || 'Ajouter une hiérarchie claire de titres',
-                            score: geoData?.html_score || 0,
-                            why: 'Structure claire pour les crawlers'
-                          },
-                          {
-                            id: 3,
-                            name: 'Métadonnées',
-                            action: planActions[3] || 'Ajouter des métadonnées techniques',
-                            score: geoData?.meta_score || 0,
-                            why: 'Informations riches pour LLM'
-                          },
-                          {
-                            id: 4,
-                            name: 'Contenu',
-                            action: planActions[4] || 'Éviter les répétitions inutiles',
-                            score: geoData?.contenu_score || 0,
-                            why: 'Qualité et pertinence du contenu'
-                          },
-                          {
-                            id: 5,
-                            name: 'Robots.txt & sitemap',
-                            action: planActions[5] || 'Mettre en place robots.txt et sitemap.xml',
-                            score: geoData?.crawlers_score || 0,
-                            why: 'Crawl IA optimisé'
-                          }
-                        ];
-
-                        return priorities.map((priority, index) => {
-                          const impact = getImpact(priority.score);
-                          const effort = getEffort(priority.action);
-                          const status = getStatus(priority.score);
-
-                          return (
-                            <tr key={priority.id} className="hover:bg-amber-50/40 dark:hover:bg-slate-700/40 transition-colors">
-                              <td className="px-2 sm:px-4 py-3 text-sm text-foreground">{priority.id}</td>
-                              <td className="px-2 sm:px-4 py-3 text-sm">
-                                <Badge className={`${impact >= 4 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' : impact >= 3 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'} text-xs font-medium`}>
-                                  {impact >= 4 ? 'Élevée' : impact >= 3 ? 'Moyen' : 'Faible'}
-                                </Badge>
-                              </td>
-                              <td className="px-2 sm:px-4 py-3 text-sm">
-                                <Badge className={`${impact >= 4 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' : impact >= 3 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'} text-xs font-medium`}>
-                                  {impact >= 4 ? 'Élevé' : impact >= 3 ? 'Moyen' : 'Faible'}
-                                </Badge>
-                              </td>
-                              <td className="px-2 sm:px-4 py-3 text-sm">
-                                <div className="flex items-center gap-1">
-                                  {Array.from({ length: 5 }, (_, i) => (
-                                    <div
-                                      key={i}
-                                      className={`w-2 h-2 rounded-full ${i < effort ? 'bg-blue-500 dark:bg-blue-400' : 'bg-gray-200 dark:bg-slate-600'}`}
-                                    />
-                                  ))}
-                                </div>
-                              </td>
-                              <td className="px-2 sm:px-4 py-3 text-sm text-foreground max-w-xs hidden md:table-cell">
-                                <span className="text-xs">{priority.why}</span>
-                              </td>
-                              <td className="px-2 sm:px-4 py-3 text-sm text-foreground max-w-md hidden lg:table-cell">
-                                <span className="text-xs">{priority.action}</span>
-                              </td>
-                              <td className="px-2 sm:px-4 py-3 text-sm">
-                                <Badge className={`${status.color} text-xs font-medium`}>
-                                  {status.label}
-                                </Badge>
-                              </td>
-                            </tr>
-                          );
-                        });
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+              <h4 style={{ fontSize: '18px', fontWeight: 600, color: '#1E293B', margin: 0 }}>
+                {etape.titre || `Étape ${idx + 1}`}
+              </h4>
+            </div>
+            {stepStatus.startedAt && (
+              <div style={{ fontSize: '14px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <Clock size={14} />
+                Commencé le {new Date(stepStatus.startedAt).toLocaleDateString('fr-FR')}
+                {stepStatus.completedAt && (
+                  <> • Terminé le {new Date(stepStatus.completedAt).toLocaleDateString('fr-FR')}</>
+                )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-
-        {/* Deux graphiques côte à côte */}
-        {/* Grid: Sources Analytics et Analyse concurrentielle côte à côte */}
-
-
-        {/* Analyses Optimiser */}
-        <div className="max-w-4xl mx-auto">
-          <Card className="bg-white shadow-lg">
-            {/* <CardHeader className="pb-6 px-8 py-6"> */}
-            {/* <div className="flex items-center justify-between">
-                <CardTitle className="text-2xl text-neutral-900 font-semibold flex items-center gap-4">
-                  <Sparkles className="w-8 h-8 text-neutral-600" />
-                  Analyses Optimiser
-                </CardTitle>
-              </div> */}
-
-            {/* Select pour choisir une analyse optimisée */}
-            {/* {!optimizationsLoading && optimizations.length > 0 && (
-                <div className="mt-6">
-                  <Select value={selectedOptimizationId} onValueChange={setSelectedOptimizationId}>
-                    <SelectTrigger className="bg-white border-neutral-200 h-12 text-base">
-                      <SelectValue placeholder="Choisir une analyse optimisée" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {optimizations.map((optimization) => {
-                        const url = optimization.url || 'URL non disponible';
-                        const date = new Date(optimization.createdAt).toLocaleDateString('fr-FR');
-                        return (
-                          <SelectItem key={optimization.id} value={optimization.id}>
-                            <div className="flex items-center gap-4 py-2">
-                              <span className="font-medium text-base">{url}</span>
-                              <span className="text-neutral-500 text-sm">• {date}</span>
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )} */}
-            {/* </CardHeader> */}
-
-            {/* <CardContent className="px-8 py-6"> */}
-            {/* {optimizationsLoading ? (
-                <div className="text-center py-8">
-                  <div className="flex items-center justify-center gap-4">
-                    <Loader2 className="w-8 h-8 animate-spin text-neutral-600" />
-                    <span className="text-neutral-600 text-base">Chargement...</span>
-              </div> */}
-            {/* </div>
-              ) : optimizations.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="w-32 h-32 bg-neutral-100 rounded-3xl flex items-center justify-center mx-auto mb-8">
-                    <Sparkles className="w-16 h-16 text-neutral-600" />
-                  </div>
-                  <h3 className="font-semibold text-neutral-900 mb-2 text-lg">Pas d'analyse</h3>
-                  <p className="text-neutral-600 text-base mb-6">
-                    Aucune analyse optimisée trouvée.
-                  </p> */}
-            {/* <Button 
-                    onClick={() => navigate('/sites-optimization')}
-                    className="bg-neutral-900 hover:bg-neutral-800 text-white h-12 px-6 text-base"
-                  >
-                    <Plus className="w-6 h-6 mr-2" />
-                    Créer une analyse
-                  </Button> */}
-            {/* </div> */}
-            {/* ) : selectedOptimizationId ? ( */}
-
-            {/* </CardContent> */}
-          </Card>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {etape.priorite && (
+            <span style={{
+              padding: '3px 8px',
+              borderRadius: '4px',
+              fontSize: '10px',
+              fontWeight: 500,
+              background: `${getPriorityColor(etape.priorite)}15`,
+              color: getPriorityColor(etape.priorite)
+            }}>
+              {etape.priorite}
+            </span>
+          )}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{
+              padding: '4px',
+              borderRadius: '4px',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              color: '#94A3B8'
+            }}
+          >
+            <ChevronRight size={14} style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+          </button>
         </div>
       </div>
 
-      {/* Analyses GEO */}
+      {isExpanded && (
+        <>
+          {/* Description */}
+          <p style={{ fontSize: '16px', color: '#475569', marginBottom: '16px', lineHeight: '1.7' }}>
+            {etape.description || ''}
+          </p>
 
-
-      {/* Enhanced LLMO Trend Chart */}
-      {/* <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 border-b">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                    <BarChart3 className="h-5 w-5 text-white" />
-                  </div>
-                  Évolution des Métriques LLMO
-                </CardTitle>
-                                  <CardDescription className="mt-2">Performance sur les 30 derniers jours</CardDescription>
-              </div>
-              <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-                Temps réel
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <ChartContainer config={chartConfig} className="h-[350px] w-full">
-              <AreaChart data={llmoTrendData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
-                <defs>
-                  <linearGradient id="llmoGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                    <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.05}/>
-                  </linearGradient>
-                  <linearGradient id="semanticGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10B981" stopOpacity={0.3}/>
-                    <stop offset="100%" stopColor="#10B981" stopOpacity={0.05}/>
-                  </linearGradient>
-                  <linearGradient id="tokenGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.3}/>
-                    <stop offset="100%" stopColor="#F59E0B" stopOpacity={0.05}/>
-                  </linearGradient>
-                </defs>
-                
-                <XAxis 
-                  dataKey="day" 
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                />
-                <YAxis 
-                  domain={[50, 90]}
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                />
-                
-                <ChartTooltip content={<ChartTooltipContent />} />
-                
-                <Area
-                  type="monotone"
-                  dataKey="llmoScore"
-                  stroke="#3B82F6"
-                  strokeWidth={3}
-                  fill="url(#llmoGradient)"
-                  dot={false}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="semanticScore"
-                  stroke="#10B981"
-                  strokeWidth={3}
-                  fill="url(#semanticGradient)"
-                  dot={false}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="tokenization"
-                  stroke="#F59E0B"
-                  strokeWidth={3}
-                  fill="url(#tokenGradient)"
-                  dot={false}
-                />
-              </AreaChart>
-            </ChartContainer>
-          </CardContent>
-        </Card> */}
-
-      {/* Usage Limits */}
-      {/* <UsageLimits className="mb-8" /> */}
-
-      {/* Enhanced Dashboard Grid */}
-      {/* <div className="grid gap-8 lg:grid-cols-2 max-w-4xl mx-auto"> */}
-      {/* Recent Analyses - Enhanced */}
-      {/* <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-purple-50 border-b">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-3 text-xl">
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-white" />
-                    </div>
-                    Analyses Récentes
-                  </CardTitle>
-                  <CardDescription className="mt-2">Dernières analyses effectuées</CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate('/analyses')}
-                  className="hover:bg-purple-50"
-                >
-                  Voir tout
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              {loadingAnalyses ? (
-                <div className="flex items-center justify-center p-8">
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-                    <span className="text-gray-600 font-medium">Chargement des analyses...</span>
-                  </div>
-                </div>
-              ) : errorAnalyses ? (
-                <Alert variant="destructive" className="border-red-200 bg-red-50">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription className="font-medium">
-                    {errorAnalyses}
-                  </AlertDescription>
-                </Alert>
-              ) : recentAnalyses.length === 0 ? (
-                  <div className="text-center p-8">
-                    <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <FileText className="h-8 w-8 text-gray-400" />
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Aucune analyse récente</h3>
-                    <p className="text-gray-500 text-sm">Commencez votre première analyse</p>
-                    <Button 
-                      onClick={() => navigate('/analyses')}
-                      className="mt-4 bg-gradient-to-r from-purple-500 to-pink-600"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Nouvelle analyse
-                    </Button>
-                  </div>
-              ) : (
-                recentAnalyses.map((analysis, index) => (
-                  <div 
-                    key={analysis.id} 
-                    className="group p-4 bg-gradient-to-r from-gray-50 to-purple-50 rounded-xl hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-[1.02] border border-gray-100"
-                    onClick={() => navigate('/analyses')}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
-                          <Globe className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">{analysis.url}</h4>
-                          <p className="text-sm text-gray-500 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {analysis.date}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            {analysis.score}
-                          </div>
-                          <div className="text-xs text-gray-500 font-medium">Score LLMO</div>
-                        </div>
-                        <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-purple-500 group-hover:translate-x-1 transition-all" />
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card> */}
-
-      {/* Enhanced LLMO Insights */}
-      {/* s */}
-
-
-      {/* Enhanced Quick Actions */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8" data-onboarding="quick-actions">
-        <Card className="shadow-lg bg-white dark:bg-slate-800 border border-blue-100/60 dark:border-slate-700 overflow-hidden">
-        <CardHeader className="bg-white dark:bg-slate-800 border-b border-blue-100/40 dark:border-slate-700">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-3 text-lg sm:text-xl">
-                
-                <span className="text-foreground">Actions Rapides</span>
-              </CardTitle>
-              <CardDescription className="mt-2 text-muted-foreground text-sm">Optimisations recommandées</CardDescription>
-            </div>
-            <Badge variant="outline" className="bg-blue-50/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700">
-              <Star className="w-3 h-3 mr-1" />
-              Recommandé
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-4 bg-white dark:bg-slate-800">
-          <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
-            {[
-              {
-                title: "Analyser un nouveau site",
-                description: "Lancer une analyse GEO complète",
-                action: () => navigate('/analyses'),
-                icon: Plus,
-                dataAttr: "new-analysis-btn"
-              },
-              {
-                title: "Analyse concurrentielle",
-                description: "Comparer avec vos concurrents",
-                action: () => navigate('/competition'),
-                icon: Globe2,
-                dataAttr: "competitor-analysis-btn"
-              }
-            ].map((action, index) => (
+          {/* Contrôles de statut avec animations */}
+          <div style={{ marginBottom: '12px' }}>
+            {/* Boutons rapides de statut - À droite, petits et groupés */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
               <Button
-                key={index}
-                variant="ghost"
-                data-onboarding={action.dataAttr}
-                className="h-auto p-4 flex flex-col items-start text-left hover:shadow-lg transition-all duration-300 bg-white dark:bg-slate-700 rounded-lg border border-blue-100/50 dark:border-slate-600 group hover:border-blue-200 dark:hover:border-slate-500 hover:scale-[1.02]"
-                onClick={action.action}
+                variant="outline"
+                size="sm"
+                onClick={() => updateStepStatus(stepId, 'Non commencé')}
+                style={{
+                  height: '32px',
+                  padding: '0 14px',
+                  fontSize: '14px',
+                  background: 'transparent',
+                  color: stepStatus.status === 'Non commencé' ? '#1E293B' : '#64748B',
+                  borderColor: '#E2E8F0',
+                  borderWidth: '1px',
+                  opacity: stepStatus.status === 'Non commencé' ? 1 : 0.6
+                }}
               >
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 bg-blue-50 dark:bg-slate-600 border border-blue-200/50 dark:border-slate-500 group-hover:bg-blue-100 dark:group-hover:bg-slate-500 transition-all">
-                  <action.icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <h4 className="font-semibold mb-1 text-sm text-foreground">{action.title}</h4>
-                <p className="text-xs text-muted-foreground leading-relaxed">{action.description}</p>
-                <ArrowRight className="h-3 w-3 text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-all mt-2 self-end" />
+                <RotateCcw size={14} style={{ marginRight: '6px' }} />
+                Non commencé
               </Button>
-            ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => updateStepStatus(stepId, 'En cours')}
+                style={{
+                  height: '30px',
+                  padding: '0 12px',
+                  fontSize: '13px',
+                  background: 'transparent',
+                  color: stepStatus.status === 'En cours' ? '#1E293B' : '#64748B',
+                  borderColor: '#E2E8F0',
+                  borderWidth: '1px',
+                  opacity: stepStatus.status === 'En cours' ? 1 : 0.6
+                }}
+              >
+                <PlayCircle size={14} style={{ marginRight: '6px' }} />
+                En cours
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => updateStepStatus(stepId, 'Terminé')}
+                style={{
+                  height: '30px',
+                  padding: '0 12px',
+                  fontSize: '13px',
+                  background: 'transparent',
+                  color: stepStatus.status === 'Terminé' ? '#1E293B' : '#64748B',
+                  borderColor: '#E2E8F0',
+                  borderWidth: '1px',
+                  opacity: stepStatus.status === 'Terminé' ? 1 : 0.6
+                }}
+              >
+                <CheckCircle size={14} style={{ marginRight: '6px' }} />
+                Terminé
+              </Button>
+            </div>
           </div>
-        </CardContent>
-        </Card>
+
+          {/* Checklist interactive des actions */}
+          {etape.actions && etape.actions.length > 0 && (
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Target size={16} style={{ color: '#475569' }} />
+                  <span style={{ fontSize: '16px', fontWeight: 600, color: '#1E293B' }}>
+                    Actions ({completedActions}/{totalActions})
+                  </span>
+                </div>
+                {actionsProgress > 0 && (
+                  <span style={{ fontSize: '14px', color: '#64748B', fontWeight: 600 }}>
+                    {actionsProgress}%
+                  </span>
+                )}
+              </div>
+              <div style={{
+                padding: '8px',
+                background: '#F8FAFC',
+                borderRadius: '6px',
+                border: '1px solid #E2E8F0',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+              }}>
+                {etape.actions.map((action: string, aIdx: number) => {
+                  const isChecked = checkedActions[aIdx] || false;
+                  return (
+                    <label
+                      key={aIdx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'start',
+                        gap: '8px',
+                        padding: '6px 8px',
+                        background: isChecked ? '#F8FAFC' : '#FFFFFF',
+                        borderRadius: '4px',
+                        border: `1px solid #E2E8F0`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        textDecoration: isChecked ? 'line-through' : 'none',
+                        opacity: isChecked ? 0.7 : 1
+                      }}
+                    >
+                      <div style={{ marginTop: '2px', flexShrink: 0 }}>
+                        {isChecked ? (
+                          <CheckCircle size={16} style={{ color: '#475569' }} />
+                        ) : (
+                          <Circle size={16} style={{ color: '#CBD5E1' }} />
+                        )}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: '15px',
+                          color: isChecked ? '#64748B' : '#475569',
+                          lineHeight: '1.6',
+                          flex: 1,
+                          userSelect: 'none'
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toggleAction(stepId, aIdx, totalActions);
+                        }}
+                      >
+                        {action}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Impact GEO */}
+          {etape.impact_geo && (
+            <div style={{ marginBottom: '12px', padding: '10px 12px', background: '#EFF6FF', borderRadius: '6px', border: '1px solid #BFDBFE' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                <TrendingUp size={16} style={{ color: '#475569' }} />
+                <div style={{ fontSize: '15px', fontWeight: 600, color: '#1E293B' }}>Impact GEO</div>
+              </div>
+              <div style={{ fontSize: '15px', color: '#475569', lineHeight: '1.6' }}>
+                {etape.impact_geo}
+              </div>
+            </div>
+          )}
+
+          {/* Notes et commentaires */}
+          <div style={{ marginBottom: '12px' }}>
+            <button
+              onClick={() => setShowNotes(!showNotes)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 10px',
+                background: showNotes ? '#EFF6FF' : '#F8FAFC',
+                border: `1px solid ${showNotes ? '#BFDBFE' : '#E2E8F0'}`,
+                borderRadius: '4px',
+                cursor: 'pointer',
+                width: '100%',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <MessageSquare size={16} style={{ color: '#64748B' }} />
+              <span style={{ fontSize: '15px', fontWeight: 600, color: '#1E293B' }}>
+                {stepStatus.notes ? 'Modifier notes' : 'Ajouter notes'}
+              </span>
+            </button>
+            {showNotes && (
+              <div style={{ marginTop: '8px', padding: '8px', background: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+                <textarea
+                  value={notesInput}
+                  onChange={(e) => setNotesInput(e.target.value)}
+                  onBlur={() => updateStepNotes(stepId, notesInput)}
+                  placeholder="Notes..."
+                  style={{
+                    width: '100%',
+                    minHeight: '60px',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '15px',
+                    fontFamily: 'inherit',
+                    resize: 'vertical',
+                    background: '#FFFFFF'
+                  }}
+                />
+                {stepStatus.notes && (
+                  <div style={{ marginTop: '6px', fontSize: '14px', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                    <Check className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Sauvegardé</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Outils recommandés */}
+          {etape.outils_recommandes && (
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: '#1E293B', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ExternalLink size={16} />
+                Outils recommandés
+              </div>
+              {Array.isArray(etape.outils_recommandes) ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {etape.outils_recommandes.map((outil: string, oIdx: number) => (
+                    <span
+                      key={oIdx}
+                      style={{
+                        padding: '8px 12px',
+                        background: '#F1F5F9',
+                        color: '#475569',
+                        borderRadius: '12px',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        border: '1px solid #E2E8F0',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Code size={14} />
+                      {outil}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: '15px', color: '#475569', lineHeight: '1.6' }}>
+                  {etape.outils_recommandes}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Guide d'implémentation avec système d'accordéons
+ * Affiche le score actuel vs cible et les sections repliables
+ */
+function ImplementationGuide({ reportData }: { reportData: FullReportData | null }) {
+  const [openAccordion, setOpenAccordion] = useState<string | null>('monitoring');
+
+  // Clé unique pour le localStorage basée sur l'ID du rapport
+  const storageKey = reportData?.report?.id
+    ? `implementation-guide-progress-${reportData.report.id}`
+    : 'implementation-guide-progress-default';
+
+  // Initialiser l'état depuis localStorage avec plus de données
+  const [stepProgress, setStepProgress] = useState<Record<string, {
+    status: string;
+    progress: number;
+    checkedActions?: Record<number, boolean>;
+    notes?: string;
+    startedAt?: string;
+    completedAt?: string;
+  }>>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Fonction pour mettre à jour le statut d'une étape
+  const updateStepStatus = (stepId: string, status: string) => {
+    const progressMap: Record<string, number> = {
+      'Non commencé': 0,
+      'En cours': 50,
+      'Terminé': 100
+    };
+
+    const currentStep: { status?: string; progress?: number; checkedActions?: Record<number, boolean>; notes?: string; startedAt?: string; completedAt?: string } = stepProgress[stepId] || {};
+    const now = new Date().toISOString();
+
+    const newProgress = {
+      ...stepProgress,
+      [stepId]: {
+        ...currentStep,
+        status,
+        progress: progressMap[status] || 0,
+        startedAt: status !== 'Non commencé' && !currentStep.startedAt ? now : (currentStep.startedAt || undefined),
+        completedAt: status === 'Terminé' ? now : (currentStep.completedAt || undefined)
+      }
+    };
+
+    setStepProgress(newProgress);
+
+    // Sauvegarder dans localStorage
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(newProgress));
+    } catch (error) {
+    }
+  };
+
+  // Fonction pour obtenir le statut d'une étape
+  const getStepStatus = (stepId: string): {
+    status: string;
+    progress: number;
+    checkedActions?: Record<number, boolean>;
+    notes?: string;
+    startedAt?: string;
+    completedAt?: string;
+  } => {
+    return stepProgress[stepId] || { status: 'Non commencé', progress: 0 };
+  };
+
+  // Fonction pour cocher/décocher une action
+  const toggleAction = (stepId: string, actionIndex: number) => {
+    const currentStep = getStepStatus(stepId);
+    const checkedActions = currentStep.checkedActions || {};
+    const newCheckedActions = {
+      ...checkedActions,
+      [actionIndex]: !checkedActions[actionIndex]
+    };
+
+    // Calculer la progression basée sur les actions cochées
+    const totalActions = Object.keys(newCheckedActions).length;
+    const completedActions = Object.values(newCheckedActions).filter(Boolean).length;
+    const actionProgress = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : currentStep.progress;
+
+    // Si toutes les actions sont cochées, mettre le statut à "Terminé"
+    let newStatus = currentStep.status;
+    if (completedActions === totalActions && totalActions > 0) {
+      newStatus = 'Terminé';
+    } else if (completedActions > 0 && currentStep.status === 'Non commencé') {
+      newStatus = 'En cours';
+    }
+
+    const progressMap: Record<string, number> = {
+      'Non commencé': 0,
+      'En cours': Math.max(50, actionProgress),
+      'Terminé': 100
+    };
+
+    const newProgress = {
+      ...stepProgress,
+      [stepId]: {
+        ...currentStep,
+        checkedActions: newCheckedActions,
+        status: newStatus,
+        progress: progressMap[newStatus] || actionProgress
+      }
+    };
+
+    setStepProgress(newProgress);
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(newProgress));
+    } catch (error) {
+    }
+  };
+
+  // Fonction pour ajouter/modifier des notes
+  const updateStepNotes = (stepId: string, notes: string) => {
+    const currentStep = getStepStatus(stepId);
+    const newProgress = {
+      ...stepProgress,
+      [stepId]: {
+        ...currentStep,
+        notes
+      }
+    };
+
+    setStepProgress(newProgress);
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(newProgress));
+    } catch (error) {
+    }
+  };
+
+  // Calculer la progression globale
+  const calculateGlobalProgress = () => {
+    const steps = Object.values(stepProgress);
+    if (steps.length === 0) return 0;
+    const totalProgress = steps.reduce((sum, step) => sum + step.progress, 0);
+    return Math.round(totalProgress / steps.length);
+  };
+
+  // Extraire les données du guide depuis l'API
+  const getGuideData = () => {
+    if (!reportData?.analyses || reportData.analyses.length === 0) {
+      return {
+        scoreActuel: 58,
+        scoreCible: 83,
+        guide: null
+      };
+    }
+
+    const auditGeoData = reportData.analyses.find(analysis =>
+      analysis.modules?.audit_geo?.package_optimisation_geo?.implementation_guide
+    )?.modules?.audit_geo;
+
+    if (!auditGeoData?.package_optimisation_geo?.implementation_guide) {
+      return {
+        scoreActuel: auditGeoData?.score_global_geo || 58,
+        scoreCible: auditGeoData?.package_optimisation_geo?.package_metadata?.estimated_improvement?.score_estime || 83,
+        guide: null
+      };
+    }
+
+    const guide = auditGeoData.package_optimisation_geo.implementation_guide;
+    return {
+      scoreActuel: guide.score_geo_actuel || auditGeoData.score_global_geo || 58,
+      scoreCible: guide.score_geo_cible || 83,
+      guide
+    };
+  };
+
+  const guideData = getGuideData();
+
+  const toggleAccordion = (id: string) => {
+    setOpenAccordion(openAccordion === id ? null : id);
+  };
+
+  // Fonction pour obtenir la couleur de la priorité (cohérente avec RecommendationsTable)
+  const getPriorityColor = (priority: string) => {
+    if (!priority) return '#6B7280';
+    const priorityLower = priority.toLowerCase();
+    // Vérifier les variantes possibles de "Haute"
+    if (priorityLower.includes('haute') || priorityLower.includes('high') || priorityLower === 'haute') return '#EF4444';
+    // Vérifier les variantes possibles de "Moyenne"
+    if (priorityLower.includes('moyenne') || priorityLower.includes('medium') || priorityLower.includes('moyen') || priorityLower === 'moyenne') return '#F97316';
+    // Vérifier les variantes possibles de "Basse"
+    if (priorityLower.includes('basse') || priorityLower.includes('low') || priorityLower === 'basse') return '#10B981';
+    return '#6B7280';
+  };
+
+  // Fonction pour télécharger le contenu
+  const downloadContent = (content: any, filename: string, type: string) => {
+    if (!content) return;
+    const blob = new Blob([typeof content === 'object' ? JSON.stringify(content, null, 2) : content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const globalProgress = calculateGlobalProgress();
+  const totalSteps = guideData.guide?.etapes_implementation ? Object.keys(guideData.guide.etapes_implementation).length : 4;
+  const completedSteps = Object.values(stepProgress).filter(s => s.status === 'Terminé').length;
+  const inProgressSteps = Object.values(stepProgress).filter(s => s.status === 'En cours').length;
+
+  return (
+    <div className="implementation-guide" style={{ boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)', border: '1px solid #E2E8F0', padding: '16px', borderRadius: '8px', background: '#FFFFFF' }}>
+      {/* En-tête avec scores et progression globale */}
+      <div className="guide-header" style={{ marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid #E2E8F0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#0F172A', margin: 0 }}>
+            {guideData.guide?.titre || 'Guide d\'Implémentation - Package d\'Optimisation GEO'}
+          </h2>
+
+        </div>
+
+        {/* Barre de progression globale dynamique */}
+        <div style={{ background: '#F8FAFC', padding: '10px 12px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '15px', fontWeight: 600, color: '#1E293B' }}>Progression</span>
+            </div>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>{globalProgress}%</span>
+          </div>
+          <div style={{
+            width: '100%',
+            height: '6px',
+            backgroundColor: '#E2E8F0',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            marginBottom: '8px'
+          }}>
+            <div style={{
+              width: `${globalProgress}%`,
+              height: '100%',
+              background: `linear-gradient(90deg, #3B82F6 0%, #60A5FA 100%)`,
+              transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+              borderRadius: '10px'
+            }} />
+          </div>
+          <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#64748B' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle size={14} style={{ color: '#10B981' }} />
+              <span><strong style={{ color: '#1E293B' }}>{completedSteps}</strong> terminée{completedSteps > 1 ? 's' : ''}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <PlayCircle size={14} style={{ color: '#F97316' }} />
+              <span><strong style={{ color: '#1E293B' }}>{inProgressSteps}</strong> en cours</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Circle size={14} style={{ color: '#CBD5E1' }} />
+              <span><strong style={{ color: '#1E293B' }}>{totalSteps - completedSteps - inProgressSteps}</strong> à faire</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {/* Accordéons */}
+        <AccordionItem
+          id="etapes"
+          title={`Étapes d'implémentation (${guideData.guide?.etapes_implementation ? Object.keys(guideData.guide.etapes_implementation).length : 4})`}
+          isOpen={openAccordion === 'etapes'}
+          onToggle={toggleAccordion}
+        >
+          <div style={{ padding: '20px 4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {guideData.guide?.etapes_implementation ? Object.values(guideData.guide.etapes_implementation).map((etape: any, idx: number) => {
+                const stepId = `etape-${idx}-${etape.titre || `step-${idx}`}`;
+                const stepStatus = getStepStatus(stepId);
+
+                return (
+                  <DynamicStepCard
+                    key={idx}
+                    etape={etape}
+                    idx={idx}
+                    stepId={stepId}
+                    stepStatus={stepStatus}
+                    updateStepStatus={updateStepStatus}
+                    toggleAction={toggleAction}
+                    updateStepNotes={updateStepNotes}
+                    getPriorityColor={getPriorityColor}
+                  />
+                );
+              }) : (
+                [
+                  {
+                    step: '1. Préparation et audit',
+                    description: 'Analyser l\'état actuel de votre site, identifier les pages prioritaires et préparer les ressources nécessaires.',
+                    duration: '2-3 heures',
+                    deliverables: ['Rapport d\'audit', 'Liste des pages prioritaires', 'Plan d\'action']
+                  },
+                  {
+                    step: '2. Implémentation technique',
+                    description: 'Mettre en place les schémas structurés, optimiser les métadonnées et améliorer la structure HTML.',
+                    duration: '4-6 heures',
+                    deliverables: ['Schémas JSON-LD', 'Métadonnées optimisées', 'Structure HTML améliorée']
+                  },
+                  {
+                    step: '3. Tests et validation',
+                    description: 'Valider toutes les implémentations avec les outils de Google et vérifier la conformité.',
+                    duration: '1-2 heures',
+                    deliverables: ['Rapport de validation', 'Corrections si nécessaire']
+                  },
+                  {
+                    step: '4. Déploiement et suivi',
+                    description: 'Mettre en production les changements et configurer le monitoring de performance.',
+                    duration: '1 heure',
+                    deliverables: ['Déploiement validé', 'Dashboard de monitoring configuré']
+                  }
+                ].map((item, idx) => {
+                  const stepId = `etape-default-${idx}-${item.step}`;
+                  const stepStatus = getStepStatus(stepId);
+                  const progressColor = stepStatus.progress === 100 ? '#10B981' : stepStatus.progress === 50 ? '#F97316' : '#EF4444';
+
+                  return (
+                    <div key={idx} style={{ padding: '20px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                        <h4 style={{ fontSize: '18px', fontWeight: 600, color: '#0F172A' }}>{item.step}</h4>
+                        <span style={{ fontSize: '14px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Clock size={16} />
+                          {item.duration}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '16px', color: '#475569', marginBottom: '16px', lineHeight: '1.7' }}>
+                        {item.description}
+                      </p>
+
+                      {/* Select de statut et barre de progression */}
+                      <div style={{ marginBottom: '16px', padding: '16px', background: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <label style={{ fontSize: '14px', fontWeight: 600, color: '#334155' }}>
+                            Statut de l'étape :
+                          </label>
+                          <select
+                            value={stepStatus.status}
+                            onChange={(e) => updateStepStatus(stepId, e.target.value)}
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: '6px',
+                              border: '1px solid #CBD5E1',
+                              fontSize: '14px',
+                              color: '#334155',
+                              backgroundColor: '#FFFFFF',
+                              cursor: 'pointer',
+                              minWidth: '160px'
+                            }}
+                          >
+                            <option value="Non commencé">Non commencé</option>
+                            <option value="En cours">En cours</option>
+                            <option value="Terminé">Terminé</option>
+                          </select>
+                        </div>
+                        <div style={{ marginTop: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '13px', color: '#64748B', fontWeight: 500 }}>Progression</span>
+                            <span style={{ fontSize: '13px', color: '#334155', fontWeight: 600 }}>{stepStatus.progress}%</span>
+                          </div>
+                          <div style={{
+                            width: '100%',
+                            height: '8px',
+                            backgroundColor: '#E2E8F0',
+                            borderRadius: '4px',
+                            overflow: 'hidden'
+                          }}>
+                            <div style={{
+                              width: `${stepStatus.progress}%`,
+                              height: '100%',
+                              backgroundColor: progressColor,
+                              transition: 'width 0.3s ease, background-color 0.3s ease',
+                              borderRadius: '4px'
+                            }} />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#64748B', marginBottom: '10px' }}>Livrables :</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {item.deliverables.map((deliverable, dIdx) => (
+                            <span key={dIdx} style={{
+                              padding: '6px 12px',
+                              background: '#EFF6FF',
+                              color: '#3B82F6',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              fontWeight: 500
+                            }}>
+                              {deliverable}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </AccordionItem>
+
+        <AccordionItem
+          id="fichiers"
+          title="Fichiers Fournis"
+          isOpen={openAccordion === 'fichiers'}
+          onToggle={toggleAccordion}
+        >
+          <div style={{ padding: '20px 4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {(() => {
+                // 1. Collecter les fichiers API
+                const apiFiles: any[] = [];
+                reportData?.analyses?.forEach((analysis, idx) => {
+                  const geoData = analysis.modules?.audit_geo;
+                  if (!geoData) return;
+
+                  const modelName = analysis.llm_name || `Modèle ${idx + 1}`;
+
+                  const downloadables = [
+                    { key: 'schema_org_json', label: 'Schema.org JSON', type: 'application/json', ext: 'json', desc: 'Données structurées Schema.org générées par l\'IA' },
+                    { key: 'llms_txt_content', label: 'LLMs.txt', type: 'text/plain', ext: 'txt', desc: 'Fichier de configuration standardisé pour les agents IA' },
+                    { key: 'robots_txt_content', label: 'Robots.txt', type: 'text/plain', ext: 'txt', desc: 'Règles d\'indexation optimisées pour les crawlers IA' },
+                    { key: 'meta_tags_snippet', label: 'Meta Tags HTML', type: 'text/html', ext: 'html', desc: 'Snippet HTML de métadonnées à insérer dans le <head>' },
+                    { key: 'open_graph_tags', label: 'Open Graph Tags', type: 'text/html', ext: 'html', desc: 'Balises Open Graph pour l\'affichage social et IA' }
+                  ];
+
+                  downloadables.forEach(item => {
+                    if (geoData[item.key]) {
+                      apiFiles.push({
+                        name: item.label,
+                        type: item.ext.toUpperCase(),
+                        model: modelName,
+                        description: item.desc,
+                        content: geoData[item.key],
+                        mime: item.type,
+                        filename: `${item.key}_${modelName.replace(/\s+/g, '_')}.${item.ext}`
+                      });
+                    }
+                  });
+                });
+
+                // 2. Collecter les fichiers statiques du guide (en filtrant les en-têtes de modèles)
+                const staticFiles = guideData.guide?.fichiers_fournis
+                  ? Object.entries(guideData.guide.fichiers_fournis)
+                    .filter(([key]) => !key.toLowerCase().includes('ressources_générées') && !key.toLowerCase().includes('ressources générées'))
+                    .map(([key, file]: [string, any]) => ({
+                      name: key.replace(/_/g, '-'),
+                      type: file.localisation?.split('.').pop()?.toUpperCase() || 'FILE',
+                      description: file.description || '',
+                      isStatic: true
+                    }))
+                  : (apiFiles.length === 0 ? [
+                    { name: 'schema-faq.json', type: 'JSON', description: 'Schéma FAQ structuré pour les pages principales', isStatic: true },
+                    { name: 'metadata-template.html', type: 'HTML', description: 'Template de métadonnées Open Graph et Twitter Cards', isStatic: true },
+                    { name: 'sitemap-optimized.xml', type: 'XML', description: 'Sitemap XML optimisé avec priorités et fréquences', isStatic: true },
+                    { name: 'robots-optimized.txt', type: 'TXT', description: 'Fichier robots.txt optimisé pour le crawling IA', isStatic: true },
+                    { name: 'implementation-guide.pdf', type: 'PDF', description: 'Guide complet d\'implémentation avec exemples', isStatic: true }
+                  ] : []);
+
+                // 3. Fusionner et afficher
+                const allFiles = [...apiFiles, ...staticFiles];
+
+                if (allFiles.length === 0) {
+                  return <div style={{ textAlign: 'center', padding: '20px', color: '#64748B', fontSize: '16px' }}>Aucun fichier disponible pour le moment.</div>;
+                }
+
+                return allFiles.map((file, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '14px 16px',
+                      background: '#FFFFFF',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: '8px',
+                      transition: 'all 0.2s ease',
+                      cursor: file.content ? 'pointer' : 'default'
+                    }}
+                    onClick={() => {
+                      if (file.content) {
+                        downloadContent(file.content, file.filename, file.mime);
+                      }
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#3B82F6';
+                      e.currentTarget.style.background = '#F8FAFC';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#E2E8F0';
+                      e.currentTarget.style.background = '#FFFFFF';
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '17px', fontWeight: 600, color: '#0F172A' }}>{file.name}</span>
+                        {file.model && (
+                          <span style={{
+                            padding: '4px 10px',
+                            background: '#F0F9FF',
+                            color: '#0284C7',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            border: '1px solid #BAE6FD'
+                          }}>
+                            {file.model}
+                          </span>
+                        )}
+                        <span style={{
+                          padding: '4px 10px',
+                          background: '#EFF6FF',
+                          color: '#3B82F6',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: 600
+                        }}>
+                          {file.type}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '15px', color: '#64748B' }}>{file.description}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {file.content && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          color: '#3B82F6',
+                          fontSize: '14px',
+                          fontWeight: 600
+                        }}>
+                          <ExternalLink size={16} />
+                          Télécharger
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        </AccordionItem>
+
+        <AccordionItem
+          id="monitoring"
+          title="Monitoring Performance"
+          isOpen={openAccordion === 'monitoring'}
+          onToggle={toggleAccordion}
+        >
+          <div style={{ padding: '20px 4px' }}>
+            <div className="monitoring-section" style={{ marginBottom: '24px' }}>
+              <h4 className="section-subtitle" style={{ color: '#2563EB', fontSize: '16px', fontWeight: 600, marginBottom: '14px' }}>KPI à Suivre</h4>
+              <ul className="kpi-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {['Score de visibilité dans les moteurs génératifs', 'Taux d\'indexation par les crawlers IA', 'Qualité des données structurées', 'Performance d\'accessibilité', 'Score de conformité GEO'].map((item, i) => (
+                  <li
+                    key={i}
+                    onClick={() => {
+                      // Handler pour le clic - peut être étendu plus tard
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      fontSize: '16px',
+                      color: '#334155',
+                      lineHeight: '1.6',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#F1F5F9';
+                      e.currentTarget.style.color = '#2563EB';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = '#334155';
+                    }}
+                  >
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#2563EB' }}></div>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="monitoring-section" style={{ marginBottom: '28px' }}>
+              <h4 className="section-subtitle" style={{ color: '#2563EB', fontSize: '16px', fontWeight: 600, marginBottom: '14px' }}>Outils Monitoring</h4>
+              <ul className="tools-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {['Google Search Console', 'Bing Webmaster Tools', 'Schema.org Validator', 'Lighthouse Performance'].map((item, i) => (
+                  <li
+                    key={i}
+                    onClick={() => {
+                      // Handler pour le clic - peut être étendu plus tard
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      fontSize: '16px',
+                      color: '#334155',
+                      lineHeight: '1.6',
+                      cursor: 'pointer',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#F1F5F9';
+                      e.currentTarget.style.color = '#2563EB';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = '#334155';
+                    }}
+                  >
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#2563EB' }}></div>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="monitoring-frequency" style={{ background: '#F8FAFC', padding: '16px 20px', borderRadius: '8px', fontSize: '15px', color: '#64748B', lineHeight: '1.6' }}>
+              <strong style={{ color: '#0F172A', marginRight: '6px', fontSize: '16px' }}>Fréquence:</strong> Hebdomadaire les 4 premières semaines, puis mensuel
+            </div>
+          </div>
+        </AccordionItem>
+
+        <AccordionItem
+          id="support"
+          title="Support & Contact"
+          isOpen={openAccordion === 'support'}
+          onToggle={toggleAccordion}
+        >
+          <div style={{ padding: '20px 4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <h4 style={{ fontSize: '16px', fontWeight: 600, color: '#2563EB', marginBottom: '14px' }}>Support technique</h4>
+                <p style={{ fontSize: '16px', color: '#475569', marginBottom: '18px', lineHeight: '1.7' }}>
+                  Notre équipe est disponible pour vous accompagner dans l'implémentation de ces optimisations.
+                  Nous offrons un support prioritaire pendant les 30 premiers jours suivant l'achat.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '16px', color: '#334155' }}>
+
+                    {/* <span>Support par email : <strong>support@solocal.com</strong></span> */}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '16px', color: '#334155' }}>
+                    <CheckCircle2 size={18} style={{ color: '#10B981' }} />
+                    <span>Réponse sous 24h en jours ouvrés</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '16px', color: '#334155' }}>
+                    <CheckCircle2 size={18} style={{ color: '#10B981' }} />
+                    <span>Assistance téléphonique pour les clients Premium</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ padding: '18px', background: '#F0F7FF', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
+                <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
+                  <AlertCircle size={22} style={{ color: '#3B82F6', flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: 600, color: '#1E40AF', marginBottom: '6px' }}>
+                      Besoin d'aide immédiate ?
+                    </div>
+                    <div style={{ fontSize: '15px', color: '#1E3A8A', lineHeight: '1.6' }}>
+                      Consultez notre centre d'aide avec plus de 50 articles et tutoriels vidéo pour vous guider pas à pas.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </AccordionItem>
       </div>
     </div>
+  );
+}
 
+/**
+ * Vue "Infos détaillées"
+ * Affiche le tableau de recommandations
+ */
+/**
+ * Section Audit GEO - Affiche le score global, les sous-scores, le résumé et le plan d'action
+ * Avec sélecteur de modèle, inspiré du style CompetitorAnalysis
+ */
+const PREFERRED_MODEL_KEY = 'preferred-ai-model';
+
+function AuditGeoSection({ reportData }: { reportData: FullReportData | null }) {
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    try { return localStorage.getItem(PREFERRED_MODEL_KEY) || ''; } catch { return ''; }
+  });
+
+  const handleSetSelectedModel = (model: string) => {
+    setSelectedModel(model);
+    try { localStorage.setItem(PREFERRED_MODEL_KEY, model); } catch { }
+  };
+
+  // Modèles disponibles (ceux qui ont un audit_geo)
+  const availableModels = useMemo(() => {
+    if (!reportData?.analyses) return [];
+    return reportData.analyses
+      .filter((a) => a.modules?.audit_geo?.score_global_geo !== undefined)
+      .map((a) => a.llm_name || 'Modèle inconnu');
+  }, [reportData?.analyses]);
+
+  // Sélectionner le modèle persisté ou le premier par défaut
+  useEffect(() => {
+    if (availableModels.length === 0) return;
+    if (!selectedModel || !availableModels.includes(selectedModel)) {
+      handleSetSelectedModel(availableModels[0]);
+    }
+  }, [availableModels]);
+
+  if (!reportData?.analyses || availableModels.length === 0) {
+    return null;
+  }
+
+  // Données du modèle sélectionné
+  const currentAnalysis = reportData.analyses.find(
+    (a) => (a.llm_name || 'Modèle inconnu') === selectedModel && a.modules?.audit_geo
+  );
+  const auditGeo = currentAnalysis?.modules?.audit_geo;
+
+  if (!auditGeo) return null;
+
+  const scoreGlobal = Math.round(auditGeo.score_global_geo ?? 0);
+  const resumeExecutif = auditGeo.resume_executif_geo || '';
+  const rawPlan = Array.isArray(auditGeo.plan_action_geo) ? auditGeo.plan_action_geo : [];
+  // Normaliser: supporter string[] ou object[]
+  const planAction = rawPlan.map((item: any) => {
+    if (typeof item === 'string') return { action: item, categorie: '', priorite: 'moyenne', impact: '', effort: 'moyen' };
+    return item as { action: string; categorie: string; priorite: string; impact: string; effort: string };
+  });
+
+  const getPriorityBadge = (p: string) => {
+    const pr = (p || '').toLowerCase();
+    if (pr === 'haute') return { bg: '#FEE2E2', color: '#DC2626', label: 'Haute' };
+    if (pr === 'moyenne') return { bg: '#FEF3C7', color: '#D97706', label: 'Moyenne' };
+    return { bg: '#D1FAE5', color: '#059669', label: 'Basse' };
+  };
+
+  const getEffortBadge = (e: string) => {
+    const ef = (e || '').toLowerCase();
+    if (ef === 'faible') return { bg: '#D1FAE5', color: '#059669', label: 'Faible' };
+    if (ef === 'moyen') return { bg: '#FEF3C7', color: '#D97706', label: 'Moyen' };
+    return { bg: '#FEE2E2', color: '#DC2626', label: 'Élevé' };
+  };
+
+  return (
+    <div className="recommendations-table" style={{ boxShadow: 'none', border: '1px solid #F1F5F9', padding: '24px', borderRadius: '16px' }}>
+      {/* Header avec sélecteur de modèle - style CompetitorAnalysis */}
+      <div className="card-header-with-selector">
+        <h3 className="text-xl font-bold text-slate-900">Audit GEO</h3>
+        <div className="model-selector">
+          <span className="selector-label">Modèle:</span>
+          <Select value={selectedModel} onValueChange={handleSetSelectedModel}>
+            <SelectTrigger className="w-[200px] h-9 bg-white border-slate-200">
+              <SelectValue placeholder="Choisir un modèle" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableModels.map((model) => (
+                <SelectItem key={model} value={model}>
+                  <div className="flex items-center gap-2">
+                    {getModelLogo(model) ? (
+                      <img src={getModelLogo(model)!} alt={model} className="w-5 h-5 object-contain" />
+                    ) : (
+                      <Zap size={16} className="text-blue-500" />
+                    )}
+                    <span>{model}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+
+      {/* Plan d'action GEO du modèle sélectionné */}
+      {planAction.length > 0 && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingTop: '16px', borderTop: '1px solid #F1F5F9' }}>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>Plan d'action</span>
+            <span style={{
+              padding: '2px 8px',
+              background: '#EFF6FF',
+              color: '#3B82F6',
+              borderRadius: '12px',
+              fontSize: '11px',
+              fontWeight: 600
+            }}>
+              {planAction.length}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {planAction.map((item: any, idx: number) => {
+              const priority = getPriorityBadge(item.priorite);
+              const effort = getEffortBadge(item.effort);
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    padding: '12px 14px',
+                    borderRadius: '10px',
+                    border: '1px solid #E2E8F0',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '14px', color: '#334155', lineHeight: '1.6', margin: 0, fontWeight: 500 }}>
+                      {item.action}
+                    </p>
+                    {item.impact && (
+                      <p style={{ fontSize: '12px', color: '#64748B', margin: 0, marginTop: '4px', lineHeight: '1.4' }}>
+                        {item.impact}
+                      </p>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                    <span style={{
+                      padding: '2px 7px', borderRadius: '6px', fontSize: '10px', fontWeight: 600,
+                      background: priority.bg, color: priority.color
+                    }}>{priority.label}</span>
+                    <span style={{
+                      padding: '2px 7px', borderRadius: '6px', fontSize: '10px', fontWeight: 600,
+                      background: effort.bg, color: effort.color
+                    }}>{effort.label}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Graphique linéaire d'évolution du Score GEO
+ */
+// Mapper les noms techniques API vers des noms commerciaux (marque uniquement)
+const getCommercialModelName = (apiName: string): string => {
+  const n = apiName.toLowerCase().trim();
+  if (n.includes('sonar')) return 'Perplexity';
+  if (n.includes('claude')) return 'Claude';
+  if (n.startsWith('gpt') || n === 'chatgpt') return 'ChatGPT';
+  if (n.includes('gemini') || n === 'ai overview' || n === 'ai-overview') return 'Gemini';
+  if (n.includes('mistral') || n.includes('mixtral')) return 'Mistral';
+  if (n.includes('deepseek')) return 'DeepSeek';
+  if (n.includes('llama')) return 'Meta AI';
+  if (n.includes('qwen')) return 'Qwen';
+  if (n.includes('grok')) return 'Grok';
+  return apiName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+function exportToCsv(filename: string, rows: string[][]): void {
+  const csvContent = rows.map(r =>
+    r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sortCol, setSortCol] = useState<'name' | 'citations'>('citations');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const toggleSort = (col: 'name' | 'citations') => {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir(col === 'citations' ? 'desc' : 'asc'); }
+  };
+  // TODO: Évolution citations - décommenter quand l'API renvoie evolution_citations
+  // const [viewMode, setViewMode] = useState<'table' | 'evolution'>('table');
+  // const evoData = (reportData?.evolution_citations as EvolutionCitations | null);
+  // const evoLoading = false;
+
+  // Extraire les données depuis l'API, regroupées par nom commercial
+  const getDataFromAPI = () => {
+    // Collecter toutes les citations brutes par modèle API
+    const rawEntries: Array<{ apiName: string; citations: number; lastUpdate: string; details: string }> = [];
+    const apiSeen = new Set<string>();
+
+    // Source principale : citations_by_model
+    if (reportData?.analyse_citation?.citations_by_model) {
+      Object.entries(reportData.analyse_citation.citations_by_model).forEach(([modelName, citations]) => {
+        if (!modelName) return;
+        apiSeen.add(modelName.toLowerCase());
+        const matchingAnalysis = reportData.analyses?.find(
+          a => a.llm_name?.toLowerCase() === modelName.toLowerCase()
+        );
+        rawEntries.push({
+          apiName: modelName,
+          citations: citations as number,
+          lastUpdate: matchingAnalysis?.created_at || new Date().toISOString(),
+          details: matchingAnalysis?.modules?.audit_geo?.resume_executif_geo || 'Données de citation disponibles',
+        });
+      });
+    }
+
+    // Source secondaire : detailed_results
+    if (reportData?.analyse_citation?.detailed_results && Array.isArray(reportData.analyse_citation.detailed_results)) {
+      const citationsFromDetails: Record<string, number> = {};
+      reportData.analyse_citation.detailed_results.forEach((r: any) => {
+        const model = r.llm_model || '';
+        if (!model) return;
+        if (!citationsFromDetails[model]) citationsFromDetails[model] = 0;
+        if (r.citation_detected) {
+          citationsFromDetails[model] += (r.mentions || 1);
+        }
+      });
+      Object.entries(citationsFromDetails).forEach(([modelName, citations]) => {
+        if (!apiSeen.has(modelName.toLowerCase())) {
+          rawEntries.push({ apiName: modelName, citations, lastUpdate: new Date().toISOString(), details: 'Données de citation disponibles' });
+        }
+      });
+    }
+
+    // Regrouper par nom commercial (ex: sonar + sonar-pro → Perplexity)
+    const grouped: Record<string, { displayName: string; citations: number; lastUpdate: string; details: string; rawModel: string }> = {};
+    rawEntries.forEach(entry => {
+      const displayName = getCommercialModelName(entry.apiName);
+      if (grouped[displayName]) {
+        grouped[displayName].citations += entry.citations;
+      } else {
+        grouped[displayName] = {
+          displayName,
+          citations: entry.citations,
+          lastUpdate: entry.lastUpdate,
+          details: entry.details,
+          rawModel: entry.apiName,
+        };
+      }
+    });
+
+    // Compléter avec les modèles attendus non présents dans les données
+    // (non analysés lors de cette exécution spécifique)
+    const DEFAULT_EXPECTED_MODELS: { apiName: string; rawModel: string }[] = [
+      { apiName: 'gpt-4o', rawModel: 'gpt-4o' },
+      { apiName: 'claude-4-sonnet', rawModel: 'claude-4-sonnet' },
+      { apiName: 'gemini-2.5-pro', rawModel: 'gemini-2.5-pro' },
+      { apiName: 'mistral-large', rawModel: 'mistral-large' },
+      { apiName: 'sonar-pro', rawModel: 'sonar-pro' },
+      { apiName: 'deepseek-chat', rawModel: 'deepseek-chat' },
+      { apiName: 'qwen-2.5-72b', rawModel: 'qwen-2.5-72b' },
+      { apiName: 'llama-3.1-70b', rawModel: 'llama-3.1-70b' },
+      { apiName: 'grok-4', rawModel: 'grok-4' },
+    ];
+    DEFAULT_EXPECTED_MODELS.forEach(({ apiName, rawModel }) => {
+      const displayName = getCommercialModelName(apiName);
+      if (!grouped[displayName]) {
+        grouped[displayName] = {
+          displayName,
+          citations: -1, // -1 = non analysé (différent de 0 = analysé mais non cité)
+          lastUpdate: new Date().toISOString(),
+          details: 'Modèle non analysé lors de cette exécution.',
+          rawModel,
+        };
+      }
+    });
+
+    return Object.values(grouped).sort((a, b) => {
+      // Les modèles non analysés (-1) vont en bas
+      if (a.citations === -1 && b.citations !== -1) return 1;
+      if (b.citations === -1 && a.citations !== -1) return -1;
+      return b.citations - a.citations;
+    });
+  };
+
+  const rawData = getDataFromAPI();
+  const data = [...rawData].sort((a, b) => {
+    if (sortCol === 'name') {
+      const cmp = a.displayName.localeCompare(b.displayName, 'fr');
+      return sortDir === 'asc' ? cmp : -cmp;
+    }
+    return sortDir === 'asc' ? a.citations - b.citations : b.citations - a.citations;
+  });
+
+  if (data.length === 0) {
+    return (
+      <Card className="rounded-2xl border-slate-200/80 bg-white shadow-xs p-5 w-full">
+        <CardHeader className="p-0 pb-4 flex flex-row items-center justify-between space-y-0">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span>Citations par modèle</span>
+              <InfoTooltip {...HELP.citationsParModele} side="bottom" />
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 py-8 text-center text-sm text-slate-500">
+          Aucune donnée d'analyse disponible pour ce rapport.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Vérifier si toutes les citations sont à 0 (données API) — exclure les "non analysés" (-1)
+  const analyzedData = data.filter(item => item.citations !== -1);
+  const allCitationsZero = analyzedData.length > 0 && analyzedData.every(item => item.citations === 0);
+  const isApiData = analyzedData.length > 0;
+
+  // Calculer le total des citations (exclure les -1)
+  const totalCitations = analyzedData.reduce((sum, item) => sum + item.citations, 0);
+
+  const handleExportCsv = () => {
+    const rows: string[][] = [['Modèle', 'Citations']];
+    data.forEach(item => rows.push([item.displayName, String(item.citations)]));
+    exportToCsv('citations-par-modele.csv', rows);
+  };
+
+  return (
+    <Card className="rounded-2xl border-slate-200/80 bg-white shadow-xs p-5 w-full">
+      <CardHeader className="p-0 pb-4 flex flex-row items-center justify-between space-y-0">
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+            <span>Citations par modèle</span>
+            <InfoTooltip {...HELP.citationsParModele} side="bottom" />
+          </CardTitle>
+        </div>
+        {data.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCsv}
+            className="h-8 gap-1.5 text-xs font-medium rounded-lg cursor-pointer"
+          >
+            <Download size={13} />
+            <span>CSV</span>
+          </Button>
+        )}
+      </CardHeader>
+
+      <CardContent className="p-0 space-y-4">
+        {allCitationsZero && isApiData && (
+          <Alert variant="destructive" className="bg-rose-50 border-rose-200 text-rose-900">
+            <AlertCircle className="h-4 w-4 text-rose-600" />
+            <AlertTitle className="text-sm font-semibold text-rose-900">Aucune citation détectée</AlertTitle>
+            <AlertDescription className="text-xs text-rose-800 leading-relaxed">
+              Votre site n'est <strong>absolument pas cité</strong> dans les réponses dans les moteurs génératifs.
+              Vous perdez actuellement des opportunités de visibilité face à vos concurrents.
+              <strong>Agissez immédiatement</strong> en consultant les recommandations GEO pour éviter de prendre encore plus de retard dans les moteurs génératifs.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {totalCitations === 1 && isApiData && (
+          <Alert className="bg-amber-50 border-amber-200 text-amber-900">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-sm font-semibold text-amber-900">Visibilité très faible</AlertTitle>
+            <AlertDescription className="text-xs text-amber-800 leading-relaxed">
+              Votre site n'est cité qu'<strong>1 seule fois</strong> dans les moteurs génératifs.
+              C'est insuffisant pour garantir une visibilité durable. <strong>Consultez les recommandations GEO</strong> pour améliorer votre présence.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {totalCitations >= 2 && totalCitations <= 4 && isApiData && (
+          <Alert className="bg-amber-50 border-amber-200 text-amber-900">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-sm font-semibold text-amber-900">Visibilité à améliorer</AlertTitle>
+            <AlertDescription className="text-xs text-amber-800 leading-relaxed">
+              Votre site est cité <strong>{totalCitations} fois</strong> dans les moteurs génératifs.
+              C'est un début mais votre visibilité reste limitée. Continuez à optimiser votre contenu en suivant les recommandations GEO.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {totalCitations >= 5 && isApiData && (
+          <Alert className="bg-emerald-50 border-emerald-200 text-emerald-900">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <AlertTitle className="text-sm font-semibold text-emerald-900">Excellent ! Vous êtes bien cité</AlertTitle>
+            <AlertDescription className="text-xs text-emerald-800 leading-relaxed">
+              Votre site est cité <strong>{totalCitations} fois</strong> dans les moteurs génératifs.
+              Félicitations ! Vous avez une bonne visibilité. Continuez sur cette lancée pour maintenir et améliorer votre positionnement.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="w-full overflow-x-auto rounded-xl border border-slate-200/70">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50/70 hover:bg-slate-50/70">
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleSort('name')}
+                    className="h-auto p-0 font-semibold text-xs text-slate-700 hover:text-slate-900 gap-1 hover:bg-transparent cursor-pointer"
+                  >
+                    <span>Modèle</span>
+                    {sortCol === 'name' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-slate-300">↕</span>}
+                  </Button>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleSort('citations')}
+                    className="h-auto p-0 font-semibold text-xs text-slate-700 hover:text-slate-900 gap-1 hover:bg-transparent ml-auto cursor-pointer"
+                  >
+                    <span>Citations</span>
+                    {sortCol === 'citations' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-slate-300">↕</span>}
+                  </Button>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((item, index) => (
+                <TableRow
+                  key={index}
+                  onClick={() => {
+                    setSelectedModel(item.displayName);
+                    setIsModalOpen(true);
+                  }}
+                  className="cursor-pointer hover:bg-slate-50/80 transition-colors"
+                >
+                  <TableCell className="py-3">
+                    <div className="flex items-center gap-2.5">
+                      {getModelLogo(item.rawModel) ? (
+                        <img src={getModelLogo(item.rawModel)!} alt="" className="w-5 h-5 object-contain" />
+                      ) : (
+                        <Zap size={14} className="text-blue-500" />
+                      )}
+                      <span className="font-semibold text-xs text-slate-900">{item.displayName}</span>
+                      <ChevronRight size={13} className="text-slate-400" />
+                    </div>
+                  </TableCell>
+
+                  <TableCell className="py-3 text-right">
+                    {item.citations === -1 ? (
+                      <Badge variant="outline" className="text-[10px] text-slate-400 font-normal italic">
+                        Non analysé
+                      </Badge>
+                    ) : item.citations === 0 && isApiData ? (
+                      <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-200 bg-amber-50 font-medium">
+                        Non cité
+                      </Badge>
+                    ) : item.citations >= 5 ? (
+                      <Badge className="text-[11px] font-bold bg-emerald-50 text-emerald-700 border-emerald-200">
+                        {item.citations} citations
+                      </Badge>
+                    ) : item.citations === 1 ? (
+                      <Badge variant="secondary" className="text-[11px] font-bold text-amber-800 bg-amber-100">
+                        {item.citations} citation
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-[11px] font-bold text-slate-800">
+                        {item.citations} citations
+                      </Badge>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+
+      {/* Modal d'analyse détaillée */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedModel && (() => {
+            const selected = data.find(d => d.displayName === selectedModel);
+            const citations = selected?.citations ?? 0;
+
+            const alertConfig = citations === -1
+              ? { bg: '#F1F5F9', border: '#CBD5E1', iconColor: '#94A3B8', titleColor: '#475569', textColor: '#64748B', title: 'Non analysé', message: `${selectedModel} n'a pas été inclus dans cette analyse. Il sera pris en compte lors de la prochaine exécution.` }
+              : citations === 0
+                ? { bg: '#FEE2E2', border: '#FCA5A5', iconColor: '#EF4444', titleColor: '#991B1B', textColor: '#7F1D1D', title: 'Aucune citation', message: `Votre site n'est pas du tout cité par ${selectedModel}. Ce moteur génératif ne vous mentionne dans aucune de ses réponses. Consultez les recommandations GEO pour y remédier.` }
+                : citations <= 5
+                  ? { bg: '#FFF7ED', border: '#FED7AA', iconColor: '#F97316', titleColor: '#9A3412', textColor: '#7C2D12', title: 'Visibilité insuffisante', message: `Votre site n'est cité que ${citations} fois par ${selectedModel}. C'est insuffisant pour garantir une visibilité durable sur ce moteur. Optimisez votre contenu en suivant les recommandations GEO.` }
+                  : { bg: '#F0FDF4', border: '#86EFAC', iconColor: '#10B981', titleColor: '#166534', textColor: '#14532D', title: 'Bonne visibilité', message: `Votre site est cité ${citations} fois par ${selectedModel}. Vous bénéficiez d'une bonne visibilité sur ce moteur génératif. Continuez sur cette lancée !` };
+
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2" style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>
+                    {selected && getModelLogo(selected.rawModel) && (
+                      <img src={getModelLogo(selected.rawModel)!} alt="" className="w-6 h-6 object-contain" />
+                    )}
+                    Analyse détaillée - {selectedModel}
+                  </DialogTitle>
+                  <DialogDescription style={{ fontSize: '14px', color: '#64748B', marginTop: '8px' }}>
+                    Informations détaillées sur les citations et la visibilité
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
+                  {/* Alerte contextuelle */}
+                  <div style={{
+                    padding: '16px',
+                    background: alertConfig.bg,
+                    borderRadius: '12px',
+                    border: `1px solid ${alertConfig.border}`,
+                    display: 'flex',
+                    alignItems: 'start',
+                    gap: '12px'
+                  }}>
+                    {citations >= 6
+                      ? <CheckCircle2 size={20} style={{ color: alertConfig.iconColor, flexShrink: 0, marginTop: '2px' }} />
+                      : <AlertCircle size={20} style={{ color: alertConfig.iconColor, flexShrink: 0, marginTop: '2px' }} />
+                    }
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: alertConfig.titleColor, marginBottom: '4px' }}>
+                        {alertConfig.title}
+                      </div>
+                      <div style={{ fontSize: '13px', color: alertConfig.textColor, lineHeight: '1.5' }}>
+                        {alertConfig.message}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#64748B', marginBottom: '8px' }}>Analyse</div>
+                    <div style={{ fontSize: '15px', color: '#475569', lineHeight: '1.6' }}>
+                      {selected?.details}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 bg-slate-50 rounded-xl">
+                      <div className="text-xs text-slate-500 mb-2">Citations</div>
+                      <div className="text-lg font-bold text-slate-900">
+                        {selected?.citations || 0}
+                      </div>
+                    </div>
+                    <div className="p-4 bg-slate-50 rounded-xl">
+                      <div className="text-xs text-slate-500 mb-2">Dernière mise à jour</div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {(() => {
+                          const dateStr = selected?.lastUpdate;
+                          if (!dateStr) return 'N/A';
+                          try {
+                            const date = new Date(dateStr);
+                            return date.toLocaleDateString('fr-FR', {
+                              day: 'numeric', month: 'long', year: 'numeric',
+                              hour: '2-digit', minute: '2-digit'
+                            });
+                          } catch { return dateStr; }
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Requêtes détaillées depuis detailed_results */}
+                  {(() => {
+                    const detailed = reportData?.analyse_citation?.detailed_results;
+                    if (!detailed || !Array.isArray(detailed)) return null;
+
+                    // Filtrer les résultats pour ce modèle
+                    const modelResults = detailed.filter((r: any) => {
+                      const name = (r.llm_model || '').toLowerCase();
+                      const sel = selectedModel.toLowerCase();
+                      return name.includes(sel) || sel.includes(name.split('-')[0]);
+                    });
+
+                    if (modelResults.length === 0) return null;
+
+                    const cited = modelResults.filter((r: any) => r.citation_detected);
+                    const notCited = modelResults.filter((r: any) => !r.citation_detected);
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
+                          Requêtes testées ({modelResults.length})
+                        </div>
+
+                        {cited.length > 0 && (
+                          <div>
+                            <div className="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-slate-600" />
+                              <span>Cité ({cited.length})</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {cited.slice(0, 5).map((r: any, i: number) => (
+                                <div key={i} style={{ padding: '10px 12px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                                  {r.query && (
+                                    <div style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', marginBottom: r.response_excerpt ? '6px' : 0 }}>
+                                      « {r.query} »
+                                    </div>
+                                  )}
+                                  {r.response_excerpt && (
+                                    <div style={{ fontSize: '12px', color: '#4B5563', lineHeight: '1.5', borderTop: '1px solid #E2E8F0', paddingTop: '6px' }}>
+                                      {r.response_excerpt.length > 200 ? r.response_excerpt.substring(0, 200) + '…' : r.response_excerpt}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                              {cited.length > 5 && (
+                                <div style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center' }}>
+                                  +{cited.length - 5} autres requêtes avec citation
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {notCited.length > 0 && (
+                          <div>
+                            <div className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                              <XCircle className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Non cité ({notCited.length})</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {notCited.slice(0, 3).map((r: any, i: number) => (
+                                <div key={i} style={{ padding: '8px 12px', background: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                                  <div style={{ fontSize: '13px', color: '#6B7280' }}>
+                                    « {r.query || 'Requête non disponible'} »
+                                  </div>
+                                </div>
+                              ))}
+                              {notCited.length > 3 && (
+                                <div style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center' }}>
+                                  +{notCited.length - 3} autres requêtes sans citation
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+/**
+ * Analyse concurrentielle avec Top 5 et sélecteur de modèle
+ */
+function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null }) {
+  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [selectedCompetitor, setSelectedCompetitor] = useState<string | null>(null);
+  const [competitorAnalysis, setCompetitorAnalysis] = useState<CompetitorAnalysisResponse | null>(null);
+  const [loadingCompetitors, setLoadingCompetitors] = useState(false);
+
+  // Extraire les modèles disponibles depuis l'API de manière mémorisée
+  const availableModels = useMemo(() => {
+    return reportData?.analyses?.map(a => a.llm_name).filter(Boolean) || [];
+  }, [reportData?.analyses]);
+
+  // Charger l'analyse concurrentielle
+  useEffect(() => {
+    const loadCompetitorAnalysis = async () => {
+      if (!reportData) return;
+
+      // SOURCE 1 (PRIORITAIRE): analyse_concurrentielle_v3
+      // Géré directement dans getCompetitorsFromAPI et le select source_models
+
+      // SOURCE 2: analyse_concurrentielle_v1 ou competitor_analysis ou competitors
+      const competitorData = reportData.analyse_concurrentielle_v1 || reportData.competitor_analysis || (reportData as any).competitors;
+
+      if (competitorData) {
+        let mappedAnalysis: CompetitorAnalysisResponse;
+
+        if (reportData.analyse_concurrentielle_v1) {
+          const reportId = reportData.report?.id || (reportData as any).llmo_report?.id || 0;
+          mappedAnalysis = mapAnalyseConcurrentielleV1ToResponse(reportId, reportData.analyse_concurrentielle_v1);
+        } else {
+          mappedAnalysis = mapApiResponseToCompetitorAnalysisResponse(competitorData);
+        }
+
+        setCompetitorAnalysis(mappedAnalysis);
+
+        if (!selectedModel) {
+          const firstRaw = mappedAnalysis.models_analysis?.[0]?.model_info?.display_name ||
+            mappedAnalysis.models_analysis?.[0]?.model_info?.model_name || '';
+          if (firstRaw) {
+            setSelectedModel(getCommercialModelName(firstRaw));
+          }
+        }
+        return;
+      }
+
+      // SOURCE 3: Recherche par URL si non présent dans le rapport (fallback)
+      const reportUrlValue = reportData.report?.url || (reportData as any)?.llmo_report?.url;
+      if (!reportUrlValue) return;
+
+      try {
+        setLoadingCompetitors(true);
+        const analyses = await listCompetitorAnalyses();
+
+        const reportUrl = reportUrlValue.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^www\./, '');
+        const reportDomain = extractDomain(reportUrlValue).toLowerCase();
+
+        const matchingAnalysis = analyses.find(analysis => {
+          const analysisUrl = (analysis.url || '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^www\./, '');
+          const analysisDomain = extractDomain(analysis.url || '').toLowerCase();
+
+          return (
+            reportUrl === analysisUrl ||
+            analysisUrl.includes(reportUrl) ||
+            reportUrl.includes(analysisUrl) ||
+            reportDomain === analysisDomain
+          );
+        });
+
+        if (matchingAnalysis) {
+          const fullAnalysis = await getCompetitorAnalysisById(matchingAnalysis.analysis_id);
+          setCompetitorAnalysis(fullAnalysis);
+
+          if (!selectedModel && fullAnalysis.models_analysis && fullAnalysis.models_analysis.length > 0) {
+            const firstRaw = fullAnalysis.models_analysis[0].model_info?.display_name ||
+              fullAnalysis.models_analysis[0].model_info?.model_name || '';
+            if (firstRaw) {
+              setSelectedModel(getCommercialModelName(firstRaw));
+            }
+          }
+        }
+      } catch (error) {
+      } finally {
+        setLoadingCompetitors(false);
+      }
+    };
+
+    loadCompetitorAnalysis();
+  }, [reportData]);
+
+  // Mettre à jour le modèle sélectionné uniquement si nécessaire (modèle plus présent)
+  useEffect(() => {
+    // Noms commerciaux dédupliqués
+    const seen = new Set<string>();
+    const commercialNames = (competitorAnalysis?.models_analysis
+      ?.filter(m => m.competitors && m.competitors.length >= 2)
+      .map(m => getCommercialModelName(m.model_info?.display_name || m.model_info?.model_name || ''))
+      .filter(Boolean) || []).filter(name => {
+        if (seen.has(name)) return false;
+        seen.add(name);
+        return true;
+      });
+
+    if (commercialNames.length > 0) {
+      if (!selectedModel) {
+        setSelectedModel(commercialNames[0]);
+      } else if (!commercialNames.includes(selectedModel)) {
+        setSelectedModel(commercialNames[0]);
+      }
+    }
+  }, [competitorAnalysis]); // Ne pas mettre selectedModel ici pour éviter les boucles de reset
+
+  // Détecter v3
+  const v3Data = reportData?.analyse_concurrentielle_v3;
+  const isV3 = v3Data && v3Data.consolidated_competitors && v3Data.consolidated_competitors.length > 0;
+
+  // Extraire les modèles source uniques depuis v3, dédupliqués par nom commercial
+  const v3Models = useMemo(() => {
+    if (!isV3) return [];
+    const commercialSeen = new Set<string>();
+    const models: { raw: string; commercial: string }[] = [];
+    v3Data!.consolidated_competitors.forEach(c => {
+      c.source_models?.forEach(m => {
+        const commercial = getCommercialModelName(m);
+        if (!commercialSeen.has(commercial)) {
+          commercialSeen.add(commercial);
+          models.push({ raw: m, commercial });
+        }
+      });
+    });
+    return models.sort((a, b) => a.commercial.localeCompare(b.commercial));
+  }, [v3Data, isV3]);
+
+  // Initialiser le modèle sélectionné pour v3 : premier modèle par défaut
+  useEffect(() => {
+    if (isV3 && v3Models.length > 0 && !selectedModel) {
+      setSelectedModel(v3Models[0].commercial);
+    }
+  }, [isV3, v3Models]);
+
+  // Extraire les concurrents depuis les données de l'API, filtrés par modèle sélectionné
+  const getCompetitorsFromAPI = () => {
+    const clientUrl = reportData?.report?.url || (reportData as any)?.llmo_report?.url || '';
+
+    // V3 : filtrer par source_models (comparaison par nom commercial)
+    if (isV3) {
+      let filtered = v3Data!.consolidated_competitors;
+      if (selectedModel && selectedModel !== 'all') {
+        filtered = filtered.filter(c =>
+          c.source_models?.some(m => getCommercialModelName(m) === selectedModel)
+        );
+      }
+      const deduplicated = deduplicateCompetitors(filtered, clientUrl);
+      return deduplicated.slice(0, 5).map(c => ({
+        name: c.name,
+        domain: extractDomain(c.primary_url || c.domain || ''),
+        faviconUrl: c.favicon_url || c.faviconUrl,
+        score: Math.round((c.average_score ?? (c.score != null ? c.score / 100 : 0)) * 100),
+        globalRank: c.global_rank,
+        sourceModels: c.source_models || c.sourceModels,
+      }));
+    }
+
+    if (!competitorAnalysis) return [];
+
+    // Priorité à models_analysis pour filtrer par modèle sélectionné
+    if (competitorAnalysis.models_analysis && selectedModel) {
+      const matchingAnalyses = competitorAnalysis.models_analysis.filter(m => {
+        const rawName = m.model_info?.display_name || m.model_info?.model_name || '';
+        return getCommercialModelName(rawName) === selectedModel;
+      });
+
+      const allCompetitors: any[] = [];
+      matchingAnalyses.forEach(analysis => {
+        (analysis.competitors || []).forEach((comp: any) => {
+          allCompetitors.push(comp);
+        });
+      });
+
+      if (allCompetitors.length > 0) {
+        const deduplicated = deduplicateCompetitors(allCompetitors, clientUrl);
+        return deduplicated
+          .sort((a, b) => (b.similarity_score || b.score || 0) - (a.similarity_score || a.score || 0))
+          .slice(0, 5)
+          .map((comp) => ({
+            name: comp.name,
+            domain: extractDomain(comp.url || comp.primary_url || ''),
+            score: Math.round((comp.similarity_score || (comp.score != null ? comp.score / 100 : 0)) * 100),
+          }));
+      }
+    }
+
+    // Fallback consolidated_competitors
+    if (competitorAnalysis.consolidated_competitors && competitorAnalysis.consolidated_competitors.length > 0) {
+      const deduplicated = deduplicateCompetitors(competitorAnalysis.consolidated_competitors, clientUrl);
+      return deduplicated
+        .slice(0, 5)
+        .map((comp) => ({
+          name: comp.name,
+          domain: extractDomain(comp.primary_url || comp.url || ''),
+          score: Math.round((comp.average_score ?? (comp.score != null ? comp.score / 100 : 0)) * 100),
+          globalRank: comp.global_rank,
+        }));
+    }
+
+    return [];
+  };
+
+  const competitors = getCompetitorsFromAPI();
+
+  // Modèles pour le select (v1/fallback)
+  const competitorModels = useMemo(() => {
+    if (isV3) return [];
+    const raw = competitorAnalysis?.models_analysis
+      ?.filter(m => m.competitors && m.competitors.length >= 2)
+      .map(m => m.model_info?.display_name || m.model_info?.model_name || '')
+      .filter(Boolean) || [];
+    const seen = new Set<string>();
+    return raw.map(m => getCommercialModelName(m)).filter(name => {
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+  }, [competitorAnalysis, isV3]);
+
+  // Liste des modèles pour le select
+  const selectModels = isV3 ? v3Models.map(m => m.commercial) : competitorModels;
+
+  return (
+    <Card className="rounded-2xl border-slate-200/80 bg-white shadow-xs p-5 competitor-card">
+      <CardHeader className="p-0 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 space-y-0">
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-lg font-bold text-slate-900">Analyse concurrentielle</CardTitle>
+          <InfoTooltip {...HELP.analyseConcurrentielle} side="bottom" />
+        </div>
+        <div className="model-selector flex items-center gap-2">
+          <span className="selector-label text-xs font-medium text-slate-500">Modèle:</span>
+          <Select
+            value={selectedModel}
+            onValueChange={setSelectedModel}
+            disabled={loadingCompetitors || selectModels.length === 0}
+          >
+            <SelectTrigger className="w-full sm:w-[200px] h-9 bg-white border-slate-200">
+              <SelectValue placeholder="Choisir un modèle" />
+            </SelectTrigger>
+            <SelectContent>
+              {selectModels.map(modelName => (
+                <SelectItem key={modelName} value={modelName}>
+                  <div className="flex items-center gap-2">
+                    {getModelLogo(modelName) ? (
+                      <img src={getModelLogo(modelName)!} alt={modelName} className="w-5 h-5 object-contain" />
+                    ) : (
+                      <Zap size={16} className="text-blue-500" />
+                    )}
+                    <span>{modelName}</span>
+                  </div>
+                </SelectItem>
+              ))}
+              {selectModels.length === 0 && (
+                <SelectItem value="none" disabled>Aucun modèle disponible</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-0">
+        <div className="competitors-list space-y-2.5">
+          {loadingCompetitors ? (
+            <div className="py-10 text-center text-sm text-slate-500">
+              Chargement de l'analyse concurrentielle...
+            </div>
+          ) : competitors.length === 0 ? (
+            <div className="py-10 text-center text-sm text-slate-500">
+              Aucune analyse concurrentielle disponible pour ce modèle.
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between pb-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Top {competitors.length} Concurrents{selectedModel && selectedModel !== 'all' ? ` - ${getCommercialModelName(selectedModel)}` : ''}
+                </span>
+                <Badge variant="secondary" className="text-xs font-medium bg-slate-100 text-slate-600">
+                  {competitors.length} détecté{competitors.length > 1 ? 's' : ''}
+                </Badge>
+              </div>
+
+              {competitors.map((competitor, index) => (
+                <div
+                  key={index}
+                  className="competitor-item flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-default"
+                >
+                  <img
+                    src={(competitor as any).faviconUrl || `https://www.google.com/s2/favicons?domain=${competitor.domain}&sz=32`}
+                    alt={competitor.domain}
+                    width={22}
+                    height={22}
+                    className="rounded-md flex-shrink-0 bg-white p-0.5 border border-slate-200/60"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                  <div className="competitor-info flex-1 min-w-0">
+                    <div className="competitor-name text-sm font-semibold text-slate-800 truncate">{competitor.name}</div>
+                    <div className="competitor-domain text-xs text-slate-500 truncate">{competitor.domain}</div>
+                  </div>
+                  {competitor.score > 0 && (
+                    <Badge variant="outline" className="text-xs font-medium text-slate-600 border-slate-200">
+                      {competitor.score}%
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Tableau des domaines avec badges de type
+ */
+function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
+  const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
+  const [domainModalOpen, setDomainModalOpen] = useState(false);
+
+  // Calculer le total des citations depuis l'API
+  const getTotalCitationsFromAPI = () => {
+    // Utiliser les données de citation explicites si disponibles (6 dans votre JSON)
+    if (reportData?.analyse_citation?.total_citations !== undefined) {
+      return reportData.analyse_citation.total_citations;
+    }
+
+    if (!reportData?.analyses || reportData.analyses.length === 0) {
+      return 0;
+    }
+
+    return reportData.analyses.reduce((sum, analysis) => {
+      const geoData = analysis.modules?.audit_geo;
+      const citations = geoData?.citations || geoData?.mentions || 0;
+      return sum + Number(citations);
+    }, 0);
+  };
+
+  const totalCitationsFromAPI = getTotalCitationsFromAPI();
+  const hasApiData = reportData?.analyses && reportData.analyses.length > 0;
+
+  // Extraire les domaines cités depuis l'analyse de citation (sources réelles)
+  const getDomainsFromAPI = () => {
+    // Récupérer l'URL du client depuis report ou llmo_report
+    const clientUrl = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || '';
+    const clientSiteName = reportData?.analyse_citation?.client_site_name || '';
+
+    // PRIORITÉ 1 : utiliser competitors_frequently_mentioned (calculé côté backend avec filtre domaine exact)
+    const cfm = reportData?.analyse_citation?.competitors_frequently_mentioned;
+    if (cfm && Array.isArray(cfm) && cfm.length > 0) {
+      return cfm.map((item: any) => {
+        const domain = extractDomain(item.url || '');
+        const isClientSite = clientUrl
+          ? domain.includes(extractDomain(clientUrl))
+          : clientSiteName
+            ? domain.toLowerCase().includes(clientSiteName.toLowerCase())
+            : false;
+        return {
+          icon: item.favicon_url || `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+          domain,
+          used: `${Math.round(item.percentage ?? 0)} %`,
+          citations: String(item.count ?? 0),
+          type: isClientSite ? 'you' : 'corporate',
+          label: isClientSite ? 'Votre Site' : 'Source',
+          pages: 1,
+          lastSeen: new Date().toLocaleDateString('fr-FR'),
+          description: isClientSite
+            ? `Votre site a été cité ${item.count} fois dans les réponses des modèles d'IA.`
+            : `Source citée ${item.count} fois.`,
+          highlight: isClientSite,
+          models: [],
+          sourceDetails: [{ url: item.url, title: item.name || domain }],
+        };
+      });
+    }
+
+    // Si on a des detailed_results, les utiliser
+    if (reportData?.analyse_citation?.detailed_results && Array.isArray(reportData.analyse_citation.detailed_results)) {
+      const sourcesMap: Record<string, any> = {};
+      const totalCalls = reportData.analyse_citation.total_llm_calls || 1;
+
+      // Parcourir tous les résultats détaillés pour extraire les sources
+      reportData.analyse_citation.detailed_results.forEach((result: any) => {
+        if (result.sources && Array.isArray(result.sources)) {
+          result.sources.forEach((source: any) => {
+            // Ignorer les sources sans URL valide
+            if (!source.url || source.url === null) return;
+
+            try {
+              const domain = extractDomain(source.url);
+              if (!domain) return;
+
+              // Vérifier si c'est le site client
+              const isClientSite = clientUrl ? domain.includes(extractDomain(clientUrl)) :
+                clientSiteName ? domain.toLowerCase().includes(clientSiteName.toLowerCase()) : false;
+
+              if (!sourcesMap[domain]) {
+                sourcesMap[domain] = {
+                  domain: domain,
+                  title: source.title || domain,
+                  mentions: 0,
+                  urls: new Set(),
+                  isClient: isClientSite,
+                  models: new Set()
+                };
+              }
+              sourcesMap[domain].mentions += 1;
+              sourcesMap[domain].urls.add(source.url);
+              if (result.llm_model) sourcesMap[domain].models.add(result.llm_model);
+            } catch (e) {
+              // Ignorer les URLs invalides
+            }
+          });
+        }
+      });
+
+      // Si aucune source avec URL n'a été trouvée, retourner un tableau vide pour passer au fallback
+      if (Object.keys(sourcesMap).length === 0) {
+        return [];
+      }
+
+      return Object.values(sourcesMap).map((s: any) => ({
+        icon: `https://www.google.com/s2/favicons?domain=${s.domain}&sz=32`,
+        domain: s.domain,
+        used: `${Math.round((s.mentions / totalCalls) * 100)} %`,
+        citations: s.mentions.toString(),
+        type: s.isClient ? 'you' : 'corporate',
+        label: s.isClient ? 'Votre Site' : 'Source',
+        pages: s.urls.size,
+        lastSeen: new Date().toLocaleDateString('fr-FR'),
+        description: s.isClient
+          ? `Votre site a été cité ${s.mentions} fois dans les réponses des modèles d'IA.`
+          : `Source externe citée ${s.mentions} fois.`,
+        highlight: s.isClient,
+        models: Array.from(s.models || []),
+        sourceDetails: Array.from(s.urls).map(url => {
+          // Retrouver le titre pour cette URL
+          let title = s.title;
+          reportData.analyse_citation.detailed_results.forEach((res: any) => {
+            const match = res.sources?.find((src: any) => src.url === url);
+            if (match && match.title) title = match.title;
+          });
+          return { url, title };
+        })
+      })).sort((a: any, b: any) => parseFloat(b.citations) - parseFloat(a.citations));
+    }
+
+    // Fallback: utiliser citations_by_model pour générer les domaines par modèle
+    if (reportData?.analyse_citation?.citations_by_model) {
+      const citationsByModel = reportData.analyse_citation.citations_by_model as Record<string, number>;
+      const totalCitations = reportData.analyse_citation.total_citations || 0;
+      const clientUrlFallback = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || reportData.analyse_citation?.client_site_url || '';
+      const clientDomain = clientUrlFallback ? extractDomain(clientUrlFallback) : (reportData.analyse_citation?.client_site_name || '');
+
+      // Créer une entrée pour le domaine client s'il y a des citations
+      const domains: any[] = [];
+
+      // Calculer le nombre de modèles qui ont cité le contenu
+      const modelsThatCited = Object.values(citationsByModel).filter(count => count > 0).length;
+      const totalModels = Object.keys(citationsByModel).length;
+      const usedPercentage = totalModels > 0 ? Math.round((modelsThatCited / totalModels) * 100) : 0;
+
+      if (totalCitations > 0 && clientDomain) {
+        domains.push({
+          icon: `https://www.google.com/s2/favicons?domain=${clientDomain}&sz=32`,
+          domain: clientDomain,
+          used: `${usedPercentage}%`,
+          citations: totalCitations.toString(),
+          type: 'you',
+          label: 'Votre Site',
+          pages: 1,
+          lastSeen: new Date().toLocaleDateString('fr-FR'),
+          description: `Votre site a été cité ${totalCitations} fois par ${modelsThatCited} modèle(s) d'IA sur ${totalModels}.`,
+          highlight: true,
+          sourceDetails: [{ url: clientUrlFallback, title: clientDomain }]
+        });
+      }
+
+      // Ajouter les modèles qui ont cité comme sources
+      Object.entries(citationsByModel).forEach(([model, count]) => {
+        if (count > 0) {
+          const modelUsedPct = totalCitations > 0 ? Math.round((count / totalCitations) * 100) : 0;
+          domains.push({
+            icon: `https://www.google.com/s2/favicons?domain=${model}&sz=32`,
+            domain: model,
+            used: `${modelUsedPct}%`,
+            citations: count.toString(),
+            type: 'model',
+            label: 'Modèle IA',
+            pages: 1,
+            lastSeen: new Date().toLocaleDateString('fr-FR'),
+            description: `${model} a cité votre contenu ${count} fois.`,
+            highlight: false,
+            sourceDetails: []
+          });
+        }
+      });
+
+      return domains.sort((a: any, b: any) => parseFloat(b.citations) - parseFloat(a.citations));
+    }
+
+    return [];
+  };
+
+  const domains = getDomainsFromAPI();
+
+  if (domains.length === 0) {
+    return (
+      <Card id="domaines-les-plus-cites" className="rounded-2xl border-slate-200/80 bg-white shadow-xs overflow-hidden scroll-mt-20 domains-table-card">
+        <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/60 space-y-1">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg font-bold text-slate-900">Domaines les plus cités</CardTitle>
+            <InfoTooltip {...HELP.domainesLesPlusCites} />
+          </div>
+          <CardDescription className="text-xs text-slate-500">Sources citées</CardDescription>
+        </CardHeader>
+        <CardContent className="p-10 text-center text-sm text-slate-500 bg-white">
+          Aucune source citée détectée pour ce rapport.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card id="domaines-les-plus-cites" className="rounded-2xl border-slate-200/80 bg-white shadow-xs overflow-hidden scroll-mt-20 domains-table-card">
+      <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/60 space-y-1">
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-lg font-bold text-slate-900">Domaines les plus cités</CardTitle>
+          <InfoTooltip {...HELP.domainesLesPlusCites} />
+        </div>
+        <CardDescription className="text-xs text-slate-500">Sources citées dans les réponses des modèles d'IA</CardDescription>
+      </CardHeader>
+
+      <CardContent className="p-0">
+        {/* Message si aucune citation trouvée dans l'API */}
+        {hasApiData && totalCitationsFromAPI === 0 ? (
+          <div className="p-6">
+            <Alert variant="destructive" className="bg-red-50/80 border-red-200 text-red-900 max-w-2xl mx-auto">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <AlertTitle className="font-semibold text-red-900 text-base">Aucune citation trouvée</AlertTitle>
+              <AlertDescription className="text-sm text-red-700 leading-relaxed mt-1">
+                Il n'y a pas de citation trouvée car vous n'êtes pas cité dans les moteurs génératifs.
+                Consultez les recommandations pour améliorer votre visibilité et augmenter vos chances d'être cité par les IA.
+              </AlertDescription>
+            </Alert>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <Table className="domains-table min-w-[600px]">
+                <TableHeader>
+                  <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Domaine</TableHead>
+                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Utilisé</TableHead>
+                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Pages</TableHead>
+                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Citations moy.</TableHead>
+                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider text-right">Type</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {domains.map((domain, index) => (
+                    <TableRow
+                      key={index}
+                      className={`cursor-pointer transition-colors ${domain.highlight
+                          ? 'bg-blue-50/60 hover:bg-blue-50/90 font-medium table-row-highlight'
+                          : 'hover:bg-slate-50/80'
+                        }`}
+                      onClick={() => {
+                        setSelectedDomain(domain.domain);
+                        setDomainModalOpen(true);
+                      }}
+                    >
+                      <TableCell className="py-3.5 px-4 md:px-6">
+                        <div className="domain-cell flex items-center gap-3 text-sm md:text-[15px] text-slate-900">
+                          <img src={domain.icon} alt={domain.domain} width={20} height={20} className="rounded flex-shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          <div className="flex items-center gap-2">
+                            <span className="truncate max-w-[120px] sm:max-w-none font-medium">{domain.domain}</span>
+                            {selectedDomain === domain.domain && <ChevronRight size={14} className="text-blue-500" />}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3.5 px-4 md:px-6 text-sm text-slate-600 font-semibold">{domain.used}</TableCell>
+                      <TableCell className="py-3.5 px-4 md:px-6 text-sm text-slate-600">{domain.pages}</TableCell>
+                      <TableCell className="py-3.5 px-4 md:px-6 text-sm text-slate-600 font-semibold">{domain.citations}</TableCell>
+                      <TableCell className="py-3.5 px-4 md:px-6 text-right">
+                        <Badge
+                          variant={domain.type === 'you' ? 'default' : 'secondary'}
+                          className={`badge badge-${domain.type} text-[11px] font-semibold uppercase px-2.5 py-0.5 border-0 ${domain.type === 'you'
+                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                              : domain.type === 'model'
+                                ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-100'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-100'
+                            }`}
+                        >
+                          {domain.label}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Modal Informations détaillées - ouvert au clic sur une source (domaine) */}
+            <Dialog open={domainModalOpen} onOpenChange={(open) => {
+              setDomainModalOpen(open);
+              if (!open) setSelectedDomain(null);
+            }}>
+              <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0" hideCloseButton>
+                {selectedDomain && (() => {
+                  const dom = domains.find(d => d.domain === selectedDomain);
+                  if (!dom) return null;
+                  return (
+                    <>
+                      <div className="flex-shrink-0 flex items-start justify-between gap-4 p-6 pb-0">
+                        <DialogHeader className="flex-1 space-y-1.5 pr-8">
+                          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
+                            Informations détaillées - {dom.domain}
+                          </DialogTitle>
+                          <DialogDescription className="text-sm text-slate-500">
+                            Source citée dans les réponses des modèles d'IA
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogClose asChild>
+                          <button
+                            type="button"
+                            className="absolute right-4 top-4 rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+                            aria-label="Fermer"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </DialogClose>
+                      </div>
+                      <div
+                        className="flex-1 overflow-y-auto min-h-0 px-6 py-4"
+                        style={{ maxHeight: 'calc(90vh - 120px)' }}
+                      >
+                        <div className="flex flex-col gap-4">
+                          <div className="text-sm text-slate-600 leading-relaxed">
+                            {dom.description}
+                          </div>
+                          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500">
+                            <span>Pages citées : <strong className="text-slate-900">{dom.pages}</strong></span>
+                            <span>Citations moy. : <strong className="text-slate-900">{dom.citations}</strong></span>
+                            <span>Dernière vue : <strong className="text-slate-900">{dom.lastSeen}</strong></span>
+                            <span>Utilisé : <strong className="text-slate-900">{dom.used}</strong></span>
+                          </div>
+                          {dom.models && dom.models.length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-xs font-semibold text-slate-500 mb-2">Cité par</div>
+                              <div className="flex flex-wrap gap-2">
+                                {dom.models.map((model: string, idx: number) => (
+                                  <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
+                                    {getModelLogo(model) ? (
+                                      <img src={getModelLogo(model)!} alt={model} className="w-4 h-4 object-contain" />
+                                    ) : null}
+                                    <span className="text-sm text-slate-700 font-medium">{model}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {dom.sourceDetails && dom.sourceDetails.length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-xs font-semibold text-slate-500 mb-2">URLs sources identifiées</div>
+                              <div className="flex flex-col gap-2">
+                                {dom.sourceDetails.map((src: any, idx: number) => (
+                                  <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                    <div className="text-sm font-semibold text-slate-900 mb-1">{src.title}</div>
+                                    <a
+                                      href={src.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-xs text-blue-600 no-underline inline-flex items-center gap-1.5 hover:underline"
+                                    >
+                                      {src.url} <ExternalLink size={12} />
+                                    </a>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Vue "Améliorer"
+ * Affiche les analyses, graphiques et tableaux de performance
+ */
+/**
+ * Résumé du Plan d'Action GEO dans la vue d'ensemble
+ * Affiche les actions prioritaires avec leur catégorie, priorité et effort
+ */
+function PlanActionGeoOverview({ reportData }: { reportData: FullReportData | null }) {
+  if (!reportData?.analyses || reportData.analyses.length === 0) return null;
+
+  // Chercher l'analyse avec le plan d'action GEO le plus complet
+  const analysisWithGeoPlan = reportData.analyses
+    .filter(a => a.modules?.audit_geo?.plan_action_geo && Array.isArray(a.modules.audit_geo.plan_action_geo) && a.modules.audit_geo.plan_action_geo.length > 0)
+    .sort((a, b) => (b.modules?.audit_geo?.plan_action_geo?.length || 0) - (a.modules?.audit_geo?.plan_action_geo?.length || 0))[0];
+
+  if (!analysisWithGeoPlan) return null;
+
+  const auditGeo = analysisWithGeoPlan.modules.audit_geo;
+  const rawPlan = auditGeo.plan_action_geo || [];
+  const scoreGlobal = Math.round(auditGeo.score_global_geo ?? 0);
+
+  // Normaliser les items (supporter string[] ou object[])
+  const planItems = rawPlan.map((item: any) => {
+    if (typeof item === 'string') {
+      return { action: item, categorie: '', priorite: 'moyenne', impact: '', effort: 'moyen' };
+    }
+    return item as { action: string; categorie: string; priorite: string; impact: string; effort: string };
+  });
+
+  if (planItems.length === 0) return null;
+
+  const highPriority = planItems.filter((i: any) => i.priorite?.toLowerCase() === 'haute').length;
+  const medPriority = planItems.filter((i: any) => i.priorite?.toLowerCase() === 'moyenne').length;
+  const lowPriority = planItems.filter((i: any) => i.priorite?.toLowerCase() === 'basse').length;
+
+  const getPriorityStyle = (p: string) => {
+    const pr = (p || '').toLowerCase();
+    if (pr === 'haute') return { bg: '#FEE2E2', color: '#DC2626', label: 'Haute' };
+    if (pr === 'moyenne') return { bg: '#FEF3C7', color: '#D97706', label: 'Moyenne' };
+    return { bg: '#D1FAE5', color: '#059669', label: 'Basse' };
+  };
+
+  const getEffortStyle = (e: string) => {
+    const ef = (e || '').toLowerCase();
+    if (ef === 'faible') return { bg: '#D1FAE5', color: '#059669', label: 'Faible' };
+    if (ef === 'moyen') return { bg: '#FEF3C7', color: '#D97706', label: 'Moyen' };
+    return { bg: '#FEE2E2', color: '#DC2626', label: 'Élevé' };
+  };
+
+  const getCategoryIcon = (cat: string) => {
+    const c = (cat || '').toLowerCase();
+    if (c.includes('structur')) return '-';
+    if (c.includes('crawl') || c.includes('accessib')) return '-';
+    if (c.includes('html') || c.includes('semantique')) return '-';
+    if (c.includes('meta') || c.includes('technique')) return '-';
+    if (c.includes('contenu') || c.includes('optimisation')) return '-';
+    if (c.includes('conform') || c.includes('standard')) return '-';
+    return '-';
+  };
+
+  return (
+    <div style={{
+      background: '#FFFFFF',
+      borderRadius: '16px',
+      border: '1px solid #E2E8F0',
+      overflow: 'hidden'
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '20px 24px',
+        borderBottom: '1px solid #F1F5F9',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '40px', height: '40px', borderRadius: '10px',
+            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <ListChecks size={20} color="white" />
+          </div>
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+              Plan d'action GEO
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748B', margin: 0, marginTop: '2px' }}>
+              {planItems.length} actions identifiées pour améliorer votre visibilité IA
+            </p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Score GEO badge */}
+          <div style={{
+            padding: '6px 14px',
+            borderRadius: '20px',
+            background: scoreGlobal >= 70 ? '#D1FAE5' : scoreGlobal >= 40 ? '#FEF3C7' : '#FEE2E2',
+            color: scoreGlobal >= 70 ? '#059669' : scoreGlobal >= 40 ? '#D97706' : '#DC2626',
+            fontSize: '14px',
+            fontWeight: 700
+          }}>
+            Score GEO: {scoreGlobal}/100
+          </div>
+        </div>
+      </div>
+
+      {/* Résumé des priorités */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '1px',
+        background: '#F1F5F9',
+        borderBottom: '1px solid #F1F5F9'
+      }}>
+        <div style={{ background: '#FFF', padding: '14px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#DC2626' }}>{highPriority}</div>
+          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>Priorité haute</div>
+        </div>
+        <div style={{ background: '#FFF', padding: '14px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#D97706' }}>{medPriority}</div>
+          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>Priorité moyenne</div>
+        </div>
+        <div style={{ background: '#FFF', padding: '14px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#059669' }}>{lowPriority}</div>
+          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>Priorité basse</div>
+        </div>
+      </div>
+
+      {/* Liste des actions */}
+      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {planItems.map((item: any, idx: number) => {
+          const priority = getPriorityStyle(item.priorite);
+          const effort = getEffortStyle(item.effort);
+          return (
+            <div key={idx} style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+              padding: '14px 16px',
+              borderRadius: '12px',
+              border: '1px solid #E2E8F0',
+              background: '#FAFBFC',
+              transition: 'all 0.2s ease'
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.borderColor = '#CBD5E1'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#FAFBFC'; e.currentTarget.style.borderColor = '#E2E8F0'; }}
+            >
+              {/* Numéro */}
+              <div style={{
+                minWidth: '28px', height: '28px', borderRadius: '8px',
+                background: priority.bg, color: priority.color,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '13px', fontWeight: 700, flexShrink: 0
+              }}>
+                {idx + 1}
+              </div>
+
+              {/* Contenu */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  {item.categorie && (
+                    <span style={{ fontSize: '12px' }}>{getCategoryIcon(item.categorie)}</span>
+                  )}
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#1E293B', margin: 0, lineHeight: '1.4' }}>
+                    {item.action}
+                  </p>
+                </div>
+                {item.impact && (
+                  <p style={{ fontSize: '12px', color: '#64748B', margin: 0, marginTop: '4px', lineHeight: '1.4' }}>
+                    {item.impact}
+                  </p>
+                )}
+              </div>
+
+              {/* Badges */}
+              <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'flex-start' }}>
+                <span style={{
+                  padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
+                  background: priority.bg, color: priority.color
+                }}>
+                  {priority.label}
+                </span>
+                <span style={{
+                  padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
+                  background: effort.bg, color: effort.color
+                }}>
+                  {effort.label}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
+  const [activeTab, setActiveTab] = useState<'citations' | 'concurrents' | 'sources' | 'score' | 'causal'>('citations');
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
+
+  const targetDomain = (() => {
+    const rawUrl = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || (reportData as any)?.url || '';
+    if (!rawUrl) return 'tally.so';
+    try {
+      return new URL(rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`).hostname.replace(/^www\./, '');
+    } catch {
+      return rawUrl;
+    }
+  })();
+
+  const totalCitations = (() => {
+    if (reportData?.analyse_citation?.total_citations !== undefined) {
+      return reportData.analyse_citation.total_citations;
+    }
+    if (!reportData?.analyses || reportData.analyses.length === 0) return 0;
+    return reportData.analyses.reduce((sum, analysis) => {
+      const geoData = analysis.modules?.audit_geo;
+      const citations = geoData?.citations || geoData?.mentions || 0;
+      return sum + Number(citations);
+    }, 0);
+  })();
+
+  const targetGeoScore = extractTargetGeoScore(reportData);
+  const effectiveAgenticScore = extractAgenticScore(reportData) ?? (targetGeoScore != null ? Math.round(targetGeoScore * 0.65) : 58);
+
+  const unified = useMemo(() => {
+    return computeUnifiedScore({
+      targetDomain,
+      geoScore: targetGeoScore,
+      totalCitations,
+      modelsCount: 9,
+      agenticScore: effectiveAgenticScore,
+      schemaScore: targetGeoScore ? Math.round(targetGeoScore * 0.9) : 60,
+    });
+  }, [targetDomain, targetGeoScore, totalCitations, effectiveAgenticScore]);
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleTabClick = (tabId: 'citations' | 'concurrents' | 'sources' | 'score' | 'causal') => {
+    setActiveTab(tabId);
+    if (tabId !== 'causal' && tabId !== 'score') {
+      setTimeout(() => {
+        scrollTo(`section-${tabId}`);
+      }, 50);
+    }
+  };
+
+  const sections = [
+    { id: 'citations' as const, label: 'Citations', icon: BarChart3 },
+    { id: 'concurrents' as const, label: 'Concurrents', icon: Users },
+    { id: 'sources' as const, label: 'Sources', icon: Globe },
+    { id: 'score' as const, label: `Score Unifié (${unified?.grade || 'C'})`, icon: Award },
+    { id: 'causal' as const, label: 'Impact Causal (ROI)', icon: TrendingUp },
+  ];
+
+  return (
+    <div className="view-content">
+      <Tabs value={activeTab} onValueChange={(val: any) => handleTabClick(val)} className="w-full">
+        {/* Barre de navigation intra-page avec shadcn Tabs */}
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-slate-200/80 -mx-4 px-4 mb-4 py-2 flex items-center justify-between gap-3">
+          <TabsList className="h-auto p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 gap-1 overflow-x-auto scrollbar-none">
+            {sections.map(s => {
+              const Icon = s.icon;
+              return (
+                <TabsTrigger
+                  key={s.id}
+                  value={s.id}
+                  id={`tab-btn-${s.id}`}
+                  className="inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-lg font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:font-semibold data-[state=active]:shadow-xs border border-transparent data-[state=active]:border-slate-200/80 transition-all cursor-pointer text-slate-500 hover:text-slate-900"
+                >
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span>{s.label}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {/* Raccourci vers la modal de Score via shadcn Button */}
+
+        </div>
+
+        {/* Onglet Score Unifié (remplace les 3 blocs) */}
+        <TabsContent value="score" className="mt-0 focus-visible:outline-none focus-visible:ring-0 animate-in fade-in duration-200">
+          <div id="section-score">
+            <ActionabilityScoreDetail
+              unified={unified}
+              domain={targetDomain}
+              onOpenModal={() => setIsScoreModalOpen(true)}
+            />
+          </div>
+        </TabsContent>
+
+        {/* Onglet Impact Causal (remplace les 3 blocs) */}
+        <TabsContent value="causal" className="mt-0 focus-visible:outline-none focus-visible:ring-0 animate-in fade-in duration-200">
+          <div id="section-causal">
+            <CausalImpactTimeline domain={targetDomain} />
+          </div>
+        </TabsContent>
+
+        {/* Onglets Standards (Citations, Concurrents, Sources) */}
+        {(activeTab === 'citations' || activeTab === 'concurrents' || activeTab === 'sources') && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Section avec les deux graphiques côte à côte */}
+            <div id="section-citations" className="analytics-section scroll-mt-16">
+              <GeoScoreChart reportData={reportData} />
+              <div id="section-concurrents" className="scroll-mt-16">
+                <CompetitorAnalysis reportData={reportData} />
+              </div>
+            </div>
+
+            {/* Tableau des domaines */}
+            <div id="section-sources" className="scroll-mt-16">
+              <DomainsTable reportData={reportData} />
+            </div>
+          </div>
+        )}
+      </Tabs>
+
+      {/* Modal Score d'Actionnabilité Unifié */}
+      <ActionabilityScoreModal
+        isOpen={isScoreModalOpen}
+        onClose={() => setIsScoreModalOpen(false)}
+        unified={unified}
+        domain={targetDomain}
+        onSwitchToFullView={() => {
+          setActiveTab('score');
+        }}
+      />
+    </div>
+  );
+}
+
+// === COMPOSANT PRINCIPAL ===
+
+/**
+ * Composant principal du Dashboard GEO Solocal
+ * Gère l'état global et la navigation entre les vues
+ */
+const Index = () => {
+  usePageTitle('Tableau de bord');
+  const navigate = useNavigate();
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
+  const [isNewAnalysisModalOpen, setIsNewAnalysisModalOpen] = useState(false);
+  const [isAiExplainModalOpen, setIsAiExplainModalOpen] = useState(false);
+  const { subscription } = usePayment();
+  const isStarter = subscription?.plan?.id === 'solo';
+
+  // Récupérer le reportId depuis le state de navigation (prioritaire) ou les paramètres d'URL
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const explicitReportId = location.state?.selectedReportId || searchParams.get('reportId');
+
+  // Récupérer la liste des rapports pour le fallback si aucun ID n'est fourni
+  const { reports, loading: reportsLoading } = useReports();
+
+  // Déterminer l'ID final à utiliser : sélection manuelle > URL explicite > rapport le plus récent
+  const reportId = selectedReportId || explicitReportId || getLatestReportId(reports);
+
+  // Redirection automatique vers /ameliorer si l'URL contient ?view=ameliorer
+  useEffect(() => {
+    if (searchParams.get('view') === 'ameliorer') {
+      navigate('/ameliorer' + (reportId ? `?reportId=${reportId}` : ''), { replace: true });
+    }
+  }, [searchParams, reportId, navigate]);
+
+  const { setSelectedReportId: setGlobalSelectedReportId } = useSelectedReport();
+  useEffect(() => {
+    setGlobalSelectedReportId(reportId);
+  }, [reportId, setGlobalSelectedReportId]);
+
+  const handleSelectReport = (id: string) => {
+    setSelectedReportId(id);
+    setIsReportsModalOpen(false);
+    setSearchParams({ reportId: id });
+  };
+
+
+  // Charger les données du rapport depuis l'API
+  const { report: reportData, loading: reportLoading, error } = useReport(reportId);
+
+  const domainName = useMemo(() => {
+    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || (reportData as any)?.url || (reportData as any)?.analyse_citation?.client_site_url;
+    if (!url) return null;
+    try { return new URL(url).hostname.replace('www.', ''); } catch { return null; }
+  }, [reportData]);
+
+  const targetGeoScore = useMemo(() => extractTargetGeoScore(reportData), [reportData]);
+  const [agenticScore, setAgenticScore] = useState<number | null>(() => extractAgenticScore(reportData));
+
+  useEffect(() => {
+    let isMounted = true;
+    const directScore = extractAgenticScore(reportData);
+    if (directScore !== null) {
+      setAgenticScore(directScore);
+    }
+
+    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || (reportData as any)?.url || (reportData as any)?.analyse_citation?.client_site_url;
+    if (!url) return;
+
+    try {
+      const hostname = new URL(url).hostname.replace('www.', '');
+      const cached = localStorage.getItem(`viraill_agentic_score_${hostname}`);
+      if (cached && !isNaN(Number(cached))) {
+        setAgenticScore(Number(cached));
+        return;
+      }
+    } catch { }
+
+    const reportId = (reportData as any)?.report?.id || (reportData as any)?.llmo_report?.id;
+
+    // 1. Chercher d'abord en BDD
+    getLatestAgenticAudit(url)
+      .then((dbAudit) => {
+        if (!isMounted) return;
+        if (dbAudit && dbAudit.score !== undefined) {
+          setAgenticScore(dbAudit.score);
+          try {
+            const hostname = new URL(url).hostname.replace('www.', '');
+            localStorage.setItem(`viraill_agentic_score_${hostname}`, String(dbAudit.score));
+          } catch { }
+          return;
+        }
+
+        // 2. Sinon lancer scan et sauvegarder en BDD
+        runAgenticScan(url, false, undefined, reportId)
+          .then((res) => {
+            if (!isMounted || !res || res.score === undefined) return;
+            setAgenticScore(res.score);
+            try {
+              const hostname = new URL(url).hostname.replace('www.', '');
+              localStorage.setItem(`viraill_agentic_score_${hostname}`, String(res.score));
+            } catch { }
+          })
+          .catch(() => { });
+      })
+      .catch(() => { });
+
+    return () => { isMounted = false; };
+  }, [reportData]);
+
+  const totalCitations = useMemo(() => {
+    if (reportData?.analyse_citation?.total_citations !== undefined) {
+      return reportData.analyse_citation.total_citations;
+    }
+    if (!reportData?.analyses || reportData.analyses.length === 0) return 0;
+    return reportData.analyses.reduce((sum, analysis) => {
+      const geoData = analysis.modules?.audit_geo;
+      const citations = geoData?.citations || geoData?.mentions || 0;
+      return sum + Number(citations);
+    }, 0);
+  }, [reportData]);
+
+  const citationsByModel = useMemo(() => {
+    return (reportData?.analyse_citation?.citations_by_model || {}) as Record<string, number>;
+  }, [reportData]);
+
+  const loading = reportsLoading || reportLoading;
+
+  // Empty state — aucun rapport
+  if (!reportsLoading && reports.length === 0) {
+    return (
+      <div className="ux-dashboard-body">
+        <div className="dashboard-container ux-dashboard">
+          <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center w-full max-w-3xl mx-auto">
+            {/* Illustration */}
+            <div className="relative mb-8">
+              <div className="w-24 h-24 rounded-3xl bg-indigo-50 flex items-center justify-center mx-auto shadow-inner">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="22" cy="22" r="14" stroke="#6366F1" strokeWidth="3" fill="none" />
+                  <path d="M32 32L40 40" stroke="#6366F1" strokeWidth="3" strokeLinecap="round" />
+                  <path d="M18 22h8M22 18v8" stroke="#6366F1" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Titre */}
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">
+              Bienvenue sur Viraill
+            </h1>
+            <p className="text-slate-500 text-sm max-w-lg mb-8 leading-relaxed">
+              Vous n'avez pas encore d'analyse. Lancez votre première analyse GEO pour découvrir comment votre site est perçu par les IA génératives.
+            </p>
+
+            {/* CTA principal */}
+            <Button
+              onClick={() => setIsNewAnalysisModalOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-indigo-200 gap-2 h-auto"
+            >
+
+              Lancer ma première analyse
+            </Button>
+
+            {/* Steps indicatifs */}
+            <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full text-left">
+              {[
+                { step: '1', title: 'Entrez votre URL', desc: 'Le domaine de votre site à analyser' },
+                { step: '2', title: 'Analyse en cours', desc: 'Nos IA testent votre visibilité GEO' },
+                { step: '3', title: 'Vos résultats', desc: 'Score, citations et recommandations' },
+              ].map(({ step, title, desc }) => (
+                <div key={step} className="p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-0.5">Étape {step}</p>
+                  <p className="text-sm font-semibold text-slate-800">{title}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <NewAnalysisModal open={isNewAnalysisModalOpen} onOpenChange={setIsNewAnalysisModalOpen} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="ux-dashboard-body">
+      <div className="dashboard-container ux-dashboard">
+        {/* Section haute avec le graphique de citations */}
+        <TopSection
+          reportData={reportData}
+          reports={reports}
+          agenticScore={agenticScore}
+          onOpenReportsModal={() => setIsReportsModalOpen(true)}
+          onOpenAiExplain={() => setIsAiExplainModalOpen(true)}
+        />
+
+
+        {/* Section basse avec contenu dynamique */}
+        <div className="bottom-section">
+          {loading && reportId ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
+              Chargement des données...
+            </div>
+          ) : error && reportId ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#EF4444' }}>
+              <div style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600 }}>
+                Erreur lors du chargement
+              </div>
+              <div style={{ fontSize: '13px', color: '#64748B', marginTop: '12px' }}>
+                Vérifiez que le reportId est correct dans l'URL (ex: ?reportId=1)
+              </div>
+            </div>
+          ) : (
+            <AmeliorerView reportData={reportData} />
+          )}
+        </div>
+      </div>
+
+      {/* Modal de sélection de rapport */}
+      <Dialog open={isReportsModalOpen} onOpenChange={setIsReportsModalOpen}>
+        <DialogContent className="w-[95vw] sm:max-w-[520px] rounded-2xl p-0 overflow-hidden">
+          <DialogHeader style={{ padding: '20px 24px 12px', borderBottom: '1px solid #F1F5F9' }}>
+            <DialogTitle style={{ fontSize: '16px', fontWeight: 600, color: '#1E293B' }}>
+              Mes analyses
+            </DialogTitle>
+            <DialogDescription style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+              Sélectionnez un rapport pour afficher ses résultats
+            </DialogDescription>
+          </DialogHeader>
+          <div style={{ maxHeight: '400px', overflowY: 'auto', padding: '8px' }}>
+            {reports.map((r) => {
+              const isActive = String(r.id) === String(reportId);
+              let domain = r.url;
+              try { domain = new URL(r.url).hostname; } catch { }
+              const date = new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+              return (
+                <button
+                  key={r.id}
+                  onClick={() => handleSelectReport(r.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: isActive ? '2px solid #6366F1' : '1px solid transparent',
+                    background: isActive ? '#EEF2FF' : 'transparent',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.15s',
+                    marginBottom: '4px',
+                  }}
+                  onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = '#F8FAFC'; }}
+                  onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div style={{
+                    width: '36px', height: '36px', borderRadius: '10px',
+                    background: isActive ? '#6366F1' : '#F1F5F9',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  }}>
+                    <FileText size={16} style={{ color: isActive ? '#fff' : '#64748B' }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {domain}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>{date}</span>
+                      <span style={{
+                        padding: '1px 6px', borderRadius: '6px', fontSize: '11px', fontWeight: 500,
+                        background: r.status === 'completed' ? '#DCFCE7' : r.status === 'processing' ? '#FEF3C7' : '#FEE2E2',
+                        color: r.status === 'completed' ? '#16A34A' : r.status === 'processing' ? '#D97706' : '#DC2626',
+                      }}>
+                        {r.status === 'completed' ? 'Terminé' : r.status === 'processing' ? 'En cours' : 'Erreur'}
+                      </span>
+                    </div>
+                  </div>
+                  {r.metadata?.score != null && (
+                    <div style={{
+                      fontSize: '14px', fontWeight: 700, color: '#6366F1', flexShrink: 0,
+                    }}>
+                      {Math.round(r.metadata.score)}/100
+                    </div>
+                  )}
+                  {isActive && (
+                    <CheckCircle size={18} style={{ color: '#6366F1', flexShrink: 0 }} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <NewAnalysisModal open={isNewAnalysisModalOpen} onOpenChange={setIsNewAnalysisModalOpen} />
+
+      {/* Modal d'explication IA */}
+      <AiExplainModal
+        open={isAiExplainModalOpen}
+        onOpenChange={setIsAiExplainModalOpen}
+        domainName={domainName}
+        geoScore={targetGeoScore}
+        agenticScore={agenticScore}
+        totalCitations={totalCitations}
+        citationsByModel={citationsByModel}
+        onGoToAmeliorer={() => {
+          navigate('/ameliorer' + (reportId ? `?reportId=${reportId}` : ''));
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+    </div>
   );
 };
 

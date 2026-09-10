@@ -19,6 +19,7 @@ export interface User {
   id: string | number;
   email: string;
   username: string;
+  avatar_url?: string;
   is_admin?: boolean;
   onboarding_completed?: boolean;
   onboarding_completed_at?: string | null;

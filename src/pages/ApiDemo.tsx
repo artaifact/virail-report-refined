@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ import { startAnalysisSequential, startOptimizedAnalysis } from '@/lib/api';
  * Cette page permet de tester tous les endpoints de l'API simulée
  */
 const ApiDemo = () => {
+  usePageTitle('API Demo');
   const [testUrl, setTestUrl] = useState('');
   const [reportId, setReportId] = useState('504606b0bc67caad');
   const [loading, setLoading] = useState<string | null>(null);
@@ -60,7 +62,6 @@ const ApiDemo = () => {
       });
 
     } catch (error) {
-      console.error('Erreur test fetchReport:', error);
       setResult({
         type: 'fetchReport',
         success: false,
@@ -105,7 +106,6 @@ const ApiDemo = () => {
       });
 
     } catch (error) {
-      console.error('Erreur test startAnalysis:', error);
       setResult({
         type: 'startAnalysis',
         success: false,
@@ -150,7 +150,6 @@ const ApiDemo = () => {
       });
 
     } catch (error) {
-      console.error('Erreur test listReports:', error);
       setResult({
         type: 'listReports',
         success: false,
@@ -175,15 +174,12 @@ const ApiDemo = () => {
 
       // 1. Lister les rapports
       const reportsList = await listReports();
-     //console.log('📋 Rapports disponibles:', reportsList.length);
 
       // 2. Récupérer le rapport Booking.com
       const bookingReport = await fetchReport('504606b0bc67caad');
-     //console.log('📄 Rapport booking récupéré:', !!bookingReport);
 
       // 3. Lancer une nouvelle analyse
       const newAnalysis = await startAnalysis('https://exemple.com');
-     //console.log('🚀 Nouvelle analyse:', newAnalysis?.reportId);
 
       setResult({
         type: 'fullWorkflow',
@@ -208,7 +204,6 @@ const ApiDemo = () => {
       });
 
     } catch (error) {
-      console.error('Erreur workflow complet:', error);
       setResult({
         type: 'fullWorkflow',
         success: false,
@@ -241,7 +236,6 @@ const ApiDemo = () => {
         description: 'Appel principal + métadonnées en parallèle'
       }]);
     } catch (error) {
-      console.error('Erreur appels parallèles:', error);
       setResults(prev => [...prev, {
         type: 'Parallèle (2 appels simultanés)',
         duration: 'Erreur',
@@ -271,7 +265,6 @@ const ApiDemo = () => {
         description: 'Analyse → puis optimisation basée sur résultats'
       }]);
     } catch (error) {
-      console.error('Erreur appels séquentiels:', error);
       setResults(prev => [...prev, {
         type: 'Séquentiel (2ème dépend du 1er)',
         duration: 'Erreur',
@@ -305,7 +298,6 @@ const ApiDemo = () => {
         description: 'Sélection automatique de la meilleure stratégie'
       }]);
     } catch (error) {
-      console.error('Erreur analyse optimisée:', error);
       setResults(prev => [...prev, {
         type: 'Auto-optimisé (sélection intelligente)',
         duration: 'Erreur',
@@ -367,7 +359,7 @@ const ApiDemo = () => {
             >
               {loading === 'parallel' ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   En cours...
                 </>
               ) : (
@@ -387,7 +379,7 @@ const ApiDemo = () => {
             >
               {loading === 'sequential' ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   En cours...
                 </>
               ) : (
@@ -407,7 +399,7 @@ const ApiDemo = () => {
             >
               {loading === 'optimized' ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                   En cours...
                 </>
               ) : (

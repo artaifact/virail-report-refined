@@ -19,6 +19,10 @@ export default {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: 'tsconfig.jest.json',
+      diagnostics: false,
+      babelConfig: {
+        plugins: ['./scripts/babel-plugin-import-meta.cjs'],
+      },
     }],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],

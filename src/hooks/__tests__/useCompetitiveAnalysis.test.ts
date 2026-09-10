@@ -32,7 +32,10 @@ describe('useCompetitiveAnalysis', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockPaymentContext.canUseFeature.mockReturnValue(true);
+    mockPaymentContext.getFeatureLimits.mockReturnValue({ used: 1, limit: 10, remaining: 9 });
     mockUsePayment.mockReturnValue(mockPaymentContext);
+    mockAuthService.isAuthenticated.mockReturnValue(true);
     
     // Mock console.error to avoid noise in tests
     jest.spyOn(console, 'error').mockImplementation(() => {});

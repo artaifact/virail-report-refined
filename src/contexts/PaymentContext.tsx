@@ -109,13 +109,15 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({ children }) =>
   }, [mapApiPlanToFrontPlan]);
 
   // Rafraîchir le plan utilisateur depuis l'API
-  const refreshUserPlan = useCallback(async () => {
+  // knownPlans peut être passé directement pour éviter la closure périmée lors du chargement initial
+  const refreshUserPlan = useCallback(async (knownPlans?: Plan[]) => {
+    const activePlans = knownPlans ?? plans;
     try {
       const data = await apiService.getCurrentSubscription();
       // Si data est null, c'est que la session a expiré ou qu'il n'y a pas d'abonnement
       if (!data) {
         // Utiliser un plan gratuit par défaut silencieusement
-        const free = plans.find(p => p.id === 'free') || {
+        const free = activePlans.find(p => p.id === 'free') || {
           id: 'free',
           name: 'Free',
           price: 0,
@@ -149,12 +151,12 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({ children }) =>
         return;
       }
       
-      const mapped = mapApiSubscriptionToUserPlan(data, plans);
+      const mapped = mapApiSubscriptionToUserPlan(data, activePlans);
       if (mapped) {
         setUserPlan(mapped);
       } else {
         // Aucun abonnement côté backend: basculer sur un plan gratuit par défaut
-        const free = plans.find(p => p.id === 'free') || {
+        const free = activePlans.find(p => p.id === 'free') || {
           id: 'free',
           name: 'Free',
           price: 0,
@@ -190,13 +192,11 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({ children }) =>
       // Si l'erreur est 401 (session expirée), ne pas afficher d'erreur
       // C'est normal et l'utilisateur sera redirigé vers la page de login si nécessaire
       if (e?.message?.includes('401') || e?.message?.includes('UNAUTHORIZED')) {
-        console.warn('Session expirée lors du chargement de l\'abonnement - utilisation du plan par défaut');
         // Utiliser un plan gratuit par défaut silencieusement
       } else {
-        console.error('Erreur lors du chargement de l\'abonnement:', e);
       }
       // En cas d'erreur, afficher un plan gratuit par défaut
-      const free = plans.find(p => p.id === 'free') || {
+      const free = activePlans.find(p => p.id === 'free') || {
         id: 'free',
         name: 'Free',
         price: 0,
@@ -242,10 +242,10 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({ children }) =>
         const mappedPlans = (resp?.plans || []).map(mapApiPlanToFrontPlan);
         setPlans(mappedPlans);
         
-        // Charger l'abonnement utilisateur
-        await refreshUserPlan();
+        // Charger l'abonnement utilisateur en passant mappedPlans directement
+        // (évite la closure périmée où plans serait encore [])
+        await refreshUserPlan(mappedPlans);
       } catch (e) {
-        console.error('Erreur lors du chargement initial:', e);
         setError('Erreur lors du chargement des données');
       } finally {
         setIsLoading(false);

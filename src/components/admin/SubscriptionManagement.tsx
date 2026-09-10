@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -65,7 +66,6 @@ export function SubscriptionManagement({ onSubscriptionSelect, className = '' }:
       setSubscriptions(response.subscriptions);
       setTotalPages(response.total_pages);
     } catch (error) {
-      console.error('Erreur lors du chargement des abonnements:', error);
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,6 @@ export function SubscriptionManagement({ onSubscriptionSelect, className = '' }:
       const statsData = await AdminService.getSubscriptionsStats();
       setStats(statsData);
     } catch (error) {
-      console.error('Erreur lors du chargement des statistiques:', error);
     }
   };
 
@@ -130,6 +129,14 @@ export function SubscriptionManagement({ onSubscriptionSelect, className = '' }:
 
   return (
     <div className={className}>
+      <div className="mb-4 flex justify-end">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/admin/subscriptions-docs" className="gap-2">
+            <BookOpen className="h-4 w-4" />
+            Documentation API abonnements (admin)
+          </Link>
+        </Button>
+      </div>
       {/* Statistiques */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -255,7 +262,7 @@ export function SubscriptionManagement({ onSubscriptionSelect, className = '' }:
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
             </div>
           ) : subscriptions.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">

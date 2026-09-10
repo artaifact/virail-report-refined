@@ -35,7 +35,6 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ userId, onBack, classN
           setUser(userData);
         }
       } catch (error) {
-        console.error('Erreur lors du chargement de l\'utilisateur:', error);
         toast({
           title: "Erreur de chargement",
           description: "Impossible de charger les détails de l'utilisateur",
@@ -311,7 +310,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ userId, onBack, classN
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                Informations personnelles
+                Informations personnelles test
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -522,7 +521,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ userId, onBack, classN
                         disabled={actionLoading}
                         size="sm"
                       >
-                        {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enregistrer'}
+                        {actionLoading ? <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> : 'Enregistrer'}
                       </Button>
                       <Button
                         onClick={() => setShowEditForm(false)}

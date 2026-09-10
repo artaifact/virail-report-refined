@@ -1,0 +1,23 @@
+{
+  "name": "@viraill/mcp-server",
+  "version": "1.0.0",
+  "description": "Viraill Model Context Protocol (MCP) Server for Cursor, Windsurf, Claude Desktop, and Autonomous Agent IDEs",
+  "main": "dist/index.js",
+  "bin": {
+    "viraill-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "viraill",
+    "geo",
+    "agentic-readiness",
+    "llms-txt"
+  ],
+  "author": "Viraill Team",
+  "license": "MIT"
+}

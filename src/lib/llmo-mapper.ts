@@ -1,4 +1,4 @@
-import { 
+import {
   MappedReportData,
   OverviewData,
   PerceptionData,
@@ -6,7 +6,8 @@ import {
   RecommendationData,
   ValuePropData,
   SemanticAnalysisData,
-  StrategicSynthesisData
+  StrategicSynthesisData,
+  CompetitiveAnalysisData
 } from '../types/llmo-report';
 import { FullReportData, Analysis } from './api';
 
@@ -16,7 +17,6 @@ import { FullReportData, Analysis } from './api';
  */
 export function mapLLMOReportData(data: FullReportData | null): MappedReportData {
   if (!data || !data.report || !data.analyses) {
-    console.error('Erreur: Données d\'entrée invalides pour mapLLMOReportData');
     return createEmptyMappedData();
   }
 
@@ -31,6 +31,8 @@ export function mapLLMOReportData(data: FullReportData | null): MappedReportData
     const valueProps = mapValuePropData(analyses);
     const semanticAnalyses = mapSemanticAnalysisData(analyses);
     const strategicSyntheses = mapStrategicSynthesisData(analyses);
+    const analyseCitation = data.analyse_citation;
+    const competitiveAnalysis = mapCompetitiveAnalysisData(data.analyse_concurrentielle_v1);
 
     return {
       url: report.url,
@@ -40,10 +42,11 @@ export function mapLLMOReportData(data: FullReportData | null): MappedReportData
       recommendations,
       valueProps,
       semanticAnalyses,
-      strategicSyntheses
+      strategicSyntheses,
+      analyseCitation,
+      competitiveAnalysis
     };
   } catch (error) {
-    console.error('Erreur lors du mapping des données LLMO:', error);
     return createEmptyMappedData();
   }
 }
@@ -138,6 +141,28 @@ function mapStrategicSynthesisData(analyses: Analysis[]): StrategicSynthesisData
   }));
 }
 
+function mapCompetitiveAnalysisData(data: any): CompetitiveAnalysisData | undefined {
+  if (!data) return undefined;
+
+  return {
+    version: data.version,
+    session_id: data.session_id,
+    url: data.url,
+    competitors: data.competitors || [],
+    mini_llm_results: data.mini_llm_results || [],
+    benchmark_results: data.benchmark_results || {
+      benchmark: { classement: [], position_cible: 0, ecarts_vs_cible: [] },
+      url_scores: {}
+    },
+    stats: data.stats || {
+      total_mentions: 0,
+      unique_competitors: 0,
+      models_used: []
+    },
+    created_at: data.created_at
+  };
+}
+
 function createEmptyMappedData(): MappedReportData {
   return {
     url: '',
@@ -155,5 +180,7 @@ function createEmptyMappedData(): MappedReportData {
     valueProps: [],
     semanticAnalyses: [],
     strategicSyntheses: [],
+    analyseCitation: undefined,
+    competitiveAnalysis: undefined,
   };
 } 

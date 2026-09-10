@@ -12,7 +12,7 @@ import {
   SkipOnboardingResponse,
 } from '@/types/onboarding';
 
-// Configuration
+// Configuration : en dev utiliser le chemin relatif (proxy Vite), sinon VITE_API_BASE_URL
 const API_BASE_URL = import.meta.env.DEV
   ? ''
   : (import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com');
@@ -129,6 +129,24 @@ class OnboardingService {
   }> {
     return this.request(`/auth/admin/users/${userId}/reset-onboarding`, {
       method: 'POST',
+    });
+  }
+
+  /**
+   * Récupérer les données de compte d'onboarding
+   */
+  async getAccountData(): Promise<{
+    brand_name?: string;
+    brand_url?: string;
+    account_type?: string;
+    agency_name?: string;
+    agency_url?: string;
+    location_country?: string;
+    location_country_code?: string;
+    sector?: string;
+  }> {
+    return this.request('/auth/user/onboarding/account-data', {
+      method: 'GET',
     });
   }
 

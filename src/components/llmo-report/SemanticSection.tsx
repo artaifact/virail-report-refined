@@ -1,6 +1,8 @@
 import React from 'react';
 import { SemanticAnalysisData } from '../../types/llmo-report';
 import { Brain, BarChart3, FileText, CheckCircle, Lightbulb, Zap } from 'lucide-react';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { HELP } from '@/lib/help-content';
 
 interface SemanticSectionProps {
   semanticAnalyses: SemanticAnalysisData[];
@@ -34,9 +36,12 @@ export const SemanticSection: React.FC<SemanticSectionProps> = ({ semanticAnalys
             <Brain className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Analyse Sémantique
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Analyse Sémantique
+              </h3>
+              <InfoTooltip {...HELP.semantique} />
+            </div>
             <p className="text-sm text-gray-600">
               Score moyen: {averageOverallScore}/100 • {semanticAnalyses.length} analyse{semanticAnalyses.length > 1 ? 's' : ''}
             </p>
@@ -68,12 +73,12 @@ export const SemanticSection: React.FC<SemanticSectionProps> = ({ semanticAnalys
  */
 const SemanticCard: React.FC<{ analysis: SemanticAnalysisData }> = ({ analysis }) => {
   const scores = [
-    { label: 'Cohérence', score: analysis.coherenceScore, icon: <CheckCircle className="w-4 h-4" />, color: 'blue' },
-    { label: 'Densité', score: analysis.densityScore, icon: <BarChart3 className="w-4 h-4" />, color: 'green' },
-    { label: 'Complexité', score: analysis.complexityScore, icon: <FileText className="w-4 h-4" />, color: 'purple' },
-    { label: 'Clarté', score: analysis.clarityScore, icon: <Lightbulb className="w-4 h-4" />, color: 'yellow' },
-    { label: 'Embeddings', score: analysis.embeddingScore, icon: <Brain className="w-4 h-4" />, color: 'indigo' },
-    { label: 'Tokenisation', score: analysis.tokenizationScore, icon: <Zap className="w-4 h-4" />, color: 'pink' }
+    { label: 'Cohérence', score: analysis.coherenceScore, icon: <CheckCircle className="w-4 h-4" />, color: 'blue', help: HELP.coherence },
+    { label: 'Densité', score: analysis.densityScore, icon: <BarChart3 className="w-4 h-4" />, color: 'green', help: HELP.densite },
+    { label: 'Complexité', score: analysis.complexityScore, icon: <FileText className="w-4 h-4" />, color: 'purple', help: HELP.complexite },
+    { label: 'Clarté', score: analysis.clarityScore, icon: <Lightbulb className="w-4 h-4" />, color: 'yellow', help: HELP.clarte },
+    { label: 'Embeddings', score: analysis.embeddingScore, icon: <Brain className="w-4 h-4" />, color: 'indigo', help: HELP.embeddings },
+    { label: 'Tokenisation', score: analysis.tokenizationScore, icon: <Zap className="w-4 h-4" />, color: 'pink', help: HELP.tokenisation }
   ].filter(item => item.score !== undefined);
 
   return (
@@ -94,8 +99,8 @@ const SemanticCard: React.FC<{ analysis: SemanticAnalysisData }> = ({ analysis }
       {/* Grille des scores détaillés */}
       {scores.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-          {scores.map((scoreItem, idx) => (
-            <ScoreMetric key={idx} {...scoreItem} />
+          {scores.map(({ help, ...scoreItem }, idx) => (
+            <ScoreMetric key={idx} {...scoreItem} helpContent={help} />
           ))}
         </div>
       )}
@@ -146,7 +151,8 @@ const ScoreMetric: React.FC<{
   score: number;
   icon: React.ReactNode;
   color: string;
-}> = ({ label, score, icon, color }) => {
+  helpContent?: { title: string; description: string };
+}> = ({ label, score, icon, color, helpContent }) => {
   const colorClasses = {
     blue: 'bg-blue-50 border-blue-200 text-blue-700',
     green: 'bg-green-50 border-green-200 text-green-700',
@@ -161,9 +167,10 @@ const ScoreMetric: React.FC<{
   return (
     <div className={`${selectedColorClass} rounded-lg p-3 border`}>
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {icon}
           <span className="font-medium text-xs">{label}</span>
+          {helpContent && <InfoTooltip {...helpContent} side="right" />}
         </div>
         <span className="font-bold text-sm">{score}</span>
       </div>

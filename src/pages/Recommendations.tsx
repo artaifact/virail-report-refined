@@ -1,4 +1,4 @@
-import { Star, TrendingUp, Lightbulb, CheckCircle, Target, Zap, Award, Brain, Sparkles, ChevronRight, Clock, Users } from "lucide-react";
+import { Star, TrendingUp, Lightbulb, CheckCircle, Target, Zap, Award, Brain, ChevronRight, Clock, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,9 @@ const Recommendations = () => {
                 <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
                   <Lightbulb className="w-6 h-6 text-white" />
                 </div>
-                <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
-                  💡 IA Recommendations
+                <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5" />
+                  <span>Recommandations IA</span>
                 </Badge>
               </div>
               <h1 className="text-4xl font-bold text-white mb-3">
@@ -84,7 +85,7 @@ const Recommendations = () => {
                   </CardDescription>
                 </div>
                 <Badge className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white">
-                  <Sparkles className="w-3 h-3 mr-1" />
+                  <CheckCircle className="w-3 h-3 mr-1" />
                   3 Actions
                 </Badge>
               </div>
@@ -281,7 +282,7 @@ const Recommendations = () => {
                 <CardDescription className="mt-2">Ce qui fonctionne bien dans votre domaine avec l'IA</CardDescription>
               </div>
               <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
-                <Sparkles className="w-3 h-3 mr-1" />
+                <TrendingUp className="w-3 h-3 mr-1" />
                 Insights IA
               </Badge>
             </div>

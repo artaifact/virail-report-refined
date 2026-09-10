@@ -121,13 +121,13 @@ const ImpactEffortMatrix: React.FC<ImpactEffortMatrixProps> = ({
       {/* En-tête avec filtres */}
       <Card className="bg-white border border-neutral-200 shadow-sm">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Target className="h-6 w-6 text-neutral-700" />
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Target className="h-5 w-5 sm:h-6 sm:w-6 text-neutral-700" />
                 Matrice Impact / Effort
               </CardTitle>
-              <p className="text-neutral-600 mt-1">
+              <p className="text-neutral-600 mt-1 text-sm">
                 Visualisez vos recommandations selon leur impact et l'effort requis
               </p>
             </div>
@@ -178,7 +178,7 @@ const ImpactEffortMatrix: React.FC<ImpactEffortMatrixProps> = ({
         <CardContent className="p-6">
           <div className="relative">
             {/* Grille de fond avec carreaux */}
-            <div className="relative w-full h-96 bg-white rounded-lg border-2 border-neutral-300 shadow-inner">
+            <div className="relative w-full h-64 sm:h-80 md:h-96 bg-white rounded-lg border-2 border-neutral-300 shadow-inner">
               {/* Grille de carreaux - en arrière-plan */}
               <div className="absolute inset-0 z-0">
                 {/* Grille verticale (tous les 10%) */}
@@ -323,7 +323,7 @@ const ImpactEffortMatrix: React.FC<ImpactEffortMatrixProps> = ({
                     
                     {/* Tooltip au survol */}
                     {isHovered && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-white border border-neutral-200 rounded-lg shadow-xl p-3 z-60">
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 sm:w-64 bg-white border border-neutral-200 rounded-lg shadow-xl p-3 z-60">
                         <div className="flex items-start justify-between mb-2">
                           <h4 className="font-semibold text-neutral-900 text-sm">{rec.title}</h4>
                           <Badge className={`${getQuadrantColor(quadrant)} text-xs`}>

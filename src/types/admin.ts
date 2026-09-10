@@ -157,3 +157,18 @@ export interface AdminSubscriptionsQuery {
   status?: string;
   plan_id?: string;
 }
+
+export interface AdminPlan {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  interval: string;
+  max_analyses: number;
+  max_reports: number;
+  features: string[];
+  stripe_price_id: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}

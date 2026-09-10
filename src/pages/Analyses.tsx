@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BarChart3, TrendingUp, Users, Calendar, FileText, ChevronRight, ArrowLeft, Plus, RefreshCw, Loader2, Zap, Sparkles, Target, Star, Brain } from "lucide-react";
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { BarChart3, TrendingUp, Users, Calendar, FileText, ChevronRight, ArrowLeft, Plus, RefreshCw, Loader2, Zap, Target, Star, Brain } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,12 +18,27 @@ import ReportModules from "@/components/reports/ReportModules";
 import ReportDetails from "@/components/reports/ReportDetails";
 import { LLMOReportDisplay } from "@/components/llmo-report";
 import { useReports, useReport } from "@/hooks/useReports";
+import { useSelectedReport } from "@/contexts/SelectedReportContext";
 import type { ReportResponse } from "@/lib/api";
 import { mapLLMOReportData } from '@/lib/llmo-mapper';
+import { ModelLogosCarousel } from "@/components/ModelLogosCarousel";
 
 const Analyses = () => {
+  usePageTitle('Analyses');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!AuthService.isAuthenticated()) {
+      navigate('/login');
+    }
+  }, [navigate]);
+
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const { setSelectedReportId: setGlobalSelectedReportId } = useSelectedReport();
+
+  useEffect(() => {
+    setGlobalSelectedReportId(selectedReportId);
+  }, [selectedReportId, setGlobalSelectedReportId]);
   const [newAnalysisUrl, setNewAnalysisUrl] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -47,12 +63,14 @@ const Analyses = () => {
   const [isOptimizedAnalyzing, setIsOptimizedAnalyzing] = useState(false);
   const [optimizedProgress, setOptimizedProgress] = useState(0);
   
-  const { reports, loading, error, createAnalysis } = useReports();
+  const { reports, loading, error, createAnalysis, refreshReports } = useReports();
   const { report, loading: reportLoading, error: reportError } = useReport(selectedReportId);
   const { toast } = useToast();
 
   const handleStartNewAnalysis = async () => {
     if (!newAnalysisUrl.trim()) return;
+    
+    let progressInterval: NodeJS.Timeout | null = null;
     
     try {
       setIsAnalyzing(true);
@@ -70,10 +88,10 @@ const Analyses = () => {
       });
 
       // Simuler la progression
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 95) {
-            clearInterval(progressInterval);
+            if (progressInterval) clearInterval(progressInterval);
             return 95;
           }
           return prev + Math.random() * 10;
@@ -82,28 +100,29 @@ const Analyses = () => {
 
       const reportId = await createAnalysis(normalizedUrl, includeOptimization);
       
-      if (reportId) {
-        clearInterval(progressInterval);
-        setProgress(100);
+      if (progressInterval) clearInterval(progressInterval);
+      setProgress(100);
 
-        setTimeout(() => {
-          setIsAnalyzing(false);
-          setIsDialogOpen(false);
-          setNewAnalysisUrl("");
-          setProgress(0);
+      // Extraire le domaine pour l'affichage
+      const domain = (() => {
+        try {
+          const urlObj = new URL(normalizedUrl);
+          return urlObj.hostname.replace('www.', '');
+        } catch {
+          return normalizedUrl;
+        }
+      })();
 
-          // Extraire le domaine pour l'affichage
-          const domain = (() => {
-            try {
-              const urlObj = new URL(normalizedUrl);
-              return urlObj.hostname.replace('www.', '');
-            } catch {
-              return normalizedUrl;
-            }
-          })();
+      // Toujours considérer comme succès si on arrive ici (même si reportId est null, l'analyse peut être en cours)
+      setTimeout(() => {
+        setIsAnalyzing(false);
+        setIsDialogOpen(false);
+        setNewAnalysisUrl("");
+        setProgress(0);
 
+        if (reportId) {
           toast({
-            title: "✅ Analyse lancée",
+            title: "Analyse lancée avec succès",
             description: (
               <div className="space-y-2 text-sm leading-relaxed">
                 <p>
@@ -111,12 +130,11 @@ const Analyses = () => {
                 </p>
                 <div className="space-y-1 text-xs">
                   <div className="flex items-center gap-2">
-                    <span>⏱️</span>
-                    <span>Durée estimée : <strong>5 à 15 minutes</strong></span>
+                    <span className="text-muted-foreground">Durée estimée :</span>
+                    <strong>5 à 15 minutes</strong>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>🔄</span>
-                    <span><strong>Actualisez la page</strong> après ce délai pour voir les résultats</span>
+                    <span className="text-muted-foreground">L'analyse est en cours de traitement. Actualisez la page après ce délai pour voir les résultats.</span>
                   </div>
                 </div>
               </div>
@@ -126,19 +144,45 @@ const Analyses = () => {
 
           // Auto-sélectionner le nouveau rapport
           setSelectedReportId(reportId);
-        }, 1000);
-      } else {
-        throw new Error("Impossible de créer l'analyse");
-      }
+        } else {
+          // Si reportId est null mais pas d'erreur, l'analyse peut être en cours
+          toast({
+            title: "Analyse en cours",
+            description: (
+              <div className="space-y-2 text-sm leading-relaxed">
+                <p>
+                  Analyse GEO {includeOptimization ? 'avec optimisation' : 'simple'} de <strong className="text-foreground">{domain}</strong> est en cours de traitement.
+                </p>
+                <div className="space-y-1 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Durée estimée :</span>
+                    <strong>5 à 15 minutes</strong>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Actualisez la page après ce délai pour voir les résultats.</span>
+                  </div>
+                </div>
+              </div>
+            ),
+            duration: 10000,
+          });
+        }
+      }, 1000);
 
     } catch (error) {
-      console.error("Erreur lors de l'analyse:", error);
+      if (progressInterval) clearInterval(progressInterval);
       setIsAnalyzing(false);
       setProgress(0);
+
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue lors du lancement de l\'analyse.';
+
       toast({
-        title: "Erreur d'analyse",
-        description: "Une erreur est survenue lors de l'analyse. Veuillez réessayer.",
-        variant: "destructive",
+        title: errorMessage.includes('Limite') || errorMessage.includes('limit') || errorMessage.includes('gratuite') || errorMessage.includes('Abonnez')
+          ? 'Limite atteinte'
+          : 'Erreur',
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 8000,
       });
     }
   };
@@ -191,7 +235,6 @@ const Analyses = () => {
       }
 
       const data = await response.json();
-     //console.log('✅ Réponse /optimize:', data);
       
       clearInterval(progressInterval);
       setOptimizedProgress(100);
@@ -209,14 +252,16 @@ const Analyses = () => {
       }, 1000);
 
     } catch (error) {
-      console.error("Erreur lors de l'analyse optimisée:", error);
       setIsOptimizedAnalyzing(false);
       setOptimizedProgress(0);
-      
+
+      const errorMessage = error instanceof Error ? error.message : "Une erreur est survenue lors de l'optimisation. Veuillez réessayer.";
+
       toast({
-        title: "Erreur d'analyse optimisée",
-        description: "Une erreur est survenue lors de l'optimisation. Veuillez réessayer.",
-        variant: "destructive",
+        title: errorMessage.includes('gratuite') || errorMessage.includes('Abonnez') ? 'Limite atteinte' : "Erreur d'analyse optimisée",
+        description: errorMessage,
+        variant: 'destructive',
+        duration: 8000,
       });
     }
   };
@@ -251,14 +296,14 @@ const Analyses = () => {
     
     if (reportError || !report) {
        return (
-        <div className="flex-1 min-h-screen bg-background p-8 pt-6">
+        <div className="flex-1 min-h-screen bg-background p-4 md:p-8 pt-6">
           <Button variant="outline" size="sm" onClick={() => setSelectedReportId(null)} className="gap-2 mb-6">
             <ArrowLeft className="h-4 w-4" />
             Retour
           </Button>
           <Card className="border-none shadow-sm bg-card">
-            <CardContent className="p-8 text-center">
-              <h3 className="text-xl font-bold text-foreground mb-2">Erreur de chargement</h3>
+            <CardContent className="p-4 md:p-8 text-center">
+              <h3 className="text-lg sm:text-xl font-bold text-foreground mb-2">Erreur de chargement</h3>
               <p className="text-muted-foreground">{reportError || 'Impossible de charger les détails du rapport.'}</p>
             </CardContent>
           </Card>
@@ -270,7 +315,7 @@ const Analyses = () => {
     const mappedData = mapLLMOReportData(report);
 
     return (
-      <div className="flex-1 space-y-6 p-8 pt-6 bg-background min-h-screen">
+      <div className="flex-1 space-y-6 p-4 md:p-8 pt-6 bg-background min-h-screen">
         <div className="flex items-center gap-3 mb-6">
           <Button
             variant="outline"
@@ -287,8 +332,8 @@ const Analyses = () => {
 
         <Card className="border-none shadow-sm bg-card">
           <Tabs defaultValue="overview" className="w-full">
-            <div className="border-b border-border px-6 pt-6">
-              <TabsList className="grid w-full max-w-md grid-cols-3 bg-muted p-1 rounded-xl">
+            <div className="border-b border-border px-4 md:px-6 pt-4 md:pt-6">
+              <TabsList className="flex w-full max-w-md overflow-x-auto whitespace-nowrap bg-muted p-1 rounded-xl">
                 <TabsTrigger value="overview" className="data-[state=active]:bg-card data-[state=active]:shadow-sm rounded-lg text-foreground">
                   Vue d'ensemble
                 </TabsTrigger>
@@ -301,7 +346,7 @@ const Analyses = () => {
               </TabsList>
             </div>
             
-            <div className="p-6">
+            <div className="p-4 md:p-6">
               <TabsContent value="overview" className="space-y-6 mt-0">
                 <LLMOReportDisplay reportData={report} />
               </TabsContent>
@@ -323,12 +368,12 @@ const Analyses = () => {
   return (
     <div className="flex-1 min-h-screen bg-background">
       {/* Hero Header Section */}
-      <div className="relative overflow-hidden bg-card px-8 py-12 border-b border-border">
+      <div className="relative overflow-hidden bg-card px-4 md:px-8 py-8 md:py-12 border-b border-border">
         {/* Background decorative elements */}
         <div className="absolute inset-0 bg-muted/50"></div>
         
         <div className="relative z-10">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="max-w-3xl">
               {/* <div className="flex items-center gap-3 mb-4"> */}
                 {/* <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center"> */}
@@ -338,10 +383,10 @@ const Analyses = () => {
                   🧠 IA Analytics
                 </Badge> */}
               {/* </div> */}
-              <h1 className="text-4xl font-bold text-foreground mb-3">
+              <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-3">
                 Analyses GEO
               </h1>
-              <p className="text-xl text-muted-foreground mb-6 leading-relaxed">
+              <p className="text-base sm:text-xl text-muted-foreground mb-6 leading-relaxed">
                 Analysez et optimisez vos contenus avec l'intelligence artificielle.
               </p>
               <div className="flex items-center gap-4">
@@ -356,6 +401,16 @@ const Analyses = () => {
                     </Button>
                   </DialogTrigger>
                 </Dialog>
+                <Button
+                  variant="outline"
+                  onClick={() => refreshReports && refreshReports()}
+                  title="Actualiser les rapports"
+                  className="px-4 py-3 h-auto border-border text-foreground hover:bg-muted"
+                  disabled={loading || isAnalyzing}
+                >
+                  <RefreshCw className="h-5 w-5 mr-2" />
+                  Actualiser
+                </Button>
               </div>
             </div>
             
@@ -377,10 +432,10 @@ const Analyses = () => {
       </div>
 
       {/* Main Content */}
-      <div className="px-8 py-8 space-y-8">
+      <div className="px-4 md:px-8 py-6 md:py-8 space-y-6 md:space-y-8">
         {/* Dialogs */}
         <Dialog open={isOptimizedDialogOpen} onOpenChange={setIsOptimizedDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[95vw] sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Zap className="h-5 w-5 text-foreground" />
@@ -395,7 +450,7 @@ const Analyses = () => {
                 <Label htmlFor="optimized-url">URL du site web</Label>
                 <Input
                   id="optimized-url"
-                  placeholder="exemple.com"
+                  placeholder="https://example.com"
                   value={optimizedAnalysisUrl}
                   onChange={(e) => setOptimizedAnalysisUrl(e.target.value)}
                   onBlur={() => {
@@ -445,7 +500,7 @@ const Analyses = () => {
         </Dialog>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[95vw] sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Brain className="h-5 w-5 text-foreground" />
@@ -460,7 +515,7 @@ const Analyses = () => {
                 <Label htmlFor="url">URL du site web</Label>
                 <Input
                   id="url"
-                  placeholder="exemple.com"
+                  placeholder="https://example.com"
                   value={newAnalysisUrl}
                   onChange={(e) => setNewAnalysisUrl(e.target.value)}
                   onBlur={() => {
@@ -495,16 +550,19 @@ const Analyses = () => {
               </div>
               
               {isAnalyzing && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Progression de l'analyse</span>
-                    <span>{Math.round(progress)}%</span>
+                <>
+                  <ModelLogosCarousel className="rounded-md bg-muted/50 border border-border/50" />
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Progression de l'analyse</span>
+                      <span>{Math.round(progress)}%</span>
+                    </div>
+                    <Progress value={progress} className="h-3" />
+                    <p className="text-xs text-muted-foreground">
+                      Analyse en cours... Cela prend généralement entre 5 et 15 minutes. Actualisez la page après ce délai pour voir les résultats.
+                    </p>
                   </div>
-                  <Progress value={progress} className="h-3" />
-                  <p className="text-xs text-muted-foreground">
-                    Analyse en cours... Cela prend généralement entre 5 et 15 minutes. Actualisez la page après ce délai pour voir les résultats.
-                  </p>
-                </div>
+                </>
               )}
               
               <div className="flex justify-end gap-3">
@@ -529,88 +587,92 @@ const Analyses = () => {
         
         {/* Enhanced Stats Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-neutral-50 border border-neutral-200 overflow-hidden relative"> */}
-            {/* <div className="absolute top-0 right-0 w-20 h-20 bg-neutral-300/20 rounded-full blur-xl"></div> */}
-            {/* <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-neutral-800">Analyses Total</CardTitle>
-              <div className="w-10 h-10 bg-neutral-300 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                <BarChart3 className="h-5 w-5 text-neutral-700" />
-              </div>
-            </CardHeader> */}
-            {/* <CardContent className="relative z-10">
-              <div className="text-3xl font-bold text-neutral-900 mb-1">156</div>
-              <p className="text-sm text-neutral-600 font-semibold">+12 ce mois</p>
-            </CardContent> */}
-          {/* </Card> */}
-          
-          {/* <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-neutral-50 border border-neutral-200 overflow-hidden relative"> */}
-            {/* <div className="absolute top-0 right-0 w-20 h-20 bg-neutral-300/20 rounded-full blur-xl"></div> */}
-            {/* <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-neutral-800">Score Moyen</CardTitle>
-              <div className="w-10 h-10 bg-neutral-300 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                <TrendingUp className="h-5 w-5 text-neutral-700" />
-              </div>
-            </CardHeader> */}
-            {/* <CardContent className="relative z-10">
-              <div className="text-3xl font-bold text-neutral-900 mb-1">
-                {reports.length > 0 
-                  ? Math.round(reports.reduce((acc, r) => acc + (r.metadata.score || 0), 0) / reports.filter(r => r.metadata.score).length)
-                  : 0
-                }
-              </div> */}
-              {/* <p className="text-sm text-neutral-600 font-semibold">
-                {reports.length > 0 ? `${reports.length} analyses` : 'Aucune analyse'}
-              </p>
-            </CardContent>
-          </Card> */}
-          
-          {/* <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-neutral-50 border border-neutral-200 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-neutral-300/20 rounded-full blur-xl"></div>
+          <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-card border border-border overflow-hidden relative">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-neutral-800">Sites Analysés</CardTitle>
-              <div className="w-10 h-10 bg-neutral-300 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                <Users className="h-5 w-5 text-neutral-700" />
+              <CardTitle className="text-sm font-medium text-foreground">Analyses Total</CardTitle>
+              <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                <BarChart3 className="h-5 w-5 text-muted-foreground" />
               </div>
             </CardHeader>
             <CardContent className="relative z-10">
-              <div className="text-3xl font-bold text-neutral-900 mb-1">
-                {new Set(reports.map(r => new URL(r.url).hostname.replace('www.', ''))).size}
+              <div className="text-3xl font-bold text-foreground mb-1">{reports.length}</div>
+              <p className="text-sm text-muted-foreground font-semibold">
+                {reports.length > 0 ? `${reports.length} analyses` : 'Aucune analyse'}
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-card border border-border overflow-hidden relative">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+              <CardTitle className="text-sm font-medium text-foreground">Score Moyen</CardTitle>
+              <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
               </div>
-              <p className="text-sm text-neutral-600 font-semibold">
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className="text-3xl font-bold text-foreground mb-1">
+                {reports.filter(r => r.metadata?.score != null).length > 0
+                  ? `${Math.round(reports.reduce((acc, r) => acc + (Number(r.metadata?.score) || 0), 0) / reports.filter(r => r.metadata?.score != null).length)}%`
+                  : '0%'
+                }
+              </div>
+              <p className="text-sm text-muted-foreground font-semibold">
+                {reports.length > 0 ? `${reports.length} analyses` : 'Aucune analyse'}
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-card border border-border overflow-hidden relative">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+              <CardTitle className="text-sm font-medium text-foreground">Sites Analysés</CardTitle>
+              <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                <Users className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className="text-3xl font-bold text-foreground mb-1">
+                {new Set(reports.map(r => {
+                  try {
+                    return new URL(r.url.startsWith('http') ? r.url : `https://${r.url}`).hostname.replace('www.', '');
+                  } catch {
+                    return r.url;
+                  }
+                })).size}
+              </div>
+              <p className="text-sm text-muted-foreground font-semibold">
                 {reports.length > 0 ? `${reports.length} analyses totales` : 'Aucun site analysé'}
               </p>
             </CardContent>
-          </Card> */}
+          </Card>
           
-          {/* <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-neutral-50 border border-neutral-200 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-neutral-300/20 rounded-full blur-xl"></div> */}
-            {/* <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-neutral-800">Temps Moyen</CardTitle>
-              <div className="w-10 h-10 bg-neutral-300 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                <Calendar className="h-5 w-5 text-neutral-700" />
+          <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] bg-card border border-border overflow-hidden relative">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+              <CardTitle className="text-sm font-medium text-foreground">Temps Moyen</CardTitle>
+              <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                <Calendar className="h-5 w-5 text-muted-foreground" />
               </div>
-            </CardHeader> */}
-            {/* <CardContent className="relative z-10">
-              <div className="text-3xl font-bold text-neutral-900 mb-1">95.4s</div>
-              <p className="text-sm text-neutral-600 font-semibold">-8.7% optimisation</p>
-            </CardContent> */}
-          {/* </Card> */}
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className="text-3xl font-bold text-foreground mb-1">95.4s</div>
+              <p className="text-sm text-muted-foreground font-semibold">-8.7% optimisation</p>
+            </CardContent>
+          </Card>
         </div>
         
         {/* Enhanced Reports List */}
         <Card className="border-none shadow-sm bg-card overflow-hidden">
           <CardHeader className="bg-muted">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-3 text-xl text-foreground">
-                  <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-foreground" />
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-3 text-lg sm:text-xl text-foreground">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-muted rounded-xl flex items-center justify-center flex-shrink-0">
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-foreground" />
                   </div>
                   Rapports Récents
                 </CardTitle>
                 <CardDescription className="mt-2 text-muted-foreground">Dernières analyses GEO effectuées</CardDescription>
               </div>
-              <Badge className="bg-muted text-muted-foreground">IA</Badge>
+              <Badge className="bg-muted text-muted-foreground flex-shrink-0">IA</Badge>
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -618,7 +680,7 @@ const Analyses = () => {
               {loading ? (
                 <div className="flex items-center justify-center p-12">
                   <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+                    <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
                     <span className="text-muted-foreground font-medium">Chargement des rapports...</span>
                   </div>
                 </div>
@@ -640,11 +702,11 @@ const Analyses = () => {
                   </Button>
                 </div>
               ) : reports.length === 0 ? (
-                <div className="p-12 text-center">
-                    <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <FileText className="h-10 w-10 text-muted-foreground" />
+                <div className="p-8 md:p-12 text-center">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <FileText className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
                   </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-3">Aucun rapport disponible</h3>
+                  <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-3">Aucun rapport disponible</h3>
                   <p className="text-muted-foreground mb-6">Créez votre première analyse LLMO pour commencer</p>
                   <Button 
                     onClick={() => setIsDialogOpen(true)}
@@ -658,7 +720,7 @@ const Analyses = () => {
                 reports.map((report, index) => (
                   <div 
                     key={report.id}
-                    className={`group flex items-center justify-between p-6 hover:bg-muted/40 cursor-pointer transition-all duration-300 hover:shadow-sm relative overflow-hidden ${
+                    className={`group flex flex-col sm:flex-row sm:items-center justify-between p-4 md:p-6 gap-4 hover:bg-muted/40 cursor-pointer transition-all duration-300 hover:shadow-sm relative overflow-hidden ${
                       index !== reports.length - 1 ? 'border-b border-border' : ''
                     }`}
                     onClick={() => {
@@ -670,14 +732,14 @@ const Analyses = () => {
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-muted opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 bg-muted rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <FileText className="h-7 w-7 text-foreground" />
+                      <div className="w-10 h-10 sm:w-14 sm:h-14 bg-muted rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
+                        <FileText className="h-5 w-5 sm:h-7 sm:w-7 text-foreground" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-foreground text-lg group-hover:text-muted-foreground transition-colors">
+                        <h4 className="font-bold text-foreground text-base sm:text-lg group-hover:text-muted-foreground transition-colors break-all">
                           {new URL(report.url).hostname.replace('www.', '')}
                         </h4>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mt-1">
                           <span>{new Date(report.createdAt).toLocaleDateString('fr-FR')}</span>
                           {report.duration > 0 && (
                             <>
@@ -704,17 +766,17 @@ const Analyses = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      {report.metadata.score &&
+                    <div className="flex items-center gap-3 sm:gap-4 self-end sm:self-auto">
+                      {report.metadata?.score &&
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-foreground">{report.metadata.score}</div>
-                          <div className="text-sm text-muted-foreground">Score</div>
+                          <div className="text-xl sm:text-2xl font-bold text-foreground">{report.metadata.score}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground">Score</div>
                         </div>
                       }
                       <Button
                         variant="outline"
                         size="sm"
-                        className="bg-card hover:bg-muted border-border text-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-all"
+                        className="bg-card hover:bg-muted border-border text-foreground hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100 transition-all"
                         onClick={(e) => {
                           e.stopPropagation();
                           setOptimizedAnalysisUrl(report.url);
@@ -738,4 +800,5 @@ const Analyses = () => {
   );
 };
 
+export { Analyses };
 export default Analyses;

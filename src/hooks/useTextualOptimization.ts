@@ -84,7 +84,6 @@ export const useTextualOptimization = (optimizationId?: string): UseTextualOptim
       });
       
     } catch (err) {
-      console.error('❌ Erreur lors du chargement de l\'optimisation:', err);
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement de l\'optimisation');
     } finally {
       setIsLoading(false);
@@ -187,7 +186,6 @@ export const useTextualOptimization = (optimizationId?: string): UseTextualOptim
   // Charger l'optimisation spécifique si un ID est fourni
   useEffect(() => {
     if (optimizationId) {
-     //console.log('🔄 Chargement de l\'optimisation spécifique:', optimizationId);
       loadOptimization(optimizationId);
     } else {
       loadOptimizations();
@@ -197,7 +195,6 @@ export const useTextualOptimization = (optimizationId?: string): UseTextualOptim
   // Charger automatiquement la première optimisation si disponible (seulement si pas d'ID spécifique)
   useEffect(() => {
     if (!optimizationId && optimizations.length > 0 && !currentOptimization) {
-      ////console.log('🔄 Chargement automatique de la première optimisation');
       loadOptimization(optimizations[0].id?.toString() || '');
     }
   }, [optimizations, currentOptimization, optimizationId]);

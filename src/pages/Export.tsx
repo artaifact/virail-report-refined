@@ -1,6 +1,6 @@
-
 import { useState } from "react";
-import { Download, Share2, FileText, Mail, Copy, ExternalLink, Calendar } from "lucide-react";
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { Download, Share2, FileText, Mail, Copy, ExternalLink, Calendar, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useReports, useReport, getLatestReportId } from '@/hooks/useReports';
+import { generateFullReportPdf } from '@/services/reportPdfService';
 
 const Export = () => {
+  usePageTitle('Export');
   const [shareableLink, setShareableLink] = useState("");
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [emailRecipients, setEmailRecipients] = useState("");
@@ -39,11 +42,46 @@ const Export = () => {
     });
   };
 
-  const handleExportPDF = (type: string) => {
+  const { reports } = useReports();
+  const latestReportId = getLatestReportId(reports);
+  const { report: reportData } = useReport(latestReportId);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const handleExportPDF = async (type: string) => {
+    if (!reportData) {
+      toast({
+        title: "Aucun rapport disponible",
+        description: "Veuillez d'abord générer ou sélectionner un rapport dans le tableau de bord.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExportingPdf(true);
     toast({
-      title: "Export en cours",
-      description: `Génération du rapport ${type} en PDF...`,
+      title: "Génération en cours",
+      description: `Préparation du rapport ${type} en PDF...`,
     });
+
+    try {
+      await generateFullReportPdf(reportData, null, {
+        includeCitations: type === 'complet' || type === 'resume',
+        includeRecommendations: type === 'complet' || type === 'recommandations',
+        includeCompetition: type === 'complet' || type === 'competition',
+      });
+      toast({
+        title: "Rapport PDF prêt",
+        description: `Le document ${type} a été généré avec succès.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Erreur d'exportation",
+        description: err?.message || "Impossible de générer le document PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   const handleSendByEmail = () => {
@@ -64,10 +102,10 @@ const Export = () => {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-8 pt-6 bg-gradient-to-br from-blue-50 via-white to-blue-100 min-h-screen">
+    <div className="flex-1 space-y-6 p-3 pt-4 sm:p-4 md:p-6 lg:p-8 lg:pt-6 bg-gradient-to-br from-blue-50 via-white to-blue-100 min-h-screen">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Export & Partage</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Export & Partage</h2>
           <p className="text-gray-600 mt-1">Exportez et partagez vos rapports GEO</p>
         </div>
       </div>

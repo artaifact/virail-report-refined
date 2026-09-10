@@ -126,8 +126,8 @@ export default function SourcesAnalytics({ className }: SourcesAnalyticsProps) {
   return (
     <div className={`space-y-section-gap-lg font-sans ${className}`}>
       {/* Header avec onglets */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-4 flex-wrap">
           <h2 className="text-heading-lg text-meetmind-dark-gray font-bold flex items-center gap-2">
             <Globe className="w-5 h-5 text-meetmind-icon-active" />
             Sources
@@ -162,7 +162,7 @@ export default function SourcesAnalytics({ className }: SourcesAnalyticsProps) {
         <Button
           variant="outline"
           size="sm"
-          className="text-label font-medium bg-meetmind-white border-meetmind-medium-gray/30 text-meetmind-dark-gray hover:bg-meetmind-light-gray transition-colors duration-meetmind"
+          className="text-label font-medium bg-meetmind-white border-meetmind-medium-gray/30 text-meetmind-dark-gray hover:bg-meetmind-light-gray transition-colors duration-meetmind self-start sm:self-auto"
         >
           <Download className="w-4 h-4 mr-2" />
           Export

@@ -1,7 +1,9 @@
 import React from 'react';
 import { PerceptionData } from '../../types/llmo-report';
-import { Eye, MessageCircle, PenTool, AlertTriangle, Sparkles } from 'lucide-react';
+import { Eye, MessageCircle, PenTool, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { HELP } from '@/lib/help-content';
 
 interface PerceptionSectionProps {
   perceptions: PerceptionData[];
@@ -36,16 +38,19 @@ export const PerceptionSection: React.FC<PerceptionSectionProps> = ({ perception
             <Eye className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-gray-900">
-              Perception de la Marque/Produit
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-2xl font-bold text-gray-900">
+                Perception de la Marque/Produit
+              </h3>
+              <InfoTooltip {...HELP.perception} />
+            </div>
             <p className="text-gray-600 mt-1">
               Analyse de la perception par {perceptions.length} LLM{perceptions.length > 1 ? 's' : ''}
             </p>
           </div>
         </div>
         <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-          <Sparkles className="w-3 h-3 mr-1" />
+          <Eye className="w-3 h-3 mr-1" />
           {perceptions.length} Analyse{perceptions.length > 1 ? 's' : ''}
         </Badge>
       </div>
@@ -90,6 +95,7 @@ const PerceptionCard: React.FC<{ perception: PerceptionData }> = ({ perception }
             label="Ton Général"
             content={perception.generalTone}
             color="green"
+            helpContent={HELP.tonGeneral}
           />
         )}
 
@@ -99,6 +105,7 @@ const PerceptionCard: React.FC<{ perception: PerceptionData }> = ({ perception }
             label="Style d'Écriture"
             content={perception.writingStyle}
             color="purple"
+            helpContent={HELP.styleEcriture}
           />
         )}
 
@@ -108,6 +115,7 @@ const PerceptionCard: React.FC<{ perception: PerceptionData }> = ({ perception }
             label="Biais Détectés"
             content={perception.bias}
             color="red"
+            helpContent={HELP.biaisDetectes}
           />
         )}
       </div>
@@ -120,6 +128,7 @@ const PerceptionCard: React.FC<{ perception: PerceptionData }> = ({ perception }
               <Eye className="w-4 h-4 text-white" />
             </div>
             <h5 className="font-bold text-gray-900">Lisibilité et Compréhensibilité</h5>
+            <InfoTooltip {...HELP.lisibilite} />
           </div>
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-200">
             <p className="text-gray-800 leading-relaxed font-medium">
@@ -134,7 +143,7 @@ const PerceptionCard: React.FC<{ perception: PerceptionData }> = ({ perception }
         <div className="border-t-2 border-gray-200 pt-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
+              <Eye className="w-5 h-5 text-white" />
             </div>
             <h5 className="text-lg font-bold text-gray-900">Synthèse de la Perception</h5>
           </div>
@@ -159,7 +168,8 @@ const PerceptionItem: React.FC<{
   label: string;
   content: string;
   color: 'blue' | 'green' | 'purple' | 'red';
-}> = ({ icon, label, content, color }) => {
+  helpContent?: { title: string; description: string };
+}> = ({ icon, label, content, color, helpContent }) => {
   const colorClasses = {
     blue: {
       bg: 'bg-gradient-to-r from-blue-50 to-blue-100',
@@ -198,6 +208,7 @@ const PerceptionItem: React.FC<{
           </div>
         </div>
         <span className={`font-bold ${classes.text}`}>{label}</span>
+        {helpContent && <InfoTooltip {...helpContent} side="right" />}
       </div>
       <p className={`${classes.text} leading-relaxed font-medium whitespace-pre-wrap`}>
         {content}

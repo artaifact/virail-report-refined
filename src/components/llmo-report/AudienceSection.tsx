@@ -1,7 +1,9 @@
 import React from 'react';
 import { AudienceData } from '../../types/llmo-report';
-import { Users, Target, Lightbulb, UserCheck, Sparkles, TrendingUp } from 'lucide-react';
+import { Users, Target, Lightbulb, UserCheck, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { HELP } from '@/lib/help-content';
 
 interface AudienceSectionProps {
   audiences: AudienceData[];
@@ -36,9 +38,12 @@ export const AudienceSection: React.FC<AudienceSectionProps> = ({ audiences }) =
             <Users className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-2xl font-bold text-gray-900">
-              Audience Cible & Segments
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-2xl font-bold text-gray-900">
+                Audience Cible & Segments
+              </h3>
+              <InfoTooltip {...HELP.audience} />
+            </div>
             <p className="text-gray-600 mt-1">
               Analyse des segments d'audience par {audiences.length} LLM{audiences.length > 1 ? 's' : ''}
             </p>
@@ -81,6 +86,7 @@ const AudienceCard: React.FC<{ audience: AudienceData }> = ({ audience }) => {
             title="Indices Explicites"
             content={audience.explicitIndicators}
             color="blue"
+            helpContent={HELP.indicesExplicites}
           />
         )}
 
@@ -99,6 +105,7 @@ const AudienceCard: React.FC<{ audience: AudienceData }> = ({ audience }) => {
             title="Signaux Distinctifs"
             content={audience.distinctiveSignals}
             color="purple"
+            helpContent={HELP.signauxDistinctifs}
           />
         )}
 
@@ -106,7 +113,7 @@ const AudienceCard: React.FC<{ audience: AudienceData }> = ({ audience }) => {
           <div className="border-t-2 border-gray-200 pt-6 mt-8">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
+                <Target className="w-5 h-5 text-white" />
               </div>
               <h5 className="text-lg font-bold text-gray-900">
                 Description Détaillée de l'Audience
@@ -142,7 +149,8 @@ const AudienceItem: React.FC<{
   title: string;
   content: string;
   color: 'blue' | 'amber' | 'purple';
-}> = ({ icon, title, content, color }) => {
+  helpContent?: { title: string; description: string };
+}> = ({ icon, title, content, color, helpContent }) => {
   const colorClasses = {
     blue: {
       bg: 'bg-gradient-to-r from-blue-50 to-blue-100',
@@ -184,6 +192,7 @@ const AudienceItem: React.FC<{
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
             <h5 className={`font-bold ${classes.text} text-lg`}>{title}</h5>
+            {helpContent && <InfoTooltip {...helpContent} side="right" />}
             {isEnglish && (
               <Badge variant="outline" className="border-blue-200 text-blue-700 text-xs">
                 EN
