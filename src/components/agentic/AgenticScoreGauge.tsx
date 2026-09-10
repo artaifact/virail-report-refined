@@ -13,6 +13,9 @@ interface AgenticScoreGaugeProps {
 export const AgenticScoreGauge: React.FC<AgenticScoreGaugeProps> = ({
   score,
   targetUrl,
+  auditId,
+  savedInDb,
+  createdAt,
 }) => {
   const circumference = 2 * Math.PI * 68; // r = 68
   const offset = circumference - (Math.min(100, Math.max(0, score)) / 100) * circumference;
@@ -95,8 +98,17 @@ export const AgenticScoreGauge: React.FC<AgenticScoreGaugeProps> = ({
             GET v1/agentic/latest
           </span>
           {createdAt && (
-            <span className="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700">
-              {new Date(createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} à {new Date(createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            <span className="text-[11px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700">
+              {(() => {
+                try {
+                  const d = new Date(createdAt);
+                  return !isNaN(d.getTime())
+                    ? `${d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Audit récent';
+                } catch {
+                  return 'Audit récent';
+                }
+              })()}
             </span>
           )}
           {auditId && (

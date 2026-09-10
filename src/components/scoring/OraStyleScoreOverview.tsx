@@ -87,9 +87,6 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
 
   const gradeInfo = getGradeInfo(scoreGlobal);
 
-  // Approximate ranking percentile
-  const rankingNumber = Math.max(120, Math.round(88131 * (1 - scoreGlobal / 100) * 0.45));
-
   // Diagnostic summary sentence
   const diagnosticText = scoreGlobal >= 80
     ? `${domainName} offre une excellente découvrabilité et compréhension machine. Les agents IA accèdent aisément à vos données structurées et à vos contenus.`
@@ -258,7 +255,7 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
             <div className="space-y-3">
               {/* Massive Score Number */}
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl sm:text-6xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-mono">
+                <span className="text-5xl sm:text-6xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
                   {scoreGlobal}
                 </span>
                 <span className="text-xl sm:text-2xl text-slate-400 font-normal">
@@ -266,17 +263,11 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
                 </span>
               </div>
 
-              {/* Grade + Rank Badge */}
+              {/* Grade Badge */}
               <div className="flex flex-wrap items-center gap-2.5 text-xs">
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-semibold text-xs border ${gradeInfo.bg}`}>
                   <span className={`w-2 h-2 rounded-full ${gradeInfo.dotColor}`} />
                   {gradeInfo.letter} {gradeInfo.label}
-                </span>
-
-                <span className="text-slate-300 dark:text-slate-700">•</span>
-
-                <span className="font-mono text-slate-500 dark:text-slate-400 text-xs">
-                  #{rankingNumber.toLocaleString('fr-FR')} sur 88 131 analysés
                 </span>
               </div>
 
@@ -365,7 +356,7 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
                   <span className="text-slate-500 dark:text-slate-400 truncate font-medium">
                     {cat.label}
                   </span>
-                  <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
                     {cat.score}<span className="text-[10px] text-slate-400 font-normal">/100</span>
                   </span>
                 </div>
@@ -417,7 +408,7 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
             </div>
 
             {/* Quick Summary Pill */}
-            <div className="text-[11px] text-slate-500 font-mono">
+            <div className="text-[11px] text-slate-500 font-medium">
               {displayedCriteria.filter(c => c.score >= 80).length} validés / {displayedCriteria.length} critères
             </div>
           </div>
@@ -446,7 +437,7 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
               >
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-semibold text-slate-400">
+                    <span className="text-xs font-semibold text-slate-400">
                       {item.num}.
                     </span>
                     <span className="text-xs sm:text-[13.5px] font-semibold text-slate-900 dark:text-slate-100">
@@ -459,7 +450,7 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
                     {item.tags.map((tag) => (
                       <span
                         key={tag.label}
-                        className={`text-[9.5px] font-mono px-1.5 py-0.5 rounded border uppercase tracking-wider font-semibold ${
+                        className={`text-[10px] font-medium px-2 py-0.5 rounded border uppercase tracking-wide ${
                           tag.ok
                             ? 'bg-slate-50 text-slate-700 border-slate-200/80 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700'
                             : 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
@@ -473,7 +464,7 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
 
                 {/* Score & Watch/Details Link */}
                 <div className="flex items-center justify-between sm:justify-end gap-3 pl-4 sm:pl-0">
-                  <span className={`font-mono font-bold text-xs sm:text-sm ${scoreColor}`}>
+                  <span className={`font-bold text-xs sm:text-sm ${scoreColor}`}>
                     {item.score}
                     <span className="text-[11px] text-slate-400 font-normal">/100</span>
                   </span>
@@ -553,11 +544,11 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
               <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                 Schémas Structurés
               </span>
-              <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 {coSchemasAdded.length}
               </span>
             </div>
-            <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+            <span className="text-xs text-slate-600 dark:text-slate-400">
               {coSchemasAdded.length > 0 ? coSchemasAdded.join(' | ') : 'WebPage standard'}
             </span>
           </div>
@@ -567,7 +558,7 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
               <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                 Enrichissements GEO
               </span>
-              <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 {coEnrichments.length}
               </span>
             </div>

@@ -58,6 +58,8 @@ function generateDeterministicFallback(url: string, brandName?: string): Agentic
     status: 'success',
     target_url: url,
     score: 42,
+    audit_id: 101,
+    created_at: new Date().toISOString(),
     pillars: {
       crawl_doc: {
         score: 12,
