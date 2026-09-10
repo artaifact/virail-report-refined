@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, AlertTriangle, XCircle, Info } from "lucide-react";
 import { useState } from "react";
 import type { MappedReportData } from "../../types/llmo-report";
 
@@ -14,10 +14,10 @@ const ReportDetails = ({ mappedData }: ReportDetailsProps) => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "success": return "✅";
-      case "warning": return "⚠️";
-      case "error": return "❌";
-      default: return "ℹ️";
+      case "success": return <CheckCircle2 className="w-4 h-4 text-slate-700 inline" />;
+      case "warning": return <AlertTriangle className="w-4 h-4 text-slate-500 inline" />;
+      case "error": return <XCircle className="w-4 h-4 text-slate-400 inline" />;
+      default: return <Info className="w-4 h-4 text-slate-400 inline" />;
     }
   };
 

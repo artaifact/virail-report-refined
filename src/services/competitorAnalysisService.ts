@@ -629,11 +629,11 @@ export const getScoreBackgroundColor = (score: number): string => {
 export const formatMarketPosition = (rank: number, total: number): string => {
   const percentage = (rank / total) * 100;
 
-  if (percentage <= 20) return '🥇 Leader';
-  if (percentage <= 40) return '📈 Acteur solide';
-  if (percentage <= 60) return '⚡ En développement';
-  if (percentage <= 80) return '🔄 À améliorer';
-  return '🚀 Potentiel inexploité';
+  if (percentage <= 20) return 'Leader';
+  if (percentage <= 40) return 'Acteur solide';
+  if (percentage <= 60) return 'En développement';
+  if (percentage <= 80) return 'À améliorer';
+  return 'Potentiel inexploité';
 };
 
 // ============================================

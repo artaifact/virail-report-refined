@@ -14,6 +14,9 @@ import {
   Bot,
   Play,
   Sparkles,
+  Scale,
+  Plug,
+  Zap,
 } from 'lucide-react';
 import {
   runAgenticScan,
@@ -39,11 +42,11 @@ const PRESETS = [
 ];
 
 const CURATED_INTENTS = [
-  { id: 'discover', label: 'Découverte & Positionnement', icon: '🔍', desc: "L'agent analyse l'offre principale et la clarté du positionnement." },
-  { id: 'compare', label: 'Comparaison Concurrentielle', icon: '⚖️', desc: "L'agent compare les fonctionnalités clés et la proposition vs alternatives." },
-  { id: 'pricing', label: 'Grille Tarifaire & Transparence', icon: '💰', desc: "L'agent tente d'extraire la grille de prix, quotas et conditions d'usage." },
-  { id: 'integrate', label: 'Documentation & API / MCP', icon: '🔌', desc: "L'agent recherche les points de terminaison machine (/llms.txt, OpenAPI, MCP)." },
-  { id: 'action', label: 'Parcours de Conversion M2M', icon: '⚡', desc: "L'agent simule une souscription ou une transaction programmatique." },
+  { id: 'discover', label: 'Découverte & Positionnement', icon: Search, desc: "L'agent analyse l'offre principale et la clarté du positionnement." },
+  { id: 'compare', label: 'Comparaison Concurrentielle', icon: Scale, desc: "L'agent compare les fonctionnalités clés et la proposition vs alternatives." },
+  { id: 'pricing', label: 'Grille Tarifaire & Transparence', icon: CreditCard, desc: "L'agent tente d'extraire la grille de prix, quotas et conditions d'usage." },
+  { id: 'integrate', label: 'Documentation & API / MCP', icon: Plug, desc: "L'agent recherche les points de terminaison machine (/llms.txt, OpenAPI, MCP)." },
+  { id: 'action', label: 'Parcours de Conversion M2M', icon: Zap, desc: "L'agent simule une souscription ou une transaction programmatique." },
 ];
 
 export default function AgenticCockpit() {
@@ -315,14 +318,14 @@ export default function AgenticCockpit() {
                       disabled={journeyLoading}
                       className={`p-3 rounded-xl text-left border transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-[#1A3AFF] bg-blue-50/50 dark:bg-blue-950/30 shadow-xs ring-1 ring-[#1A3AFF]/30'
-                          : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
+                          ? 'border-primary bg-muted/60 shadow-xs ring-1 ring-primary/20'
+                          : 'border-border bg-card hover:border-slate-300'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-1 mb-1">
-                        <span className="text-base">{intent.icon}</span>
+                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <intent.icon className="w-4 h-4 text-muted-foreground" />
                         {isSelected && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#1A3AFF] text-white">
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-medium uppercase tracking-wider bg-primary text-primary-foreground">
                             Actif
                           </span>
                         )}

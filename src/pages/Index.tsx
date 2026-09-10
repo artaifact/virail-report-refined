@@ -1606,8 +1606,9 @@ function DynamicStepCard({
                   }}
                 />
                 {stepStatus.notes && (
-                  <div style={{ marginTop: '6px', fontSize: '14px', color: '#64748B', display: 'flex', justifyContent: 'flex-end' }}>
-                    <span>✓ Sauvegardé</span>
+                  <div style={{ marginTop: '6px', fontSize: '14px', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                    <Check className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Sauvegardé</span>
                   </div>
                 )}
               </div>
@@ -2948,19 +2949,20 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
 
                       {cited.length > 0 && (
                         <div>
-                          <div style={{ fontSize: '12px', fontWeight: 600, color: '#059669', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            ✓ Cité ({cited.length})
+                          <div className="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-slate-600" />
+                            <span>Cité ({cited.length})</span>
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {cited.slice(0, 5).map((r: any, i: number) => (
-                              <div key={i} style={{ padding: '10px 12px', background: '#F0FDF4', borderRadius: '8px', border: '1px solid #BBF7D0' }}>
+                              <div key={i} style={{ padding: '10px 12px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                                 {r.query && (
-                                  <div style={{ fontSize: '13px', fontWeight: 500, color: '#166534', marginBottom: r.response_excerpt ? '6px' : 0 }}>
+                                  <div style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', marginBottom: r.response_excerpt ? '6px' : 0 }}>
                                     « {r.query} »
                                   </div>
                                 )}
                                 {r.response_excerpt && (
-                                  <div style={{ fontSize: '12px', color: '#4B5563', lineHeight: '1.5', borderTop: '1px solid #BBF7D0', paddingTop: '6px' }}>
+                                  <div style={{ fontSize: '12px', color: '#4B5563', lineHeight: '1.5', borderTop: '1px solid #E2E8F0', paddingTop: '6px' }}>
                                     {r.response_excerpt.length > 200 ? r.response_excerpt.substring(0, 200) + '…' : r.response_excerpt}
                                   </div>
                                 )}
@@ -2977,8 +2979,9 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
 
                       {notCited.length > 0 && (
                         <div>
-                          <div style={{ fontSize: '12px', fontWeight: 600, color: '#9CA3AF', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            ✗ Non cité ({notCited.length})
+                          <div className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                            <XCircle className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Non cité ({notCited.length})</span>
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             {notCited.slice(0, 3).map((r: any, i: number) => (

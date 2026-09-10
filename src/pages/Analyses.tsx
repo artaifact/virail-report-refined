@@ -122,7 +122,7 @@ const Analyses = () => {
 
         if (reportId) {
           toast({
-            title: "✅ Analyse lancée avec succès",
+            title: "Analyse lancée avec succès",
             description: (
               <div className="space-y-2 text-sm leading-relaxed">
                 <p>
@@ -130,12 +130,11 @@ const Analyses = () => {
                 </p>
                 <div className="space-y-1 text-xs">
                   <div className="flex items-center gap-2">
-                    <span>⏱️</span>
-                    <span>Durée estimée : <strong>5 à 15 minutes</strong></span>
+                    <span className="text-muted-foreground">Durée estimée :</span>
+                    <strong>5 à 15 minutes</strong>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>🔄</span>
-                    <span>L'analyse est <strong>en cours de traitement</strong>. Actualisez la page après ce délai pour voir les résultats.</span>
+                    <span className="text-muted-foreground">L'analyse est en cours de traitement. Actualisez la page après ce délai pour voir les résultats.</span>
                   </div>
                 </div>
               </div>
@@ -148,7 +147,7 @@ const Analyses = () => {
         } else {
           // Si reportId est null mais pas d'erreur, l'analyse peut être en cours
           toast({
-            title: "✅ Analyse en cours",
+            title: "Analyse en cours",
             description: (
               <div className="space-y-2 text-sm leading-relaxed">
                 <p>
@@ -156,12 +155,11 @@ const Analyses = () => {
                 </p>
                 <div className="space-y-1 text-xs">
                   <div className="flex items-center gap-2">
-                    <span>⏱️</span>
-                    <span>Durée estimée : <strong>5 à 15 minutes</strong></span>
+                    <span className="text-muted-foreground">Durée estimée :</span>
+                    <strong>5 à 15 minutes</strong>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span>🔄</span>
-                    <span>Actualisez la page après ce délai pour voir les résultats.</span>
+                    <span className="text-muted-foreground">Actualisez la page après ce délai pour voir les résultats.</span>
                   </div>
                 </div>
               </div>

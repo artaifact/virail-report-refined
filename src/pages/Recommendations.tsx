@@ -21,8 +21,9 @@ const Recommendations = () => {
                 <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
                   <Lightbulb className="w-6 h-6 text-white" />
                 </div>
-                <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
-                  💡 IA Recommendations
+                <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Recommandations IA</span>
                 </Badge>
               </div>
               <h1 className="text-4xl font-bold text-white mb-3">

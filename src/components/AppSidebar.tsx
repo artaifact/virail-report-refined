@@ -207,20 +207,9 @@ export function AppSidebar() {
                     <SidebarMenuButton 
                       onClick={() => setIsNewAnalysisModalOpen(true)}
                       tooltip="Nouvelle Analyse"
-                      className="font-medium"
-                      style={{ 
-                        color: '#3B82F6'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = '#3B82F6';
-                        e.currentTarget.style.backgroundColor = 'rgba(239, 246, 255, 0.5)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = '#3B82F6';
-                        e.currentTarget.style.backgroundColor = '';
-                      }}
+                      className="font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100/80"
                     >
-                      <PlusCircle className="size-4" />
+                      <PlusCircle className="size-4 text-slate-500" />
                       <span>Nouvelle Analyse</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -234,7 +223,7 @@ export function AppSidebar() {
                         isActive={isActive}
                         tooltip={item.title}
                         className={cn(
-                          isActive && "border-l-2 border-primary rounded-l-none font-semibold"
+                          isActive && "bg-slate-100 text-slate-900 font-semibold"
                         )}
                       >
                         <Link to={explicitReportId ? `${item.url}?reportId=${explicitReportId}` : item.url} onClick={handleNavigation}>

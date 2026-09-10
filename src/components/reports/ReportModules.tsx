@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronDown, ChevronRight, CheckCircle, Star, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, CheckCircle, Star, AlertCircle, Bot, Users, BarChart3, Sparkles } from "lucide-react";
 import { useState } from "react";
 import type { MappedReportData } from "../../types/llmo-report";
 
@@ -17,7 +17,7 @@ const ReportModules = ({ mappedData }: ReportModulesProps) => {
     {
       id: "perception",
       title: "Perception IA",
-      icon: "🎭",
+      icon: <Bot className="w-5 h-5 text-slate-700" />,
       status: "completed",
       color: "from-blue-500 to-blue-600",
       hasData: mappedData.perceptions.length > 0,
@@ -47,7 +47,7 @@ const ReportModules = ({ mappedData }: ReportModulesProps) => {
     {
       id: "audience",
       title: "Audience Cible", 
-      icon: "👥",
+      icon: <Users className="w-5 h-5 text-slate-700" />,
       status: "completed",
       color: "from-green-500 to-green-600",
       hasData: mappedData.audiences.length > 0,
@@ -73,7 +73,7 @@ const ReportModules = ({ mappedData }: ReportModulesProps) => {
     {
       id: "recommendation",
       title: "Probabilité Recommandation",
-      icon: "📊", 
+      icon: <BarChart3 className="w-5 h-5 text-slate-700" />, 
       status: "completed",
       score: mappedData.recommendations.length > 0 ? mappedData.recommendations[0].score : 0,
       color: "from-purple-500 to-purple-600",
@@ -101,7 +101,7 @@ const ReportModules = ({ mappedData }: ReportModulesProps) => {
     {
       id: "value-prop",
       title: "Proposition de Valeur",
-      icon: "💎",
+      icon: <Sparkles className="w-5 h-5 text-slate-700" />,
       status: "completed",
       color: "from-orange-500 to-orange-600",
       hasData: mappedData.valueProps.length > 0,

@@ -26,13 +26,13 @@ export const ActionabilityScoreModal: React.FC<ActionabilityScoreModalProps> = (
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-4 sm:p-6 bg-slate-50/50">
+      <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-4 sm:p-6 bg-card">
         <DialogHeader className="mb-2">
-          <DialogTitle className="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
             <span>Détail du Score d'Actionnabilité Unifié (3 Niveaux)</span>
           </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500">
-            Pondération canonique Viraill 2026 : Être trouvé (40%) ➔ Être compris (30%) ➔ Être actionnable (30%).
+          <DialogDescription className="text-xs text-muted-foreground">
+            Pondération canonique Viraill 2026 : Être trouvé (40%) • Être compris (30%) • Être actionnable (30%).
           </DialogDescription>
         </DialogHeader>
 
