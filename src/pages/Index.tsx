@@ -215,6 +215,7 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
   const [isScoreAgenticHovered, setIsScoreAgenticHovered] = useState(false);
   const [hoveredModel, setHoveredModel] = useState<string | null>(null);
   const [isScoreGeoHovered, setIsScoreGeoHovered] = useState(false);
+  const [isWheelHovered, setIsWheelHovered] = useState(false);
   const getTotalCitations = () => {
     if (reportData?.analyse_citation?.total_citations !== undefined) {
       return reportData.analyse_citation.total_citations;
@@ -325,24 +326,40 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
     <div className="citations-chart">
       {/* Conteneur des 3 graphiques côte à côte de même dimension et arrondi */}
       <div className="flex flex-col xl:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-10 w-full mb-3">
-        {/* 1. Graphique circulaire : Citations totales avec pourcentages masqués par défaut (révélés au survol/scroll) */}
-        <div className="flex items-center justify-center gap-2 sm:gap-3 shrink-0">
-          {/* Liste verticale des modèles à gauche */}
+        {/* 1. Graphique circulaire : Citations totales (nom et pourcentage révélés uniquement sur la roue) */}
+        <div 
+          className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto group"
+          onMouseEnter={() => {
+            setIsWheelHovered(true);
+            if (!hoveredModel && activeModels.length > 0) {
+              setHoveredModel(activeModels[0].name);
+            }
+          }}
+          onMouseLeave={() => {
+            setIsWheelHovered(false);
+            setHoveredModel(null);
+          }}
+          onWheel={handleCitationsWheel}
+        >
+          {/* Menu flottant des modèles : visible UNIQUEMENT quand on va sur la roue */}
           {modelColors.length > 0 && (
             <div 
-              className="flex flex-col gap-0.5 shrink-0 pr-2.5 border-r border-slate-200/80 my-auto"
-              onWheel={handleCitationsWheel}
+              className={`hidden lg:flex flex-col gap-0.5 absolute right-[calc(100%+14px)] top-1/2 -translate-y-1/2 z-30 p-2 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-xl min-w-[135px] transition-all duration-200 ${
+                isWheelHovered ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
+              }`}
             >
+              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1 pb-1 mb-0.5 border-b border-slate-100 dark:border-slate-800">
+                Modèles IA
+              </div>
               {modelColors.map((m) => {
                 const isThisHovered = hoveredModel === m.name;
                 return (
                   <button
                     key={m.name}
                     type="button"
-                    className="flex items-center justify-between gap-2.5 text-xs transition-opacity hover:opacity-100 py-0.5 px-1.5 rounded hover:bg-slate-50 text-left cursor-pointer"
-                    style={{ opacity: hoveredModel && !isThisHovered ? 0.35 : 1 }}
+                    className="flex items-center justify-between gap-2 text-xs transition-colors py-0.5 px-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left cursor-pointer"
+                    style={{ opacity: hoveredModel && !isThisHovered ? 0.4 : 1 }}
                     onMouseEnter={() => setHoveredModel(m.name)}
-                    onMouseLeave={() => setHoveredModel(null)}
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
                       {getModelLogo(m.name) ? (
@@ -354,12 +371,9 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
                       ) : (
                         <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
                       )}
-                      <span className="text-slate-600 font-medium text-[11px] truncate max-w-[80px]">{m.name}</span>
+                      <span className="text-slate-700 dark:text-slate-200 font-medium text-[11px] truncate max-w-[75px]">{m.name}</span>
                     </div>
-                    {/* Pourcentage masqué par défaut, révélé uniquement au survol/scroll */}
-                    <span className={`text-[11px] shrink-0 ml-1 font-semibold transition-opacity duration-200 ${
-                      isThisHovered ? 'opacity-100 text-slate-900' : 'opacity-0 text-slate-400'
-                    }`}>
+                    <span className="text-[11px] shrink-0 ml-1 font-semibold text-slate-900 dark:text-slate-100">
                       {m.pct}%
                     </span>
                   </button>
@@ -369,14 +383,9 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
           )}
 
           {/* Cercle SVG Citations totales */}
-          <div 
-            className="relative w-[180px] sm:w-[200px] shrink-0"
-            onWheel={handleCitationsWheel}
-          >
           <svg 
             viewBox="0 0 280 280" 
-            className="w-full h-auto mx-auto"
-            onMouseLeave={() => setHoveredModel(null)}
+            className="w-full h-auto mx-auto cursor-pointer"
           >
             {/* Background circle - même épaisseur 32 que les segments */}
             <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
@@ -431,7 +440,6 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
               </>
             )}
           </svg>
-        </div>
         </div>
 
         {/* 2. Graphique circulaire : Score GEO (même dimension et même arrondi exact) */}

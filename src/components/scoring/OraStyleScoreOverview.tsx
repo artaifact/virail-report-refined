@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  RotateCcw,
-  Wand2,
-  FileText,
   ChevronDown,
   ChevronUp,
   ArrowRight,
@@ -272,48 +269,9 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
               </div>
 
               {/* Executive Diagnostic Sentence */}
-              <p className="text-xs sm:text-[13.5px] text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed pt-1 font-normal">
+              <p className="text-xs sm:text-[13.5px] text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed pt-1 font-normal">
                 {diagnosticText}
               </p>
-            </div>
-
-            {/* Action Links on the Right (ora.ai style) */}
-            <div className="flex flex-col items-start md:items-end gap-2 shrink-0 pt-1">
-              {onRescan && (
-                <button
-                  type="button"
-                  onClick={onRescan}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer group"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white group-hover:rotate-45 transition-transform" />
-                  <span>Re-scanner l'URL</span>
-                  <span className="text-slate-400 group-hover:translate-x-0.5 transition-transform">→</span>
-                </button>
-              )}
-
-              {onNavigateTab && (
-                <button
-                  type="button"
-                  onClick={() => onNavigateTab('schemas')}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer group"
-                >
-                  <Wand2 className="w-3.5 h-3.5 text-primary group-hover:rotate-12 transition-transform" />
-                  <span>Corriger avec l'IA</span>
-                  <span className="text-primary group-hover:translate-x-0.5 transition-transform">→</span>
-                </button>
-              )}
-
-              {onOpenReport && (
-                <button
-                  type="button"
-                  onClick={onOpenReport}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer group"
-                >
-                  <FileText className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white" />
-                  <span>Rapport de synthèse</span>
-                  <span className="text-slate-400 group-hover:translate-x-0.5 transition-transform">→</span>
-                </button>
-              )}
             </div>
           </div>
 
