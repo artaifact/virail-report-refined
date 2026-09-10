@@ -318,40 +318,40 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
 
   return (
     <div className="citations-chart">
-      {/* Bannière d'Actionnabilité Unifiée en 3 Niveaux */}
-      <div className="w-full mb-4 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white border border-slate-700/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+      {/* Bannière d'Actionnabilité Unifiée en 3 Niveaux - Style Thème Viraill */}
+      <div className="w-full mb-4 p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3.5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center font-bold text-base text-white border border-white/20 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center font-bold text-base text-indigo-700 shrink-0">
             {unified?.grade || 'B'}
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs sm:text-sm font-bold tracking-tight">
+              <span className="text-xs sm:text-sm font-bold tracking-tight text-slate-900">
                 Score d'Actionnabilité Unifié : {unified?.overallScore ?? (unified as any)?.score ?? 50}/100
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-500/40">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/70">
                 Grade {unified?.grade || 'B'}
               </span>
             </div>
-            <p className="text-[11px] text-slate-300 mt-0.5">
+            <p className="text-[11px] text-slate-500 mt-0.5">
               Hiérarchie en 3 niveaux : Cité (40%) ➔ Compris (30%) ➔ Actionnable (30%)
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap text-[11px]">
-          <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-200">
-            <strong className="text-emerald-400 font-semibold">Niv. 1 Cité</strong> : {unified?.levels?.found_and_cited?.score ?? normalizedGeoScore ?? 50}/100
+          <span className="px-2.5 py-1 rounded-lg bg-emerald-50/70 border border-emerald-200/60 text-slate-700">
+            <strong className="text-emerald-700 font-semibold">Niv. 1 Cité</strong> : {unified?.levels?.found_and_cited?.score ?? normalizedGeoScore ?? 50}/100
           </span>
-          <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-200">
-            <strong className="text-indigo-400 font-semibold">Niv. 2 Compris</strong> : {unified?.levels?.understood_and_preferred?.score ?? 60}/100
+          <span className="px-2.5 py-1 rounded-lg bg-indigo-50/70 border border-indigo-200/60 text-slate-700">
+            <strong className="text-indigo-700 font-semibold">Niv. 2 Compris</strong> : {unified?.levels?.understood_and_preferred?.score ?? 60}/100
           </span>
-          <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-200">
-            <strong className="text-rose-400 font-semibold">Niv. 3 Actionnable</strong> : {unified?.levels?.actionable_and_transacting?.score ?? normalizedAgenticScore ?? 50}/100
+          <span className="px-2.5 py-1 rounded-lg bg-rose-50/70 border border-rose-200/60 text-slate-700">
+            <strong className="text-rose-700 font-semibold">Niv. 3 Actionnable</strong> : {unified?.levels?.actionable_and_transacting?.score ?? normalizedAgenticScore ?? 50}/100
           </span>
           <Link
             to="/methodologie"
-            className="text-[11px] font-medium text-indigo-300 hover:text-white underline ml-1 transition-colors"
+            className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 underline ml-1 transition-colors"
           >
             Méthodologie 2026.1 →
           </Link>

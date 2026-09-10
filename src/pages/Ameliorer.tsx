@@ -1482,22 +1482,23 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                     flexWrap: 'wrap',
                     gap: '12px',
                     padding: '14px 18px',
-                    background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+                    background: '#FFFFFF',
+                    border: '1px solid #E2E8F0',
                     borderRadius: '12px',
-                    color: '#F8FAFC',
-                    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.08)'
+                    color: '#0F172A',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38BDF8' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1A3AFF' }}>
                         <FileDiff size={20} />
                       </div>
                       <div>
-                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span>Export Développeur & Intégration CI/CD</span>
-                          <span style={{ fontSize: '10px', padding: '1.5px 6px', borderRadius: '4px', background: '#38BDF8', color: '#0F172A', fontWeight: 700 }}>.PATCH</span>
+                          <span style={{ fontSize: '10px', padding: '1.5px 6px', borderRadius: '4px', background: '#EEF2FF', color: '#1A3AFF', fontWeight: 700, border: '1px solid #C7D2FE' }}>.PATCH</span>
                         </div>
-                        <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>
-                          Appliquez instantanément toutes les modifications avec <code style={{ color: '#38BDF8', fontFamily: 'monospace' }}>git apply</code> ou ouvrez une Pull Request.
+                        <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+                          Appliquez instantanément toutes les modifications avec <code style={{ color: '#1A3AFF', fontFamily: 'monospace', background: '#F1F5F9', padding: '1px 4px', borderRadius: '4px' }}>git apply</code> ou ouvrez une Pull Request.
                         </div>
                       </div>
                     </div>
@@ -1512,9 +1513,9 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                           gap: '6px',
                           padding: '7px 13px',
                           borderRadius: '8px',
-                          border: '1px solid rgba(255,255,255,0.2)',
-                          background: copied === 'pr_payload' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.08)',
-                          color: copied === 'pr_payload' ? '#4ADE80' : '#FFFFFF',
+                          border: '1px solid #CBD5E1',
+                          background: copied === 'pr_payload' ? '#F0FDF4' : '#FFFFFF',
+                          color: copied === 'pr_payload' ? '#16A34A' : '#334155',
                           fontSize: '12px',
                           fontWeight: 500,
                           cursor: 'pointer',
@@ -1540,7 +1541,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                           fontSize: '12px',
                           fontWeight: 600,
                           cursor: 'pointer',
-                          boxShadow: '0 2px 8px rgba(26, 58, 255, 0.3)',
+                          boxShadow: '0 2px 6px rgba(26, 58, 255, 0.2)',
                           transition: 'all 0.2s ease',
                         }}
                       >

@@ -189,68 +189,68 @@ export const CausalImpactTimeline: React.FC<CausalImpactTimelineProps> = ({
       </div>
 
       {/* Causal Lift Analysis Card */}
-      <div className="p-4 sm:p-5 rounded-xl bg-slate-950 text-slate-100 border border-slate-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
           <div>
-            <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Analyse d'Impact • Fenêtre de {analysis.observationDays} jours
             </div>
-            <div className="text-sm font-bold text-white mt-0.5">
+            <div className="text-sm font-bold text-slate-900 mt-0.5">
               {analysis.optimization.title}
             </div>
           </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <Sparkles size={12} />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <Sparkles size={12} className="text-emerald-600" />
             <span>Impact Positif Avéré</span>
           </div>
         </div>
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-            <div className="text-[11px] text-slate-400">Gain de Citations</div>
-            <div className="text-xl font-bold text-emerald-400 mt-1">
+          <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+            <div className="text-[11px] text-slate-500 font-medium">Gain de Citations</div>
+            <div className="text-xl font-bold text-emerald-600 mt-1">
               +{analysis.deltas.citationsLift}
             </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">
+            <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
               {analysis.before.totalCitations} ➔ {analysis.after.totalCitations} mentions
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-            <div className="text-[11px] text-slate-400">Part de Voix (SoV)</div>
-            <div className="text-xl font-bold text-indigo-400 mt-1">
+          <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+            <div className="text-[11px] text-slate-500 font-medium">Part de Voix (SoV)</div>
+            <div className="text-xl font-bold text-indigo-600 mt-1">
               +{analysis.deltas.shareOfVoiceLiftPct}%
             </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">
+            <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
               {analysis.before.shareOfVoicePct}% ➔ {analysis.after.shareOfVoicePct}%
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-            <div className="text-[11px] text-slate-400">Succès Parcours Agent</div>
-            <div className="text-xl font-bold text-blue-400 mt-1">
+          <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+            <div className="text-[11px] text-slate-500 font-medium">Succès Parcours Agent</div>
+            <div className="text-xl font-bold text-blue-600 mt-1">
               +{analysis.deltas.journeyLiftPct}%
             </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">
+            <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
               {analysis.before.journeySuccessRatePct}% ➔ {analysis.after.journeySuccessRatePct}%
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-            <div className="text-[11px] text-slate-400">Modèles Référents</div>
-            <div className="text-xl font-bold text-purple-400 mt-1">
+          <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+            <div className="text-[11px] text-slate-500 font-medium">Modèles Référents</div>
+            <div className="text-xl font-bold text-purple-600 mt-1">
               +{analysis.after.modelsCitingCount - analysis.before.modelsCitingCount}
             </div>
-            <div className="text-[10px] text-slate-500 mt-0.5">
+            <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
               {analysis.after.modelsCitingCount} moteurs actifs
             </div>
           </div>
         </div>
 
         {/* Narrative Explanation */}
-        <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 text-xs text-slate-300 leading-relaxed">
-          <strong className="text-white font-semibold">Attribution causale Viraill : </strong>
+        <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-100 text-xs text-slate-700 leading-relaxed">
+          <strong className="text-indigo-900 font-semibold">Attribution causale Viraill : </strong>
           {analysis.narrativeExplanation}
         </div>
       </div>
