@@ -7,6 +7,7 @@ on:
 
 jobs:
   build:
+    name: Build Production
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,14 +20,13 @@ jobs:
           cache: 'npm'
 
       - name: Install deps
-        run: npm install --no-audit --no-fund
+        run: npm ci || npm install --no-audit --no-fund
 
-      - name: Run working tests
-        run: npm run test -- --testPathPatterns="jest-setup.test.ts|react-testing.test.tsx|button.test.tsx|AppSidebar.simple.test.tsx|simple.test.ts" --passWithNoTests
-        continue-on-error: true
+      - name: Run type check
+        run: npm run type-check
 
-      - name: Lint (temporarily skipped due to ESLint rule crash)
-        run: echo "Skipping lint in CI for now"
+      - name: Run unit tests
+        run: npm run test:ci
 
       - name: Build
         run: npm run build
@@ -36,11 +36,13 @@ jobs:
         with:
           name: dist
           path: dist
+          retention-days: 7
 
   deploy:
+    name: Deploy to Server
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Download dist artifact
         uses: actions/download-artifact@v4
