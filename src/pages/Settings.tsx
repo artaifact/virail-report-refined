@@ -7,7 +7,7 @@ import { AuthService } from "@/services/authService";
 import { SessionList } from "@/components/SessionList";
 import {
   Settings as SettingsIcon,
-  Sparkles,
+  ArrowUpRight,
   ChevronRight,
   CreditCard,
   Download,
@@ -527,7 +527,7 @@ const Settings = () => {
                     Gérer sur Stripe
                   </Button>
                   <Button onClick={() => navigate("/pricing")} size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    <Sparkles className="h-4 w-4 mr-2" />
+                    <ArrowUpRight className="h-4 w-4 mr-2" />
                     Améliorer
                   </Button>
                 </div>
@@ -539,7 +539,7 @@ const Settings = () => {
                 </div>
                 <p className="text-gray-600 mb-4">Aucun abonnement actif</p>
                 <Button onClick={() => navigate("/pricing")} className="bg-blue-600 hover:bg-blue-700">
-                  <Sparkles className="h-4 w-4 mr-2" />
+                  <ArrowUpRight className="h-4 w-4 mr-2" />
                   Découvrir nos offres
                 </Button>
               </div>

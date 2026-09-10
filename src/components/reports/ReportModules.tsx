@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronDown, ChevronRight, CheckCircle, Star, AlertCircle, Eye, Users, BarChart3, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronRight, CheckCircle, Star, AlertCircle, Eye, Users, BarChart3, Target } from "lucide-react";
 import { useState } from "react";
 import type { MappedReportData } from "../../types/llmo-report";
 
@@ -101,7 +101,7 @@ const ReportModules = ({ mappedData }: ReportModulesProps) => {
     {
       id: "value-prop",
       title: "Proposition de Valeur",
-      icon: <Sparkles className="w-5 h-5 text-slate-700" />,
+      icon: <Target className="w-5 h-5 text-slate-700" />,
       status: "completed",
       color: "from-orange-500 to-orange-600",
       hasData: mappedData.valueProps.length > 0,

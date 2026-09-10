@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import {
   Search,
-  Sparkles,
   ShieldCheck,
   ArrowRight,
   CheckCircle2,
@@ -21,11 +20,13 @@ import { actionabilityEngine } from '@/services/actionability/ActionabilityEngin
 import { UnifiedActionabilityScore } from '@/types/scoring';
 import { AgenticBadge } from '@/components/ui/AgenticBadge';
 import { normalizeDomain } from '@/utils/entityNormalizer';
+import { MethodologyModal } from '@/components/scoring/MethodologyModal';
 
 export const Snapshot: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const urlParam = searchParams.get('url') || '';
+  const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
 
   const [inputUrl, setInputUrl] = useState(urlParam);
   const [loading, setLoading] = useState(false);
@@ -94,9 +95,13 @@ export const Snapshot: React.FC = () => {
           </Link>
 
           <div className="flex items-center gap-4">
-            <Link to="/methodologie" className="text-xs text-slate-400 hover:text-slate-200 transition-colors">
+            <button
+              type="button"
+              onClick={() => setIsMethodologyOpen(true)}
+              className="text-xs text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+            >
               Méthodologie
-            </Link>
+            </button>
             <Link
               to="/login"
               className="text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-sm"
@@ -110,7 +115,7 @@ export const Snapshot: React.FC = () => {
       {/* Hero & Barre de Scan */}
       <div className="max-w-4xl mx-auto px-4 pt-12 sm:pt-16 pb-10 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-6 animate-fade-in">
-          <Sparkles size={13} />
+          <ShieldCheck size={13} />
           <span>Audit Public d'Actionnabilité & Citations IA</span>
         </div>
 
@@ -343,6 +348,11 @@ export const Snapshot: React.FC = () => {
           </div>
         </div>
       )}
+
+      <MethodologyModal
+        isOpen={isMethodologyOpen}
+        onClose={() => setIsMethodologyOpen(false)}
+      />
     </div>
   );
 };

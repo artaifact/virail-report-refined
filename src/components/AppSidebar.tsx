@@ -34,7 +34,7 @@ import {
   Cpu,
   BookOpen,
   Layers,
-  Sparkles,
+  Wrench,
 } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
 import { usePayment } from '@/contexts/PaymentContext'
@@ -118,7 +118,7 @@ export function AppSidebar() {
           {
             title: "Améliorer",
             url: "/ameliorer",
-            icon: Sparkles,
+            icon: Wrench,
             badge: undefined as string | undefined,
           },
           {

@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, 
-  Sparkles, 
   ArrowRight, 
   Search, 
   TrendingUp, 
@@ -17,6 +16,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { MethodologyModal } from './MethodologyModal';
 
 interface ActionabilityScoreDetailProps {
   unified: UnifiedActionabilityScore | null;
@@ -34,6 +34,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
   isModalView = false,
 }) => {
   const navigate = useNavigate();
+  const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
   const overallScore = unified?.overallScore ?? (unified as any)?.score ?? 63;
   const grade = unified?.grade || 'C';
 
@@ -88,7 +89,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
             {/* Quick Actions & Simulation */}
             <div className="flex flex-col sm:flex-row md:flex-col gap-2 shrink-0 self-stretch md:self-auto justify-center">
               <div className="p-3 rounded-xl border border-border bg-muted/40 flex items-center gap-2.5">
-                <Sparkles className="w-4 h-4 text-muted-foreground shrink-0" />
+                <TrendingUp className="w-4 h-4 text-muted-foreground shrink-0" />
                 <div className="text-xs">
                   <span className="font-semibold text-foreground">Potentiel : +28 pts</span>
                   <p className="text-[11px] text-muted-foreground">Passage au Grade A possible via 3 correctifs</p>
@@ -109,13 +110,11 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
                 <Button
                   variant="outline"
                   size="sm"
-                  asChild
-                  className="text-xs font-medium"
+                  onClick={() => setIsMethodologyOpen(true)}
+                  className="text-xs font-medium cursor-pointer"
                 >
-                  <Link to="/methodologie">
-                    <BookOpen className="w-3.5 h-3.5 mr-1" />
-                    <span>Méthode</span>
-                  </Link>
+                  <BookOpen className="w-3.5 h-3.5 mr-1" />
+                  <span>Méthode</span>
                 </Button>
 
                 {onSwitchToFullView && isModalView && (
@@ -437,6 +436,11 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
           </div>
         </CardContent>
       </Card>
+      {/* Methodology Modal */}
+      <MethodologyModal
+        isOpen={isMethodologyOpen}
+        onClose={() => setIsMethodologyOpen(false)}
+      />
     </div>
   );
 };

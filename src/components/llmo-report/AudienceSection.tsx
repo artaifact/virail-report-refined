@@ -1,6 +1,6 @@
 import React from 'react';
 import { AudienceData } from '../../types/llmo-report';
-import { Users, Target, Lightbulb, UserCheck, Sparkles, TrendingUp } from 'lucide-react';
+import { Users, Target, Lightbulb, UserCheck, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { HELP } from '@/lib/help-content';
@@ -113,7 +113,7 @@ const AudienceCard: React.FC<{ audience: AudienceData }> = ({ audience }) => {
           <div className="border-t-2 border-gray-200 pt-6 mt-8">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
+                <Target className="w-5 h-5 text-white" />
               </div>
               <h5 className="text-lg font-bold text-gray-900">
                 Description Détaillée de l'Audience

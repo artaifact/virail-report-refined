@@ -7,7 +7,7 @@ import { AudienceSection } from './AudienceSection';
 import { RecommendationSection } from './RecommendationSection';
 import { SemanticSection } from './SemanticSection';
 import { StrategicSection } from './StrategicSection';
-import { Globe, Clock, Brain, Target, TrendingUp, Users, Sparkles, Star, Zap } from 'lucide-react';
+import { Globe, Clock, Brain, Target, TrendingUp, Users, Star, Zap } from 'lucide-react';
 import { FullReportData } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
@@ -66,7 +66,7 @@ export const LLMOReportDisplay: React.FC<LLMOReportDisplayProps> = ({
                     Rapport d'Analyse GEO
                   </h2>
                   <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-                    <Sparkles className="w-3 h-3 mr-1" />
+                    <Target className="w-3 h-3 mr-1" />
                     IA Analysis
                   </Badge>
                 </div>

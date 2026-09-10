@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Check, Crown, Zap, Sparkles, CreditCard, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Check, Crown, Zap, Target, CreditCard, Loader2, CheckCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useOnboarding } from '@/hooks/useOnboarding';
@@ -230,7 +230,7 @@ export function PlanStep() {
       case 'free':
         return <Zap className="w-6 h-6" />;
       case 'standard':
-        return <Sparkles className="w-6 h-6" />;
+        return <Target className="w-6 h-6" />;
       case 'premium':
       case 'pro':
         return <Crown className="w-6 h-6" />;

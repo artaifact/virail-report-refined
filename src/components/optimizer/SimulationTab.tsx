@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { CheckCircle, AlertTriangle, ChevronDown, ChevronRight, Code, ArrowRight, Info, Sparkles } from 'lucide-react';
+import { CheckCircle, AlertTriangle, ChevronDown, ChevronRight, Code, ArrowRight, Info } from 'lucide-react';
 import { ScoreCard } from '@/components/dashboard/ScoreCard';
 
 type CrawlerType = 'gptbot' | 'perplexitybot' | 'googlebot' | 'claudebot';
@@ -621,8 +621,8 @@ export function SimulationTab({
                     {addedFacts.length > 0 && (
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                          <Sparkles size={14} style={{ color: '#8B5CF6', flexShrink: 0 }} />
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#6D28D9' }}>
+                          <CheckCircle size={14} style={{ color: '#0F172A', flexShrink: 0 }} />
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>
                             {addedFacts.length} nouveau{addedFacts.length > 1 ? 'x faits extraits' : ' fait extrait'} après optimisation
                           </span>
                         </div>

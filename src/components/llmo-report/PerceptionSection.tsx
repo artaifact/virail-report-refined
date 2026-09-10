@@ -1,6 +1,6 @@
 import React from 'react';
 import { PerceptionData } from '../../types/llmo-report';
-import { Eye, MessageCircle, PenTool, AlertTriangle, Sparkles } from 'lucide-react';
+import { Eye, MessageCircle, PenTool, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { HELP } from '@/lib/help-content';
@@ -50,7 +50,7 @@ export const PerceptionSection: React.FC<PerceptionSectionProps> = ({ perception
           </div>
         </div>
         <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-          <Sparkles className="w-3 h-3 mr-1" />
+          <Eye className="w-3 h-3 mr-1" />
           {perceptions.length} Analyse{perceptions.length > 1 ? 's' : ''}
         </Badge>
       </div>
@@ -143,7 +143,7 @@ const PerceptionCard: React.FC<{ perception: PerceptionData }> = ({ perception }
         <div className="border-t-2 border-gray-200 pt-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
+              <Eye className="w-5 h-5 text-white" />
             </div>
             <h5 className="text-lg font-bold text-gray-900">Synthèse de la Perception</h5>
           </div>

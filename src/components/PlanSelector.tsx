@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePayment } from '@/hooks/usePayment';
-import { Crown, Star, Zap, Check, CreditCard, Users, BarChart3, Shield, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
+import { Crown, Star, Zap, Check, CreditCard, Users, BarChart3, Shield, ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
 import { modelLogos } from '@/components/ModelLogosCarousel';
@@ -267,7 +267,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
   //     case 'premium':
   //       return <Crown className="h-5 w-5" />;
   //     case 'pro':
-  //       return <Sparkles className="h-5 w-5" />;
+  //       return <Zap className="h-5 w-5" />;
   //     default:
   //       return <Star className="h-5 w-5" />;
   //   }

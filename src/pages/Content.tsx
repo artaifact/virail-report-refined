@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Video, MessageSquare, Twitter, Users, Copy, Download, Sparkles, Globe, Target, Zap } from "lucide-react";
+import { FileText, Video, MessageSquare, Twitter, Users, Copy, Download, Globe, Target, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { StatsCard } from "@/components/ui/stats-card";
 
@@ -80,7 +80,7 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
           <p className="text-muted-foreground">Créez du contenu optimisé pour votre audience géographique</p>
         </div>
         <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
-          <Sparkles className="h-3 w-3 mr-1" />
+          <Target className="h-3 w-3 mr-1" />
           IA Optimisée
         </Badge>
       </div>
@@ -436,7 +436,7 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
           <Card className="border-0 shadow-md hover:shadow-lg transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary-600" />
+                <FileText className="h-5 w-5 text-primary-600" />
                 Contenu généré
               </CardTitle>
               <CardDescription>Aperçu et actions</CardDescription>
@@ -468,7 +468,7 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                 </div>
               ) : (
                 <div className="text-center text-neutral-500 py-8">
-                  <Sparkles className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
                   <p>Sélectionnez un type de contenu et cliquez sur "Générer" pour voir le résultat ici.</p>
                 </div>
               )}

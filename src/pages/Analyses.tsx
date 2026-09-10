@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { BarChart3, TrendingUp, Users, Calendar, FileText, ChevronRight, ArrowLeft, Plus, RefreshCw, Loader2, Zap, Sparkles, Target, Star, Brain } from "lucide-react";
+import { BarChart3, TrendingUp, Users, Calendar, FileText, ChevronRight, ArrowLeft, Plus, RefreshCw, Loader2, Zap, Target, Star, Brain } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

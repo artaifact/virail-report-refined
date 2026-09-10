@@ -11,7 +11,7 @@ import {
   AlertCircle,
   AlertTriangle,
   RotateCcw,
-  Sparkles,
+  Plus,
   Download,
   Lock,
   FileText,
@@ -838,7 +838,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                           cursor: 'pointer', fontSize: '11px', color: '#64748B', fontWeight: 500,
                         }}
                       >
-                        <Sparkles size={11} /> Nouveau
+                        <Plus size={11} /> Nouveau
                       </button>
                     )}
                   </div>

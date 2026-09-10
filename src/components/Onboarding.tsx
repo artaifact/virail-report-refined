@@ -17,7 +17,6 @@ import {
   X,
   ArrowRight,
   ArrowLeft,
-  Sparkles,
   Target,
   Globe2,
   Settings,
@@ -383,7 +382,7 @@ export function Onboarding({ open, onClose }: OnboardingProps) {
               <div className="flex justify-center mb-4">
                 {currentStep.id === 'welcome' && (
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-8 w-8 text-primary" />
+                    <Target className="h-8 w-8 text-primary" />
                   </div>
                 )}
                 {currentStep.id === 'dashboard' && (

@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
-  Sparkles,
   ExternalLink,
   ChevronRight,
   ShieldAlert,
@@ -205,7 +204,7 @@ export const CausalImpactTimeline: React.FC<CausalImpactTimelineProps> = ({
               </div>
             </div>
             <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-bold gap-1.5 py-1 self-start sm:self-auto">
-              <Sparkles size={12} className="text-emerald-600" />
+              <TrendingUp size={12} className="text-emerald-600" />
               <span>Impact Positif Avéré</span>
             </Badge>
           </div>

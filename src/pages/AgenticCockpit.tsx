@@ -13,7 +13,6 @@ import {
   FileCode2,
   Workflow,
   Play,
-  Sparkles,
   Scale,
   Plug,
   Zap,
@@ -366,7 +365,7 @@ export default function AgenticCockpit() {
               ) : (
                 <Card className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-6 text-center">
                   <div className="max-w-md mx-auto space-y-2">
-                    <Sparkles className="w-6 h-6 text-muted-foreground mx-auto opacity-80" />
+                    <Workflow className="w-6 h-6 text-muted-foreground mx-auto opacity-80" />
                     <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                       Visualisez en direct les étapes de raisonnement des agents
                     </div>
