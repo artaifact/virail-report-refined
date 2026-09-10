@@ -7,7 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle, BarChart3, Users, Swords, Bot, LayoutDashboard } from 'lucide-react';
 import { useSearchParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { computeUnifiedScore } from '@/utils/scoreEngine';
 import { useReport, useReports, getLatestReportId } from '@/hooks/useReports';
@@ -2656,17 +2659,19 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
 
   if (data.length === 0) {
     return (
-      <div className="chart-card chart-card-wide" style={{ width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Citations par modèle</h3>
-            <InfoTooltip {...HELP.citationsParModele} side="bottom" />
+      <Card className="rounded-2xl border-slate-200/80 bg-white shadow-xs p-5 w-full">
+        <CardHeader className="p-0 pb-4 flex flex-row items-center justify-between space-y-0">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+              <span>Citations par modèle</span>
+              <InfoTooltip {...HELP.citationsParModele} side="bottom" />
+            </CardTitle>
           </div>
-        </div>
-        <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
+        </CardHeader>
+        <CardContent className="p-0 py-8 text-center text-sm text-slate-500">
           Aucune donnée d'analyse disponible pour ce rapport.
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -2685,183 +2690,152 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
   };
 
   return (
-    <div className="chart-card chart-card-wide" style={{ width: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Citations par modèle</h3>
-          <InfoTooltip {...HELP.citationsParModele} side="bottom" />
+    <Card className="rounded-2xl border-slate-200/80 bg-white shadow-xs p-5 w-full">
+      <CardHeader className="p-0 pb-4 flex flex-row items-center justify-between space-y-0">
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+            <span>Citations par modèle</span>
+            <InfoTooltip {...HELP.citationsParModele} side="bottom" />
+          </CardTitle>
         </div>
         {data.length > 0 && (
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleExportCsv}
-            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-1.5 transition-colors bg-white"
+            className="h-8 gap-1.5 text-xs font-medium rounded-lg cursor-pointer"
           >
             <Download size={13} />
-            CSV
-          </button>
+            <span>CSV</span>
+          </Button>
         )}
-      </div>
+      </CardHeader>
 
-      {allCitationsZero && isApiData && (
-        <div style={{ 
-          marginBottom: '20px', 
-          padding: '16px', 
-          background: '#FEE2E2', 
-          borderRadius: '12px', 
-          border: '1px solid #FCA5A5',
-          display: 'flex',
-          alignItems: 'start',
-          gap: '12px'
-        }}>
-          <AlertCircle size={20} style={{ color: '#EF4444', flexShrink: 0, marginTop: '2px' }} />
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: '#991B1B', marginBottom: '4px' }}>
-               Aucune citation détectée 
-            </div>
-            <div style={{ fontSize: '13px', color: '#7F1D1D', lineHeight: '1.5' }}>
+      <CardContent className="p-0 space-y-4">
+        {allCitationsZero && isApiData && (
+          <Alert variant="destructive" className="bg-rose-50 border-rose-200 text-rose-900">
+            <AlertCircle className="h-4 w-4 text-rose-600" />
+            <AlertTitle className="text-sm font-semibold text-rose-900">Aucune citation détectée</AlertTitle>
+            <AlertDescription className="text-xs text-rose-800 leading-relaxed">
               Votre site n'est <strong>absolument pas cité</strong> dans les réponses dans les moteurs génératifs. 
               Vous perdez actuellement des opportunités de visibilité face à vos concurrents. 
               <strong>Agissez immédiatement</strong> en consultant les recommandations GEO pour éviter de prendre encore plus de retard dans les moteurs génératifs.
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {totalCitations === 1 && isApiData && (
-        <div style={{
-          marginBottom: '20px',
-          padding: '16px',
-          background: '#FFF7ED',
-          borderRadius: '12px',
-          border: '1px solid #FED7AA',
-          display: 'flex',
-          alignItems: 'start',
-          gap: '12px'
-        }}>
-          <AlertCircle size={20} style={{ color: '#F97316', flexShrink: 0, marginTop: '2px' }} />
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: '#9A3412', marginBottom: '4px' }}>
-              Visibilité très faible
-            </div>
-            <div style={{ fontSize: '13px', color: '#7C2D12', lineHeight: '1.5' }}>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {totalCitations === 1 && isApiData && (
+          <Alert className="bg-amber-50 border-amber-200 text-amber-900">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-sm font-semibold text-amber-900">Visibilité très faible</AlertTitle>
+            <AlertDescription className="text-xs text-amber-800 leading-relaxed">
               Votre site n'est cité qu'<strong>1 seule fois</strong> dans les moteurs génératifs.
               C'est insuffisant pour garantir une visibilité durable. <strong>Consultez les recommandations GEO</strong> pour améliorer votre présence.
-            </div>
-          </div>
-        </div>
-      )}
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {totalCitations >= 2 && totalCitations <= 4 && isApiData && (
-        <div style={{
-          marginBottom: '20px',
-          padding: '16px',
-          background: '#FFF7ED',
-          borderRadius: '12px',
-          border: '1px solid #FED7AA',
-          display: 'flex',
-          alignItems: 'start',
-          gap: '12px'
-        }}>
-          <AlertCircle size={20} style={{ color: '#F97316', flexShrink: 0, marginTop: '2px' }} />
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: '#9A3412', marginBottom: '4px' }}>
-              Visibilité à améliorer
-            </div>
-            <div style={{ fontSize: '13px', color: '#7C2D12', lineHeight: '1.5' }}>
+        {totalCitations >= 2 && totalCitations <= 4 && isApiData && (
+          <Alert className="bg-amber-50 border-amber-200 text-amber-900">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-sm font-semibold text-amber-900">Visibilité à améliorer</AlertTitle>
+            <AlertDescription className="text-xs text-amber-800 leading-relaxed">
               Votre site est cité <strong>{totalCitations} fois</strong> dans les moteurs génératifs.
               C'est un début mais votre visibilité reste limitée. Continuez à optimiser votre contenu en suivant les recommandations GEO.
-            </div>
-          </div>
-        </div>
-      )}
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {totalCitations >= 5 && isApiData && (
-        <div style={{ 
-          marginBottom: '20px', 
-          padding: '16px', 
-          background: '#F0FDF4', 
-          borderRadius: '12px', 
-          border: '1px solid #86EFAC',
-          display: 'flex',
-          alignItems: 'start',
-          gap: '12px'
-        }}>
-          <CheckCircle2 size={20} style={{ color: '#10B981', flexShrink: 0, marginTop: '2px' }} />
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: 600, color: '#166534', marginBottom: '4px' }}>
-              Excellent ! Vous êtes bien cité
-            </div>
-            <div style={{ fontSize: '13px', color: '#14532D', lineHeight: '1.5' }}>
+        {totalCitations >= 5 && isApiData && (
+          <Alert className="bg-emerald-50 border-emerald-200 text-emerald-900">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <AlertTitle className="text-sm font-semibold text-emerald-900">Excellent ! Vous êtes bien cité</AlertTitle>
+            <AlertDescription className="text-xs text-emerald-800 leading-relaxed">
               Votre site est cité <strong>{totalCitations} fois</strong> dans les moteurs génératifs. 
               Félicitations ! Vous avez une bonne visibilité. Continuez sur cette lancée pour maintenir et améliorer votre positionnement.
-            </div>
-          </div>
-        </div>
-      )}
-      
-      <div className="w-full overflow-x-auto">
-        <table className="domains-table">
-          <thead>
-            <tr>
-              <th>
-                <button type="button" onClick={() => toggleSort('name')} className="flex items-center gap-1 hover:text-slate-700 transition-colors font-semibold">
-                  Modèle {sortCol === 'name' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-slate-300">↕</span>}
-                </button>
-              </th>
-              <th>
-                <button type="button" onClick={() => toggleSort('citations')} className="flex items-center gap-1 hover:text-slate-700 transition-colors font-semibold">
-                  Citations {sortCol === 'citations' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-slate-300">↕</span>}
-                </button>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((item, index) => (
-              <tr
-                key={index}
-                onClick={() => {
-                  setSelectedModel(item.displayName);
-                  setIsModalOpen(true);
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {getModelLogo(item.rawModel) ? (
-                      <img src={getModelLogo(item.rawModel)!} alt="" className="w-5 h-5 object-contain" />
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="w-full overflow-x-auto rounded-xl border border-slate-200/70">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50/70 hover:bg-slate-50/70">
+                <TableHead>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleSort('name')}
+                    className="h-auto p-0 font-semibold text-xs text-slate-700 hover:text-slate-900 gap-1 hover:bg-transparent cursor-pointer"
+                  >
+                    <span>Modèle</span>
+                    {sortCol === 'name' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-slate-300">↕</span>}
+                  </Button>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleSort('citations')}
+                    className="h-auto p-0 font-semibold text-xs text-slate-700 hover:text-slate-900 gap-1 hover:bg-transparent ml-auto cursor-pointer"
+                  >
+                    <span>Citations</span>
+                    {sortCol === 'citations' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-slate-300">↕</span>}
+                  </Button>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((item, index) => (
+                <TableRow
+                  key={index}
+                  onClick={() => {
+                    setSelectedModel(item.displayName);
+                    setIsModalOpen(true);
+                  }}
+                  className="cursor-pointer hover:bg-slate-50/80 transition-colors"
+                >
+                  <TableCell className="py-3">
+                    <div className="flex items-center gap-2.5">
+                      {getModelLogo(item.rawModel) ? (
+                        <img src={getModelLogo(item.rawModel)!} alt="" className="w-5 h-5 object-contain" />
+                      ) : (
+                        <Zap size={14} className="text-blue-500" />
+                      )}
+                      <span className="font-semibold text-xs text-slate-900">{item.displayName}</span>
+                      <ChevronRight size={13} className="text-slate-400" />
+                    </div>
+                  </TableCell>
+
+                  <TableCell className="py-3 text-right">
+                    {item.citations === -1 ? (
+                      <Badge variant="outline" className="text-[10px] text-slate-400 font-normal italic">
+                        Non analysé
+                      </Badge>
+                    ) : item.citations === 0 && isApiData ? (
+                      <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-200 bg-amber-50 font-medium">
+                        Non cité
+                      </Badge>
+                    ) : item.citations >= 5 ? (
+                      <Badge className="text-[11px] font-bold bg-emerald-50 text-emerald-700 border-emerald-200">
+                        {item.citations} citations
+                      </Badge>
+                    ) : item.citations === 1 ? (
+                      <Badge variant="secondary" className="text-[11px] font-bold text-amber-800 bg-amber-100">
+                        {item.citations} citation
+                      </Badge>
                     ) : (
-                      <Zap size={14} className="text-blue-500" />
+                      <Badge variant="secondary" className="text-[11px] font-bold text-slate-800">
+                        {item.citations} citations
+                      </Badge>
                     )}
-                    <span className="font-medium">{item.displayName}</span>
-                    <ChevronRight size={14} style={{ color: '#94A3B8' }} />
-                  </div>
-                </td>
-               
-                <td>
-                  {item.citations === -1 ? (
-                    <span style={{ fontSize: '13px', color: '#94A3B8', fontStyle: 'italic' }}>
-                      Non analysé
-                    </span>
-                  ) : item.citations === 0 && isApiData ? (
-                    <span style={{ fontSize: '13px', color: '#F59E0B', fontStyle: 'italic' }}>
-                      Non cité
-                    </span>
-                  ) : item.citations >= 5 ? (
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#10B981' }}>{item.citations}</span>
-                  ) : item.citations === 1 ? (
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#F97316' }}>{item.citations}</span>
-                  ) : (
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#334155' }}>{item.citations}</span>
-                  )}
-                </td>
-              
-  
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
 
       {/* Modal d'analyse détaillée */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -3031,7 +3005,7 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
           })()}
         </DialogContent>
       </Dialog>
-    </div>
+    </Card>
   );
 }
 
@@ -3265,14 +3239,14 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
   const selectModels = isV3 ? v3Models.map(m => m.commercial) : competitorModels;
 
   return (
-    <div className="chart-card competitor-card">
-      <div className="card-header-with-selector flex-col sm:flex-row gap-3">
+    <Card className="rounded-2xl border-slate-200/80 bg-white shadow-xs p-5 competitor-card">
+      <CardHeader className="p-0 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 space-y-0">
         <div className="flex items-center gap-2">
-          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Analyse concurrentielle</h3>
+          <CardTitle className="text-lg font-bold text-slate-900">Analyse concurrentielle</CardTitle>
           <InfoTooltip {...HELP.analyseConcurrentielle} side="bottom" />
         </div>
-        <div className="model-selector">
-          <span className="selector-label">Modèle:</span>
+        <div className="model-selector flex items-center gap-2">
+          <span className="selector-label text-xs font-medium text-slate-500">Modèle:</span>
           <Select
             value={selectedModel}
             onValueChange={setSelectedModel}
@@ -3300,49 +3274,58 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
             </SelectContent>
           </Select>
         </div>
-      </div>
+      </CardHeader>
 
-      <div className="competitors-list">
-        {loadingCompetitors ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
-            Chargement de l'analyse concurrentielle...
-          </div>
-        ) : competitors.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
-            Aucune analyse concurrentielle disponible pour ce modèle.
-          </div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div className="subtitle-section">
-                Top {competitors.length} Concurrents{selectedModel && selectedModel !== 'all' ? ` - ${getCommercialModelName(selectedModel)}` : ''}
-              </div>
+      <CardContent className="p-0">
+        <div className="competitors-list space-y-2.5">
+          {loadingCompetitors ? (
+            <div className="py-10 text-center text-sm text-slate-500">
+              Chargement de l'analyse concurrentielle...
             </div>
-
-            {competitors.map((competitor, index) => (
-              <div
-                key={index}
-                className="competitor-item"
-                style={{ cursor: 'default' }}
-              >
-                <img
-                  src={(competitor as any).faviconUrl || `https://www.google.com/s2/favicons?domain=${competitor.domain}&sz=32`}
-                  alt={competitor.domain}
-                  width={20} height={20}
-                  style={{ borderRadius: '4px', flexShrink: 0 }}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-                <div className="competitor-info" style={{ flex: 1 }}>
-                  <div className="competitor-name">{competitor.name}</div>
-                  <div className="competitor-domain">{competitor.domain}</div>
-                </div>
+          ) : competitors.length === 0 ? (
+            <div className="py-10 text-center text-sm text-slate-500">
+              Aucune analyse concurrentielle disponible pour ce modèle.
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between pb-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Top {competitors.length} Concurrents{selectedModel && selectedModel !== 'all' ? ` - ${getCommercialModelName(selectedModel)}` : ''}
+                </span>
+                <Badge variant="secondary" className="text-xs font-medium bg-slate-100 text-slate-600">
+                  {competitors.length} détecté{competitors.length > 1 ? 's' : ''}
+                </Badge>
               </div>
-            ))}
 
-          </>
-        )}
-      </div>
-    </div>
+              {competitors.map((competitor, index) => (
+                <div
+                  key={index}
+                  className="competitor-item flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-default"
+                >
+                  <img
+                    src={(competitor as any).faviconUrl || `https://www.google.com/s2/favicons?domain=${competitor.domain}&sz=32`}
+                    alt={competitor.domain}
+                    width={22}
+                    height={22}
+                    className="rounded-md flex-shrink-0 bg-white p-0.5 border border-slate-200/60"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                  <div className="competitor-info flex-1 min-w-0">
+                    <div className="competitor-name text-sm font-semibold text-slate-800 truncate">{competitor.name}</div>
+                    <div className="competitor-domain text-xs text-slate-500 truncate">{competitor.domain}</div>
+                  </div>
+                  {competitor.score > 0 && (
+                    <Badge variant="outline" className="text-xs font-medium text-slate-600 border-slate-200">
+                      {competitor.score}%
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -3541,209 +3524,194 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
 
   if (domains.length === 0) {
     return (
-      <div id="domaines-les-plus-cites" className="domains-table-card" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', padding: '0', overflow: 'hidden', background: '#FFFFFF', scrollMarginTop: '80px' }}>
-        <div style={{ padding: '20px 26px', borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Domaines les plus cités</h3>
+      <Card id="domaines-les-plus-cites" className="rounded-2xl border-slate-200/80 bg-white shadow-xs overflow-hidden scroll-mt-20 domains-table-card">
+        <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/60 space-y-1">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg font-bold text-slate-900">Domaines les plus cités</CardTitle>
             <InfoTooltip {...HELP.domainesLesPlusCites} />
           </div>
-          <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', margin: 0 }}>Sources citées</p>
-        </div>
-        <div style={{ padding: '40px 26px', textAlign: 'center', background: '#FFFFFF' }}>
+          <CardDescription className="text-xs text-slate-500">Sources citées</CardDescription>
+        </CardHeader>
+        <CardContent className="p-10 text-center text-sm text-slate-500 bg-white">
           Aucune source citée détectée pour ce rapport.
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div id="domaines-les-plus-cites" className="domains-table-card" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', padding: '0', overflow: 'hidden', background: '#FFFFFF', scrollMarginTop: '80px' }}>
-      <div style={{ padding: '20px 26px', borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Domaines les plus cités</h3>
+    <Card id="domaines-les-plus-cites" className="rounded-2xl border-slate-200/80 bg-white shadow-xs overflow-hidden scroll-mt-20 domains-table-card">
+      <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/60 space-y-1">
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-lg font-bold text-slate-900">Domaines les plus cités</CardTitle>
           <InfoTooltip {...HELP.domainesLesPlusCites} />
         </div>
-        <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px', margin: 0 }}>Sources citées</p>
-      </div>
+        <CardDescription className="text-xs text-slate-500">Sources citées dans les réponses des modèles d'IA</CardDescription>
+      </CardHeader>
       
-      {/* Message si aucune citation trouvée dans l'API */}
-      {hasApiData && totalCitationsFromAPI === 0 ? (
-        <div style={{ 
-          padding: '40px 26px', 
-          textAlign: 'center',
-          background: '#FFFFFF'
-        }}>
-          <div style={{ 
-            padding: '24px', 
-            background: '#FEE2E2', 
-            borderRadius: '12px', 
-            border: '1px solid #FCA5A5',
-            display: 'flex',
-            alignItems: 'start',
-            gap: '16px',
-            maxWidth: '600px',
-            margin: '0 auto'
-          }}>
-            <AlertCircle size={24} style={{ color: '#EF4444', flexShrink: 0, marginTop: '2px' }} />
-            <div style={{ textAlign: 'left', flex: 1 }}>
-              <div style={{ fontSize: '16px', fontWeight: 600, color: '#991B1B', marginBottom: '8px' }}>
-                Aucune citation trouvée
-              </div>
-              <div style={{ fontSize: '14px', color: '#7F1D1D', lineHeight: '1.6' }}>
+      <CardContent className="p-0">
+        {/* Message si aucune citation trouvée dans l'API */}
+        {hasApiData && totalCitationsFromAPI === 0 ? (
+          <div className="p-6">
+            <Alert variant="destructive" className="bg-red-50/80 border-red-200 text-red-900 max-w-2xl mx-auto">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <AlertTitle className="font-semibold text-red-900 text-base">Aucune citation trouvée</AlertTitle>
+              <AlertDescription className="text-sm text-red-700 leading-relaxed mt-1">
                 Il n'y a pas de citation trouvée car vous n'êtes pas cité dans les moteurs génératifs. 
                 Consultez les recommandations pour améliorer votre visibilité et augmenter vos chances d'être cité par les IA.
-              </div>
-            </div>
+              </AlertDescription>
+            </Alert>
           </div>
-        </div>
-      ) : (
-        <>
-          <div className="overflow-x-auto -mx-1">
-          <table className="domains-table w-full border-separate" style={{ borderSpacing: 0, minWidth: '600px' }}>
-            <thead>
-              <tr className="text-left text-xs uppercase text-slate-400 font-semibold tracking-wider bg-slate-50">
-                <th className="py-3 px-4 md:px-6 border-b border-slate-200">Domaine</th>
-                <th className="py-3 px-4 md:px-6 border-b border-slate-200">Utilisé</th>
-                <th className="py-3 px-4 md:px-6 border-b border-slate-200">Pages</th>
-                <th className="py-3 px-4 md:px-6 border-b border-slate-200">Citations moy.</th>
-                <th className="py-3 px-4 md:px-6 border-b border-slate-200 text-right">Type</th>
-              </tr>
-            </thead>
-            <tbody>
-              {domains.map((domain, index) => (
-                <tr 
-                  key={index} 
-                  className={domain.highlight ? 'table-row-highlight' : ''} 
-                  onClick={() => {
-                    setSelectedDomain(domain.domain);
-                    setDomainModalOpen(true);
-                  }}
-                  style={{ 
-                    background: domain.highlight ? '#E8F4FF' : '#FFFFFF',
-                    borderBottom: index === domains.length - 1 ? 'none' : '1px solid #F1F5F9',
-                    transition: 'background 0.2s ease',
-                    cursor: 'pointer'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!domain.highlight) e.currentTarget.style.background = '#F8FAFC';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!domain.highlight) e.currentTarget.style.background = '#FFFFFF';
-                  }}
-                >
-                  <td className="py-4 px-4 md:px-6">
-                    <div className="domain-cell flex items-center gap-3 text-sm md:text-[15px] text-slate-900" style={{ fontWeight: domain.highlight ? 600 : 500 }}>
-                      <img src={domain.icon} alt={domain.domain} width={20} height={20} className="rounded flex-shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      <div className="flex items-center gap-2">
-                        <span className="truncate max-w-[120px] sm:max-w-none">{domain.domain}</span>
-                        {selectedDomain === domain.domain && <ChevronRight size={14} className="text-blue-500" />}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 md:px-6 text-sm text-slate-600 font-semibold">{domain.used}</td>
-                  <td className="py-4 px-4 md:px-6 text-sm text-slate-600">{domain.pages}</td>
-                  <td className="py-4 px-4 md:px-6 text-sm text-slate-600 font-semibold">{domain.citations}</td>
-                  <td className="py-4 px-4 md:px-6 text-right">
-                    <span className={`badge badge-${domain.type}`} style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', padding: '4px 12px', background: domain.type === 'you' ? 'rgba(74, 222, 128, 0.15)' : domain.type === 'model' ? 'rgba(99, 102, 241, 0.15)' : undefined }}>
-                      {domain.label}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
-
-          {/* Modal Informations détaillées - ouvert au clic sur une source (domaine) */}
-          <Dialog open={domainModalOpen} onOpenChange={(open) => {
-            setDomainModalOpen(open);
-            if (!open) setSelectedDomain(null);
-          }}>
-            <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0" hideCloseButton>
-              {selectedDomain && (() => {
-                const dom = domains.find(d => d.domain === selectedDomain);
-                if (!dom) return null;
-                return (
-                  <>
-                    <div className="flex-shrink-0 flex items-start justify-between gap-4 p-6 pb-0">
-                      <DialogHeader className="flex-1 space-y-1.5 pr-8">
-                        <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
-                          Informations détaillées - {dom.domain}
-                        </DialogTitle>
-                        <DialogDescription className="text-sm text-slate-500">
-                          Source citée dans les réponses des modèles d'IA
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogClose asChild>
-                        <button
-                          type="button"
-                          className="absolute right-4 top-4 rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-                          aria-label="Fermer"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      </DialogClose>
-                    </div>
-                    <div
-                      className="flex-1 overflow-y-auto min-h-0 px-6 py-4"
-                      style={{ maxHeight: 'calc(90vh - 120px)' }}
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <Table className="domains-table min-w-[600px]">
+                <TableHeader>
+                  <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Domaine</TableHead>
+                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Utilisé</TableHead>
+                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Pages</TableHead>
+                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Citations moy.</TableHead>
+                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider text-right">Type</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {domains.map((domain, index) => (
+                    <TableRow 
+                      key={index} 
+                      className={`cursor-pointer transition-colors ${
+                        domain.highlight 
+                          ? 'bg-blue-50/60 hover:bg-blue-50/90 font-medium table-row-highlight' 
+                          : 'hover:bg-slate-50/80'
+                      }`}
+                      onClick={() => {
+                        setSelectedDomain(domain.domain);
+                        setDomainModalOpen(true);
+                      }}
                     >
-                      <div className="flex flex-col gap-4">
-                        <div className="text-sm text-slate-600 leading-relaxed">
-                          {dom.description}
-                        </div>
-                        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500">
-                          <span>Pages citées : <strong className="text-slate-900">{dom.pages}</strong></span>
-                          <span>Citations moy. : <strong className="text-slate-900">{dom.citations}</strong></span>
-                          <span>Dernière vue : <strong className="text-slate-900">{dom.lastSeen}</strong></span>
-                          <span>Utilisé : <strong className="text-slate-900">{dom.used}</strong></span>
-                        </div>
-                        {dom.models && dom.models.length > 0 && (
-                          <div className="mt-2">
-                            <div className="text-xs font-semibold text-slate-500 mb-2">Cité par</div>
-                            <div className="flex flex-wrap gap-2">
-                              {dom.models.map((model: string, idx: number) => (
-                                <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
-                                  {getModelLogo(model) ? (
-                                    <img src={getModelLogo(model)!} alt={model} className="w-4 h-4 object-contain" />
-                                  ) : null}
-                                  <span className="text-sm text-slate-700 font-medium">{model}</span>
-                                </div>
-                              ))}
-                            </div>
+                      <TableCell className="py-3.5 px-4 md:px-6">
+                        <div className="domain-cell flex items-center gap-3 text-sm md:text-[15px] text-slate-900">
+                          <img src={domain.icon} alt={domain.domain} width={20} height={20} className="rounded flex-shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          <div className="flex items-center gap-2">
+                            <span className="truncate max-w-[120px] sm:max-w-none font-medium">{domain.domain}</span>
+                            {selectedDomain === domain.domain && <ChevronRight size={14} className="text-blue-500" />}
                           </div>
-                        )}
-                        {dom.sourceDetails && dom.sourceDetails.length > 0 && (
-                          <div className="mt-2">
-                            <div className="text-xs font-semibold text-slate-500 mb-2">URLs sources identifiées</div>
-                            <div className="flex flex-col gap-2">
-                              {dom.sourceDetails.map((src: any, idx: number) => (
-                                <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                  <div className="text-sm font-semibold text-slate-900 mb-1">{src.title}</div>
-                                  <a
-                                    href={src.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="text-xs text-blue-600 no-underline inline-flex items-center gap-1.5 hover:underline"
-                                  >
-                                    {src.url} <ExternalLink size={12} />
-                                  </a>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3.5 px-4 md:px-6 text-sm text-slate-600 font-semibold">{domain.used}</TableCell>
+                      <TableCell className="py-3.5 px-4 md:px-6 text-sm text-slate-600">{domain.pages}</TableCell>
+                      <TableCell className="py-3.5 px-4 md:px-6 text-sm text-slate-600 font-semibold">{domain.citations}</TableCell>
+                      <TableCell className="py-3.5 px-4 md:px-6 text-right">
+                        <Badge 
+                          variant={domain.type === 'you' ? 'default' : 'secondary'}
+                          className={`badge badge-${domain.type} text-[11px] font-semibold uppercase px-2.5 py-0.5 border-0 ${
+                            domain.type === 'you'
+                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                              : domain.type === 'model'
+                                ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-100'
+                                : 'bg-slate-100 text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          {domain.label}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Modal Informations détaillées - ouvert au clic sur une source (domaine) */}
+            <Dialog open={domainModalOpen} onOpenChange={(open) => {
+              setDomainModalOpen(open);
+              if (!open) setSelectedDomain(null);
+            }}>
+              <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0" hideCloseButton>
+                {selectedDomain && (() => {
+                  const dom = domains.find(d => d.domain === selectedDomain);
+                  if (!dom) return null;
+                  return (
+                    <>
+                      <div className="flex-shrink-0 flex items-start justify-between gap-4 p-6 pb-0">
+                        <DialogHeader className="flex-1 space-y-1.5 pr-8">
+                          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
+                            Informations détaillées - {dom.domain}
+                          </DialogTitle>
+                          <DialogDescription className="text-sm text-slate-500">
+                            Source citée dans les réponses des modèles d'IA
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogClose asChild>
+                          <button
+                            type="button"
+                            className="absolute right-4 top-4 rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+                            aria-label="Fermer"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </DialogClose>
                       </div>
-                    </div>
-                  </>
-                );
-              })()}
-            </DialogContent>
-          </Dialog>
-        </>
-      )}
-    </div>
+                      <div
+                        className="flex-1 overflow-y-auto min-h-0 px-6 py-4"
+                        style={{ maxHeight: 'calc(90vh - 120px)' }}
+                      >
+                        <div className="flex flex-col gap-4">
+                          <div className="text-sm text-slate-600 leading-relaxed">
+                            {dom.description}
+                          </div>
+                          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500">
+                            <span>Pages citées : <strong className="text-slate-900">{dom.pages}</strong></span>
+                            <span>Citations moy. : <strong className="text-slate-900">{dom.citations}</strong></span>
+                            <span>Dernière vue : <strong className="text-slate-900">{dom.lastSeen}</strong></span>
+                            <span>Utilisé : <strong className="text-slate-900">{dom.used}</strong></span>
+                          </div>
+                          {dom.models && dom.models.length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-xs font-semibold text-slate-500 mb-2">Cité par</div>
+                              <div className="flex flex-wrap gap-2">
+                                {dom.models.map((model: string, idx: number) => (
+                                  <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
+                                    {getModelLogo(model) ? (
+                                      <img src={getModelLogo(model)!} alt={model} className="w-4 h-4 object-contain" />
+                                    ) : null}
+                                    <span className="text-sm text-slate-700 font-medium">{model}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {dom.sourceDetails && dom.sourceDetails.length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-xs font-semibold text-slate-500 mb-2">URLs sources identifiées</div>
+                              <div className="flex flex-col gap-2">
+                                {dom.sourceDetails.map((src: any, idx: number) => (
+                                  <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                    <div className="text-sm font-semibold text-slate-900 mb-1">{src.title}</div>
+                                    <a
+                                      href={src.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-xs text-blue-600 no-underline inline-flex items-center gap-1.5 hover:underline"
+                                    >
+                                      {src.url} <ExternalLink size={12} />
+                                    </a>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -4001,11 +3969,11 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
   };
 
   const sections = [
-    { id: 'citations' as const, label: 'Citations' },
-    { id: 'concurrents' as const, label: 'Concurrents' },
-    { id: 'sources' as const, label: 'Sources' },
-    { id: 'score' as const, label: `Score Unifié (${unified?.grade || 'C'})` },
-    { id: 'causal' as const, label: 'Impact Causal (ROI)' },
+    { id: 'citations' as const, label: 'Citations', icon: BarChart3 },
+    { id: 'concurrents' as const, label: 'Concurrents', icon: Users },
+    { id: 'sources' as const, label: 'Sources', icon: Globe },
+    { id: 'score' as const, label: `Score Unifié (${unified?.grade || 'C'})`, icon: Award },
+    { id: 'causal' as const, label: 'Impact Causal (ROI)', icon: TrendingUp },
   ];
 
   return (
@@ -4014,16 +3982,20 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
         {/* Barre de navigation intra-page avec shadcn Tabs */}
         <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-slate-200/80 -mx-4 px-4 mb-4 py-2 flex items-center justify-between gap-3">
           <TabsList className="h-auto p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 gap-1 overflow-x-auto scrollbar-none">
-            {sections.map(s => (
-              <TabsTrigger
-                key={s.id}
-                value={s.id}
-                id={`tab-btn-${s.id}`}
-                className="text-xs px-3.5 py-1.5 rounded-lg font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:font-semibold data-[state=active]:shadow-xs border border-transparent data-[state=active]:border-slate-200/80 transition-all cursor-pointer text-slate-500 hover:text-slate-900"
-              >
-                {s.label}
-              </TabsTrigger>
-            ))}
+            {sections.map(s => {
+              const Icon = s.icon;
+              return (
+                <TabsTrigger
+                  key={s.id}
+                  value={s.id}
+                  id={`tab-btn-${s.id}`}
+                  className="inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-lg font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:font-semibold data-[state=active]:shadow-xs border border-transparent data-[state=active]:border-slate-200/80 transition-all cursor-pointer text-slate-500 hover:text-slate-900"
+                >
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span>{s.label}</span>
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
 
           {/* Raccourci vers la modal de Score via shadcn Button */}

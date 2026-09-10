@@ -13,12 +13,13 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import {
-  Home,
+  LayoutDashboard,
   MessageSquare,
   Globe,
   Swords,
   Tag,
   Users,
+  Users2,
   Folder,
   Building2,
   CreditCard,
@@ -29,12 +30,11 @@ import {
   ShieldCheck,
   BadgeDollarSign,
   PlusCircle,
-  Target,
   TrendingUp,
-  Cpu,
-  FileText,
-  LayoutGrid,
-  Wand2,
+  Bot,
+  BookOpen,
+  Layers,
+  Sparkles,
 } from "lucide-react"
 import { Badge } from '@/components/ui/badge'
 import { usePayment } from '@/contexts/PaymentContext'
@@ -106,28 +106,27 @@ export function AppSidebar() {
           {
             title: "Vue d'ensemble",
             url: "/",
-            icon: Home,
+            icon: LayoutDashboard,
             badge: undefined as string | undefined,
           },
           {
             title: "Concurrentielle",
             url: "/competition",
-            icon: Target,
+            icon: Swords,
             badge: undefined as string | undefined,
           },
           {
             title: "Améliorer",
             url: "/ameliorer",
-            icon: Wand2,
+            icon: Sparkles,
             badge: undefined as string | undefined,
           },
           {
             title: "Éligibilité Agentique",
             url: "/agentic",
-            icon: Cpu,
+            icon: Bot,
             badge: "M2M" as string | undefined,
           },
-
         ],
       },
       {
@@ -136,7 +135,7 @@ export function AppSidebar() {
           {
             title: "Personnes",
             url: "/settings",
-            icon: Users,
+            icon: Users2,
             badge: undefined as string | undefined,
           },
           {
@@ -159,13 +158,13 @@ export function AppSidebar() {
           {
             title: "Plans",
             url: "/admin/plans",
-            icon: LayoutGrid,
+            icon: Layers,
             badge: undefined as string | undefined,
           },
           {
             title: "Doc abonnements",
             url: "/admin/subscriptions-docs",
-            icon: FileText,
+            icon: BookOpen,
             badge: undefined as string | undefined,
           },
         ],
