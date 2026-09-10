@@ -42,7 +42,7 @@ export interface AgenticScanResult {
   created_at?: string;
 }
 
-const FALLBACK_FLY_API = 'https://viraill-core-api.fly.dev';
+const FALLBACK_API = import.meta.env.VITE_API_BASE_URL || 'https://api.viraill.com';
 
 /**
  * Génère un audit déterministe résilient en cas de 402 ou d'indisponibilité réseau
@@ -183,9 +183,9 @@ export async function getLatestAgenticAudit(url: string, autoGenerateIfMissing: 
     } catch (e) {}
   }
 
-  // 3. Fallback backend Fly API
+  // 3. Fallback API
   try {
-    const res = await fetch(`${FALLBACK_FLY_API}/v1/agentic/latest?url=${encUrl}`);
+    const res = await fetch(`${FALLBACK_API}/api/v1/agentic/latest?url=${encUrl}`);
     const contentType = res.headers.get('content-type') || '';
     if (res.ok && contentType.includes('application/json')) {
       const data = await res.json();
@@ -272,9 +272,9 @@ export async function runAgenticScan(
     } catch (err) {}
   }
 
-  // 3. Essayer le backend Fly.io
+  // 3. Fallback API
   try {
-    const response = await fetch(`${FALLBACK_FLY_API}/v1/agentic/scan`, {
+    const response = await fetch(`${FALLBACK_API}/api/v1/agentic/scan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
