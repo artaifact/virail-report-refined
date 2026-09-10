@@ -142,28 +142,32 @@ export async function getLatestAgenticAudit(url: string): Promise<AgenticScanRes
     const res = await fetch(`/api/v1/agentic/latest?url=${encUrl}`, {
       credentials: 'include',
     });
-    if (res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('application/json')) {
       const data = await res.json();
       if (data && (data.score !== undefined || data.pillars)) {
         return data;
       }
     }
   } catch (e) {
-    console.warn('[AgenticService] Proxy getLatestAgenticAudit failed, trying direct localhost:8000...', e);
+    // Ignorer l'erreur proxy
   }
 
-  // 2. Direct localhost:8000
-  try {
-    const res = await fetch(`http://localhost:8000/api/v1/agentic/latest?url=${encUrl}`, {
-      credentials: 'include',
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && (data.score !== undefined || data.pillars)) {
-        return data;
+  // 2. Direct localhost:8000 (uniquement si en dev local sur localhost)
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    try {
+      const res = await fetch(`http://localhost:8000/api/v1/agentic/latest?url=${encUrl}`, {
+        credentials: 'include',
+      });
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data && (data.score !== undefined || data.pillars)) {
+          return data;
+        }
       }
-    }
-  } catch (e) {}
+    } catch (e) {}
+  }
 
   return null;
 }
@@ -187,32 +191,34 @@ export async function runAgenticScan(
       credentials: 'include',
       body: JSON.stringify(payload),
     });
-    if (localRes.ok) {
+    const contentType = localRes.headers.get('content-type') || '';
+    if (localRes.ok && contentType.includes('application/json')) {
       const data = await localRes.json();
       if (data && (data.score !== undefined || data.pillars)) {
         return data;
       }
     }
   } catch (err) {
-    console.warn('[AgenticService] Proxy /api/v1/agentic/scan failed, trying direct localhost:8000...', err);
+    // Ignorer l'erreur proxy
   }
 
-  // 2. Essayer directement localhost:8000
-  try {
-    const directRes = await fetch('http://localhost:8000/api/v1/agentic/scan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(payload),
-    });
-    if (directRes.ok) {
-      const data = await directRes.json();
-      if (data && (data.score !== undefined || data.pillars)) {
-        return data;
+  // 2. Essayer directement localhost:8000 si en dev local
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    try {
+      const directRes = await fetch('http://localhost:8000/api/v1/agentic/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      const contentType = directRes.headers.get('content-type') || '';
+      if (directRes.ok && contentType.includes('application/json')) {
+        const data = await directRes.json();
+        if (data && (data.score !== undefined || data.pillars)) {
+          return data;
+        }
       }
-    }
-  } catch (err) {
-    console.warn('[AgenticService] Direct localhost:8000 failed...', err);
+    } catch (err) {}
   }
 
   // 3. Essayer le backend Fly.io
@@ -223,7 +229,8 @@ export async function runAgenticScan(
       body: JSON.stringify(payload),
     });
 
-    if (response.ok) {
+    const contentType = response.headers.get('content-type') || '';
+    if (response.ok && contentType.includes('application/json')) {
       const raw = await response.json();
       return {
         status: 'success',
@@ -241,7 +248,7 @@ export async function runAgenticScan(
       };
     }
   } catch (err) {
-    console.warn('[AgenticService] Fly.io failed...', err);
+    // Ignorer l'erreur Fly.io
   }
 
   // 4. Si tous les réseaux ont échoué, générer le diagnostic résilient

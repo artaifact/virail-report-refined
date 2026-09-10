@@ -362,6 +362,9 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     };
   };
 
+  // Plateforme et métadonnées d'optimisation
+  const coPlatform = coAnalyze?.platform || coOptimize?.metadata?.platform || co?.platform || '';
+
   // Fichiers : optimize > simulate.generated_files > technical_files
   const schemaContent = coOptimize?.schemas
     ? JSON.stringify(coOptimize.schemas, null, 2)
@@ -384,7 +387,6 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     || [];
   const coMissingSchemas = coAnalyze?.missing_schemas || [];
   const coEntityCoverage = coAnalyze?.entity_coverage || {};
-  const coPlatform = coAnalyze?.platform || coOptimize?.metadata?.platform || co?.platform || '';
   const coCrawlerPerspective = coSimulate?.crawler_perspective;
   const coOriginalScore = coSimulate?.comparison?.original_score;
   const coOptimizedScore = coSimulate?.comparison?.optimized_score;
