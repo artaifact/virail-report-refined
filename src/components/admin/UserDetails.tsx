@@ -310,7 +310,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ userId, onBack, classN
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                Informations personnelles
+                Informations personnelles test
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
