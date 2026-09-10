@@ -20,6 +20,8 @@ import { modelLogos } from '@/components/ModelLogosCarousel';
 import { usePayment } from '@/hooks/usePayment';
 import { ScoreCard } from '@/components/dashboard/ScoreCard';
 import { CausalImpactTimeline } from '@/components/causal/CausalImpactTimeline';
+import { ActionabilityScoreDetail } from '@/components/scoring/ActionabilityScoreDetail';
+import { ActionabilityScoreModal } from '@/components/scoring/ActionabilityScoreModal';
 import { NewAnalysisModal } from '@/components/NewAnalysisModal';
 import { AiExplainModal } from '@/components/AiExplainModal';
 import AskAIButton from '@/components/AskAIButton';
@@ -316,17 +318,23 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
     });
   }, [domain, normalizedGeoScore, totalCitations, activeModels.length, normalizedAgenticScore]);
 
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
+
   return (
     <div className="citations-chart">
       {/* Bannière d'Actionnabilité Unifiée en 3 Niveaux - Style Thème Viraill */}
-      <div className="w-full mb-4 p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+      <div 
+        onClick={() => setIsScoreModalOpen(true)}
+        className="w-full mb-4 p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:border-indigo-300 hover:shadow-md transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-3.5 cursor-pointer group"
+        title="Cliquer pour afficher la décomposition complète du Score d'Actionnabilité Unifié en modal"
+      >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center font-bold text-base text-indigo-700 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200/60 flex items-center justify-center font-bold text-base text-indigo-700 shrink-0 group-hover:scale-105 transition-transform">
             {unified?.grade || 'B'}
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs sm:text-sm font-bold tracking-tight text-slate-900">
+              <span className="text-xs sm:text-sm font-bold tracking-tight text-slate-900 group-hover:text-indigo-600 transition-colors">
                 Score d'Actionnabilité Unifié : {unified?.overallScore ?? (unified as any)?.score ?? 50}/100
               </span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/70">
@@ -349,14 +357,43 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
           <span className="px-2.5 py-1 rounded-lg bg-rose-50/70 border border-rose-200/60 text-slate-700">
             <strong className="text-rose-700 font-semibold">Niv. 3 Actionnable</strong> : {unified?.levels?.actionable_and_transacting?.score ?? normalizedAgenticScore ?? 50}/100
           </span>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsScoreModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/70 font-semibold transition-colors cursor-pointer"
+          >
+            <Sparkles className="w-3 h-3 text-indigo-600" />
+            <span>Détails (Modal) ↗</span>
+          </button>
+
           <Link
             to="/methodologie"
+            onClick={(e) => e.stopPropagation()}
             className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 underline ml-1 transition-colors"
           >
             Méthodologie 2026.1 →
           </Link>
         </div>
       </div>
+
+      <ActionabilityScoreModal
+        isOpen={isScoreModalOpen}
+        onClose={() => setIsScoreModalOpen(false)}
+        unified={unified}
+        domain={domain}
+        onSwitchToFullView={() => {
+          setIsScoreModalOpen(false);
+          const tabBtn = document.getElementById('tab-btn-score');
+          if (tabBtn) {
+            tabBtn.click();
+            tabBtn.scrollIntoView({ behavior: 'smooth' });
+          }
+        }}
+      />
 
       {/* Conteneur des 3 graphiques côte à côte de même dimension et arrondi */}
       <div className="flex flex-col xl:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-10 w-full mb-3">
@@ -3995,28 +4032,8 @@ function PlanActionGeoOverview({ reportData }: { reportData: FullReportData | nu
 }
 
 function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
-  const [activeTab, setActiveTab] = useState<'citations' | 'concurrents' | 'sources' | 'causal'>('citations');
-
-  const scrollTo = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const handleTabClick = (tabId: 'citations' | 'concurrents' | 'sources' | 'causal') => {
-    setActiveTab(tabId);
-    if (tabId !== 'causal') {
-      setTimeout(() => {
-        scrollTo(`section-${tabId}`);
-      }, 50);
-    }
-  };
-
-  const sections = [
-    { id: 'citations' as const, label: 'Citations' },
-    { id: 'concurrents' as const, label: 'Concurrents' },
-    { id: 'sources' as const, label: 'Sources' },
-    { id: 'causal' as const, label: 'Impact Causal (ROI)' },
-  ];
+  const [activeTab, setActiveTab] = useState<'citations' | 'concurrents' | 'sources' | 'score' | 'causal'>('citations');
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
 
   const targetDomain = (() => {
     const rawUrl = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || (reportData as any)?.url || '';
@@ -4028,6 +4045,54 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
     }
   })();
 
+  const totalCitations = (() => {
+    if (reportData?.analyse_citation?.total_citations !== undefined) {
+      return reportData.analyse_citation.total_citations;
+    }
+    if (!reportData?.analyses || reportData.analyses.length === 0) return 0;
+    return reportData.analyses.reduce((sum, analysis) => {
+      const geoData = analysis.modules?.audit_geo;
+      const citations = geoData?.citations || geoData?.mentions || 0;
+      return sum + Number(citations);
+    }, 0);
+  })();
+
+  const targetGeoScore = extractTargetGeoScore(reportData);
+  const effectiveAgenticScore = extractAgenticScore(reportData) ?? (targetGeoScore != null ? Math.round(targetGeoScore * 0.65) : 58);
+
+  const unified = useMemo(() => {
+    return computeUnifiedScore({
+      targetDomain,
+      geoScore: targetGeoScore,
+      totalCitations,
+      modelsCount: 9,
+      agenticScore: effectiveAgenticScore,
+      schemaScore: targetGeoScore ? Math.round(targetGeoScore * 0.9) : 60,
+    });
+  }, [targetDomain, targetGeoScore, totalCitations, effectiveAgenticScore]);
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleTabClick = (tabId: 'citations' | 'concurrents' | 'sources' | 'score' | 'causal') => {
+    setActiveTab(tabId);
+    if (tabId !== 'causal' && tabId !== 'score') {
+      setTimeout(() => {
+        scrollTo(`section-${tabId}`);
+      }, 50);
+    }
+  };
+
+  const sections = [
+    { id: 'citations' as const, label: 'Citations' },
+    { id: 'concurrents' as const, label: 'Concurrents' },
+    { id: 'sources' as const, label: 'Sources' },
+    { id: 'score' as const, label: `Score Unifié (${unified?.grade || 'C'})` },
+    { id: 'causal' as const, label: 'Impact Causal (ROI)' },
+  ];
+
   return (
     <div className="view-content">
       {/* Barre de navigation intra-page */}
@@ -4038,6 +4103,7 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
             return (
               <button
                 key={s.id}
+                id={`tab-btn-${s.id}`}
                 type="button"
                 onClick={() => handleTabClick(s.id)}
                 className={`flex-shrink-0 text-xs px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
@@ -4051,10 +4117,29 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
             );
           })}
         </div>
+
+        {/* Raccourci vers la modal de Score */}
+        <button
+          type="button"
+          onClick={() => setIsScoreModalOpen(true)}
+          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/70 transition-all cursor-pointer shadow-xs"
+          title="Ouvrir le détail du score unifié dans une modale"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+          <span>Score en Modal</span>
+        </button>
       </div>
 
-      {/* Contenu conditionnel : Impact Causal remplace les 3 blocs standard */}
-      {activeTab === 'causal' ? (
+      {/* Contenu conditionnel : Score Unifié ou Impact Causal remplace les 3 blocs standard */}
+      {activeTab === 'score' ? (
+        <div id="section-score" className="animate-in fade-in duration-200">
+          <ActionabilityScoreDetail
+            unified={unified}
+            domain={targetDomain}
+            onOpenModal={() => setIsScoreModalOpen(true)}
+          />
+        </div>
+      ) : activeTab === 'causal' ? (
         <div id="section-causal" className="animate-in fade-in duration-200">
           <CausalImpactTimeline domain={targetDomain} />
         </div>
@@ -4074,6 +4159,17 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
           </div>
         </div>
       )}
+
+      {/* Modal Score d'Actionnabilité Unifié */}
+      <ActionabilityScoreModal
+        isOpen={isScoreModalOpen}
+        onClose={() => setIsScoreModalOpen(false)}
+        unified={unified}
+        domain={targetDomain}
+        onSwitchToFullView={() => {
+          setActiveTab('score');
+        }}
+      />
     </div>
   );
 }
