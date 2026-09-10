@@ -43,7 +43,7 @@ import { generateFullReportPdf } from '@/services/reportPdfService';
 const getModelLogo = (modelName: string): string | null => {
   if (!modelName) return null;
   const name = modelName.toLowerCase();
-  
+
   for (const [key, path] of Object.entries(modelLogos)) {
     if (name.includes(key)) return path;
   }
@@ -84,13 +84,13 @@ export const extractAgenticScore = (reportData: FullReportData | null): number |
     if (url) {
       const hostname = new URL(url).hostname.replace('www.', '');
       const cached = localStorage.getItem(`viraill_agentic_score_${hostname}`) ||
-                     localStorage.getItem(`viraill_agentic_score_${url}`);
+        localStorage.getItem(`viraill_agentic_score_${url}`);
       if (cached) {
         const num = Number(cached);
         if (!isNaN(num)) return Math.max(0, Math.min(100, Math.round(num)));
       }
     }
-  } catch {}
+  } catch { }
 
   // 3. Estimation déterministe basée sur les capacités machine observées
   const geoScore = extractTargetGeoScore(reportData) ?? 50;
@@ -173,7 +173,7 @@ export const extractTargetGeoScore = (reportData: FullReportData | null): number
         const num = Number(score);
         if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
       }
-    } catch {}
+    } catch { }
   }
 
   // 4. Score produit analysé (report.score_produit_analyse)
@@ -301,16 +301,16 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
 
   // Configuration du graphique Score GEO (même dimension que Citations totales)
   const normalizedGeoScore = targetGeoScore != null ? Math.max(0, Math.min(100, Math.round(targetGeoScore))) : null;
-  const geoStrokeColor = normalizedGeoScore != null 
-    ? (normalizedGeoScore >= 75 ? '#10B981' : normalizedGeoScore >= 50 ? '#6366F1' : '#F59E0B') 
+  const geoStrokeColor = normalizedGeoScore != null
+    ? (normalizedGeoScore >= 75 ? '#10B981' : normalizedGeoScore >= 50 ? '#6366F1' : '#F59E0B')
     : '#10B981';
-  const geoGradStart = normalizedGeoScore != null 
-    ? (normalizedGeoScore >= 75 ? '#34D399' : normalizedGeoScore >= 50 ? '#818CF8' : '#FBBF24') 
+  const geoGradStart = normalizedGeoScore != null
+    ? (normalizedGeoScore >= 75 ? '#34D399' : normalizedGeoScore >= 50 ? '#818CF8' : '#FBBF24')
     : '#34D399';
   const geoCirc = 2 * Math.PI * r;
   const geoDashoffset = normalizedGeoScore != null ? geoCirc - (normalizedGeoScore / 100) * geoCirc : 0;
-  const geoStatusLabel = normalizedGeoScore != null 
-    ? (normalizedGeoScore >= 75 ? 'Visibilité optimale' : normalizedGeoScore >= 50 ? 'Bonne visibilité' : 'À améliorer') 
+  const geoStatusLabel = normalizedGeoScore != null
+    ? (normalizedGeoScore >= 75 ? 'Visibilité optimale' : normalizedGeoScore >= 50 ? 'Bonne visibilité' : 'À améliorer')
     : '';
 
   // Configuration du graphique Score Agentique (même dimension que Citations totales et Score GEO)
@@ -327,7 +327,7 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
       {/* Conteneur des 3 graphiques côte à côte de même dimension et arrondi */}
       <div className="flex flex-col xl:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-10 w-full mb-3">
         {/* 1. Graphique circulaire : Citations totales (nom et pourcentage révélés uniquement sur la roue) */}
-        <div 
+        <div
           className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto group"
           onMouseEnter={() => {
             setIsWheelHovered(true);
@@ -343,10 +343,9 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
         >
           {/* Menu flottant des modèles : visible UNIQUEMENT quand on va sur la roue */}
           {modelColors.length > 0 && (
-            <div 
-              className={`hidden lg:flex flex-col gap-0.5 absolute right-[calc(100%+14px)] top-1/2 -translate-y-1/2 z-30 p-2 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-xl min-w-[135px] transition-all duration-200 ${
-                isWheelHovered ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
-              }`}
+            <div
+              className={`hidden lg:flex flex-col gap-0.5 absolute right-[calc(100%+14px)] top-1/2 -translate-y-1/2 z-30 p-2 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-xl min-w-[135px] transition-all duration-200 ${isWheelHovered ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
+                }`}
             >
               <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1 pb-1 mb-0.5 border-b border-slate-100 dark:border-slate-800">
                 Modèles IA
@@ -383,8 +382,8 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
           )}
 
           {/* Cercle SVG Citations totales */}
-          <svg 
-            viewBox="0 0 280 280" 
+          <svg
+            viewBox="0 0 280 280"
             className="w-full h-auto mx-auto cursor-pointer"
           >
             {/* Background circle - même épaisseur 32 que les segments */}
@@ -445,8 +444,8 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
         {/* 2. Graphique circulaire : Score GEO (même dimension et même arrondi exact) */}
         {normalizedGeoScore !== null && (
           <div className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto">
-            <svg 
-              viewBox="0 0 280 280" 
+            <svg
+              viewBox="0 0 280 280"
               className="w-full h-auto mx-auto cursor-pointer"
               onMouseEnter={() => setIsScoreGeoHovered(true)}
               onMouseLeave={() => setIsScoreGeoHovered(false)}
@@ -502,74 +501,74 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
 
         {/* 3. Graphique circulaire : Score Agentique (même dimension et même arrondi exact) */}
         <div className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto group">
-            <svg 
-              viewBox="0 0 280 280" 
-              className="w-full h-auto mx-auto cursor-pointer transition-transform duration-200 group-hover:scale-[1.02]"
+          <svg
+            viewBox="0 0 280 280"
+            className="w-full h-auto mx-auto cursor-pointer transition-transform duration-200 group-hover:scale-[1.02]"
+            onClick={() => navigate('/agentic')}
+            onMouseEnter={() => setIsScoreAgenticHovered(true)}
+            onMouseLeave={() => setIsScoreAgenticHovered(false)}
+          >
+            <defs>
+              <linearGradient id="agenticScoreRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor={agenticGradStart} />
+                <stop offset="100%" stopColor={agenticStrokeColor} />
+              </linearGradient>
+            </defs>
+
+            {/* Background circle - même dimension exacte cx, cy, r et strokeWidth=32 */}
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
+
+            {/* Progress ring - même épaisseur 32 et même rayon r=95 */}
+            <circle
+              cx={cx}
+              cy={cy}
+              r={r}
+              fill="none"
+              stroke="url(#agenticScoreRingGradient)"
+              strokeWidth="32"
+              strokeDasharray={agenticCirc}
+              strokeDashoffset={agenticDashoffset}
+              strokeLinecap="round"
+              transform={`rotate(-90 ${cx} ${cy})`}
+              style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.3s ease' }}
+            />
+
+            {/* Center text : même style typographique que citations totales et score GEO */}
+            {isScoreAgenticHovered ? (
+              <>
+                <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                  {normalizedAgenticScore}/100
+                </text>
+                <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: agenticStrokeColor, fontFamily: 'Inter, sans-serif' }}>
+                  {agenticStatusLabel}
+                </text>
+              </>
+            ) : (
+              <>
+                <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                  {normalizedAgenticScore}
+                </text>
+                <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
+                  Score Agentique
+                </text>
+              </>
+            )}
+          </svg>
+          <div className="text-center mt-1">
+            <button
+              type="button"
               onClick={() => navigate('/agentic')}
-              onMouseEnter={() => setIsScoreAgenticHovered(true)}
-              onMouseLeave={() => setIsScoreAgenticHovered(false)}
+              className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors inline-flex items-center gap-0.5 cursor-pointer"
+              title="Consulter l'audit complet d'éligibilité machine"
             >
-              <defs>
-                <linearGradient id="agenticScoreRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor={agenticGradStart} />
-                  <stop offset="100%" stopColor={agenticStrokeColor} />
-                </linearGradient>
-              </defs>
-
-              {/* Background circle - même dimension exacte cx, cy, r et strokeWidth=32 */}
-              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
-
-              {/* Progress ring - même épaisseur 32 et même rayon r=95 */}
-              <circle
-                cx={cx}
-                cy={cy}
-                r={r}
-                fill="none"
-                stroke="url(#agenticScoreRingGradient)"
-                strokeWidth="32"
-                strokeDasharray={agenticCirc}
-                strokeDashoffset={agenticDashoffset}
-                strokeLinecap="round"
-                transform={`rotate(-90 ${cx} ${cy})`}
-                style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.3s ease' }}
-              />
-
-              {/* Center text : même style typographique que citations totales et score GEO */}
-              {isScoreAgenticHovered ? (
-                <>
-                  <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
-                    {normalizedAgenticScore}/100
-                  </text>
-                  <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: agenticStrokeColor, fontFamily: 'Inter, sans-serif' }}>
-                    {agenticStatusLabel}
-                  </text>
-                </>
-              ) : (
-                <>
-                  <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
-                    {normalizedAgenticScore}
-                  </text>
-                  <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
-                    Score Agentique
-                  </text>
-                </>
-              )}
-            </svg>
-            <div className="text-center mt-1">
-              <button
-                type="button"
-                onClick={() => navigate('/agentic')}
-                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors inline-flex items-center gap-0.5 cursor-pointer"
-                title="Consulter l'audit complet d'éligibilité machine"
-              >
-                <span>Éligibilité M2M</span>
-                <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
+              <span>Éligibilité M2M</span>
+              <ChevronRight className="w-3 h-3" />
+            </button>
           </div>
+        </div>
       </div>
 
-      
+
     </div>
   );
 }
@@ -622,7 +621,7 @@ function TopSection({ reportData, reports, onOpenReportsModal, onOpenAiExplain, 
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => { isMounted = false; };
   }, [reportData]);
@@ -725,7 +724,7 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
             a.remove();
             window.URL.revokeObjectURL(url);
           }
-        } catch {}
+        } catch { }
       }
     } finally {
       setPdfLoading(false);
@@ -931,7 +930,7 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
   return (
     <>
       <div className="recommendations-table border border-slate-100 rounded-2xl p-4 md:p-6 shadow-none">
-        
+
         {/* Desktop: table layout */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full border-separate" style={{ borderSpacing: '0' }}>
@@ -1014,7 +1013,7 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
             </div>
           ))}
         </div>
-        
+
       </div>
 
       {/* Bouton Rapport PDF */}
@@ -1255,11 +1254,11 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
  */
 function AccordionItem({ id, title, isOpen, onToggle, children }: { id: string, title: string, isOpen: boolean, onToggle: (id: string) => void, children?: React.ReactNode }) {
   return (
-    <div 
-      className={`accordion-item ${isOpen ? 'accordion-open' : ''}`} 
-      style={{ 
-        border: `1px solid ${isOpen ? '#CBD5F5' : '#E2E8F0'}`, 
-        borderRadius: '10px', 
+    <div
+      className={`accordion-item ${isOpen ? 'accordion-open' : ''}`}
+      style={{
+        border: `1px solid ${isOpen ? '#CBD5F5' : '#E2E8F0'}`,
+        borderRadius: '10px',
         background: isOpen ? '#FFFFFF' : '#F7F9FC',
         overflow: 'hidden'
       }}
@@ -1283,14 +1282,14 @@ function AccordionItem({ id, title, isOpen, onToggle, children }: { id: string, 
         <span style={{ fontSize: '15px', fontWeight: 600, color: '#1F2937', textAlign: 'left' }}>{title}</span>
         <span className="accordion-icon" style={{ fontSize: '12px', color: '#94A3B8', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>▼</span>
       </button>
-      
+
       {isOpen && children && (
-        <div 
-          className="accordion-content" 
-          style={{ 
-            padding: '0 20px 20px 20px', 
-            background: '#FFFFFF', 
-            borderTop: '1px solid #E2E8F0' 
+        <div
+          className="accordion-content"
+          style={{
+            padding: '0 20px 20px 20px',
+            background: '#FFFFFF',
+            borderTop: '1px solid #E2E8F0'
           }}
         >
           {children}
@@ -1303,20 +1302,20 @@ function AccordionItem({ id, title, isOpen, onToggle, children }: { id: string, 
 /**
  * Composant de carte d'étape dynamique et interactive
  */
-function DynamicStepCard({ 
-  etape, 
-  idx, 
-  stepId, 
-  stepStatus, 
-  updateStepStatus, 
-  toggleAction, 
-  updateStepNotes, 
-  getPriorityColor 
-}: { 
-  etape: any; 
-  idx: number; 
-  stepId: string; 
-  stepStatus: any; 
+function DynamicStepCard({
+  etape,
+  idx,
+  stepId,
+  stepStatus,
+  updateStepStatus,
+  toggleAction,
+  updateStepNotes,
+  getPriorityColor
+}: {
+  etape: any;
+  idx: number;
+  stepId: string;
+  stepStatus: any;
   updateStepStatus: (stepId: string, status: string) => void;
   toggleAction: (stepId: string, actionIndex: number, totalActionsCount: number) => void;
   updateStepNotes: (stepId: string, notes: string) => void;
@@ -1338,7 +1337,7 @@ function DynamicStepCard({
 
   const progressColor = stepStatus.progress === 100 ? '#10B981' : stepStatus.progress >= 50 ? '#F97316' : '#EF4444';
   const StatusIcon = stepStatus.status === 'Terminé' ? CheckCircle : stepStatus.status === 'En cours' ? PlayCircle : Circle;
-  
+
   // Calculer le nombre d'actions cochées
   const checkedActions = stepStatus.checkedActions || {};
   const totalActions = etape.actions?.length || 0;
@@ -1346,11 +1345,11 @@ function DynamicStepCard({
   const actionsProgress = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 0;
 
   return (
-    <div 
-      style={{ 
-        padding: '12px 14px', 
+    <div
+      style={{
+        padding: '12px 14px',
         background: '#FFFFFF',
-        borderRadius: '6px', 
+        borderRadius: '6px',
         border: '1px solid #E2E8F0',
         boxShadow: isExpanded ? '0 1px 3px rgba(0,0,0,0.04)' : '0 1px 2px rgba(0,0,0,0.02)',
         transition: 'all 0.2s ease',
@@ -1419,10 +1418,10 @@ function DynamicStepCard({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {etape.priorite && (
-            <span style={{ 
-              padding: '3px 8px', 
-              borderRadius: '4px', 
-              fontSize: '10px', 
+            <span style={{
+              padding: '3px 8px',
+              borderRadius: '4px',
+              fontSize: '10px',
               fontWeight: 500,
               background: `${getPriorityColor(etape.priorite)}15`,
               color: getPriorityColor(etape.priorite)
@@ -1454,7 +1453,7 @@ function DynamicStepCard({
           <p style={{ fontSize: '16px', color: '#475569', marginBottom: '16px', lineHeight: '1.7' }}>
             {etape.description || ''}
           </p>
-          
+
           {/* Contrôles de statut avec animations */}
           <div style={{ marginBottom: '12px' }}>
             {/* Boutons rapides de statut - À droite, petits et groupés */}
@@ -1463,7 +1462,7 @@ function DynamicStepCard({
                 variant="outline"
                 size="sm"
                 onClick={() => updateStepStatus(stepId, 'Non commencé')}
-                style={{ 
+                style={{
                   height: '32px',
                   padding: '0 14px',
                   fontSize: '14px',
@@ -1481,7 +1480,7 @@ function DynamicStepCard({
                 variant="outline"
                 size="sm"
                 onClick={() => updateStepStatus(stepId, 'En cours')}
-                style={{ 
+                style={{
                   height: '30px',
                   padding: '0 12px',
                   fontSize: '13px',
@@ -1499,7 +1498,7 @@ function DynamicStepCard({
                 variant="outline"
                 size="sm"
                 onClick={() => updateStepStatus(stepId, 'Terminé')}
-                style={{ 
+                style={{
                   height: '30px',
                   padding: '0 12px',
                   fontSize: '13px',
@@ -1532,10 +1531,10 @@ function DynamicStepCard({
                   </span>
                 )}
               </div>
-              <div style={{ 
-                padding: '8px', 
-                background: '#F8FAFC', 
-                borderRadius: '6px', 
+              <div style={{
+                padding: '8px',
+                background: '#F8FAFC',
+                borderRadius: '6px',
                 border: '1px solid #E2E8F0',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1567,10 +1566,10 @@ function DynamicStepCard({
                           <Circle size={16} style={{ color: '#CBD5E1' }} />
                         )}
                       </div>
-                      <span 
-                        style={{ 
-                          fontSize: '15px', 
-                          color: isChecked ? '#64748B' : '#475569', 
+                      <span
+                        style={{
+                          fontSize: '15px',
+                          color: isChecked ? '#64748B' : '#475569',
                           lineHeight: '1.6',
                           flex: 1,
                           userSelect: 'none'
@@ -1663,9 +1662,9 @@ function DynamicStepCard({
               {Array.isArray(etape.outils_recommandes) ? (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {etape.outils_recommandes.map((outil: string, oIdx: number) => (
-                    <span 
+                    <span
                       key={oIdx}
-                      style={{ 
+                      style={{
                         padding: '8px 12px',
                         background: '#F1F5F9',
                         color: '#475569',
@@ -1702,15 +1701,15 @@ function DynamicStepCard({
  */
 function ImplementationGuide({ reportData }: { reportData: FullReportData | null }) {
   const [openAccordion, setOpenAccordion] = useState<string | null>('monitoring');
-  
+
   // Clé unique pour le localStorage basée sur l'ID du rapport
-  const storageKey = reportData?.report?.id 
-    ? `implementation-guide-progress-${reportData.report.id}` 
+  const storageKey = reportData?.report?.id
+    ? `implementation-guide-progress-${reportData.report.id}`
     : 'implementation-guide-progress-default';
-  
+
   // Initialiser l'état depuis localStorage avec plus de données
-  const [stepProgress, setStepProgress] = useState<Record<string, { 
-    status: string; 
+  const [stepProgress, setStepProgress] = useState<Record<string, {
+    status: string;
     progress: number;
     checkedActions?: Record<number, boolean>;
     notes?: string;
@@ -1732,10 +1731,10 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
       'En cours': 50,
       'Terminé': 100
     };
-    
+
     const currentStep: { status?: string; progress?: number; checkedActions?: Record<number, boolean>; notes?: string; startedAt?: string; completedAt?: string } = stepProgress[stepId] || {};
     const now = new Date().toISOString();
-    
+
     const newProgress = {
       ...stepProgress,
       [stepId]: {
@@ -1746,9 +1745,9 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
         completedAt: status === 'Terminé' ? now : (currentStep.completedAt || undefined)
       }
     };
-    
+
     setStepProgress(newProgress);
-    
+
     // Sauvegarder dans localStorage
     try {
       localStorage.setItem(storageKey, JSON.stringify(newProgress));
@@ -1757,8 +1756,8 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
   };
 
   // Fonction pour obtenir le statut d'une étape
-  const getStepStatus = (stepId: string): { 
-    status: string; 
+  const getStepStatus = (stepId: string): {
+    status: string;
     progress: number;
     checkedActions?: Record<number, boolean>;
     notes?: string;
@@ -1776,12 +1775,12 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
       ...checkedActions,
       [actionIndex]: !checkedActions[actionIndex]
     };
-    
+
     // Calculer la progression basée sur les actions cochées
     const totalActions = Object.keys(newCheckedActions).length;
     const completedActions = Object.values(newCheckedActions).filter(Boolean).length;
     const actionProgress = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : currentStep.progress;
-    
+
     // Si toutes les actions sont cochées, mettre le statut à "Terminé"
     let newStatus = currentStep.status;
     if (completedActions === totalActions && totalActions > 0) {
@@ -1789,13 +1788,13 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
     } else if (completedActions > 0 && currentStep.status === 'Non commencé') {
       newStatus = 'En cours';
     }
-    
+
     const progressMap: Record<string, number> = {
       'Non commencé': 0,
       'En cours': Math.max(50, actionProgress),
       'Terminé': 100
     };
-    
+
     const newProgress = {
       ...stepProgress,
       [stepId]: {
@@ -1805,9 +1804,9 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
         progress: progressMap[newStatus] || actionProgress
       }
     };
-    
+
     setStepProgress(newProgress);
-    
+
     try {
       localStorage.setItem(storageKey, JSON.stringify(newProgress));
     } catch (error) {
@@ -1824,9 +1823,9 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
         notes
       }
     };
-    
+
     setStepProgress(newProgress);
-    
+
     try {
       localStorage.setItem(storageKey, JSON.stringify(newProgress));
     } catch (error) {
@@ -1851,7 +1850,7 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
       };
     }
 
-    const auditGeoData = reportData.analyses.find(analysis => 
+    const auditGeoData = reportData.analyses.find(analysis =>
       analysis.modules?.audit_geo?.package_optimisation_geo?.implementation_guide
     )?.modules?.audit_geo;
 
@@ -1928,17 +1927,17 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
             </div>
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>{globalProgress}%</span>
           </div>
-          <div style={{ 
-            width: '100%', 
-            height: '6px', 
-            backgroundColor: '#E2E8F0', 
+          <div style={{
+            width: '100%',
+            height: '6px',
+            backgroundColor: '#E2E8F0',
             borderRadius: '10px',
             overflow: 'hidden',
             marginBottom: '8px'
           }}>
-            <div style={{ 
-              width: `${globalProgress}%`, 
-              height: '100%', 
+            <div style={{
+              width: `${globalProgress}%`,
+              height: '100%',
               background: `linear-gradient(90deg, #3B82F6 0%, #60A5FA 100%)`,
               transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
               borderRadius: '10px'
@@ -1960,7 +1959,7 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
           </div>
         </div>
       </div>
-      
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {/* Accordéons */}
         <AccordionItem
@@ -1974,7 +1973,7 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
               {guideData.guide?.etapes_implementation ? Object.values(guideData.guide.etapes_implementation).map((etape: any, idx: number) => {
                 const stepId = `etape-${idx}-${etape.titre || `step-${idx}`}`;
                 const stepStatus = getStepStatus(stepId);
-                
+
                 return (
                   <DynamicStepCard
                     key={idx}
@@ -1990,26 +1989,26 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                 );
               }) : (
                 [
-                  { 
-                    step: '1. Préparation et audit', 
+                  {
+                    step: '1. Préparation et audit',
                     description: 'Analyser l\'état actuel de votre site, identifier les pages prioritaires et préparer les ressources nécessaires.',
                     duration: '2-3 heures',
                     deliverables: ['Rapport d\'audit', 'Liste des pages prioritaires', 'Plan d\'action']
                   },
-                  { 
-                    step: '2. Implémentation technique', 
+                  {
+                    step: '2. Implémentation technique',
                     description: 'Mettre en place les schémas structurés, optimiser les métadonnées et améliorer la structure HTML.',
                     duration: '4-6 heures',
                     deliverables: ['Schémas JSON-LD', 'Métadonnées optimisées', 'Structure HTML améliorée']
                   },
-                  { 
-                    step: '3. Tests et validation', 
+                  {
+                    step: '3. Tests et validation',
                     description: 'Valider toutes les implémentations avec les outils de Google et vérifier la conformité.',
                     duration: '1-2 heures',
                     deliverables: ['Rapport de validation', 'Corrections si nécessaire']
                   },
-                  { 
-                    step: '4. Déploiement et suivi', 
+                  {
+                    step: '4. Déploiement et suivi',
                     description: 'Mettre en production les changements et configurer le monitoring de performance.',
                     duration: '1 heure',
                     deliverables: ['Déploiement validé', 'Dashboard de monitoring configuré']
@@ -2018,92 +2017,92 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                   const stepId = `etape-default-${idx}-${item.step}`;
                   const stepStatus = getStepStatus(stepId);
                   const progressColor = stepStatus.progress === 100 ? '#10B981' : stepStatus.progress === 50 ? '#F97316' : '#EF4444';
-                  
+
                   return (
-                  <div key={idx} style={{ padding: '20px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
-                      <h4 style={{ fontSize: '18px', fontWeight: 600, color: '#0F172A' }}>{item.step}</h4>
-                      <span style={{ fontSize: '14px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Clock size={16} />
-                        {item.duration}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '16px', color: '#475569', marginBottom: '16px', lineHeight: '1.7' }}>
-                      {item.description}
-                    </p>
-                    
-                    {/* Select de statut et barre de progression */}
-                    <div style={{ marginBottom: '16px', padding: '16px', background: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                        <label style={{ fontSize: '14px', fontWeight: 600, color: '#334155' }}>
-                          Statut de l'étape :
-                        </label>
-                        <select
-                          value={stepStatus.status}
-                          onChange={(e) => updateStepStatus(stepId, e.target.value)}
-                          style={{
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            border: '1px solid #CBD5E1',
-                            fontSize: '14px',
-                            color: '#334155',
-                            backgroundColor: '#FFFFFF',
-                            cursor: 'pointer',
-                            minWidth: '160px'
-                          }}
-                        >
-                          <option value="Non commencé">Non commencé</option>
-                          <option value="En cours">En cours</option>
-                          <option value="Terminé">Terminé</option>
-                        </select>
+                    <div key={idx} style={{ padding: '20px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                        <h4 style={{ fontSize: '18px', fontWeight: 600, color: '#0F172A' }}>{item.step}</h4>
+                        <span style={{ fontSize: '14px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Clock size={16} />
+                          {item.duration}
+                        </span>
                       </div>
-                      <div style={{ marginTop: '12px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '13px', color: '#64748B', fontWeight: 500 }}>Progression</span>
-                          <span style={{ fontSize: '13px', color: '#334155', fontWeight: 600 }}>{stepStatus.progress}%</span>
+                      <p style={{ fontSize: '16px', color: '#475569', marginBottom: '16px', lineHeight: '1.7' }}>
+                        {item.description}
+                      </p>
+
+                      {/* Select de statut et barre de progression */}
+                      <div style={{ marginBottom: '16px', padding: '16px', background: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <label style={{ fontSize: '14px', fontWeight: 600, color: '#334155' }}>
+                            Statut de l'étape :
+                          </label>
+                          <select
+                            value={stepStatus.status}
+                            onChange={(e) => updateStepStatus(stepId, e.target.value)}
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: '6px',
+                              border: '1px solid #CBD5E1',
+                              fontSize: '14px',
+                              color: '#334155',
+                              backgroundColor: '#FFFFFF',
+                              cursor: 'pointer',
+                              minWidth: '160px'
+                            }}
+                          >
+                            <option value="Non commencé">Non commencé</option>
+                            <option value="En cours">En cours</option>
+                            <option value="Terminé">Terminé</option>
+                          </select>
                         </div>
-                        <div style={{ 
-                          width: '100%', 
-                          height: '8px', 
-                          backgroundColor: '#E2E8F0', 
-                          borderRadius: '4px',
-                          overflow: 'hidden'
-                        }}>
-                          <div style={{ 
-                            width: `${stepStatus.progress}%`, 
-                            height: '100%', 
-                            backgroundColor: progressColor,
-                            transition: 'width 0.3s ease, background-color 0.3s ease',
-                            borderRadius: '4px'
-                          }} />
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 600, color: '#64748B', marginBottom: '10px' }}>Livrables :</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                        {item.deliverables.map((deliverable, dIdx) => (
-                          <span key={dIdx} style={{ 
-                            padding: '6px 12px', 
-                            background: '#EFF6FF', 
-                            color: '#3B82F6', 
-                            borderRadius: '6px', 
-                            fontSize: '14px',
-                            fontWeight: 500
+                        <div style={{ marginTop: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '13px', color: '#64748B', fontWeight: 500 }}>Progression</span>
+                            <span style={{ fontSize: '13px', color: '#334155', fontWeight: 600 }}>{stepStatus.progress}%</span>
+                          </div>
+                          <div style={{
+                            width: '100%',
+                            height: '8px',
+                            backgroundColor: '#E2E8F0',
+                            borderRadius: '4px',
+                            overflow: 'hidden'
                           }}>
-                            {deliverable}
-                          </span>
-                        ))}
+                            <div style={{
+                              width: `${stepStatus.progress}%`,
+                              height: '100%',
+                              backgroundColor: progressColor,
+                              transition: 'width 0.3s ease, background-color 0.3s ease',
+                              borderRadius: '4px'
+                            }} />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#64748B', marginBottom: '10px' }}>Livrables :</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {item.deliverables.map((deliverable, dIdx) => (
+                            <span key={dIdx} style={{
+                              padding: '6px 12px',
+                              background: '#EFF6FF',
+                              color: '#3B82F6',
+                              borderRadius: '6px',
+                              fontSize: '14px',
+                              fontWeight: 500
+                            }}>
+                              {deliverable}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
                   );
                 })
               )}
             </div>
           </div>
         </AccordionItem>
-        
+
         <AccordionItem
           id="fichiers"
           title="Fichiers Fournis"
@@ -2118,9 +2117,9 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                 reportData?.analyses?.forEach((analysis, idx) => {
                   const geoData = analysis.modules?.audit_geo;
                   if (!geoData) return;
-                  
+
                   const modelName = analysis.llm_name || `Modèle ${idx + 1}`;
-                  
+
                   const downloadables = [
                     { key: 'schema_org_json', label: 'Schema.org JSON', type: 'application/json', ext: 'json', desc: 'Données structurées Schema.org générées par l\'IA' },
                     { key: 'llms_txt_content', label: 'LLMs.txt', type: 'text/plain', ext: 'txt', desc: 'Fichier de configuration standardisé pour les agents IA' },
@@ -2145,22 +2144,22 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                 });
 
                 // 2. Collecter les fichiers statiques du guide (en filtrant les en-têtes de modèles)
-                const staticFiles = guideData.guide?.fichiers_fournis 
+                const staticFiles = guideData.guide?.fichiers_fournis
                   ? Object.entries(guideData.guide.fichiers_fournis)
-                      .filter(([key]) => !key.toLowerCase().includes('ressources_générées') && !key.toLowerCase().includes('ressources générées'))
-                      .map(([key, file]: [string, any]) => ({
-                        name: key.replace(/_/g, '-'),
-                        type: file.localisation?.split('.').pop()?.toUpperCase() || 'FILE',
-                        description: file.description || '',
-                        isStatic: true
-                      }))
+                    .filter(([key]) => !key.toLowerCase().includes('ressources_générées') && !key.toLowerCase().includes('ressources générées'))
+                    .map(([key, file]: [string, any]) => ({
+                      name: key.replace(/_/g, '-'),
+                      type: file.localisation?.split('.').pop()?.toUpperCase() || 'FILE',
+                      description: file.description || '',
+                      isStatic: true
+                    }))
                   : (apiFiles.length === 0 ? [
-                      { name: 'schema-faq.json', type: 'JSON', description: 'Schéma FAQ structuré pour les pages principales', isStatic: true },
-                      { name: 'metadata-template.html', type: 'HTML', description: 'Template de métadonnées Open Graph et Twitter Cards', isStatic: true },
-                      { name: 'sitemap-optimized.xml', type: 'XML', description: 'Sitemap XML optimisé avec priorités et fréquences', isStatic: true },
-                      { name: 'robots-optimized.txt', type: 'TXT', description: 'Fichier robots.txt optimisé pour le crawling IA', isStatic: true },
-                      { name: 'implementation-guide.pdf', type: 'PDF', description: 'Guide complet d\'implémentation avec exemples', isStatic: true }
-                    ] : []);
+                    { name: 'schema-faq.json', type: 'JSON', description: 'Schéma FAQ structuré pour les pages principales', isStatic: true },
+                    { name: 'metadata-template.html', type: 'HTML', description: 'Template de métadonnées Open Graph et Twitter Cards', isStatic: true },
+                    { name: 'sitemap-optimized.xml', type: 'XML', description: 'Sitemap XML optimisé avec priorités et fréquences', isStatic: true },
+                    { name: 'robots-optimized.txt', type: 'TXT', description: 'Fichier robots.txt optimisé pour le crawling IA', isStatic: true },
+                    { name: 'implementation-guide.pdf', type: 'PDF', description: 'Guide complet d\'implémentation avec exemples', isStatic: true }
+                  ] : []);
 
                 // 3. Fusionner et afficher
                 const allFiles = [...apiFiles, ...staticFiles];
@@ -2170,11 +2169,11 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                 }
 
                 return allFiles.map((file, idx) => (
-                  <div 
-                    key={idx} 
-                    style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '14px 16px',
                       background: '#FFFFFF',
@@ -2201,23 +2200,23 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                         <span style={{ fontSize: '17px', fontWeight: 600, color: '#0F172A' }}>{file.name}</span>
                         {file.model && (
-                          <span style={{ 
-                            padding: '4px 10px', 
-                            background: '#F0F9FF', 
-                            color: '#0284C7', 
-                            borderRadius: '4px', 
-                            fontSize: '12px', 
+                          <span style={{
+                            padding: '4px 10px',
+                            background: '#F0F9FF',
+                            color: '#0284C7',
+                            borderRadius: '4px',
+                            fontSize: '12px',
                             fontWeight: 600,
                             border: '1px solid #BAE6FD'
                           }}>
                             {file.model}
                           </span>
                         )}
-                        <span style={{ 
-                          padding: '4px 10px', 
-                          background: '#EFF6FF', 
-                          color: '#3B82F6', 
-                          borderRadius: '4px', 
+                        <span style={{
+                          padding: '4px 10px',
+                          background: '#EFF6FF',
+                          color: '#3B82F6',
+                          borderRadius: '4px',
                           fontSize: '12px',
                           fontWeight: 600
                         }}>
@@ -2228,19 +2227,19 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       {file.content && (
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '6px', 
-                          color: '#3B82F6', 
-                          fontSize: '14px', 
-                          fontWeight: 600 
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          color: '#3B82F6',
+                          fontSize: '14px',
+                          fontWeight: 600
                         }}>
                           <ExternalLink size={16} />
                           Télécharger
                         </div>
                       )}
-                     
+
                     </div>
                   </div>
                 ));
@@ -2248,7 +2247,7 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
             </div>
           </div>
         </AccordionItem>
-        
+
         <AccordionItem
           id="monitoring"
           title="Monitoring Performance"
@@ -2265,12 +2264,12 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                     onClick={() => {
                       // Handler pour le clic - peut être étendu plus tard
                     }}
-                    style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px', 
-                      fontSize: '16px', 
-                      color: '#334155', 
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      fontSize: '16px',
+                      color: '#334155',
                       lineHeight: '1.6',
                       cursor: 'pointer',
                       padding: '4px 8px',
@@ -2292,7 +2291,7 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                 ))}
               </ul>
             </div>
-            
+
             <div className="monitoring-section" style={{ marginBottom: '28px' }}>
               <h4 className="section-subtitle" style={{ color: '#2563EB', fontSize: '16px', fontWeight: 600, marginBottom: '14px' }}>Outils Monitoring</h4>
               <ul className="tools-list" style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -2302,12 +2301,12 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                     onClick={() => {
                       // Handler pour le clic - peut être étendu plus tard
                     }}
-                    style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px', 
-                      fontSize: '16px', 
-                      color: '#334155', 
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      fontSize: '16px',
+                      color: '#334155',
                       lineHeight: '1.6',
                       cursor: 'pointer',
                       padding: '4px 8px',
@@ -2329,13 +2328,13 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                 ))}
               </ul>
             </div>
-            
+
             <div className="monitoring-frequency" style={{ background: '#F8FAFC', padding: '16px 20px', borderRadius: '8px', fontSize: '15px', color: '#64748B', lineHeight: '1.6' }}>
               <strong style={{ color: '#0F172A', marginRight: '6px', fontSize: '16px' }}>Fréquence:</strong> Hebdomadaire les 4 premières semaines, puis mensuel
             </div>
           </div>
         </AccordionItem>
-        
+
         <AccordionItem
           id="support"
           title="Support & Contact"
@@ -2347,12 +2346,12 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
               <div>
                 <h4 style={{ fontSize: '16px', fontWeight: 600, color: '#2563EB', marginBottom: '14px' }}>Support technique</h4>
                 <p style={{ fontSize: '16px', color: '#475569', marginBottom: '18px', lineHeight: '1.7' }}>
-                  Notre équipe est disponible pour vous accompagner dans l'implémentation de ces optimisations. 
+                  Notre équipe est disponible pour vous accompagner dans l'implémentation de ces optimisations.
                   Nous offrons un support prioritaire pendant les 30 premiers jours suivant l'achat.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '16px', color: '#334155' }}>
-                   
+
                     {/* <span>Support par email : <strong>support@solocal.com</strong></span> */}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '16px', color: '#334155' }}>
@@ -2365,7 +2364,7 @@ function ImplementationGuide({ reportData }: { reportData: FullReportData | null
                   </div>
                 </div>
               </div>
-              
+
               <div style={{ padding: '18px', background: '#F0F7FF', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
                 <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
                   <AlertCircle size={22} style={{ color: '#3B82F6', flexShrink: 0, marginTop: '2px' }} />
@@ -2404,7 +2403,7 @@ function AuditGeoSection({ reportData }: { reportData: FullReportData | null }) 
 
   const handleSetSelectedModel = (model: string) => {
     setSelectedModel(model);
-    try { localStorage.setItem(PREFERRED_MODEL_KEY, model); } catch {}
+    try { localStorage.setItem(PREFERRED_MODEL_KEY, model); } catch { }
   };
 
   // Modèles disponibles (ceux qui ont un audit_geo)
@@ -2656,15 +2655,15 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
     // Compléter avec les modèles attendus non présents dans les données
     // (non analysés lors de cette exécution spécifique)
     const DEFAULT_EXPECTED_MODELS: { apiName: string; rawModel: string }[] = [
-      { apiName: 'gpt-4o',          rawModel: 'gpt-4o' },
+      { apiName: 'gpt-4o', rawModel: 'gpt-4o' },
       { apiName: 'claude-4-sonnet', rawModel: 'claude-4-sonnet' },
-      { apiName: 'gemini-2.5-pro',  rawModel: 'gemini-2.5-pro' },
-      { apiName: 'mistral-large',   rawModel: 'mistral-large' },
-      { apiName: 'sonar-pro',       rawModel: 'sonar-pro' },
-      { apiName: 'deepseek-chat',   rawModel: 'deepseek-chat' },
-      { apiName: 'qwen-2.5-72b',    rawModel: 'qwen-2.5-72b' },
-      { apiName: 'llama-3.1-70b',   rawModel: 'llama-3.1-70b' },
-      { apiName: 'grok-4',          rawModel: 'grok-4' },
+      { apiName: 'gemini-2.5-pro', rawModel: 'gemini-2.5-pro' },
+      { apiName: 'mistral-large', rawModel: 'mistral-large' },
+      { apiName: 'sonar-pro', rawModel: 'sonar-pro' },
+      { apiName: 'deepseek-chat', rawModel: 'deepseek-chat' },
+      { apiName: 'qwen-2.5-72b', rawModel: 'qwen-2.5-72b' },
+      { apiName: 'llama-3.1-70b', rawModel: 'llama-3.1-70b' },
+      { apiName: 'grok-4', rawModel: 'grok-4' },
     ];
     DEFAULT_EXPECTED_MODELS.forEach(({ apiName, rawModel }) => {
       const displayName = getCommercialModelName(apiName);
@@ -2756,8 +2755,8 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
             <AlertCircle className="h-4 w-4 text-rose-600" />
             <AlertTitle className="text-sm font-semibold text-rose-900">Aucune citation détectée</AlertTitle>
             <AlertDescription className="text-xs text-rose-800 leading-relaxed">
-              Votre site n'est <strong>absolument pas cité</strong> dans les réponses dans les moteurs génératifs. 
-              Vous perdez actuellement des opportunités de visibilité face à vos concurrents. 
+              Votre site n'est <strong>absolument pas cité</strong> dans les réponses dans les moteurs génératifs.
+              Vous perdez actuellement des opportunités de visibilité face à vos concurrents.
               <strong>Agissez immédiatement</strong> en consultant les recommandations GEO pour éviter de prendre encore plus de retard dans les moteurs génératifs.
             </AlertDescription>
           </Alert>
@@ -2790,7 +2789,7 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             <AlertTitle className="text-sm font-semibold text-emerald-900">Excellent ! Vous êtes bien cité</AlertTitle>
             <AlertDescription className="text-xs text-emerald-800 leading-relaxed">
-              Votre site est cité <strong>{totalCitations} fois</strong> dans les moteurs génératifs. 
+              Votre site est cité <strong>{totalCitations} fois</strong> dans les moteurs génératifs.
               Félicitations ! Vous avez une bonne visibilité. Continuez sur cette lancée pour maintenir et améliorer votre positionnement.
             </AlertDescription>
           </Alert>
@@ -2886,162 +2885,162 @@ function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
             const alertConfig = citations === -1
               ? { bg: '#F1F5F9', border: '#CBD5E1', iconColor: '#94A3B8', titleColor: '#475569', textColor: '#64748B', title: 'Non analysé', message: `${selectedModel} n'a pas été inclus dans cette analyse. Il sera pris en compte lors de la prochaine exécution.` }
               : citations === 0
-              ? { bg: '#FEE2E2', border: '#FCA5A5', iconColor: '#EF4444', titleColor: '#991B1B', textColor: '#7F1D1D', title: 'Aucune citation', message: `Votre site n'est pas du tout cité par ${selectedModel}. Ce moteur génératif ne vous mentionne dans aucune de ses réponses. Consultez les recommandations GEO pour y remédier.` }
-              : citations <= 5
-              ? { bg: '#FFF7ED', border: '#FED7AA', iconColor: '#F97316', titleColor: '#9A3412', textColor: '#7C2D12', title: 'Visibilité insuffisante', message: `Votre site n'est cité que ${citations} fois par ${selectedModel}. C'est insuffisant pour garantir une visibilité durable sur ce moteur. Optimisez votre contenu en suivant les recommandations GEO.` }
-              : { bg: '#F0FDF4', border: '#86EFAC', iconColor: '#10B981', titleColor: '#166534', textColor: '#14532D', title: 'Bonne visibilité', message: `Votre site est cité ${citations} fois par ${selectedModel}. Vous bénéficiez d'une bonne visibilité sur ce moteur génératif. Continuez sur cette lancée !` };
+                ? { bg: '#FEE2E2', border: '#FCA5A5', iconColor: '#EF4444', titleColor: '#991B1B', textColor: '#7F1D1D', title: 'Aucune citation', message: `Votre site n'est pas du tout cité par ${selectedModel}. Ce moteur génératif ne vous mentionne dans aucune de ses réponses. Consultez les recommandations GEO pour y remédier.` }
+                : citations <= 5
+                  ? { bg: '#FFF7ED', border: '#FED7AA', iconColor: '#F97316', titleColor: '#9A3412', textColor: '#7C2D12', title: 'Visibilité insuffisante', message: `Votre site n'est cité que ${citations} fois par ${selectedModel}. C'est insuffisant pour garantir une visibilité durable sur ce moteur. Optimisez votre contenu en suivant les recommandations GEO.` }
+                  : { bg: '#F0FDF4', border: '#86EFAC', iconColor: '#10B981', titleColor: '#166534', textColor: '#14532D', title: 'Bonne visibilité', message: `Votre site est cité ${citations} fois par ${selectedModel}. Vous bénéficiez d'une bonne visibilité sur ce moteur génératif. Continuez sur cette lancée !` };
 
             return (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2" style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>
-                  {selected && getModelLogo(selected.rawModel) && (
-                    <img src={getModelLogo(selected.rawModel)!} alt="" className="w-6 h-6 object-contain" />
-                  )}
-                  Analyse détaillée - {selectedModel}
-                </DialogTitle>
-                <DialogDescription style={{ fontSize: '14px', color: '#64748B', marginTop: '8px' }}>
-                  Informations détaillées sur les citations et la visibilité
-                </DialogDescription>
-              </DialogHeader>
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2" style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>
+                    {selected && getModelLogo(selected.rawModel) && (
+                      <img src={getModelLogo(selected.rawModel)!} alt="" className="w-6 h-6 object-contain" />
+                    )}
+                    Analyse détaillée - {selectedModel}
+                  </DialogTitle>
+                  <DialogDescription style={{ fontSize: '14px', color: '#64748B', marginTop: '8px' }}>
+                    Informations détaillées sur les citations et la visibilité
+                  </DialogDescription>
+                </DialogHeader>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
-                {/* Alerte contextuelle */}
-                <div style={{
-                  padding: '16px',
-                  background: alertConfig.bg,
-                  borderRadius: '12px',
-                  border: `1px solid ${alertConfig.border}`,
-                  display: 'flex',
-                  alignItems: 'start',
-                  gap: '12px'
-                }}>
-                  {citations >= 6
-                    ? <CheckCircle2 size={20} style={{ color: alertConfig.iconColor, flexShrink: 0, marginTop: '2px' }} />
-                    : <AlertCircle size={20} style={{ color: alertConfig.iconColor, flexShrink: 0, marginTop: '2px' }} />
-                  }
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: alertConfig.titleColor, marginBottom: '4px' }}>
-                      {alertConfig.title}
-                    </div>
-                    <div style={{ fontSize: '13px', color: alertConfig.textColor, lineHeight: '1.5' }}>
-                      {alertConfig.message}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#64748B', marginBottom: '8px' }}>Analyse</div>
-                  <div style={{ fontSize: '15px', color: '#475569', lineHeight: '1.6' }}>
-                    {selected?.details}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 bg-slate-50 rounded-xl">
-                    <div className="text-xs text-slate-500 mb-2">Citations</div>
-                    <div className="text-lg font-bold text-slate-900">
-                      {selected?.citations || 0}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded-xl">
-                    <div className="text-xs text-slate-500 mb-2">Dernière mise à jour</div>
-                    <div className="text-sm font-semibold text-slate-900">
-                      {(() => {
-                        const dateStr = selected?.lastUpdate;
-                        if (!dateStr) return 'N/A';
-                        try {
-                          const date = new Date(dateStr);
-                          return date.toLocaleDateString('fr-FR', {
-                            day: 'numeric', month: 'long', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit'
-                          });
-                        } catch { return dateStr; }
-                      })()}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Requêtes détaillées depuis detailed_results */}
-                {(() => {
-                  const detailed = reportData?.analyse_citation?.detailed_results;
-                  if (!detailed || !Array.isArray(detailed)) return null;
-
-                  // Filtrer les résultats pour ce modèle
-                  const modelResults = detailed.filter((r: any) => {
-                    const name = (r.llm_model || '').toLowerCase();
-                    const sel = selectedModel.toLowerCase();
-                    return name.includes(sel) || sel.includes(name.split('-')[0]);
-                  });
-
-                  if (modelResults.length === 0) return null;
-
-                  const cited = modelResults.filter((r: any) => r.citation_detected);
-                  const notCited = modelResults.filter((r: any) => !r.citation_detected);
-
-                  return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
-                        Requêtes testées ({modelResults.length})
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
+                  {/* Alerte contextuelle */}
+                  <div style={{
+                    padding: '16px',
+                    background: alertConfig.bg,
+                    borderRadius: '12px',
+                    border: `1px solid ${alertConfig.border}`,
+                    display: 'flex',
+                    alignItems: 'start',
+                    gap: '12px'
+                  }}>
+                    {citations >= 6
+                      ? <CheckCircle2 size={20} style={{ color: alertConfig.iconColor, flexShrink: 0, marginTop: '2px' }} />
+                      : <AlertCircle size={20} style={{ color: alertConfig.iconColor, flexShrink: 0, marginTop: '2px' }} />
+                    }
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: alertConfig.titleColor, marginBottom: '4px' }}>
+                        {alertConfig.title}
                       </div>
-
-                      {cited.length > 0 && (
-                        <div>
-                          <div className="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-slate-600" />
-                            <span>Cité ({cited.length})</span>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {cited.slice(0, 5).map((r: any, i: number) => (
-                              <div key={i} style={{ padding: '10px 12px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                                {r.query && (
-                                  <div style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', marginBottom: r.response_excerpt ? '6px' : 0 }}>
-                                    « {r.query} »
-                                  </div>
-                                )}
-                                {r.response_excerpt && (
-                                  <div style={{ fontSize: '12px', color: '#4B5563', lineHeight: '1.5', borderTop: '1px solid #E2E8F0', paddingTop: '6px' }}>
-                                    {r.response_excerpt.length > 200 ? r.response_excerpt.substring(0, 200) + '…' : r.response_excerpt}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                            {cited.length > 5 && (
-                              <div style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center' }}>
-                                +{cited.length - 5} autres requêtes avec citation
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {notCited.length > 0 && (
-                        <div>
-                          <div className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                            <XCircle className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Non cité ({notCited.length})</span>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            {notCited.slice(0, 3).map((r: any, i: number) => (
-                              <div key={i} style={{ padding: '8px 12px', background: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
-                                <div style={{ fontSize: '13px', color: '#6B7280' }}>
-                                  « {r.query || 'Requête non disponible'} »
-                                </div>
-                              </div>
-                            ))}
-                            {notCited.length > 3 && (
-                              <div style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center' }}>
-                                +{notCited.length - 3} autres requêtes sans citation
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                      <div style={{ fontSize: '13px', color: alertConfig.textColor, lineHeight: '1.5' }}>
+                        {alertConfig.message}
+                      </div>
                     </div>
-                  );
-                })()}
-              </div>
-            </>
+                  </div>
+
+                  <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#64748B', marginBottom: '8px' }}>Analyse</div>
+                    <div style={{ fontSize: '15px', color: '#475569', lineHeight: '1.6' }}>
+                      {selected?.details}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 bg-slate-50 rounded-xl">
+                      <div className="text-xs text-slate-500 mb-2">Citations</div>
+                      <div className="text-lg font-bold text-slate-900">
+                        {selected?.citations || 0}
+                      </div>
+                    </div>
+                    <div className="p-4 bg-slate-50 rounded-xl">
+                      <div className="text-xs text-slate-500 mb-2">Dernière mise à jour</div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {(() => {
+                          const dateStr = selected?.lastUpdate;
+                          if (!dateStr) return 'N/A';
+                          try {
+                            const date = new Date(dateStr);
+                            return date.toLocaleDateString('fr-FR', {
+                              day: 'numeric', month: 'long', year: 'numeric',
+                              hour: '2-digit', minute: '2-digit'
+                            });
+                          } catch { return dateStr; }
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Requêtes détaillées depuis detailed_results */}
+                  {(() => {
+                    const detailed = reportData?.analyse_citation?.detailed_results;
+                    if (!detailed || !Array.isArray(detailed)) return null;
+
+                    // Filtrer les résultats pour ce modèle
+                    const modelResults = detailed.filter((r: any) => {
+                      const name = (r.llm_model || '').toLowerCase();
+                      const sel = selectedModel.toLowerCase();
+                      return name.includes(sel) || sel.includes(name.split('-')[0]);
+                    });
+
+                    if (modelResults.length === 0) return null;
+
+                    const cited = modelResults.filter((r: any) => r.citation_detected);
+                    const notCited = modelResults.filter((r: any) => !r.citation_detected);
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
+                          Requêtes testées ({modelResults.length})
+                        </div>
+
+                        {cited.length > 0 && (
+                          <div>
+                            <div className="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-slate-600" />
+                              <span>Cité ({cited.length})</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {cited.slice(0, 5).map((r: any, i: number) => (
+                                <div key={i} style={{ padding: '10px 12px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                                  {r.query && (
+                                    <div style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', marginBottom: r.response_excerpt ? '6px' : 0 }}>
+                                      « {r.query} »
+                                    </div>
+                                  )}
+                                  {r.response_excerpt && (
+                                    <div style={{ fontSize: '12px', color: '#4B5563', lineHeight: '1.5', borderTop: '1px solid #E2E8F0', paddingTop: '6px' }}>
+                                      {r.response_excerpt.length > 200 ? r.response_excerpt.substring(0, 200) + '…' : r.response_excerpt}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                              {cited.length > 5 && (
+                                <div style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center' }}>
+                                  +{cited.length - 5} autres requêtes avec citation
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {notCited.length > 0 && (
+                          <div>
+                            <div className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-1.5">
+                              <XCircle className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Non cité ({notCited.length})</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {notCited.slice(0, 3).map((r: any, i: number) => (
+                                <div key={i} style={{ padding: '8px 12px', background: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
+                                  <div style={{ fontSize: '13px', color: '#6B7280' }}>
+                                    « {r.query || 'Requête non disponible'} »
+                                  </div>
+                                </div>
+                              ))}
+                              {notCited.length > 3 && (
+                                <div style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center' }}>
+                                  +{notCited.length - 3} autres requêtes sans citation
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </>
             );
           })()}
         </DialogContent>
@@ -3063,7 +3062,7 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
   const availableModels = useMemo(() => {
     return reportData?.analyses?.map(a => a.llm_name).filter(Boolean) || [];
   }, [reportData?.analyses]);
-  
+
   // Charger l'analyse concurrentielle
   useEffect(() => {
     const loadCompetitorAnalysis = async () => {
@@ -3089,7 +3088,7 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
 
         if (!selectedModel) {
           const firstRaw = mappedAnalysis.models_analysis?.[0]?.model_info?.display_name ||
-                            mappedAnalysis.models_analysis?.[0]?.model_info?.model_name || '';
+            mappedAnalysis.models_analysis?.[0]?.model_info?.model_name || '';
           if (firstRaw) {
             setSelectedModel(getCommercialModelName(firstRaw));
           }
@@ -3126,7 +3125,7 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
 
           if (!selectedModel && fullAnalysis.models_analysis && fullAnalysis.models_analysis.length > 0) {
             const firstRaw = fullAnalysis.models_analysis[0].model_info?.display_name ||
-                              fullAnalysis.models_analysis[0].model_info?.model_name || '';
+              fullAnalysis.models_analysis[0].model_info?.model_name || '';
             if (firstRaw) {
               setSelectedModel(getCommercialModelName(firstRaw));
             }
@@ -3387,7 +3386,7 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
     if (!reportData?.analyses || reportData.analyses.length === 0) {
       return 0;
     }
-    
+
     return reportData.analyses.reduce((sum, analysis) => {
       const geoData = analysis.modules?.audit_geo;
       const citations = geoData?.citations || geoData?.mentions || 0;
@@ -3397,7 +3396,7 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
 
   const totalCitationsFromAPI = getTotalCitationsFromAPI();
   const hasApiData = reportData?.analyses && reportData.analyses.length > 0;
-  
+
   // Extraire les domaines cités depuis l'analyse de citation (sources réelles)
   const getDomainsFromAPI = () => {
     // Récupérer l'URL du client depuis report ou llmo_report
@@ -3451,7 +3450,7 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
 
               // Vérifier si c'est le site client
               const isClientSite = clientUrl ? domain.includes(extractDomain(clientUrl)) :
-                                   clientSiteName ? domain.toLowerCase().includes(clientSiteName.toLowerCase()) : false;
+                clientSiteName ? domain.toLowerCase().includes(clientSiteName.toLowerCase()) : false;
 
               if (!sourcesMap[domain]) {
                 sourcesMap[domain] = {
@@ -3589,7 +3588,7 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
         </div>
         <CardDescription className="text-xs text-slate-500">Sources citées dans les réponses des modèles d'IA</CardDescription>
       </CardHeader>
-      
+
       <CardContent className="p-0">
         {/* Message si aucune citation trouvée dans l'API */}
         {hasApiData && totalCitationsFromAPI === 0 ? (
@@ -3598,7 +3597,7 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
               <AlertCircle className="h-5 w-5 text-red-600" />
               <AlertTitle className="font-semibold text-red-900 text-base">Aucune citation trouvée</AlertTitle>
               <AlertDescription className="text-sm text-red-700 leading-relaxed mt-1">
-                Il n'y a pas de citation trouvée car vous n'êtes pas cité dans les moteurs génératifs. 
+                Il n'y a pas de citation trouvée car vous n'êtes pas cité dans les moteurs génératifs.
                 Consultez les recommandations pour améliorer votre visibilité et augmenter vos chances d'être cité par les IA.
               </AlertDescription>
             </Alert>
@@ -3618,13 +3617,12 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
                 </TableHeader>
                 <TableBody>
                   {domains.map((domain, index) => (
-                    <TableRow 
-                      key={index} 
-                      className={`cursor-pointer transition-colors ${
-                        domain.highlight 
-                          ? 'bg-blue-50/60 hover:bg-blue-50/90 font-medium table-row-highlight' 
+                    <TableRow
+                      key={index}
+                      className={`cursor-pointer transition-colors ${domain.highlight
+                          ? 'bg-blue-50/60 hover:bg-blue-50/90 font-medium table-row-highlight'
                           : 'hover:bg-slate-50/80'
-                      }`}
+                        }`}
                       onClick={() => {
                         setSelectedDomain(domain.domain);
                         setDomainModalOpen(true);
@@ -3643,15 +3641,14 @@ function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
                       <TableCell className="py-3.5 px-4 md:px-6 text-sm text-slate-600">{domain.pages}</TableCell>
                       <TableCell className="py-3.5 px-4 md:px-6 text-sm text-slate-600 font-semibold">{domain.citations}</TableCell>
                       <TableCell className="py-3.5 px-4 md:px-6 text-right">
-                        <Badge 
+                        <Badge
                           variant={domain.type === 'you' ? 'default' : 'secondary'}
-                          className={`badge badge-${domain.type} text-[11px] font-semibold uppercase px-2.5 py-0.5 border-0 ${
-                            domain.type === 'you'
+                          className={`badge badge-${domain.type} text-[11px] font-semibold uppercase px-2.5 py-0.5 border-0 ${domain.type === 'you'
                               ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
                               : domain.type === 'model'
                                 ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-100'
                                 : 'bg-slate-100 text-slate-700 hover:bg-slate-100'
-                          }`}
+                            }`}
                         >
                           {domain.label}
                         </Badge>
@@ -4040,16 +4037,7 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
           </TabsList>
 
           {/* Raccourci vers la modal de Score via shadcn Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsScoreModalOpen(true)}
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl text-xs font-medium text-foreground bg-card hover:bg-muted/40 border-border shadow-xs cursor-pointer h-9 px-3"
-            title="Ouvrir le détail du score unifié dans une modale"
-          >
-            <Target className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>Score en Modal</span>
-          </Button>
+
         </div>
 
         {/* Onglet Score Unifié (remplace les 3 blocs) */}
@@ -4147,8 +4135,8 @@ const Index = () => {
     setIsReportsModalOpen(false);
     setSearchParams({ reportId: id });
   };
-  
-  
+
+
   // Charger les données du rapport depuis l'API
   const { report: reportData, loading: reportLoading, error } = useReport(reportId);
 
@@ -4178,7 +4166,7 @@ const Index = () => {
         setAgenticScore(Number(cached));
         return;
       }
-    } catch {}
+    } catch { }
 
     const reportId = (reportData as any)?.report?.id || (reportData as any)?.llmo_report?.id;
 
@@ -4191,7 +4179,7 @@ const Index = () => {
           try {
             const hostname = new URL(url).hostname.replace('www.', '');
             localStorage.setItem(`viraill_agentic_score_${hostname}`, String(dbAudit.score));
-          } catch {}
+          } catch { }
           return;
         }
 
@@ -4203,11 +4191,11 @@ const Index = () => {
             try {
               const hostname = new URL(url).hostname.replace('www.', '');
               localStorage.setItem(`viraill_agentic_score_${hostname}`, String(res.score));
-            } catch {}
+            } catch { }
           })
-          .catch(() => {});
+          .catch(() => { });
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => { isMounted = false; };
   }, [reportData]);
@@ -4227,7 +4215,7 @@ const Index = () => {
   const citationsByModel = useMemo(() => {
     return (reportData?.analyse_citation?.citations_by_model || {}) as Record<string, number>;
   }, [reportData]);
-  
+
   const loading = reportsLoading || reportLoading;
 
   // Empty state — aucun rapport
@@ -4260,7 +4248,7 @@ const Index = () => {
               onClick={() => setIsNewAnalysisModalOpen(true)}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-indigo-200 gap-2 h-auto"
             >
-             
+
               Lancer ma première analyse
             </Button>
 
@@ -4314,7 +4302,7 @@ const Index = () => {
               </div>
             </div>
           ) : (
-<AmeliorerView reportData={reportData} />
+            <AmeliorerView reportData={reportData} />
           )}
         </div>
       </div>
@@ -4334,7 +4322,7 @@ const Index = () => {
             {reports.map((r) => {
               const isActive = String(r.id) === String(reportId);
               let domain = r.url;
-              try { domain = new URL(r.url).hostname; } catch {}
+              try { domain = new URL(r.url).hostname; } catch { }
               const date = new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
               return (
                 <button
