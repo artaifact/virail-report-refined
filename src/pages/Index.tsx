@@ -3995,16 +3995,27 @@ function PlanActionGeoOverview({ reportData }: { reportData: FullReportData | nu
 }
 
 function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
+  const [activeTab, setActiveTab] = useState<'citations' | 'concurrents' | 'sources' | 'causal'>('citations');
+
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  const handleTabClick = (tabId: 'citations' | 'concurrents' | 'sources' | 'causal') => {
+    setActiveTab(tabId);
+    if (tabId !== 'causal') {
+      setTimeout(() => {
+        scrollTo(`section-${tabId}`);
+      }, 50);
+    }
+  };
+
   const sections = [
-    { id: 'section-citations', label: 'Citations' },
-    { id: 'section-concurrents', label: 'Concurrents' },
-    { id: 'section-sources', label: 'Sources' },
-    { id: 'section-causal', label: 'Impact Causal (ROI)' },
+    { id: 'citations' as const, label: 'Citations' },
+    { id: 'concurrents' as const, label: 'Concurrents' },
+    { id: 'sources' as const, label: 'Sources' },
+    { id: 'causal' as const, label: 'Impact Causal (ROI)' },
   ];
 
   const targetDomain = (() => {
@@ -4020,38 +4031,49 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
   return (
     <div className="view-content">
       {/* Barre de navigation intra-page */}
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-slate-100 -mx-4 px-4 mb-4">
-        <div className="flex gap-1 overflow-x-auto py-2 scrollbar-none">
-          {sections.map(s => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => scrollTo(s.id)}
-              className="flex-shrink-0 text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
-            >
-              {s.label}
-            </button>
-          ))}
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-slate-200/80 -mx-4 px-4 mb-4 py-2 flex items-center justify-between gap-3">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none p-1 bg-slate-100/80 rounded-xl border border-slate-200/60">
+          {sections.map(s => {
+            const isActive = activeTab === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => handleTabClick(s.id)}
+                className={`flex-shrink-0 text-xs px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-white text-slate-900 font-semibold shadow-xs border border-slate-200/80'
+                    : 'text-slate-500 hover:text-slate-900 font-medium hover:bg-white/50'
+                }`}
+              >
+                {s.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Section avec les deux graphiques côte à côte */}
-      <div id="section-citations" className="analytics-section scroll-mt-12">
-        <GeoScoreChart reportData={reportData} />
-        <div id="section-concurrents" className="scroll-mt-12">
-          <CompetitorAnalysis reportData={reportData} />
+      {/* Contenu conditionnel : Impact Causal remplace les 3 blocs standard */}
+      {activeTab === 'causal' ? (
+        <div id="section-causal" className="animate-in fade-in duration-200">
+          <CausalImpactTimeline domain={targetDomain} />
         </div>
-      </div>
+      ) : (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Section avec les deux graphiques côte à côte */}
+          <div id="section-citations" className="analytics-section scroll-mt-16">
+            <GeoScoreChart reportData={reportData} />
+            <div id="section-concurrents" className="scroll-mt-16">
+              <CompetitorAnalysis reportData={reportData} />
+            </div>
+          </div>
 
-      {/* Tableau des domaines */}
-      <div id="section-sources" className="scroll-mt-12">
-        <DomainsTable reportData={reportData} />
-      </div>
-
-      {/* Attribution Causale & Veille Continue */}
-      <div id="section-causal" className="scroll-mt-12 mt-6">
-        <CausalImpactTimeline domain={targetDomain} />
-      </div>
+          {/* Tableau des domaines */}
+          <div id="section-sources" className="scroll-mt-16">
+            <DomainsTable reportData={reportData} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
