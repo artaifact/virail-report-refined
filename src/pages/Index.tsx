@@ -277,8 +277,6 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
   let fallbackIdx = 0;
   let currentAngle = -90;
 
-  const hoveredData = hoveredModel ? activeModels.find(m => m.name === hoveredModel) : null;
-
   // Recalculate colors for legend (need to mirror segment logic)
   let legendFallbackIdx = 0;
   const modelColors = hasModels ? activeModels.map((model) => ({
@@ -287,6 +285,18 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
     color: MODEL_COLORS[model.name] || MODEL_COLORS_FALLBACK[legendFallbackIdx++ % MODEL_COLORS_FALLBACK.length],
     pct: totalCitations > 0 ? Math.round((model.count / totalCitations) * 100) : 0,
   })) : [];
+
+  const hoveredData = hoveredModel ? modelColors.find(m => m.name === hoveredModel) : null;
+
+  const handleCitationsWheel = (e: React.WheelEvent) => {
+    if (modelColors.length === 0) return;
+    const currentIndex = modelColors.findIndex(m => m.name === hoveredModel);
+    const direction = e.deltaY > 0 ? 1 : -1;
+    let nextIndex = currentIndex === -1 ? 0 : currentIndex + direction;
+    if (nextIndex < 0) nextIndex = modelColors.length - 1;
+    if (nextIndex >= modelColors.length) nextIndex = 0;
+    setHoveredModel(modelColors[nextIndex].name);
+  };
 
   // Configuration du graphique Score GEO (même dimension que Citations totales)
   const normalizedGeoScore = targetGeoScore != null ? Math.max(0, Math.min(100, Math.round(targetGeoScore))) : null;
@@ -315,41 +325,59 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
     <div className="citations-chart">
       {/* Conteneur des 3 graphiques côte à côte de même dimension et arrondi */}
       <div className="flex flex-col xl:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-10 w-full mb-3">
-        {/* 1. Graphique circulaire : Citations totales avec pourcentages à gauche en long */}
+        {/* 1. Graphique circulaire : Citations totales avec pourcentages masqués par défaut (révélés au survol/scroll) */}
         <div className="flex items-center justify-center gap-2 sm:gap-3 shrink-0">
-          {/* Liste verticale des pourcentages à gauche en long */}
+          {/* Liste verticale des modèles à gauche */}
           {modelColors.length > 0 && (
-            <div className="flex flex-col gap-0.5 shrink-0 pr-2.5 border-r border-slate-200/80 my-auto">
-              {modelColors.map((m) => (
-                <button
-                  key={m.name}
-                  type="button"
-                  className="flex items-center justify-between gap-2.5 text-xs transition-opacity hover:opacity-100 py-0.5 px-1.5 rounded hover:bg-slate-50 text-left cursor-pointer"
-                  style={{ opacity: hoveredModel && hoveredModel !== m.name ? 0.35 : 1 }}
-                  onMouseEnter={() => setHoveredModel(m.name)}
-                  onMouseLeave={() => setHoveredModel(null)}
-                >
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    {getModelLogo(m.name) ? (
-                      <img
-                        src={getModelLogo(m.name)!}
-                        alt={m.name}
-                        className="w-3.5 h-3.5 object-contain flex-shrink-0 rounded-sm"
-                      />
-                    ) : (
-                      <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
-                    )}
-                    <span className="text-slate-600 font-medium text-[11px] truncate max-w-[80px]">{m.name}</span>
-                  </div>
-                  <span className="text-slate-500 font-semibold text-[11px] shrink-0 ml-1">{m.pct}%</span>
-                </button>
-              ))}
+            <div 
+              className="flex flex-col gap-0.5 shrink-0 pr-2.5 border-r border-slate-200/80 my-auto"
+              onWheel={handleCitationsWheel}
+            >
+              {modelColors.map((m) => {
+                const isThisHovered = hoveredModel === m.name;
+                return (
+                  <button
+                    key={m.name}
+                    type="button"
+                    className="flex items-center justify-between gap-2.5 text-xs transition-opacity hover:opacity-100 py-0.5 px-1.5 rounded hover:bg-slate-50 text-left cursor-pointer"
+                    style={{ opacity: hoveredModel && !isThisHovered ? 0.35 : 1 }}
+                    onMouseEnter={() => setHoveredModel(m.name)}
+                    onMouseLeave={() => setHoveredModel(null)}
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {getModelLogo(m.name) ? (
+                        <img
+                          src={getModelLogo(m.name)!}
+                          alt={m.name}
+                          className="w-3.5 h-3.5 object-contain flex-shrink-0 rounded-sm"
+                        />
+                      ) : (
+                        <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
+                      )}
+                      <span className="text-slate-600 font-medium text-[11px] truncate max-w-[80px]">{m.name}</span>
+                    </div>
+                    {/* Pourcentage masqué par défaut, révélé uniquement au survol/scroll */}
+                    <span className={`text-[11px] shrink-0 ml-1 font-semibold transition-opacity duration-200 ${
+                      isThisHovered ? 'opacity-100 text-slate-900' : 'opacity-0 text-slate-400'
+                    }`}>
+                      {m.pct}%
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
 
           {/* Cercle SVG Citations totales */}
-          <div className="relative w-[180px] sm:w-[200px] shrink-0">
-          <svg viewBox="0 0 280 280" className="w-full h-auto mx-auto">
+          <div 
+            className="relative w-[180px] sm:w-[200px] shrink-0"
+            onWheel={handleCitationsWheel}
+          >
+          <svg 
+            viewBox="0 0 280 280" 
+            className="w-full h-auto mx-auto"
+            onMouseLeave={() => setHoveredModel(null)}
+          >
             {/* Background circle - même épaisseur 32 que les segments */}
             <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
 
@@ -370,7 +398,6 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
                   opacity={hoveredModel && !isHovered ? 0.35 : 1}
                   style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
                   onMouseEnter={() => setHoveredModel(model.name)}
-                  onMouseLeave={() => setHoveredModel(null)}
                 />
               );
             })}
@@ -380,14 +407,17 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
               <circle cx={cx} cy={cy} r={r} fill="none" stroke="#CBD5E1" strokeWidth="32" opacity={0.5} />
             )}
 
-            {/* Center text: nombre ou info modèle survolé */}
+            {/* Center text: pourcentage affiché au survol/scroll, ou nombre total par défaut */}
             {hoveredData ? (
               <>
-                <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
-                  {hoveredData.count}
+                <text x={cx} y={cy - 4} textAnchor="middle" style={{ fontSize: '38px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+                  {hoveredData.pct}%
                 </text>
-                <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 500, fill: '#64748B', fontFamily: 'Inter, sans-serif' }}>
+                <text x={cx} y={cy + 18} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 600, fill: hoveredData.color || '#334155', fontFamily: 'Inter, sans-serif' }}>
                   {hoveredData.name}
+                </text>
+                <text x={cx} y={cy + 34} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 500, fill: '#64748B', fontFamily: 'Inter, sans-serif' }}>
+                  {hoveredData.count} citation{hoveredData.count > 1 ? 's' : ''}
                 </text>
               </>
             ) : (
