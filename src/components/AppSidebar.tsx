@@ -16,7 +16,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Globe,
-  Swords,
+  Scale,
   Tag,
   Users,
   Users2,
@@ -112,7 +112,7 @@ export function AppSidebar() {
           {
             title: "Concurrentielle",
             url: "/competition",
-            icon: Swords,
+            icon: Scale,
             badge: undefined as string | undefined,
           },
           {

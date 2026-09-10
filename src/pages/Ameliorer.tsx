@@ -38,6 +38,7 @@ import { useReport, useReports, getLatestReportId } from '@/hooks/useReports';
 import { useSelectedReport } from '@/contexts/SelectedReportContext';
 import { usePayment } from '@/hooks/usePayment';
 import { ScoreCard } from '@/components/dashboard/ScoreCard';
+import { OraStyleScoreOverview } from '@/components/scoring/OraStyleScoreOverview';
 import { HtmlDiffViewer } from '@/components/optimizer/HtmlDiffViewer';
 import { SchemaPreview } from '@/components/optimizer/SchemaPreview';
 import { sanitizeRobotsTxt } from '@/utils/robotsValidator';
@@ -66,6 +67,7 @@ import {
 } from '@/lib/api';
 
 function InfosDetailleesView({ reportData }: { reportData: FullReportData | null }) {
+  const navigate = useNavigate();
   const [activeOptTab, setActiveOptTab] = useState<'overview' | 'schemas' | 'meta' | 'llms' | 'robots' | 'htmldiff' | 'simulation' | 'agentic'>('overview');
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -665,56 +667,22 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Score global + sous-scores */}
+          {/* Score Ora.ai Presentation with Viraill Graphic Identity */}
           {scores.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-3 items-start">
-              {/* Score global a gauche */}
-              <ScoreCard
-                title="Score Global"
-                score={scoreGlobal}
-                description={`${scores.length} catégorie${scores.length > 1 ? 's' : ''}`}
-              />
-              {/* Sous-scores a droite */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {scores.map(cat => (
-                    <ScoreCard
-                      key={cat.key}
-                      title={cat.label}
-                      score={cat.score}
-                      compact
-                    />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Infos plateforme + enrichissements */}
-          {co && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]" style={{ gap: '10px' }}>
-              {coPlatform && (
-                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Plateforme</div>
-                  <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '6px', background: '#F1F5F9', fontSize: '13px', fontWeight: 600, color: '#334155', textTransform: 'capitalize' }}>{coPlatform}</span>
-                </div>
-              )}
-              {coSchemasAdded.length > 0 && (
-                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Schémas ajoutés</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#334155' }}>{coSchemasAdded.length}</span>
-                  </div>
-                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748B' }}>{coSchemasAdded.join(' | ')}</span>
-                </div>
-              )}
-              {coEnrichments.length > 0 && (
-                <div style={{ padding: '14px 16px', background: '#FFFFFF', borderRadius: '12px', border: '1px solid #E8ECF1' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Enrichissements</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#334155' }}>{coEnrichments.length}</span>
-                  </div>
-                  <span style={{ fontSize: '13px', fontWeight: 500, color: '#64748B' }}>{coEnrichments.map((e: string) => e.replace(/_/g, ' ')).join(' | ')}</span>
-                </div>
-              )}
-            </div>
+            <OraStyleScoreOverview
+              scoreGlobal={scoreGlobal}
+              domainName={reportDomainHostname || 'votre domaine'}
+              scores={scores}
+              coPlatform={coPlatform}
+              coSchemasAdded={coSchemasAdded}
+              coEnrichments={coEnrichments}
+              coRecommendations={coRecommendations}
+              onRescan={handleStartBulk}
+              onNavigateTab={(tab) => setActiveOptTab(tab)}
+              onOpenReport={() => {
+                if (reportId) navigate(`/rapport/${reportId}`);
+              }}
+            />
           )}
 
           {/* Recommandations */}

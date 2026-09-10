@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,12 @@ import {
   Scale,
   Plug,
   Zap,
+  RefreshCw,
+  Database,
+  CheckCircle2,
 } from 'lucide-react';
+import { useReports, getLatestReportId } from '@/hooks/useReports';
+import { useSelectedReport } from '@/contexts/SelectedReportContext';
 import {
   runAgenticScan,
   getLatestAgenticAudit,
@@ -49,11 +55,16 @@ const CURATED_INTENTS = [
 ];
 
 export default function AgenticCockpit() {
+  const [searchParams] = useSearchParams();
+  const { reports } = useReports();
+  const { selectedReportId } = useSelectedReport();
+
   const [url, setUrl] = useState<string>('https://tally.so');
   const [remediate, setRemediate] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<AgenticScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastLoadedGetTime, setLastLoadedGetTime] = useState<string | null>(null);
 
   // Agent Journeys live testing
   const [selectedIntent, setSelectedIntent] = useState<string>('discover');
@@ -64,22 +75,43 @@ export default function AgenticCockpit() {
   const [x402Loading, setX402Loading] = useState<boolean>(false);
   const [x402Output, setX402Output] = useState<string | null>(null);
 
-  // Restauration automatique de l'analyse au chargement ou après actualisation (F5)
+  // Résolution automatique de l'URL cible (param URL > rapport actif > dernier rapport > localStorage > fallback)
   useEffect(() => {
     let isMounted = true;
-    const lastUrl = localStorage.getItem('viraill_last_agentic_url') || url;
+    const urlParam = searchParams.get('url');
+    let target = urlParam;
 
-    if (lastUrl) {
-      setUrl(lastUrl);
+    if (!target && selectedReportId && reports.length > 0) {
+      const cur = reports.find((r) => String(r.id) === String(selectedReportId));
+      if (cur?.url) target = cur.url;
+    }
+
+    if (!target && reports.length > 0) {
+      const latestId = getLatestReportId(reports);
+      const latestReport = reports.find((r) => String(r.id) === String(latestId));
+      if (latestReport?.url) target = latestReport.url;
+    }
+
+    if (!target) {
+      const stored = localStorage.getItem('viraill_last_agentic_url');
+      if (stored) target = stored;
+    }
+
+    const finalUrl = (target || url || 'https://tally.so').trim();
+    if (finalUrl) {
+      setUrl(finalUrl);
       setLoading(true);
 
-      getLatestAgenticAudit(lastUrl)
+      getLatestAgenticAudit(finalUrl)
         .then((cached) => {
           if (isMounted && cached && cached.score !== undefined) {
             setResult(cached);
+            setLastLoadedGetTime(new Date().toLocaleTimeString('fr-FR'));
           }
         })
-        .catch(() => {})
+        .catch((err) => {
+          console.warn('[AgenticCockpit] GET audit error:', err);
+        })
         .finally(() => {
           if (isMounted) setLoading(false);
         });
@@ -88,7 +120,25 @@ export default function AgenticCockpit() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [searchParams, selectedReportId, reports.length]);
+
+  const handleRefreshGet = async () => {
+    const targetUrl = url.trim();
+    if (!targetUrl) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const audit = await getLatestAgenticAudit(targetUrl, true);
+      if (audit) {
+        setResult(audit);
+        setLastLoadedGetTime(new Date().toLocaleTimeString('fr-FR'));
+      }
+    } catch (err: any) {
+      setError(err.message || 'Impossible de récupérer le dernier audit GET.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleScan = async (e?: React.FormEvent, overrideUrl?: string) => {
     if (e) e.preventDefault();
@@ -104,10 +154,11 @@ export default function AgenticCockpit() {
       const data = await runAgenticScan(targetUrl, remediate);
       setResult(data);
       setJourneyResult(null);
+      setLastLoadedGetTime(new Date().toLocaleTimeString('fr-FR'));
 
       if (data && data.score !== undefined) {
         try {
-          const domain = new URL(targetUrl).hostname.replace('www.', '');
+          const domain = new URL(targetUrl.startsWith('http') ? targetUrl : `https://${targetUrl}`).hostname.replace('www.', '');
           localStorage.setItem(`viraill_agentic_score_${domain}`, String(data.score));
           localStorage.setItem(`viraill_agentic_score_${targetUrl}`, String(data.score));
         } catch {}
@@ -230,6 +281,36 @@ export default function AgenticCockpit() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Status Bar Dernier GET */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              GET /api/v1/agentic/latest
+            </span>
+            <span className="text-xs text-slate-700 dark:text-slate-200 font-medium">
+              {result ? `Dernier audit GET chargé pour ${url}` : `Chargement du dernier audit GET pour ${url}...`}
+            </span>
+            {lastLoadedGetTime && (
+              <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
+                • Synchronisé à {lastLoadedGetTime}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefreshGet}
+              disabled={loading}
+              className="h-8 px-3 text-xs font-medium gap-1.5 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-slate-900 cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Recharger le dernier GET
+            </Button>
+          </div>
+        </div>
 
         {/* Error display */}
         {error && (

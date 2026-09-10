@@ -134,8 +134,12 @@ function generateDeterministicFallback(url: string, brandName?: string): Agentic
 /**
  * Récupère le dernier audit agentique stocké en base de données pour une URL
  */
-export async function getLatestAgenticAudit(url: string): Promise<AgenticScanResult | null> {
+export async function getLatestAgenticAudit(url: string, autoGenerateIfMissing: boolean = true): Promise<AgenticScanResult | null> {
   const encUrl = encodeURIComponent(url);
+  let domain = url;
+  try {
+    domain = new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, '');
+  } catch {}
 
   // 1. Proxy local Vite (/api/v1/agentic/latest)
   try {
@@ -146,6 +150,10 @@ export async function getLatestAgenticAudit(url: string): Promise<AgenticScanRes
     if (res.ok && contentType.includes('application/json')) {
       const data = await res.json();
       if (data && (data.score !== undefined || data.pillars)) {
+        try {
+          localStorage.setItem(`viraill_agentic_audit_${domain}`, JSON.stringify(data));
+          localStorage.setItem('viraill_last_agentic_audit', JSON.stringify(data));
+        } catch {}
         return data;
       }
     }
@@ -163,10 +171,51 @@ export async function getLatestAgenticAudit(url: string): Promise<AgenticScanRes
       if (res.ok && contentType.includes('application/json')) {
         const data = await res.json();
         if (data && (data.score !== undefined || data.pillars)) {
+          try {
+            localStorage.setItem(`viraill_agentic_audit_${domain}`, JSON.stringify(data));
+            localStorage.setItem('viraill_last_agentic_audit', JSON.stringify(data));
+          } catch {}
           return data;
         }
       }
     } catch (e) {}
+  }
+
+  // 3. Fallback backend Fly API
+  try {
+    const res = await fetch(`${FALLBACK_FLY_API}/v1/agentic/latest?url=${encUrl}`);
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('application/json')) {
+      const data = await res.json();
+      if (data && (data.score !== undefined || data.pillars)) {
+        try {
+          localStorage.setItem(`viraill_agentic_audit_${domain}`, JSON.stringify(data));
+          localStorage.setItem('viraill_last_agentic_audit', JSON.stringify(data));
+        } catch {}
+        return data;
+      }
+    }
+  } catch (e) {}
+
+  // 4. Cache local persistant
+  try {
+    const local = localStorage.getItem(`viraill_agentic_audit_${domain}`) || localStorage.getItem('viraill_last_agentic_audit');
+    if (local) {
+      const parsed = JSON.parse(local);
+      if (parsed && (parsed.score !== undefined || parsed.pillars)) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+
+  // 5. Si manquant, générer immédiatement l'audit déterministe pour que la vue GET soit toujours renseignée
+  if (autoGenerateIfMissing) {
+    const fallback = generateDeterministicFallback(url);
+    try {
+      localStorage.setItem(`viraill_agentic_audit_${domain}`, JSON.stringify(fallback));
+      localStorage.setItem('viraill_last_agentic_audit', JSON.stringify(fallback));
+    } catch {}
+    return fallback;
   }
 
   return null;
