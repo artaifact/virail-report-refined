@@ -440,7 +440,13 @@ export default function AgenticCockpit() {
               ) : journeyResult ? (
                 <JourneyReplay
                   journey={journeyResult}
-                  targetDomain={new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, '')}
+                  targetDomain={(() => {
+                    try {
+                      return new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, '');
+                    } catch {
+                      return url;
+                    }
+                  })()}
                   intentTitle={CURATED_INTENTS.find(i => i.id === selectedIntent)?.label}
                 />
               ) : (
