@@ -360,43 +360,48 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
             </CardHeader>
             <CardContent className="flex flex-col h-full">
               <div className="flex-1 space-y-4">
-                {/* Fonctionnalités principales */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">
-                      {plan.maxAnalyses === -1 ? '∞' : plan.maxAnalyses}
+                {/* Quotas clairs et explicites */}
+                <div className="space-y-2.5 text-xs text-neutral-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-slate-700">Analyses mensuelles</span>
+                    <span className="font-bold text-slate-900">
+                      {plan.maxAnalyses === -1 ? 'Illimitées' : `${plan.maxAnalyses} / mois`}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">
-                      {plan.maxReports === -1 ? '∞' : plan.maxReports} 
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-slate-700">Domaines / Rapports</span>
+                    <span className="font-bold text-slate-900">
+                      {plan.maxReports === -1 ? 'Illimités' : `${plan.maxReports} domaine${plan.maxReports > 1 ? 's' : ''}`}
                     </span>
                   </div>
-                  
                 </div>
 
-                {/* AI Models */}
+                {/* Modèles IA audités */}
                 {(() => {
                   const planIndex = plans.indexOf(plan);
                   const aiModels = getAiModelsForPlan(plan.id) || (AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)] ? { web: AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)].web, api: AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)].api } : null);
                   if (!aiModels) return null;
                   return (
-                    <div className="pt-4 border-t border-primary space-y-3">
+                    <div className="pt-3 border-t border-slate-200 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wide">AI Models</span>
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Modèles IA Audités</span>
+                        <span className="text-[10px] text-slate-400 font-medium">{aiModels.web.length} moteurs</span>
                       </div>
 
                       {/* Web UI scraping */}
                       {aiModels.web.length > 0 && (
                         <div className="space-y-1.5">
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium">Web UI</Badge>
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-medium text-slate-600">Moteurs génératifs</span>
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 text-slate-500">Web</Badge>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             {aiModels.web.map((model) => (
                               <img
                                 key={model}
                                 src={modelLogos[model]}
                                 alt={model}
-                                className="h-6 w-6 object-contain"
+                                className="h-5 w-5 object-contain"
                                 title={model.charAt(0).toUpperCase() + model.slice(1)}
                               />
                             ))}
@@ -404,23 +409,30 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                         </div>
                       )}
 
-                      {/* API */}
-                      <div className="space-y-1.5">
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium">+ API</Badge>
+                      {/* API Machine-to-Machine */}
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-medium text-slate-600">Accès API programmatique</span>
+                          <Badge variant={aiModels.api.length > 0 ? "default" : "secondary"} className="text-[9px] px-1.5 py-0">
+                            {aiModels.api.length > 0 ? 'Inclus' : 'Option'}
+                          </Badge>
+                        </div>
                         {aiModels.api.length > 0 ? (
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             {aiModels.api.map((model) => (
                               <img
                                 key={model}
                                 src={modelLogos[model]}
                                 alt={model}
-                                className="h-6 w-6 object-contain"
+                                className="h-5 w-5 object-contain"
                                 title={model.charAt(0).toUpperCase() + model.slice(1)}
                               />
                             ))}
                           </div>
                         ) : (
-                          <span className="text-xs text-neutral-400 italic">Plan supérieur</span>
+                          <span className="text-[11px] text-slate-400 italic">
+                            Disponible à partir du plan Pro
+                          </span>
                         )}
                       </div>
                     </div>

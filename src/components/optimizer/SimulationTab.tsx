@@ -257,6 +257,8 @@ export function SimulationTab({
                 title={`Score ${crawler.label}`}
                 score={getCrawlerScore(overall, selectedCrawler)}
                 description="Score d'indexation pour ce robot"
+                isRegression={deltaAdj != null && deltaAdj < 0}
+                delta={deltaAdj ?? undefined}
               />
               {breakdown && (
                 <ScoreCard
@@ -302,9 +304,16 @@ export function SimulationTab({
         {/* Avant / Après */}
         {origAdj != null && optAdj != null && deltaAdj != null && (
           <div style={{ padding: '14px 16px', borderBottom: hasActions ? '1px solid #F1F5F9' : 'none' }}>
-            <p style={{ margin: '0 0 10px', fontSize: '11px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
-              Impact de l'optimisation
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: deltaAdj < 0 ? '#DC2626' : '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.7px' }}>
+                {deltaAdj < 0 ? '⚠️ Impact de l\'optimisation (Régression)' : 'Impact de l\'optimisation'}
+              </p>
+              {deltaAdj < 0 && (
+                <span style={{ fontSize: '10px', fontWeight: 700, color: '#DC2626', background: '#FEE2E2', padding: '2px 6px', borderRadius: '4px' }}>
+                  Alerte Régression
+                </span>
+              )}
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ textAlign: 'center', flex: 1 }}>
                 <div style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '4px' }}>Avant</div>
@@ -324,10 +333,27 @@ export function SimulationTab({
               </div>
               <div style={{ textAlign: 'center', flex: 1 }}>
                 <div style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '4px' }}>Après</div>
-                <div style={{ fontSize: '28px', fontWeight: 700, color: optAdj > origAdj ? '#10B981' : '#334155', lineHeight: 1 }}>{optAdj}</div>
+                <div style={{ fontSize: '28px', fontWeight: 700, color: deltaAdj < 0 ? '#EF4444' : optAdj > origAdj ? '#10B981' : '#334155', lineHeight: 1 }}>{optAdj}</div>
                 <div style={{ fontSize: '11px', color: '#CBD5E1' }}>/100</div>
               </div>
             </div>
+            {deltaAdj < 0 && (
+              <div style={{
+                marginTop: '12px',
+                padding: '10px 12px',
+                borderRadius: '6px',
+                background: '#FEF2F2',
+                border: '1px solid #FECACA',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px'
+              }}>
+                <AlertTriangle size={15} style={{ color: '#DC2626', marginTop: '2px', flexShrink: 0 }} />
+                <div style={{ fontSize: '11px', color: '#991B1B', lineHeight: '1.4' }}>
+                  <strong>Régression d'indexation détectée ({deltaAdj} pts).</strong> Cette variante d'optimisation entraîne une baisse de score pour {crawler.label}. Corrigez les directives ou rétablissez les balises originales avant toute mise en ligne.
+                </div>
+              </div>
+            )}
           </div>
         )}
 

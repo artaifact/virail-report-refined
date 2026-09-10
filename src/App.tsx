@@ -43,6 +43,8 @@ import Pricing from "./pages/Pricing";
 import PaymentTest from "./pages/PaymentTest";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import LLMODashboard from "./pages/LLMODashboard";
+import Snapshot from "./pages/public/Snapshot";
+import Methodology from "./pages/Methodology";
 import AdminWaitlist from "./pages/AdminWaitlist";
 import AdminMessages from "./pages/AdminMessages";
 import AdminSubscriptionDocs from "./pages/AdminSubscriptionDocs";
@@ -140,6 +142,8 @@ const App = () => (
             <StreamingProvider>
             <Routes>
               {/* Routes publiques */}
+              <Route path="/snapshot" element={<Snapshot />} />
+              <Route path="/methodologie" element={<Methodology />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />

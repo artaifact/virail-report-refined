@@ -38,6 +38,8 @@ import { usePayment } from '@/hooks/usePayment';
 import { ScoreCard } from '@/components/dashboard/ScoreCard';
 import { HtmlDiffViewer } from '@/components/optimizer/HtmlDiffViewer';
 import { SchemaPreview } from '@/components/optimizer/SchemaPreview';
+import { sanitizeRobotsTxt } from '@/utils/robotsValidator';
+import { normalizeDomain } from '@/utils/entityNormalizer';
 import { SimulationTab } from '@/components/optimizer/SimulationTab';
 import { AgenticRemediationSection } from '@/components/agentic/AgenticRemediationSection';
 import { HELP } from '@/lib/help-content';
@@ -95,17 +97,33 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
   const reportId = reportData?.report?.id;
 
-  // Charger l'historique des jobs au montage et restaurer le dernier directement
+  // Charger l'historique des jobs au montage et restaurer le dernier uniquement s'il correspond au domaine courant
   useEffect(() => {
     let cancelled = false;
+    // Réinitialiser les états du job bulk si le rapport change
+    setBulkJobId(null);
+    setBulkPages([]);
+    setBulkProgress(null);
+    setBulkLoading(false);
+
     const loadJobs = async () => {
       const jobs = await listBulkJobs();
       if (cancelled) return;
-      setBulkJobsHistory(jobs);
+
+      const currentNormDomain = normalizeDomain(reportDomainHostname || reportDomain);
+      // Étanchéité absolue : filtrer strictement pour ne conserver que les jobs du domaine courant
+      const domainJobs = currentNormDomain
+        ? jobs.filter(j => {
+            const jobNormDomain = normalizeDomain(j.domain_url);
+            return jobNormDomain === currentNormDomain || jobNormDomain.endsWith(`.${currentNormDomain}`);
+          })
+        : [];
+
+      setBulkJobsHistory(domainJobs);
       setBulkJobsLoaded(true);
 
-      if (jobs.length > 0 && !bulkJobId) {
-        const latest = jobs[0];
+      if (domainJobs.length > 0) {
+        const latest = domainJobs[0];
         setBulkJobId(latest.job_id);
 
         if (latest.status === 'completed' || latest.status === 'failed') {
@@ -123,7 +141,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     };
     loadJobs();
     return () => { cancelled = true; };
-  }, []);
+  }, [reportId, reportDomainHostname]);
 
   // Polling uniquement si le job est en cours
   useEffect(() => {
@@ -165,8 +183,17 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
       });
       if (result?.job_id) {
         setBulkJobId(result.job_id);
-        // Rafraîchir l'historique
-        listBulkJobs().then(jobs => setBulkJobsHistory(jobs));
+        // Rafraîchir l'historique filtré par domaine
+        const currentNormDomain = normalizeDomain(reportDomainHostname || reportDomain);
+        listBulkJobs().then(jobs => {
+          const domainJobs = currentNormDomain
+            ? jobs.filter(j => {
+                const jobNormDomain = normalizeDomain(j.domain_url);
+                return jobNormDomain === currentNormDomain || jobNormDomain.endsWith(`.${currentNormDomain}`);
+              })
+            : [];
+          setBulkJobsHistory(domainJobs);
+        });
       } else {
         setBulkError('Impossible de lancer le job.');
         setBulkLoading(false);
@@ -183,8 +210,17 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     setBulkLoading(false);
     setBulkJobId(null);
     setBulkProgress(null);
-    // Rafraîchir l'historique
-    listBulkJobs().then(jobs => setBulkJobsHistory(jobs));
+    // Rafraîchir l'historique filtré par domaine
+    const currentNormDomain = normalizeDomain(reportDomainHostname || reportDomain);
+    listBulkJobs().then(jobs => {
+      const domainJobs = currentNormDomain
+        ? jobs.filter(j => {
+            const jobNormDomain = normalizeDomain(j.domain_url);
+            return jobNormDomain === currentNormDomain || jobNormDomain.endsWith(`.${currentNormDomain}`);
+          })
+        : [];
+      setBulkJobsHistory(domainJobs);
+    });
   };
 
   const handleLoadJob = async (job: BulkJobSummary) => {
@@ -331,8 +367,10 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     ? JSON.stringify(coOptimize.schemas, null, 2)
     : (tf?.schema_org_json?.content || '');
   const llmsContent = stripEmojis(coOptimize?.llms_txt || coSimulate?.generated_files?.llms_txt || tf?.llms_txt?.content || '');
-  const llmsFullContent = stripEmojis(coOptimize?.llms_full_txt || coSimulate?.generated_files?.llms_full_txt || '');
-  const robotsContent = stripEmojis(coOptimize?.robots_txt || coSimulate?.generated_files?.robots_txt || tf?.robots_txt?.content || '');
+  const rawRobotsContent = stripEmojis(coOptimize?.robots_txt || coSimulate?.generated_files?.robots_txt || tf?.robots_txt?.content || '');
+  const targetSiteUrl = reportData?.report?.url || (reportData as any)?.llmo_report?.url || '';
+  const robotsSanitization = useMemo(() => sanitizeRobotsTxt(rawRobotsContent, coPlatform, targetSiteUrl), [rawRobotsContent, coPlatform, targetSiteUrl]);
+  const robotsContent = robotsSanitization.sanitizedContent;
   const optimizedHtmlContent = coOptimize?.html || '';
   const extractedMeta = extractMetaFromHtml(optimizedHtmlContent);
   const metaTagsContent = stripEmojis(extractedMeta.metaTags || tf?.meta_tags?.content || '');
@@ -1238,6 +1276,14 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                   ))}
                 </div>
               )}
+            </div>
+          )}
+          {robotsSanitization.warnings.length > 0 && (
+            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <CheckCircle2 size={16} style={{ color: '#16A34A', flexShrink: 0 }} />
+              <div style={{ fontSize: '12px', color: '#166534', lineHeight: '1.4' }}>
+                <strong>Adaptation contextuelle :</strong> {robotsSanitization.warnings.join(' ')}
+              </div>
             </div>
           )}
           <FileCard

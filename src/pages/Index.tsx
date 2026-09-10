@@ -14,6 +14,7 @@ import type { FullReportData, ReportResponse, BulkJobProgress, BulkPageResult, B
 import { startBulkOptimization, getBulkProgress, getBulkPages, getBulkResults, cancelBulkJob, fetchPageOptimization, listBulkJobs } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { listCompetitorAnalyses, getCompetitorAnalysisById, getCompetitorAnalysisFromReport, extractDomain, CompetitorAnalysisResponse, mapApiResponseToCompetitorAnalysisResponse, mapAnalyseConcurrentielleV1ToResponse } from '@/services/competitorAnalysisService';
+import { deduplicateCompetitors, normalizeBrandName, normalizeDomain } from '@/utils/entityNormalizer';
 import { modelLogos } from '@/components/ModelLogosCarousel';
 import { usePayment } from '@/hooks/usePayment';
 import { ScoreCard } from '@/components/dashboard/ScoreCard';
@@ -3171,33 +3172,24 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
 
   // Extraire les concurrents depuis les données de l'API, filtrés par modèle sélectionné
   const getCompetitorsFromAPI = () => {
+    const clientUrl = reportData?.report?.url || (reportData as any)?.llmo_report?.url || '';
+
     // V3 : filtrer par source_models (comparaison par nom commercial)
     if (isV3) {
-      // Exclure le site client de la liste des concurrents
-      const clientUrl = reportData?.report?.url || (reportData as any)?.llmo_report?.url || '';
-      const clientDomain = clientUrl ? extractDomain(clientUrl).toLowerCase().replace('www.', '') : '';
-      // Extraire le nom de base sans TLD (ex: "amundi.fr" -> "amundi")
-      const clientBase = clientDomain.split('.')[0];
-
-      let filtered = v3Data!.consolidated_competitors.filter(c => {
-        const compDomain = extractDomain(c.primary_url).toLowerCase().replace('www.', '');
-        const compBase = compDomain.split('.')[0];
-        const compName = (c.name || '').toLowerCase();
-        // Exclure si même domaine, même base, ou nom contient le client
-        return !clientBase || (compDomain !== clientDomain && compBase !== clientBase && !compName.includes(clientBase));
-      });
+      let filtered = v3Data!.consolidated_competitors;
       if (selectedModel && selectedModel !== 'all') {
         filtered = filtered.filter(c =>
           c.source_models?.some(m => getCommercialModelName(m) === selectedModel)
         );
       }
-      return filtered.slice(0, 5).map(c => ({
+      const deduplicated = deduplicateCompetitors(filtered, clientUrl);
+      return deduplicated.slice(0, 5).map(c => ({
         name: c.name,
-        domain: extractDomain(c.primary_url),
-        faviconUrl: c.favicon_url,
-        score: Math.round(c.average_score * 100),
+        domain: extractDomain(c.primary_url || c.domain || ''),
+        faviconUrl: c.favicon_url || c.faviconUrl,
+        score: Math.round((c.average_score ?? (c.score != null ? c.score / 100 : 0)) * 100),
         globalRank: c.global_rank,
-        sourceModels: c.source_models,
+        sourceModels: c.source_models || c.sourceModels,
       }));
     }
 
@@ -3211,37 +3203,34 @@ function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null 
       });
 
       const allCompetitors: any[] = [];
-      const seenDomains = new Set<string>();
       matchingAnalyses.forEach(analysis => {
         (analysis.competitors || []).forEach((comp: any) => {
-          const domain = extractDomain(comp.url);
-          if (!seenDomains.has(domain)) {
-            seenDomains.add(domain);
-            allCompetitors.push(comp);
-          }
+          allCompetitors.push(comp);
         });
       });
 
       if (allCompetitors.length > 0) {
-        return allCompetitors
-          .sort((a, b) => (b.similarity_score || 0) - (a.similarity_score || 0))
+        const deduplicated = deduplicateCompetitors(allCompetitors, clientUrl);
+        return deduplicated
+          .sort((a, b) => (b.similarity_score || b.score || 0) - (a.similarity_score || a.score || 0))
           .slice(0, 5)
           .map((comp) => ({
             name: comp.name,
-            domain: extractDomain(comp.url),
-            score: Math.round(comp.similarity_score * 100),
+            domain: extractDomain(comp.url || comp.primary_url || ''),
+            score: Math.round((comp.similarity_score || (comp.score != null ? comp.score / 100 : 0)) * 100),
           }));
       }
     }
 
     // Fallback consolidated_competitors
     if (competitorAnalysis.consolidated_competitors && competitorAnalysis.consolidated_competitors.length > 0) {
-      return competitorAnalysis.consolidated_competitors
+      const deduplicated = deduplicateCompetitors(competitorAnalysis.consolidated_competitors, clientUrl);
+      return deduplicated
         .slice(0, 5)
         .map((comp) => ({
           name: comp.name,
-          domain: extractDomain(comp.primary_url),
-          score: Math.round(comp.average_score * 100),
+          domain: extractDomain(comp.primary_url || comp.url || ''),
+          score: Math.round((comp.average_score ?? (comp.score != null ? comp.score / 100 : 0)) * 100),
           globalRank: comp.global_rank,
         }));
     }
