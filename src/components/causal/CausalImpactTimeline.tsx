@@ -21,6 +21,10 @@ import {
   detectProactiveAlerts,
   ProactiveAlert,
 } from '@/services/causalTrackingService';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 interface CausalImpactTimelineProps {
   domain: string;
@@ -127,27 +131,27 @@ export const CausalImpactTimeline: React.FC<CausalImpactTimelineProps> = ({
   }, [domain, metrics]);
 
   return (
-    <div className={`rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-6 space-y-6 ${className}`}>
+    <Card className={`rounded-2xl border-slate-200/80 bg-white shadow-xs p-5 sm:p-6 space-y-6 ${className}`}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 mb-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-[11px] font-semibold text-indigo-700 border border-indigo-200/50 mb-1">
             <TrendingUp size={12} />
             <span>Preuve de ROI Causal (Causal Tracking)</span>
           </div>
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+          <CardTitle className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
             Impact Réel des Déploiements sur les Citations LLM
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          </CardTitle>
+          <CardDescription className="text-xs text-slate-500 mt-0.5">
             Relie chaque correction technique déployée à la variation mesurée sur {domain} (30 derniers jours).
-          </p>
+          </CardDescription>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-semibold gap-1 py-1">
             <CheckCircle2 size={13} />
-            Attribution Causalité : Validée
-          </span>
+            <span>Attribution Causalité : Validée</span>
+          </Badge>
         </div>
       </div>
 
@@ -165,19 +169,19 @@ export const CausalImpactTimeline: React.FC<CausalImpactTimelineProps> = ({
               onClick={() => setSelectedOptId(opt.id)}
               className={`p-3.5 rounded-xl text-left border transition-all cursor-pointer ${
                 isSelected
-                  ? 'border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/30 shadow-xs ring-1 ring-indigo-600/30'
-                  : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:bg-slate-50'
+                  ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-600/30'
+                  : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
               }`}
             >
               <div className="flex items-center justify-between gap-1 text-[11px] text-slate-400 mb-1 font-mono">
                 <span className="flex items-center gap-1">
                   <Calendar size={11} /> {opt.deployedAt}
                 </span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="font-bold text-emerald-600">
                   +{diffCitations} citations
                 </span>
               </div>
-              <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 line-clamp-1">
+              <div className="text-xs font-semibold text-slate-900 line-clamp-1">
                 {opt.title}
               </div>
               <div className="text-[11px] text-slate-500 mt-1 line-clamp-1">
@@ -188,103 +192,116 @@ export const CausalImpactTimeline: React.FC<CausalImpactTimelineProps> = ({
         })}
       </div>
 
-      {/* Causal Lift Analysis Card */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
-          <div>
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Analyse d'Impact • Fenêtre de {analysis.observationDays} jours
+      {/* Causal Lift Analysis Card (shadcn Card) */}
+      <Card className="rounded-2xl bg-slate-50/70 border-slate-200/80 shadow-none">
+        <CardHeader className="p-4 sm:p-5 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
+            <div>
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Analyse d'Impact • Fenêtre de {analysis.observationDays} jours
+              </div>
+              <div className="text-sm font-bold text-slate-900 mt-0.5">
+                {analysis.optimization.title}
+              </div>
             </div>
-            <div className="text-sm font-bold text-slate-900 mt-0.5">
-              {analysis.optimization.title}
-            </div>
+            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-bold gap-1.5 py-1 self-start sm:self-auto">
+              <Sparkles size={12} className="text-emerald-600" />
+              <span>Impact Positif Avéré</span>
+            </Badge>
           </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <Sparkles size={12} className="text-emerald-600" />
-            <span>Impact Positif Avéré</span>
-          </div>
-        </div>
+        </CardHeader>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
-            <div className="text-[11px] text-slate-500 font-medium">Gain de Citations</div>
-            <div className="text-xl font-bold text-emerald-600 mt-1">
-              +{analysis.deltas.citationsLift}
-            </div>
-            <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
-              {analysis.before.totalCitations} ➔ {analysis.after.totalCitations} mentions
-            </div>
+        <CardContent className="p-4 sm:p-5 pt-0 space-y-4">
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Card className="p-3.5 rounded-xl bg-white border-slate-200/80 shadow-2xs">
+              <div className="text-[11px] text-slate-500 font-medium">Gain de Citations</div>
+              <div className="text-xl font-bold text-emerald-600 mt-1">
+                +{analysis.deltas.citationsLift}
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                {analysis.before.totalCitations} ➔ {analysis.after.totalCitations} mentions
+              </div>
+            </Card>
+
+            <Card className="p-3.5 rounded-xl bg-white border-slate-200/80 shadow-2xs">
+              <div className="text-[11px] text-slate-500 font-medium">Part de Voix (SoV)</div>
+              <div className="text-xl font-bold text-indigo-600 mt-1">
+                +{analysis.deltas.shareOfVoiceLiftPct}%
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                {analysis.before.shareOfVoicePct}% ➔ {analysis.after.shareOfVoicePct}%
+              </div>
+            </Card>
+
+            <Card className="p-3.5 rounded-xl bg-white border-slate-200/80 shadow-2xs">
+              <div className="text-[11px] text-slate-500 font-medium">Succès Parcours Agent</div>
+              <div className="text-xl font-bold text-blue-600 mt-1">
+                +{analysis.deltas.journeyLiftPct}%
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                {analysis.before.journeySuccessRatePct}% ➔ {analysis.after.journeySuccessRatePct}%
+              </div>
+            </Card>
+
+            <Card className="p-3.5 rounded-xl bg-white border-slate-200/80 shadow-2xs">
+              <div className="text-[11px] text-slate-500 font-medium">Modèles Référents</div>
+              <div className="text-xl font-bold text-purple-600 mt-1">
+                +{analysis.after.modelsCitingCount - analysis.before.modelsCitingCount}
+              </div>
+              <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                {analysis.after.modelsCitingCount} moteurs actifs
+              </div>
+            </Card>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
-            <div className="text-[11px] text-slate-500 font-medium">Part de Voix (SoV)</div>
-            <div className="text-xl font-bold text-indigo-600 mt-1">
-              +{analysis.deltas.shareOfVoiceLiftPct}%
-            </div>
-            <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
-              {analysis.before.shareOfVoicePct}% ➔ {analysis.after.shareOfVoicePct}%
-            </div>
+          {/* Narrative Explanation */}
+          <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-100 text-xs text-slate-700 leading-relaxed">
+            <strong className="text-indigo-900 font-semibold">Attribution causale Viraill : </strong>
+            {analysis.narrativeExplanation}
           </div>
-
-          <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
-            <div className="text-[11px] text-slate-500 font-medium">Succès Parcours Agent</div>
-            <div className="text-xl font-bold text-blue-600 mt-1">
-              +{analysis.deltas.journeyLiftPct}%
-            </div>
-            <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
-              {analysis.before.journeySuccessRatePct}% ➔ {analysis.after.journeySuccessRatePct}%
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
-            <div className="text-[11px] text-slate-500 font-medium">Modèles Référents</div>
-            <div className="text-xl font-bold text-purple-600 mt-1">
-              +{analysis.after.modelsCitingCount - analysis.before.modelsCitingCount}
-            </div>
-            <div className="text-[10px] text-slate-400 mt-0.5 font-medium">
-              {analysis.after.modelsCitingCount} moteurs actifs
-            </div>
-          </div>
-        </div>
-
-        {/* Narrative Explanation */}
-        <div className="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-100 text-xs text-slate-700 leading-relaxed">
-          <strong className="text-indigo-900 font-semibold">Attribution causale Viraill : </strong>
-          {analysis.narrativeExplanation}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Proactive Alerts Section if any */}
       {alerts.length > 0 && (
         <div className="space-y-2.5 pt-1">
-          <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <ShieldAlert size={14} className="text-amber-500" />
-            <span>Alertes Proactives & Veille Continue Détectées</span>
+            <span className="text-xs font-bold text-slate-900">
+              Alertes Proactives Détectées
+            </span>
           </div>
 
           <div className="space-y-2">
-            {alerts.map((al) => (
+            {alerts.map(alert => (
               <div
-                key={al.id}
-                className="p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                key={alert.id}
+                className={`p-3 rounded-xl border flex items-start justify-between gap-3 text-xs ${
+                  alert.severity === 'critical'
+                    ? 'border-rose-200 bg-rose-50/70 text-rose-900'
+                    : 'border-amber-200 bg-amber-50/70 text-amber-900'
+                }`}
               >
                 <div>
-                  <div className="font-semibold text-amber-900 dark:text-amber-300">
-                    {al.title}
-                  </div>
-                  <div className="text-[11px] text-amber-800/80 dark:text-amber-400 mt-0.5">
-                    {al.message}
-                  </div>
+                  <div className="font-bold">{alert.title}</div>
+                  <div className="text-[11px] opacity-85 mt-0.5">{alert.description}</div>
                 </div>
-                <div className="text-[11px] font-medium text-amber-700 dark:text-amber-300 shrink-0 bg-white dark:bg-amber-900/40 px-2.5 py-1 rounded-lg border border-amber-200">
-                  {al.recommendedAction}
-                </div>
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] uppercase font-bold shrink-0 ${
+                    alert.severity === 'critical'
+                      ? 'border-rose-300 text-rose-700 bg-white'
+                      : 'border-amber-300 text-amber-700 bg-white'
+                  }`}
+                >
+                  {alert.severity}
+                </Badge>
               </div>
             ))}
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 };

@@ -5,6 +5,8 @@ import './Index.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle } from 'lucide-react';
 import { useSearchParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { computeUnifiedScore } from '@/utils/scoreEngine';
@@ -4008,70 +4010,71 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
 
   return (
     <div className="view-content">
-      {/* Barre de navigation intra-page */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-slate-200/80 -mx-4 px-4 mb-4 py-2 flex items-center justify-between gap-3">
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-none p-1 bg-slate-100/80 rounded-xl border border-slate-200/60">
-          {sections.map(s => {
-            const isActive = activeTab === s.id;
-            return (
-              <button
+      <Tabs value={activeTab} onValueChange={(val: any) => handleTabClick(val)} className="w-full">
+        {/* Barre de navigation intra-page avec shadcn Tabs */}
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-slate-200/80 -mx-4 px-4 mb-4 py-2 flex items-center justify-between gap-3">
+          <TabsList className="h-auto p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 gap-1 overflow-x-auto scrollbar-none">
+            {sections.map(s => (
+              <TabsTrigger
                 key={s.id}
+                value={s.id}
                 id={`tab-btn-${s.id}`}
-                type="button"
-                onClick={() => handleTabClick(s.id)}
-                className={`flex-shrink-0 text-xs px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-white text-slate-900 font-semibold shadow-xs border border-slate-200/80'
-                    : 'text-slate-500 hover:text-slate-900 font-medium hover:bg-white/50'
-                }`}
+                className="text-xs px-3.5 py-1.5 rounded-lg font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:font-semibold data-[state=active]:shadow-xs border border-transparent data-[state=active]:border-slate-200/80 transition-all cursor-pointer text-slate-500 hover:text-slate-900"
               >
                 {s.label}
-              </button>
-            );
-          })}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {/* Raccourci vers la modal de Score via shadcn Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsScoreModalOpen(true)}
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl text-xs font-semibold text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100/80 border-indigo-200/70 shadow-xs cursor-pointer h-9 px-3"
+            title="Ouvrir le détail du score unifié dans une modale"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Score en Modal</span>
+          </Button>
         </div>
 
-        {/* Raccourci vers la modal de Score */}
-        <button
-          type="button"
-          onClick={() => setIsScoreModalOpen(true)}
-          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/70 transition-all cursor-pointer shadow-xs"
-          title="Ouvrir le détail du score unifié dans une modale"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-          <span>Score en Modal</span>
-        </button>
-      </div>
+        {/* Onglet Score Unifié (remplace les 3 blocs) */}
+        <TabsContent value="score" className="mt-0 focus-visible:outline-none focus-visible:ring-0 animate-in fade-in duration-200">
+          <div id="section-score">
+            <ActionabilityScoreDetail
+              unified={unified}
+              domain={targetDomain}
+              onOpenModal={() => setIsScoreModalOpen(true)}
+            />
+          </div>
+        </TabsContent>
 
-      {/* Contenu conditionnel : Score Unifié ou Impact Causal remplace les 3 blocs standard */}
-      {activeTab === 'score' ? (
-        <div id="section-score" className="animate-in fade-in duration-200">
-          <ActionabilityScoreDetail
-            unified={unified}
-            domain={targetDomain}
-            onOpenModal={() => setIsScoreModalOpen(true)}
-          />
-        </div>
-      ) : activeTab === 'causal' ? (
-        <div id="section-causal" className="animate-in fade-in duration-200">
-          <CausalImpactTimeline domain={targetDomain} />
-        </div>
-      ) : (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Section avec les deux graphiques côte à côte */}
-          <div id="section-citations" className="analytics-section scroll-mt-16">
-            <GeoScoreChart reportData={reportData} />
-            <div id="section-concurrents" className="scroll-mt-16">
-              <CompetitorAnalysis reportData={reportData} />
+        {/* Onglet Impact Causal (remplace les 3 blocs) */}
+        <TabsContent value="causal" className="mt-0 focus-visible:outline-none focus-visible:ring-0 animate-in fade-in duration-200">
+          <div id="section-causal">
+            <CausalImpactTimeline domain={targetDomain} />
+          </div>
+        </TabsContent>
+
+        {/* Onglets Standards (Citations, Concurrents, Sources) */}
+        {(activeTab === 'citations' || activeTab === 'concurrents' || activeTab === 'sources') && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Section avec les deux graphiques côte à côte */}
+            <div id="section-citations" className="analytics-section scroll-mt-16">
+              <GeoScoreChart reportData={reportData} />
+              <div id="section-concurrents" className="scroll-mt-16">
+                <CompetitorAnalysis reportData={reportData} />
+              </div>
+            </div>
+
+            {/* Tableau des domaines */}
+            <div id="section-sources" className="scroll-mt-16">
+              <DomainsTable reportData={reportData} />
             </div>
           </div>
-
-          {/* Tableau des domaines */}
-          <div id="section-sources" className="scroll-mt-16">
-            <DomainsTable reportData={reportData} />
-          </div>
-        </div>
-      )}
+        )}
+      </Tabs>
 
       {/* Modal Score d'Actionnabilité Unifié */}
       <ActionabilityScoreModal
