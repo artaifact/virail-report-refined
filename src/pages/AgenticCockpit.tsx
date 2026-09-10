@@ -11,6 +11,9 @@ import {
   Layers,
   CreditCard,
   FileCode2,
+  Bot,
+  Play,
+  Sparkles,
 } from 'lucide-react';
 import {
   runAgenticScan,
@@ -18,6 +21,9 @@ import {
   getX402Manifest,
   AgenticScanResult,
 } from '@/services/agenticService';
+import { actionabilityEngine } from '@/services/actionability/ActionabilityEngine';
+import { JourneyResult } from '@/services/actionability/types';
+import { JourneyReplay } from '@/components/journey/JourneyReplay';
 import { AgenticScoreGauge } from '@/components/agentic/AgenticScoreGauge';
 import { AgenticPillarsView } from '@/components/agentic/AgenticPillarsView';
 import { AgenticChannelsMatrix } from '@/components/agentic/AgenticChannelsMatrix';
@@ -32,12 +38,25 @@ const PRESETS = [
   { name: 'Shopify', url: 'https://shopify.com' },
 ];
 
+const CURATED_INTENTS = [
+  { id: 'discover', label: 'Découverte & Positionnement', icon: '🔍', desc: "L'agent analyse l'offre principale et la clarté du positionnement." },
+  { id: 'compare', label: 'Comparaison Concurrentielle', icon: '⚖️', desc: "L'agent compare les fonctionnalités clés et la proposition vs alternatives." },
+  { id: 'pricing', label: 'Grille Tarifaire & Transparence', icon: '💰', desc: "L'agent tente d'extraire la grille de prix, quotas et conditions d'usage." },
+  { id: 'integrate', label: 'Documentation & API / MCP', icon: '🔌', desc: "L'agent recherche les points de terminaison machine (/llms.txt, OpenAPI, MCP)." },
+  { id: 'action', label: 'Parcours de Conversion M2M', icon: '⚡', desc: "L'agent simule une souscription ou une transaction programmatique." },
+];
+
 export default function AgenticCockpit() {
   const [url, setUrl] = useState<string>('https://tally.so');
   const [remediate, setRemediate] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<AgenticScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Agent Journeys live testing
+  const [selectedIntent, setSelectedIntent] = useState<string>('discover');
+  const [journeyLoading, setJourneyLoading] = useState<boolean>(false);
+  const [journeyResult, setJourneyResult] = useState<JourneyResult | null>(null);
 
   // x402 live test
   const [x402Loading, setX402Loading] = useState<boolean>(false);
@@ -82,6 +101,7 @@ export default function AgenticCockpit() {
       localStorage.setItem('viraill_last_agentic_url', targetUrl);
       const data = await runAgenticScan(targetUrl, remediate);
       setResult(data);
+      setJourneyResult(null);
 
       if (data && data.score !== undefined) {
         try {
@@ -95,6 +115,23 @@ export default function AgenticCockpit() {
       setError(err.message || "Erreur lors de l'exécution de l'audit agentique.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRunJourney = async (intentId?: string) => {
+    const intent = intentId || selectedIntent;
+    setSelectedIntent(intent);
+    setJourneyLoading(true);
+    try {
+      const res = await actionabilityEngine.runJourney({
+        intentId: intent,
+        targetUrl: url,
+      });
+      setJourneyResult(res);
+    } catch (err: any) {
+      console.error('[AgenticCockpit] Journey error:', err);
+    } finally {
+      setJourneyLoading(false);
     }
   };
 
@@ -238,6 +275,110 @@ export default function AgenticCockpit() {
                 Matrice de Présence sur les 8 Canaux de Distribution Agentique
               </h3>
               <AgenticChannelsMatrix channelAudit={result.channel_audit} />
+            </div>
+
+            {/* Agent Journey Replay Section */}
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                    <Bot className="w-4 h-4 text-[#1A3AFF]" />
+                    Banc d'Essai de Parcours Réels d'Agents (Agent Journey Replay)
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Simulez et rejouez le raisonnement étape par étape d'un agent autonome face à 5 intentions critiques.
+                  </p>
+                </div>
+                {journeyResult && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleRunJourney(selectedIntent)}
+                    disabled={journeyLoading}
+                    className="h-8 px-3 text-xs gap-1.5 self-start sm:self-auto cursor-pointer"
+                  >
+                    {journeyLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+                    Rejouer ce parcours
+                  </Button>
+                )}
+              </div>
+
+              {/* 5 Curated Intent Selector */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+                {CURATED_INTENTS.map((intent) => {
+                  const isSelected = selectedIntent === intent.id;
+                  return (
+                    <button
+                      key={intent.id}
+                      type="button"
+                      onClick={() => handleRunJourney(intent.id)}
+                      disabled={journeyLoading}
+                      className={`p-3 rounded-xl text-left border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-[#1A3AFF] bg-blue-50/50 dark:bg-blue-950/30 shadow-xs ring-1 ring-[#1A3AFF]/30'
+                          : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="text-base">{intent.icon}</span>
+                        {isSelected && (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#1A3AFF] text-white">
+                            Actif
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                        {intent.label}
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        {intent.desc}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Journey Loading / Results */}
+              {journeyLoading ? (
+                <Card className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center space-y-3">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-[#1A3AFF] animate-pulse mx-auto">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      Simulation du parcours agentique en cours...
+                    </div>
+                    <div className="text-xs text-slate-500 font-mono">
+                      Intention : {CURATED_INTENTS.find(i => i.id === selectedIntent)?.label}
+                    </div>
+                  </div>
+                </Card>
+              ) : journeyResult ? (
+                <JourneyReplay
+                  journey={journeyResult}
+                  targetDomain={new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, '')}
+                  intentTitle={CURATED_INTENTS.find(i => i.id === selectedIntent)?.label}
+                />
+              ) : (
+                <Card className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-6 text-center">
+                  <div className="max-w-md mx-auto space-y-2">
+                    <Sparkles className="w-6 h-6 text-[#1A3AFF] mx-auto opacity-80" />
+                    <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                      Visualisez en direct les étapes de raisonnement des agents
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Sélectionnez l'une des 5 intentions ci-dessus pour observer le cheminement de l'agent, ses appels d'outils et les points de friction éventuels.
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={() => handleRunJourney(selectedIntent)}
+                      className="mt-2 h-8 px-4 text-xs font-semibold bg-[#1A3AFF] hover:bg-[#1530D9] text-white cursor-pointer"
+                    >
+                      <Play className="w-3 h-3 mr-1.5" /> Lancer le parcours "{CURATED_INTENTS.find(i => i.id === selectedIntent)?.label}"
+                    </Button>
+                  </div>
+                </Card>
+              )}
             </div>
 
             {/* Remediation Pack */}

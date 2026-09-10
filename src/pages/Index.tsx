@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { Info, ChevronRight, ExternalLink, CheckCircle2, AlertCircle, AlertTriangle, Clock, Target, TrendingUp, CheckCircle, Circle, PlayCircle, Pause, RotateCcw, Sparkles, Wand2, Zap, Award, MessageSquare, MoreVertical, X, Check, Download, Lock, FileText, ListChecks, ArrowUpRight, Shield, Code, Globe, Copy, FileCode, Loader2, Layers, Play, XCircle } from 'lucide-react';
-import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
+import { useSearchParams, useLocation, useNavigate, Link } from 'react-router-dom';
+import { computeUnifiedScore } from '@/utils/scoreEngine';
 import { useReport, useReports, getLatestReportId } from '@/hooks/useReports';
 import { useSelectedReport } from '@/contexts/SelectedReportContext';
 import { AuthService } from '@/services/authService';
@@ -18,6 +19,7 @@ import { deduplicateCompetitors, normalizeBrandName, normalizeDomain } from '@/u
 import { modelLogos } from '@/components/ModelLogosCarousel';
 import { usePayment } from '@/hooks/usePayment';
 import { ScoreCard } from '@/components/dashboard/ScoreCard';
+import { CausalImpactTimeline } from '@/components/causal/CausalImpactTimeline';
 import { NewAnalysisModal } from '@/components/NewAnalysisModal';
 import { AiExplainModal } from '@/components/AiExplainModal';
 import AskAIButton from '@/components/AskAIButton';
@@ -302,8 +304,58 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
   const agenticDashoffset = agenticCirc - (normalizedAgenticScore / 100) * agenticCirc;
   const agenticStatusLabel = normalizedAgenticScore >= 80 ? 'Agentic Native' : normalizedAgenticScore >= 50 ? 'Agent-Friendly' : 'Non Conforme (M2M)';
 
+  const domain = reportData?.report?.url || 'site.com';
+  const unified = useMemo(() => {
+    return computeUnifiedScore({
+      targetDomain: domain,
+      geoScore: normalizedGeoScore,
+      totalCitations,
+      modelsCount: activeModels.length,
+      agenticScore: normalizedAgenticScore,
+      schemaScore: normalizedGeoScore ? Math.round(normalizedGeoScore * 0.9) : 60,
+    });
+  }, [domain, normalizedGeoScore, totalCitations, activeModels.length, normalizedAgenticScore]);
+
   return (
     <div className="citations-chart">
+      {/* Bannière d'Actionnabilité Unifiée en 3 Niveaux */}
+      <div className="w-full mb-4 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white border border-slate-700/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center font-bold text-base text-white border border-white/20 shrink-0">
+            {unified.grade}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs sm:text-sm font-bold tracking-tight">Score d'Actionnabilité Unifié : {unified.score}/100</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-500/40">
+                Grade {unified.grade}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-300 mt-0.5">
+              Hiérarchie en 3 niveaux : Cité (40%) ➔ Compris (30%) ➔ Actionnable (30%)
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap text-[11px]">
+          <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-200">
+            <strong className="text-emerald-400 font-semibold">Niv. 1 Cité</strong> : {unified.levels.level1.score}/100
+          </span>
+          <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-200">
+            <strong className="text-indigo-400 font-semibold">Niv. 2 Compris</strong> : {unified.levels.level2.score}/100
+          </span>
+          <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-200">
+            <strong className="text-rose-400 font-semibold">Niv. 3 Actionnable</strong> : {unified.levels.level3.score}/100
+          </span>
+          <Link
+            to="/methodologie"
+            className="text-[11px] font-medium text-indigo-300 hover:text-white underline ml-1 transition-colors"
+          >
+            Méthodologie 2026.1 →
+          </Link>
+        </div>
+      </div>
+
       {/* Conteneur des 3 graphiques côte à côte de même dimension et arrondi */}
       <div className="flex flex-col xl:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-10 w-full mb-3">
         {/* 1. Graphique circulaire : Citations totales avec pourcentages à gauche en long */}
@@ -3950,7 +4002,18 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
     { id: 'section-citations', label: 'Citations' },
     { id: 'section-concurrents', label: 'Concurrents' },
     { id: 'section-sources', label: 'Sources' },
+    { id: 'section-causal', label: 'Impact Causal (ROI)' },
   ];
+
+  const targetDomain = (() => {
+    const rawUrl = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || (reportData as any)?.url || '';
+    if (!rawUrl) return 'tally.so';
+    try {
+      return new URL(rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`).hostname.replace(/^www\./, '');
+    } catch {
+      return rawUrl;
+    }
+  })();
 
   return (
     <div className="view-content">
@@ -3962,7 +4025,7 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
               key={s.id}
               type="button"
               onClick={() => scrollTo(s.id)}
-              className="flex-shrink-0 text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-lg transition-colors"
+              className="flex-shrink-0 text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               {s.label}
             </button>
@@ -3981,6 +4044,11 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
       {/* Tableau des domaines */}
       <div id="section-sources" className="scroll-mt-12">
         <DomainsTable reportData={reportData} />
+      </div>
+
+      {/* Attribution Causale & Veille Continue */}
+      <div id="section-causal" className="scroll-mt-12 mt-6">
+        <CausalImpactTimeline domain={targetDomain} />
       </div>
     </div>
   );

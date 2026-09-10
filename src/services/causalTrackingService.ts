@@ -98,8 +98,8 @@ export function computeCausalLift(
 export function detectProactiveAlerts(
   domain: string,
   history: CausalMetricPoint[],
-  latestCompetitorNames: string[],
-  previousCompetitorNames: string[]
+  latestCompetitorNames: string[] = [],
+  previousCompetitorNames: string[] = []
 ): ProactiveAlert[] {
   const alerts: ProactiveAlert[] = [];
   if (history.length < 2) return alerts;

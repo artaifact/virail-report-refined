@@ -30,6 +30,8 @@ import {
   Info,
   CheckCircle,
   X,
+  FileDiff,
+  GitPullRequest,
 } from 'lucide-react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useReport, useReports, getLatestReportId } from '@/hooks/useReports';
@@ -42,6 +44,7 @@ import { sanitizeRobotsTxt } from '@/utils/robotsValidator';
 import { normalizeDomain } from '@/utils/entityNormalizer';
 import { SimulationTab } from '@/components/optimizer/SimulationTab';
 import { AgenticRemediationSection } from '@/components/agentic/AgenticRemediationSection';
+import { generateFullRemediationPatch, createPullRequestPayload } from '@/services/remediationPatchService';
 import { HELP } from '@/lib/help-content';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
@@ -427,6 +430,55 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     a.href = url; a.download = filename;
     document.body.appendChild(a); a.click();
     document.body.removeChild(a); URL.revokeObjectURL(url);
+  };
+
+  const getRemediationChanges = () => {
+    const changes: { path: string; originalContent: string; newContent: string }[] = [];
+    if (robotsContent) {
+      changes.push({
+        path: 'public/robots.txt',
+        originalContent: '',
+        newContent: robotsContent,
+      });
+    }
+    if (llmsContent) {
+      changes.push({
+        path: 'public/llms.txt',
+        originalContent: '',
+        newContent: llmsContent,
+      });
+    }
+    if (llmsFullContent) {
+      changes.push({
+        path: 'public/llms-full.txt',
+        originalContent: '',
+        newContent: llmsFullContent,
+      });
+    }
+    if (schemaContent) {
+      changes.push({
+        path: 'public/schemas/structured-data.jsonld',
+        originalContent: '',
+        newContent: schemaContent,
+      });
+    }
+    return changes;
+  };
+
+  const handleDownloadGitPatch = () => {
+    const changes = getRemediationChanges();
+    if (changes.length === 0) return;
+    const patch = generateFullRemediationPatch(domainName || 'target-site', changes);
+    downloadFile(patch, `${domainName || 'viraill'}-remediation.patch`, 'text/x-diff');
+  };
+
+  const handleCopyPRPayload = () => {
+    const changes = getRemediationChanges();
+    if (changes.length === 0) return;
+    const pr = createPullRequestPayload(domainName || 'target-site', changes);
+    navigator.clipboard.writeText(pr.body);
+    setCopied('pr_payload');
+    setTimeout(() => setCopied(null), 2500);
   };
 
   const fileTabsMeta: Record<string, { icon: any; badge: string }> = {
@@ -1420,6 +1472,82 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                         {pgProcessingTime < 1000 ? `${pgProcessingTime}ms` : `${(pgProcessingTime / 1000).toFixed(1)}s`}
                       </span>
                     )}
+                  </div>
+
+                  {/* Export Développeur & Intégration CI/CD */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                    padding: '14px 18px',
+                    background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+                    borderRadius: '12px',
+                    color: '#F8FAFC',
+                    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.08)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38BDF8' }}>
+                        <FileDiff size={20} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>Export Développeur & Intégration CI/CD</span>
+                          <span style={{ fontSize: '10px', padding: '1.5px 6px', borderRadius: '4px', background: '#38BDF8', color: '#0F172A', fontWeight: 700 }}>.PATCH</span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>
+                          Appliquez instantanément toutes les modifications avec <code style={{ color: '#38BDF8', fontFamily: 'monospace' }}>git apply</code> ou ouvrez une Pull Request.
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={handleCopyPRPayload}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '7px 13px',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          background: copied === 'pr_payload' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.08)',
+                          color: copied === 'pr_payload' ? '#4ADE80' : '#FFFFFF',
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        {copied === 'pr_payload' ? <Check size={13} /> : <GitPullRequest size={13} />}
+                        <span>{copied === 'pr_payload' ? 'PR Copiée !' : 'Copier Description PR'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleDownloadGitPatch}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '7px 15px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          background: '#1A3AFF',
+                          color: '#FFFFFF',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 8px rgba(26, 58, 255, 0.3)',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        <Download size={13} />
+                        <span>Télécharger .patch</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Schema.org JSON-LD — coloration syntaxique */}
