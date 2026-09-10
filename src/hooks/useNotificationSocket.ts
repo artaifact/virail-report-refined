@@ -45,6 +45,8 @@ export function useNotificationSocket() {
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttempts = useRef(0);
+  const MAX_RECONNECT_ATTEMPTS = 3;
 
   const [isConnected, setIsConnected] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -53,6 +55,11 @@ export function useNotificationSocket() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const connect = useCallback(async () => {
+    // Si nombre max de tentatives atteint, arrêter les retries silencieusement
+    if (reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS) {
+      return;
+    }
+
     try {
       // Récupérer le token d'accès
       const token = await AuthService.getAccessToken();
@@ -65,8 +72,8 @@ export function useNotificationSocket() {
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
+        reconnectAttempts.current = 0; // Réinitialiser le compteur
         // Envoyer le token comme premier message après connexion
-        // au lieu de l'exposer dans l'URL (logs serveur, historique navigateur)
         if (ws.current?.readyState === WebSocket.OPEN) {
           ws.current.send(JSON.stringify({ type: 'authenticate', token }));
         }
@@ -95,10 +102,14 @@ export function useNotificationSocket() {
         setIsConnected(false);
         cleanup();
 
-        // Reconnexion automatique après 5 secondes
-        reconnectTimeout.current = setTimeout(() => {
-          connect();
-        }, 5000);
+        // Reconnexion avec backoff limité (max 3 tentatives)
+        if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
+          reconnectAttempts.current += 1;
+          const delay = reconnectAttempts.current * 4000;
+          reconnectTimeout.current = setTimeout(() => {
+            connect();
+          }, delay);
+        }
       };
 
       ws.current.onerror = () => {

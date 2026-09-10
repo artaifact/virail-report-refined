@@ -322,13 +322,15 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
       <div className="w-full mb-4 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white border border-slate-700/60 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3.5">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center font-bold text-base text-white border border-white/20 shrink-0">
-            {unified.grade}
+            {unified?.grade || 'B'}
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs sm:text-sm font-bold tracking-tight">Score d'Actionnabilité Unifié : {unified.score}/100</span>
+              <span className="text-xs sm:text-sm font-bold tracking-tight">
+                Score d'Actionnabilité Unifié : {unified?.overallScore ?? (unified as any)?.score ?? 50}/100
+              </span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-500/40">
-                Grade {unified.grade}
+                Grade {unified?.grade || 'B'}
               </span>
             </div>
             <p className="text-[11px] text-slate-300 mt-0.5">
@@ -339,13 +341,13 @@ function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportDa
 
         <div className="flex items-center gap-2 flex-wrap text-[11px]">
           <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-200">
-            <strong className="text-emerald-400 font-semibold">Niv. 1 Cité</strong> : {unified.levels.level1.score}/100
+            <strong className="text-emerald-400 font-semibold">Niv. 1 Cité</strong> : {unified?.levels?.found_and_cited?.score ?? normalizedGeoScore ?? 50}/100
           </span>
           <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-200">
-            <strong className="text-indigo-400 font-semibold">Niv. 2 Compris</strong> : {unified.levels.level2.score}/100
+            <strong className="text-indigo-400 font-semibold">Niv. 2 Compris</strong> : {unified?.levels?.understood_and_preferred?.score ?? 60}/100
           </span>
           <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-200">
-            <strong className="text-rose-400 font-semibold">Niv. 3 Actionnable</strong> : {unified.levels.level3.score}/100
+            <strong className="text-rose-400 font-semibold">Niv. 3 Actionnable</strong> : {unified?.levels?.actionable_and_transacting?.score ?? normalizedAgenticScore ?? 50}/100
           </span>
           <Link
             to="/methodologie"

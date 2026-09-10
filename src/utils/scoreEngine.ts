@@ -210,6 +210,7 @@ export function computeUnifiedScore(input: ScoreCalculationInput): UnifiedAction
 
   return {
     overallScore,
+    score: overallScore,
     grade: calculateGrade(overallScore),
     methodVersion: '2026.1',
     calculatedAt: new Date().toISOString(),
@@ -225,7 +226,10 @@ export function computeUnifiedScore(input: ScoreCalculationInput): UnifiedAction
       found_and_cited: level1,
       understood_and_preferred: level2,
       actionable_and_transacting: level3,
-    },
+      level1,
+      level2,
+      level3,
+    } as any,
     topFixes,
   };
 }
