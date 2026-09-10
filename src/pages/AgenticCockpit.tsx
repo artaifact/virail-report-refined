@@ -14,10 +14,9 @@ import {
   FileCode2,
   Workflow,
   Play,
-  Scale,
+  BarChart3,
   Plug,
   Zap,
-  RefreshCw,
   Database,
   CheckCircle2,
 } from 'lucide-react';
@@ -48,7 +47,7 @@ const PRESETS = [
 
 const CURATED_INTENTS = [
   { id: 'discover', label: 'Découverte & Positionnement', icon: Search, desc: "L'agent analyse l'offre principale et la clarté du positionnement." },
-  { id: 'compare', label: 'Comparaison Concurrentielle', icon: Scale, desc: "L'agent compare les fonctionnalités clés et la proposition vs alternatives." },
+  { id: 'compare', label: 'Comparaison Concurrentielle', icon: BarChart3, desc: "L'agent compare les fonctionnalités clés et la proposition vs alternatives." },
   { id: 'pricing', label: 'Grille Tarifaire & Transparence', icon: CreditCard, desc: "L'agent tente d'extraire la grille de prix, quotas et conditions d'usage." },
   { id: 'integrate', label: 'Documentation & API / MCP', icon: Plug, desc: "L'agent recherche les points de terminaison machine (/llms.txt, OpenAPI, MCP)." },
   { id: 'action', label: 'Parcours de Conversion M2M', icon: Zap, desc: "L'agent simule une souscription ou une transaction programmatique." },
@@ -64,7 +63,6 @@ export default function AgenticCockpit() {
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<AgenticScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [lastLoadedGetTime, setLastLoadedGetTime] = useState<string | null>(null);
 
   // Agent Journeys live testing
   const [selectedIntent, setSelectedIntent] = useState<string>('discover');
@@ -122,24 +120,6 @@ export default function AgenticCockpit() {
     };
   }, [searchParams, selectedReportId, reports.length]);
 
-  const handleRefreshGet = async () => {
-    const targetUrl = url.trim();
-    if (!targetUrl) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const audit = await getLatestAgenticAudit(targetUrl, true);
-      if (audit) {
-        setResult(audit);
-        setLastLoadedGetTime(new Date().toLocaleTimeString('fr-FR'));
-      }
-    } catch (err: any) {
-      setError(err.message || 'Impossible de récupérer le dernier audit GET.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleScan = async (e?: React.FormEvent, overrideUrl?: string) => {
     if (e) e.preventDefault();
     const targetUrl = (overrideUrl || url).trim();
@@ -154,7 +134,6 @@ export default function AgenticCockpit() {
       const data = await runAgenticScan(targetUrl, remediate);
       setResult(data);
       setJourneyResult(null);
-      setLastLoadedGetTime(new Date().toLocaleTimeString('fr-FR'));
 
       if (data && data.score !== undefined) {
         try {
@@ -281,36 +260,6 @@ export default function AgenticCockpit() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Status Bar Dernier GET */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              GET /api/v1/agentic/latest
-            </span>
-            <span className="text-xs text-slate-700 dark:text-slate-200 font-medium">
-              {result ? `Dernier audit GET chargé pour ${url}` : `Chargement du dernier audit GET pour ${url}...`}
-            </span>
-            {lastLoadedGetTime && (
-              <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
-                • Synchronisé à {lastLoadedGetTime}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefreshGet}
-              disabled={loading}
-              className="h-8 px-3 text-xs font-medium gap-1.5 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-slate-900 cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              Recharger le dernier GET
-            </Button>
-          </div>
-        </div>
 
         {/* Error display */}
         {error && (

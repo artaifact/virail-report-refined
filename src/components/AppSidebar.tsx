@@ -16,7 +16,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Globe,
-  Scale,
+  BarChart3,
   Tag,
   Users,
   Users2,
@@ -112,7 +112,7 @@ export function AppSidebar() {
           {
             title: "Concurrentielle",
             url: "/competition",
-            icon: Scale,
+            icon: BarChart3,
             badge: undefined as string | undefined,
           },
           {

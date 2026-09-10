@@ -93,27 +93,18 @@ export const AgenticScoreGauge: React.FC<AgenticScoreGaugeProps> = ({
           <span className="text-xs font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700">
             {targetUrl}
           </span>
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200/60 dark:border-emerald-800/60 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            GET v1/agentic/latest
-          </span>
           {createdAt && (
-            <span className="text-[11px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700">
+            <span className="text-[11px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700">
               {(() => {
                 try {
                   const d = new Date(createdAt);
                   return !isNaN(d.getTime())
-                    ? `${d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                    ? `Mis à jour le ${d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
                     : 'Audit récent';
                 } catch {
                   return 'Audit récent';
                 }
               })()}
-            </span>
-          )}
-          {auditId && (
-            <span className="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700">
-              #AUDIT-{auditId}
             </span>
           )}
         </div>
