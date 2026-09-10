@@ -370,6 +370,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     ? JSON.stringify(coOptimize.schemas, null, 2)
     : (tf?.schema_org_json?.content || '');
   const llmsContent = stripEmojis(coOptimize?.llms_txt || coSimulate?.generated_files?.llms_txt || tf?.llms_txt?.content || '');
+  const llmsFullContent = stripEmojis(coOptimize?.llms_full_txt || coSimulate?.generated_files?.llms_full_txt || '');
   const rawRobotsContent = stripEmojis(coOptimize?.robots_txt || coSimulate?.generated_files?.robots_txt || tf?.robots_txt?.content || '');
   const targetSiteUrl = reportData?.report?.url || (reportData as any)?.llmo_report?.url || '';
   const robotsSanitization = useMemo(() => sanitizeRobotsTxt(rawRobotsContent, coPlatform, targetSiteUrl), [rawRobotsContent, coPlatform, targetSiteUrl]);
