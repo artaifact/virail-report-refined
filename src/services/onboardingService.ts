@@ -11,6 +11,7 @@ import {
   SkipOnboardingRequest,
   SkipOnboardingResponse,
 } from '@/types/onboarding';
+import { AuthService } from './authService';
 
 // Configuration : en dev utiliser le chemin relatif (proxy Vite), sinon VITE_API_BASE_URL
 const API_BASE_URL = import.meta.env.DEV
@@ -34,12 +35,14 @@ class OnboardingService {
     try {
       const method = (options.method || 'GET').toUpperCase();
       const isGetLike = method === 'GET' || method === 'HEAD';
+      const accessToken = AuthService.getAccessToken();
 
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...options,
         credentials: 'include', // Important pour les cookies JWT
         headers: {
           ...(isGetLike ? {} : { 'Content-Type': 'application/json' }),
+          ...(accessToken && accessToken !== 'httponly-cookie' ? { 'Authorization': `Bearer ${accessToken}` } : {}),
           ...(options.headers || {}),
         },
       });

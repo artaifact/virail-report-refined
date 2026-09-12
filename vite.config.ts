@@ -4,29 +4,35 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8081,
-    proxy: {
-      // Proxy API backend to avoid cross-origin cookie issues in dev
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/auth': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/llmo': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        secure: false,
+export default defineConfig(({ mode }) => {
+  const apiTarget = process.env.VITE_API_PROXY_TARGET || process.env.VITE_API_BASE_URL || 'https://api.viraill.com';
+
+  return {
+    server: {
+      host: "::",
+      port: 8081,
+      proxy: {
+        // Proxy API backend to avoid cross-origin cookie issues in dev
+        '/api': {
+          target: apiTarget,
+          changeOrigin: true,
+          secure: false,
+          cookieDomainRewrite: "",
+        },
+        '/auth': {
+          target: apiTarget,
+          changeOrigin: true,
+          secure: false,
+          cookieDomainRewrite: "",
+        },
+        '/llmo': {
+          target: apiTarget,
+          changeOrigin: true,
+          secure: false,
+          cookieDomainRewrite: "",
+        },
       },
     },
-  },
   preview: {
     host: "0.0.0.0",
     port: 3000,
@@ -55,9 +61,10 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-  },
-}));
+  };
+});

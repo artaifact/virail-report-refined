@@ -15,12 +15,26 @@ export class AdminService {
    */
   private static async verifyAdminAccess(): Promise<void> {
     try {
+      const accessToken = AuthService.getAccessToken();
+      const authHeader: Record<string, string> = {};
+      if (accessToken && accessToken !== 'httponly-cookie') {
+        authHeader['Authorization'] = `Bearer ${accessToken}`;
+      }
+
       // Récupérer les données utilisateur fraîches depuis l'API
-      const response = await fetch(`${API_BASE_URL}/auth/me-bearer`, {
+      let response = await fetch(`${API_BASE_URL}/auth/me-bearer`, {
         method: 'GET',
         credentials: 'include',
-        // Ne pas envoyer Content-Type pour GET
+        headers: authHeader,
       });
+
+      if (!response.ok) {
+        response = await fetch(`${API_BASE_URL}/auth/me`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: authHeader,
+        });
+      }
 
       if (!response.ok) {
         throw new Error('Authentification requise');
@@ -48,12 +62,13 @@ export class AdminService {
   private static async makeAdminRequest<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
     await this.verifyAdminAccess();
     
-    // Utiliser la même approche que apiService pour les cookies
+    const accessToken = AuthService.getAccessToken();
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       credentials: 'include', // Important pour les cookies JWT
       headers: {
         'Content-Type': 'application/json',
+        ...(accessToken && accessToken !== 'httponly-cookie' ? { 'Authorization': `Bearer ${accessToken}` } : {}),
         ...options.headers,
       },
     });

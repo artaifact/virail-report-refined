@@ -3,6 +3,8 @@
  * Gestion des paiements, quotas et fonctionnalités protégées
  */
 
+import { AuthService } from './authService';
+
 // Configuration
 // En développement, utiliser les chemins relatifs pour profiter du proxy Vite (port 8081)
 const getApiBaseUrl = () => {
@@ -145,12 +147,14 @@ class ApiService {
     try {
       const method = (options.method || 'GET').toUpperCase();
       const isGetLike = method === 'GET' || method === 'HEAD';
+      const accessToken = AuthService.getAccessToken();
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...options,
         method,
         credentials: 'include', // Important pour les cookies JWT
         headers: {
           'Content-Type': 'application/json',
+          ...(accessToken && accessToken !== 'httponly-cookie' ? { 'Authorization': `Bearer ${accessToken}` } : {}),
           ...(options.headers || {}),
         },
         signal: controller.signal,
@@ -279,7 +283,6 @@ class ApiService {
     try {
       return await this.request('/auth/me-bearer', { method: 'GET' });
     } catch (e: any) {
-      // Si l'erreur est 401 (UNAUTHORIZED_SILENT), retourner null silencieusement
       if (e?.message === 'UNAUTHORIZED_SILENT') {
         return null;
       }
@@ -288,12 +291,8 @@ class ApiService {
       try {
         return await this.request('/auth/me', { method: 'GET' });
       } catch (e2: any) {
-        // Si cette requête échoue aussi avec 401, retourner null silencieusement
-        if (e2?.message === 'UNAUTHORIZED_SILENT') {
-          return null;
-        }
-        // Sinon, propager l'erreur
-        throw e2;
+        // Silencieux si l'endpoint échoue pour ne pas bloquer l'initialisation de l'authentification
+        return null;
       }
     }
   }

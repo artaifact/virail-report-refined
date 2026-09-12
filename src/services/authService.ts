@@ -168,15 +168,12 @@ export class AuthService {
   private static async makeLoginRequest(credentials: LoginRequest): Promise<Response> {
     const requestOptions: RequestInit = {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(credentials),
     };
-
-    if (AUTH_MODE === 'cookies') {
-      requestOptions.credentials = 'include';
-    }
 
     return fetch(`${API_BASE_URL}/auth/login`, requestOptions);
   }
@@ -409,7 +406,7 @@ export class AuthService {
 
   static async refreshAccessToken(): Promise<string | null> {
     try {
-      
+      const refreshToken = this.getRefreshToken();
       const requestOptions: RequestInit = {
         method: 'POST',
         headers: {
@@ -420,28 +417,17 @@ export class AuthService {
       if (AUTH_MODE === 'cookies') {
         requestOptions.credentials = 'include';
       } else if (AUTH_MODE === 'bearer') {
-        const refreshToken = this.getRefreshToken();
         if (!refreshToken || refreshToken === 'httponly-cookie') {
           this.logout();
           return null;
         }
+        requestOptions.credentials = 'include';
         requestOptions.body = JSON.stringify({ refresh_token: refreshToken });
       }
 
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, requestOptions);
 
-
       if (!response.ok) {
-        if (response.status === 404) {
-        } else if (response.status === 401) {
-        } else {
-        }
-        
-        try {
-          const errorData = await response.text();
-        } catch (e) {
-        }
-        
         this.logout();
         return null;
       }
@@ -465,9 +451,7 @@ export class AuthService {
     const user = this.getUser();
     const accessToken = this.getAccessToken();
 
-    const isAuth = (AUTH_MODE === 'cookies')
-      ? !!user
-      : !!(user && accessToken && accessToken !== 'httponly-cookie');
+    const isAuth = !!user || (accessToken && accessToken !== 'httponly-cookie');
 
     if (!isAuth) {
       throw new Error('Utilisateur non authentifié');
@@ -479,20 +463,17 @@ export class AuthService {
 
     const requestOptions: RequestInit = {
       ...options,
+      credentials: 'include',
       headers: {
         ...options.headers,
       },
     };
 
-    if (AUTH_MODE === 'cookies') {
-      requestOptions.credentials = 'include';
-    } else if (AUTH_MODE === 'bearer') {
-      if (accessToken && accessToken !== 'httponly-cookie') {
-        requestOptions.headers = {
-          ...requestOptions.headers,
-          'Authorization': `Bearer ${accessToken}`,
-        };
-      }
+    if (accessToken && accessToken !== 'httponly-cookie') {
+      requestOptions.headers = {
+        ...requestOptions.headers,
+        'Authorization': `Bearer ${accessToken}`,
+      };
     }
 
     try {
@@ -501,7 +482,7 @@ export class AuthService {
       if (response.status === 401) {
         const refreshed = await this.refreshAccessToken();
         if (refreshed) {
-          if (AUTH_MODE === 'bearer' && refreshed !== 'httponly-cookie') {
+          if (refreshed !== 'httponly-cookie') {
             requestOptions.headers = {
               ...requestOptions.headers,
               'Authorization': `Bearer ${refreshed}`,
@@ -512,14 +493,17 @@ export class AuthService {
         
         this.logout();
         if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
-          window.location.href = '/login';
+          const pathname = window.location.pathname;
+          if (pathname !== '/login' && pathname !== '/register') {
+            window.location.href = '/login';
+          }
         }
         throw new Error('Session expirée, veuillez vous reconnecter');
       }
 
       return response;
     } catch (error) {
-      if (error.message.includes('Credential is not supported') && AUTH_MODE === 'cookies') {
+      if (error?.message?.includes('Credential is not supported') && AUTH_MODE === 'cookies') {
         AUTH_MODE = 'bearer';
         CORS_CREDENTIALS_SUPPORTED = false;
         
@@ -717,24 +701,21 @@ export class AuthService {
     }
 
     try {
-      
-      const response = await fetch(`${API_BASE_URL}/docs`, {
+      await fetch(`${API_BASE_URL}/docs`, {
         method: 'GET',
         credentials: 'include',
       });
       
       CORS_CREDENTIALS_SUPPORTED = true;
-      AUTH_MODE = 'cookies';
       return true;
-    } catch (error) {
-      if (error.message.includes('Credential is not supported')) {
+    } catch (error: any) {
+      if (error?.message?.includes('Credential is not supported')) {
         CORS_CREDENTIALS_SUPPORTED = false;
         AUTH_MODE = 'bearer';
         return false;
       }
       
       CORS_CREDENTIALS_SUPPORTED = true;
-      AUTH_MODE = 'cookies';
       return true;
     }
   }
