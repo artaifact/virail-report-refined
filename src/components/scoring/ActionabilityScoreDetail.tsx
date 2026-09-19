@@ -44,11 +44,11 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
   const navigate = useNavigate();
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
   const [expandedLevels, setExpandedLevels] = useState<Record<number, boolean>>({
-    1: true,
-    2: true,
-    3: true,
+    1: false,
+    2: false,
+    3: false,
   });
-  const [allExpanded, setAllExpanded] = useState(true);
+  const [allExpanded, setAllExpanded] = useState(false);
 
   const overallScore = unified?.overallScore ?? (unified as any)?.score ?? 63;
   const grade = unified?.grade || 'C';
@@ -298,7 +298,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
               <span>Être trouvé & cité</span>
             </CardTitle>
 
-            <CardDescription className="text-xs text-muted-foreground line-clamp-2">
+            <CardDescription className="text-xs text-muted-foreground line-clamp-2 min-h-[32px]">
               Part de voix et fréquence de recommandation dans les réponses de ChatGPT, Perplexity, Gemini, Claude.
             </CardDescription>
 
@@ -393,7 +393,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
               <span>Être compris & choisi</span>
             </CardTitle>
 
-            <CardDescription className="text-xs text-muted-foreground line-clamp-2">
+            <CardDescription className="text-xs text-muted-foreground line-clamp-2 min-h-[32px]">
               Lisibilité de l'offre pour les extracteurs IA : balisage Schema.org JSON-LD, sémantique HTML, netteté des entités.
             </CardDescription>
 
@@ -506,7 +506,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
               <span>Être actionnable (M2M)</span>
             </CardTitle>
 
-            <CardDescription className="text-xs text-muted-foreground line-clamp-2">
+            <CardDescription className="text-xs text-muted-foreground line-clamp-2 min-h-[32px]">
               Capacité d'un agent autonome (ChatGPT Operator, Claude Computer Use) à interagir et finaliser des actions.
             </CardDescription>
 
@@ -562,7 +562,11 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
           ) : (
             <CardContent className="p-5 pt-0 pb-3">
               <div className={`text-[11px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border ${l3LlmsTxt ? 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20' : 'text-destructive bg-destructive/10 border-destructive/20'}`}>
-                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                {l3LlmsTxt ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-destructive" />
+                )}
                 <span className="truncate">
                   {l3LlmsTxt ? 'Agents M2M supportés (/llms.txt actif)' : 'Blocage critique : /llms.txt non détecté'}
                 </span>
