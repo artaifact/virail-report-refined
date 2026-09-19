@@ -36,657 +36,27 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useToast } from '@/hooks/use-toast';
 import { generateFullReportPdf } from '@/services/reportPdfService';
 
-// === CONSTANTES ===
-/**
- * Récupère le logo d'un modèle avec une recherche par mot-clé
- */
-const getModelLogo = (modelName: string): string | null => {
-  if (!modelName) return null;
-  const name = modelName.toLowerCase();
+// === SOUS-COMPOSANTS & HELPERS IMPORTÉS ===
+import {
+  TopSection,
+  CitationsChart,
+  extractTargetGeoScore,
+  extractAgenticScore,
+  MODEL_COLORS,
+  MODEL_COLORS_FALLBACK,
+  getModelLogo,
+} from '@/components/dashboard/TopSection';
+import {
+  GeoScoreChart,
+  getCommercialModelName,
+  exportToCsv,
+} from '@/components/dashboard/GeoScoreChart';
+import { CompetitorAnalysis } from '@/components/dashboard/CompetitorAnalysis';
+import { DomainsTable } from '@/components/dashboard/DomainsTable';
+import { PlanActionGeoOverview } from '@/components/dashboard/PlanActionGeoOverview';
+import { IndexSkeletonLoader } from '@/components/dashboard/IndexSkeletonLoader';
 
-  for (const [key, path] of Object.entries(modelLogos)) {
-    if (name.includes(key)) return path;
-  }
-  return null;
-};
-
-/**
- * Extrait le score d'éligibilité agentique depuis les différentes structures possibles du rapport
- * ou utilise une évaluation déterministe basée sur l'infrastructure machine
- */
-export const extractAgenticScore = (reportData: FullReportData | null): number | null => {
-  if (!reportData) return null;
-
-  const raw = reportData as any;
-
-  // 1. Directement sur root, report ou metadata
-  const directCandidates = [
-    raw.agentic_score,
-    raw.report?.agentic_score,
-    raw.metadata?.agentic_score,
-    raw.report?.metadata?.agentic_score,
-    raw.agentic_readiness?.score,
-    raw.report?.agentic_readiness?.score,
-    raw.scan_data?.score,
-    raw.llmo_report?.agentic_score,
-    raw.agentic_scan?.score,
-  ];
-  for (const c of directCandidates) {
-    if (c !== undefined && c !== null && c !== '') {
-      const num = Number(c);
-      if (!isNaN(num)) return Math.max(0, Math.min(100, Math.round(num)));
-    }
-  }
-
-  // 2. Cache localStorage si un scan a déjà été effectué
-  try {
-    const url = raw.report?.url || raw.llmo_report?.url || raw.url || raw.analyse_citation?.client_site_url;
-    if (url) {
-      const hostname = new URL(url).hostname.replace('www.', '');
-      const cached = localStorage.getItem(`viraill_agentic_score_${hostname}`) ||
-        localStorage.getItem(`viraill_agentic_score_${url}`);
-      if (cached) {
-        const num = Number(cached);
-        if (!isNaN(num)) return Math.max(0, Math.min(100, Math.round(num)));
-      }
-    }
-  } catch { }
-
-  // 3. Estimation déterministe basée sur les capacités machine observées
-  const geoScore = extractTargetGeoScore(reportData) ?? 50;
-  let estimated = Math.round(geoScore * 0.55);
-  if (raw.crawl_optimizer?.llms_txt?.exists) estimated += 15;
-  if (raw.crawl_optimizer?.robots_txt?.exists) estimated += 10;
-  if (raw.crawl_optimizer?.schemas && raw.crawl_optimizer.schemas.length > 0) estimated += 10;
-  return Math.max(15, Math.min(95, estimated));
-};
-
-
-// === SOUS-COMPOSANTS ===
-
-
-/**
- * Graphique circulaire SVG affichant les citations
- * Design multicolore avec segments orange, vert et accents colorés
- */
-const MODEL_COLORS: Record<string, string> = {
-  'ChatGPT': '#86CEAC',
-  'Perplexity': '#8ECFD9',
-  'Gemini': '#93B5E1',
-  'Claude': '#E0C08A',
-  'Mistral': '#F0B88A',
-  'DeepSeek': '#A5A7E0',
-  'Meta AI': '#88B5E8',
-  'Qwen': '#B8A3DB',
-  'Grok': '#E8A0A0',
-};
-const MODEL_COLORS_FALLBACK = ['#B5A8D8', '#DBA8C4', '#8DD0C4', '#E0C68A', '#A5A7E0', '#8BC5E0'];
-
-/**
- * Extrait le score target_geo_score depuis les différentes structures possibles du rapport
- */
-export const extractTargetGeoScore = (reportData: FullReportData | null): number | null => {
-  if (!reportData) return null;
-
-  const raw = reportData as any;
-
-  // 1. Directement sur root ou report
-  const directCandidates = [
-    raw.target_geo_score,
-    raw.report?.target_geo_score,
-    raw.llmo_report?.target_geo_score,
-    raw.metadata?.target_geo_score,
-    raw.report?.metadata?.target_geo_score,
-    raw.target_positioning?.target_geo_score,
-    raw.report?.target_positioning?.target_geo_score,
-  ];
-  for (const c of directCandidates) {
-    if (c !== undefined && c !== null && c !== '') {
-      const num = Number(c);
-      if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
-    }
-  }
-
-  // 2. Dans analyse_concurrentielle_v3 ou competitor_analysis ou analyse_concurrentielle_v1
-  const compCandidates = [
-    raw.analyse_concurrentielle_v3?.target_positioning?.target_geo_score,
-    raw.analyse_concurrentielle_v3?.target_geo_score,
-    raw.competitor_analysis?.target_positioning?.target_geo_score,
-    raw.competitor_analysis?.target_geo_score,
-    raw.analyse_concurrentielle_v1?.target_positioning?.target_geo_score,
-    raw.analyse_concurrentielle_v1?.target_geo_score,
-  ];
-  for (const c of compCandidates) {
-    if (c !== undefined && c !== null && c !== '') {
-      const num = Number(c);
-      if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
-    }
-  }
-
-  // 3. Mapping via mapAnalyseConcurrentielleV1ToResponse si analyse_concurrentielle_v1 ou competitor_analysis existe
-  const compData = raw.analyse_concurrentielle_v1 || raw.competitor_analysis;
-  if (compData) {
-    try {
-      const mapped = mapAnalyseConcurrentielleV1ToResponse(raw.report?.id || 0, compData);
-      const score = mapped?.target_positioning?.target_geo_score;
-      if (score !== undefined && score !== null && score !== '') {
-        const num = Number(score);
-        if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
-      }
-    } catch { }
-  }
-
-  // 4. Score produit analysé (report.score_produit_analyse)
-  const scoreProduit = raw.report?.score_produit_analyse ?? raw.score_produit_analyse;
-  if (scoreProduit !== undefined && scoreProduit !== null) {
-    const num = Number(scoreProduit);
-    if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
-  }
-
-  // 5. Moyenne depuis les modules d'analyses (audit_geo.score_global_geo)
-  if (Array.isArray(raw.analyses) && raw.analyses.length > 0) {
-    const geoScores = raw.analyses
-      .map((a: any) => a.modules?.audit_geo?.score_global_geo)
-      .filter((s: any) => typeof s === 'number' && !isNaN(s));
-    if (geoScores.length > 0) {
-      const avg = geoScores.reduce((sum: number, val: number) => sum + val, 0) / geoScores.length;
-      return avg > 0 && avg <= 1 ? Math.round(avg * 100) : Math.round(avg);
-    }
-  }
-
-  // 6. Crawl optimizer overall score
-  const crawlOptScore = raw.crawl_optimizer?.score?.overall ?? (raw as any)?.crawl_optimizer?.analyze?.score?.overall;
-  if (crawlOptScore !== undefined && crawlOptScore !== null) {
-    const num = Number(crawlOptScore);
-    if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
-  }
-
-  // 7. Metadata score
-  if (raw.report?.metadata?.score !== undefined && raw.report?.metadata?.score !== null) {
-    const num = Number(raw.report.metadata.score);
-    if (!isNaN(num)) return num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num);
-  }
-
-  return null;
-};
-
-function CitationsChart({ reportData, targetGeoScore, agenticScore }: { reportData: FullReportData | null; targetGeoScore?: number | null; agenticScore?: number | null }) {
-  const navigate = useNavigate();
-  const [isScoreAgenticHovered, setIsScoreAgenticHovered] = useState(false);
-  const [hoveredModel, setHoveredModel] = useState<string | null>(null);
-  const [isScoreGeoHovered, setIsScoreGeoHovered] = useState(false);
-  const [isWheelHovered, setIsWheelHovered] = useState(false);
-  const getTotalCitations = () => {
-    if (reportData?.analyse_citation?.total_citations !== undefined) {
-      return reportData.analyse_citation.total_citations;
-    }
-    if (!reportData?.analyses || reportData.analyses.length === 0) return 0;
-    const totalFromApi = reportData.analyses.reduce((sum, analysis) => {
-      const geoData = analysis.modules?.audit_geo;
-      const citations = geoData?.citations || geoData?.mentions || 0;
-      return sum + Number(citations);
-    }, 0);
-    return totalFromApi > 0 ? totalFromApi : 0;
-  };
-
-  const totalCitations = getTotalCitations();
-  const citationsByModel = (reportData?.analyse_citation?.citations_by_model || {}) as Record<string, number>;
-
-  // Regrouper par nom commercial et trier par citations desc
-  const grouped = useMemo(() => {
-    const map: Record<string, number> = {};
-    Object.entries(citationsByModel).forEach(([raw, count]) => {
-      const name = getModelLogo(raw) ? raw : raw;
-      const commercial = (() => {
-        const n = raw.toLowerCase().trim();
-        if (n.includes('sonar')) return 'Perplexity';
-        if (n.includes('claude')) return 'Claude';
-        if (n.startsWith('gpt') || n === 'chatgpt') return 'ChatGPT';
-        if (n.includes('gemini') || n === 'ai overview' || n === 'ai-overview') return 'Gemini';
-        if (n.includes('mistral') || n.includes('mixtral')) return 'Mistral';
-        if (n.includes('deepseek')) return 'DeepSeek';
-        if (n.includes('llama')) return 'Meta AI';
-        if (n.includes('qwen')) return 'Qwen';
-        if (n.includes('grok')) return 'Grok';
-        return raw;
-      })();
-      map[commercial] = (map[commercial] || 0) + (count as number);
-    });
-    return Object.entries(map)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [citationsByModel]);
-
-  const cx = 140, cy = 140, r = 95;
-  const totalSweep = 360;
-
-  const polarToCartesian = (angle: number, radius: number) => {
-    const rad = (angle * Math.PI) / 180;
-    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
-  };
-
-  const describeArc = (start: number, end: number, arcR: number) => {
-    if (end - start >= 360) end = start + 359.99;
-    const s = polarToCartesian(start, arcR);
-    const e = polarToCartesian(end, arcR);
-    const large = end - start > 180 ? 1 : 0;
-    return `M ${s.x} ${s.y} A ${arcR} ${arcR} 0 ${large} 1 ${e.x} ${e.y}`;
-  };
-
-  const hasModels = grouped.length > 0 && totalCitations > 0;
-  const activeModels = grouped.filter(m => m.count > 0);
-  let fallbackIdx = 0;
-  let currentAngle = -90;
-
-  // Recalculate colors for legend (need to mirror segment logic)
-  let legendFallbackIdx = 0;
-  const modelColors = hasModels ? activeModels.map((model) => ({
-    name: model.name,
-    count: model.count,
-    color: MODEL_COLORS[model.name] || MODEL_COLORS_FALLBACK[legendFallbackIdx++ % MODEL_COLORS_FALLBACK.length],
-    pct: totalCitations > 0 ? Math.round((model.count / totalCitations) * 100) : 0,
-  })) : [];
-
-  const hoveredData = hoveredModel ? modelColors.find(m => m.name === hoveredModel) : null;
-
-  const handleCitationsWheel = (e: React.WheelEvent) => {
-    if (modelColors.length === 0) return;
-    const currentIndex = modelColors.findIndex(m => m.name === hoveredModel);
-    const direction = e.deltaY > 0 ? 1 : -1;
-    let nextIndex = currentIndex === -1 ? 0 : currentIndex + direction;
-    if (nextIndex < 0) nextIndex = modelColors.length - 1;
-    if (nextIndex >= modelColors.length) nextIndex = 0;
-    setHoveredModel(modelColors[nextIndex].name);
-  };
-
-  // Configuration du graphique Score GEO (même dimension que Citations totales)
-  const normalizedGeoScore = targetGeoScore != null ? Math.max(0, Math.min(100, Math.round(targetGeoScore))) : null;
-  const geoStrokeColor = normalizedGeoScore != null
-    ? (normalizedGeoScore >= 75 ? '#10B981' : normalizedGeoScore >= 50 ? '#6366F1' : '#F59E0B')
-    : '#10B981';
-  const geoGradStart = normalizedGeoScore != null
-    ? (normalizedGeoScore >= 75 ? '#34D399' : normalizedGeoScore >= 50 ? '#818CF8' : '#FBBF24')
-    : '#34D399';
-  const geoCirc = 2 * Math.PI * r;
-  const geoDashoffset = normalizedGeoScore != null ? geoCirc - (normalizedGeoScore / 100) * geoCirc : 0;
-  const geoStatusLabel = normalizedGeoScore != null
-    ? (normalizedGeoScore >= 75 ? 'Visibilité optimale' : normalizedGeoScore >= 50 ? 'Bonne visibilité' : 'À améliorer')
-    : '';
-
-  // Configuration du graphique Score Agentique (même dimension que Citations totales et Score GEO)
-  const effectiveAgenticScore = agenticScore ?? extractAgenticScore(reportData) ?? (normalizedGeoScore != null ? Math.round(normalizedGeoScore * 0.65) : 58);
-  const normalizedAgenticScore = Math.max(0, Math.min(100, Math.round(effectiveAgenticScore)));
-  const agenticStrokeColor = normalizedAgenticScore >= 80 ? '#10B981' : normalizedAgenticScore >= 50 ? '#6366F1' : '#F43F5E';
-  const agenticGradStart = normalizedAgenticScore >= 80 ? '#34D399' : normalizedAgenticScore >= 50 ? '#818CF8' : '#FB7185';
-  const agenticCirc = 2 * Math.PI * r;
-  const agenticDashoffset = agenticCirc - (normalizedAgenticScore / 100) * agenticCirc;
-  const agenticStatusLabel = normalizedAgenticScore >= 80 ? 'Agentic Native' : normalizedAgenticScore >= 50 ? 'Agent-Friendly' : 'Non Conforme (M2M)';
-
-  return (
-    <div className="citations-chart">
-      {/* Conteneur des 3 graphiques côte à côte de même dimension et arrondi */}
-      <div className="flex flex-col xl:flex-row items-center justify-center gap-6 sm:gap-8 lg:gap-10 w-full mb-3">
-        {/* 1. Graphique circulaire : Citations totales (nom et pourcentage révélés uniquement sur la roue) */}
-        <div
-          className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto group"
-          onMouseEnter={() => {
-            setIsWheelHovered(true);
-            if (!hoveredModel && activeModels.length > 0) {
-              setHoveredModel(activeModels[0].name);
-            }
-          }}
-          onMouseLeave={() => {
-            setIsWheelHovered(false);
-            setHoveredModel(null);
-          }}
-          onWheel={handleCitationsWheel}
-        >
-          {/* Menu flottant des modèles : visible UNIQUEMENT quand on va sur la roue */}
-          {modelColors.length > 0 && (
-            <div
-              className={`hidden lg:flex flex-col gap-0.5 absolute right-[calc(100%+14px)] top-1/2 -translate-y-1/2 z-30 p-2 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-xl min-w-[135px] transition-all duration-200 ${isWheelHovered ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
-                }`}
-            >
-              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1 pb-1 mb-0.5 border-b border-slate-100 dark:border-slate-800">
-                Modèles IA
-              </div>
-              {modelColors.map((m) => {
-                const isThisHovered = hoveredModel === m.name;
-                return (
-                  <button
-                    key={m.name}
-                    type="button"
-                    className="flex items-center justify-between gap-2 text-xs transition-colors py-0.5 px-1.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left cursor-pointer"
-                    style={{ opacity: hoveredModel && !isThisHovered ? 0.4 : 1 }}
-                    onMouseEnter={() => setHoveredModel(m.name)}
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      {getModelLogo(m.name) ? (
-                        <img
-                          src={getModelLogo(m.name)!}
-                          alt={m.name}
-                          className="w-3.5 h-3.5 object-contain flex-shrink-0 rounded-sm"
-                        />
-                      ) : (
-                        <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
-                      )}
-                      <span className="text-slate-700 dark:text-slate-200 font-medium text-[11px] truncate max-w-[75px]">{m.name}</span>
-                    </div>
-                    <span className="text-[11px] shrink-0 ml-1 font-semibold text-slate-900 dark:text-slate-100">
-                      {m.pct}%
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Cercle SVG Citations totales */}
-          <svg
-            viewBox="0 0 280 280"
-            className="w-full h-auto mx-auto cursor-pointer"
-          >
-            {/* Background circle - même épaisseur 32 que les segments */}
-            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
-
-            {/* Model segments */}
-            {hasModels && activeModels.map((model, i) => {
-              const fraction = model.count / totalCitations;
-              const segSweep = fraction * totalSweep;
-              const segStart = currentAngle;
-              const segEnd = segStart + segSweep;
-              currentAngle = segEnd;
-              const color = MODEL_COLORS[model.name] || MODEL_COLORS_FALLBACK[fallbackIdx++ % MODEL_COLORS_FALLBACK.length];
-              const isHovered = hoveredModel === model.name;
-              return (
-                <path
-                  key={model.name}
-                  d={describeArc(segStart, segEnd, r)}
-                  fill="none" stroke={color} strokeWidth="32" strokeLinecap="butt"
-                  opacity={hoveredModel && !isHovered ? 0.35 : 1}
-                  style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                  onMouseEnter={() => setHoveredModel(model.name)}
-                />
-              );
-            })}
-
-            {/* Si pas de modèles, cercle gris */}
-            {!hasModels && totalCitations > 0 && (
-              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#CBD5E1" strokeWidth="32" opacity={0.5} />
-            )}
-
-            {/* Center text: pourcentage affiché au survol/scroll, ou nombre total par défaut */}
-            {hoveredData ? (
-              <>
-                <text x={cx} y={cy - 4} textAnchor="middle" style={{ fontSize: '38px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
-                  {hoveredData.pct}%
-                </text>
-                <text x={cx} y={cy + 18} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 600, fill: hoveredData.color || '#334155', fontFamily: 'Inter, sans-serif' }}>
-                  {hoveredData.name}
-                </text>
-                <text x={cx} y={cy + 34} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 500, fill: '#64748B', fontFamily: 'Inter, sans-serif' }}>
-                  {hoveredData.count} citation{hoveredData.count > 1 ? 's' : ''}
-                </text>
-              </>
-            ) : (
-              <>
-                <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
-                  {totalCitations}
-                </text>
-                <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
-                  Citations totales
-                </text>
-              </>
-            )}
-          </svg>
-        </div>
-
-        {/* 2. Graphique circulaire : Score GEO (même dimension et même arrondi exact) */}
-        {normalizedGeoScore !== null && (
-          <div className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto">
-            <svg
-              viewBox="0 0 280 280"
-              className="w-full h-auto mx-auto cursor-pointer"
-              onMouseEnter={() => setIsScoreGeoHovered(true)}
-              onMouseLeave={() => setIsScoreGeoHovered(false)}
-            >
-              <defs>
-                <linearGradient id="geoScoreRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor={geoGradStart} />
-                  <stop offset="100%" stopColor={geoStrokeColor} />
-                </linearGradient>
-              </defs>
-
-              {/* Background circle - même dimension exacte cx, cy, r et strokeWidth=32 */}
-              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
-
-              {/* Progress ring - même épaisseur 32 et même rayon r=95 */}
-              <circle
-                cx={cx}
-                cy={cy}
-                r={r}
-                fill="none"
-                stroke="url(#geoScoreRingGradient)"
-                strokeWidth="32"
-                strokeDasharray={geoCirc}
-                strokeDashoffset={geoDashoffset}
-                strokeLinecap="round"
-                transform={`rotate(-90 ${cx} ${cy})`}
-                style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.3s ease' }}
-              />
-
-              {/* Center text : même style typographique que citations totales */}
-              {isScoreGeoHovered ? (
-                <>
-                  <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
-                    {normalizedGeoScore}/100
-                  </text>
-                  <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: geoStrokeColor, fontFamily: 'Inter, sans-serif' }}>
-                    {geoStatusLabel}
-                  </text>
-                </>
-              ) : (
-                <>
-                  <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
-                    {normalizedGeoScore}
-                  </text>
-                  <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
-                    Score GEO
-                  </text>
-                </>
-              )}
-            </svg>
-          </div>
-        )}
-
-        {/* 3. Graphique circulaire : Score Agentique (même dimension et même arrondi exact) */}
-        <div className="relative w-[180px] sm:w-[200px] shrink-0 mx-auto group">
-          <svg
-            viewBox="0 0 280 280"
-            className="w-full h-auto mx-auto cursor-pointer transition-transform duration-200 group-hover:scale-[1.02]"
-            onClick={() => navigate('/agentic')}
-            onMouseEnter={() => setIsScoreAgenticHovered(true)}
-            onMouseLeave={() => setIsScoreAgenticHovered(false)}
-          >
-            <defs>
-              <linearGradient id="agenticScoreRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor={agenticGradStart} />
-                <stop offset="100%" stopColor={agenticStrokeColor} />
-              </linearGradient>
-            </defs>
-
-            {/* Background circle - même dimension exacte cx, cy, r et strokeWidth=32 */}
-            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F1F5F9" strokeWidth="32" />
-
-            {/* Progress ring - même épaisseur 32 et même rayon r=95 */}
-            <circle
-              cx={cx}
-              cy={cy}
-              r={r}
-              fill="none"
-              stroke="url(#agenticScoreRingGradient)"
-              strokeWidth="32"
-              strokeDasharray={agenticCirc}
-              strokeDashoffset={agenticDashoffset}
-              strokeLinecap="round"
-              transform={`rotate(-90 ${cx} ${cy})`}
-              style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.3s ease' }}
-            />
-
-            {/* Center text : même style typographique que citations totales et score GEO */}
-            {isScoreAgenticHovered ? (
-              <>
-                <text x={cx} y={cy + 2} textAnchor="middle" style={{ fontSize: '28px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
-                  {normalizedAgenticScore}/100
-                </text>
-                <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: '11px', fontWeight: 600, fill: agenticStrokeColor, fontFamily: 'Inter, sans-serif' }}>
-                  {agenticStatusLabel}
-                </text>
-              </>
-            ) : (
-              <>
-                <text x={cx} y={cy + 8} textAnchor="middle" style={{ fontSize: '42px', fontWeight: 700, fill: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
-                  {normalizedAgenticScore}
-                </text>
-                <text x={cx} y={cy + 32} textAnchor="middle" style={{ fontSize: '13px', fontWeight: 500, fill: '#94A3B8', fontFamily: 'Inter, sans-serif' }}>
-                  Score Agentique
-                </text>
-              </>
-            )}
-          </svg>
-          <div className="text-center mt-1">
-            <button
-              type="button"
-              onClick={() => navigate('/agentic')}
-              className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 transition-colors inline-flex items-center gap-0.5 cursor-pointer"
-              title="Consulter l'audit complet d'éligibilité machine"
-            >
-              <span>Éligibilité M2M</span>
-              <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-
-    </div>
-  );
-}
-
-
-/**
- * Section haute du dashboard - Fixe
- * Contient le graphique de citations, le carrousel de logos et les boutons de navigation
- */
-function TopSection({ reportData, reports, onOpenReportsModal, onOpenAiExplain, agenticScore }: { reportData: FullReportData | null, reports: ReportResponse[], onOpenReportsModal: () => void, onOpenAiExplain?: () => void, agenticScore?: number | null }) {
-  const [isExportingPdf, setIsExportingPdf] = useState(false);
-  const { toast } = useToast();
-
-  const domainName = useMemo(() => {
-    const url = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || (reportData as any)?.url || (reportData as any)?.analyse_citation?.client_site_url;
-    if (!url) return null;
-    try { return new URL(url).hostname.replace('www.', ''); } catch { return null; }
-  }, [reportData]);
-
-  const lastUpdate = useMemo(() => {
-    const d = (reportData as any)?.report?.updated_at || (reportData as any)?.report?.created_at;
-    if (!d) return null;
-    const parsed = new Date(d);
-    if (isNaN(parsed.getTime())) return null;
-    return parsed.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  }, [reportData]);
-
-  // Récupération synchrone ou asynchrone du score target_geo_score
-  const [asyncGeoScore, setAsyncGeoScore] = useState<number | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    const directScore = extractTargetGeoScore(reportData);
-    if (directScore !== null) {
-      setAsyncGeoScore(directScore);
-      return;
-    }
-
-    const reportId = (reportData as any)?.report?.id || (reportData as any)?.llmo_report?.id;
-    if (!reportId) return;
-
-    getCompetitorAnalysisFromReport(reportId)
-      .then((res) => {
-        if (!isMounted || !res) return;
-        const s = res.target_positioning?.target_geo_score;
-        if (s !== undefined && s !== null) {
-          const num = Number(s);
-          if (!isNaN(num)) {
-            setAsyncGeoScore(num > 0 && num <= 1 ? Math.round(num * 100) : Math.round(num));
-          }
-        }
-      })
-      .catch(() => { });
-
-    return () => { isMounted = false; };
-  }, [reportData]);
-
-  const targetGeoScore = asyncGeoScore ?? extractTargetGeoScore(reportData);
-
-  const handleExportPdf = async () => {
-    if (!reportData) return;
-    setIsExportingPdf(true);
-    toast({
-      title: "Génération du PDF en cours",
-      description: "Compilation des données de citations, d'optimisations et de veille concurrentielle...",
-    });
-    try {
-      await generateFullReportPdf(reportData);
-      toast({
-        title: "Rapport PDF prêt",
-        description: "L'aperçu et l'enregistrement PDF haute résolution ont été lancés.",
-      });
-    } catch (err: any) {
-      toast({
-        title: "Erreur d'exportation",
-        description: err?.message || "Impossible de générer le document PDF.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsExportingPdf(false);
-    }
-  };
-
-  return (
-    <div className="top-section relative">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1 mb-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">
-              {domainName ? `Tableau de bord — ${domainName}` : 'Tableau de bord'}
-            </h1>
-            <AskAIButton reportData={reportData} size="sm" onOpenAiModal={onOpenAiExplain} className="flex-shrink-0" />
-          </div>
-          {lastUpdate && (
-            <p className="text-xs text-slate-400 mt-1">Dernière mise à jour : {lastUpdate}</p>
-          )}
-        </div>
-
-        {/* Bouton Télécharger le rapport complet en PDF */}
-        <button
-          type="button"
-          onClick={handleExportPdf}
-          disabled={isExportingPdf || !reportData}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200/80 transition-all shadow-xs self-start sm:self-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Télécharger l'intégralité du rapport (Infos détaillées, Améliorer, Compétition) en PDF"
-        >
-          {isExportingPdf ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-          ) : (
-            <Download className="w-3.5 h-3.5 text-indigo-600" />
-          )}
-          <span>{isExportingPdf ? 'Génération PDF...' : 'Télécharger le rapport (PDF)'}</span>
-        </button>
-      </div>
-      <CitationsChart reportData={reportData} targetGeoScore={targetGeoScore} agenticScore={agenticScore} />
-    </div>
-  );
-}
+export { extractTargetGeoScore, extractAgenticScore, getModelLogo };
 
 /**
  * Tableau des recommandations SEO avec barres de progression
@@ -929,39 +299,38 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
 
   return (
     <>
-      <div className="recommendations-table border border-slate-100 rounded-2xl p-4 md:p-6 shadow-none">
-
+      <Card className="border-border/60 rounded-2xl shadow-xs overflow-hidden">
         {/* Desktop: table layout */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="w-full border-separate" style={{ borderSpacing: '0' }}>
-            <thead>
-              <tr>
-                <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100">
+          <Table>
+            <TableHeader className="bg-muted/30">
+              <TableRow className="border-border/60 hover:bg-transparent">
+                <TableHead className="py-3 px-6 text-xs text-muted-foreground font-semibold uppercase tracking-wider text-left">
                   <div className="flex items-center gap-1.5">CATÉGORIE<InfoTooltip {...HELP.scoreGEO} side="right" /></div>
-                </th>
-                <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100">DESCRIPTION</th>
-                <th className="pb-4 uppercase text-xs text-slate-400 font-semibold tracking-wider text-left border-b border-slate-100 w-[35%]">SCORE</th>
-              </tr>
-            </thead>
-            <tbody>
+                </TableHead>
+                <TableHead className="py-3 px-4 text-xs text-muted-foreground font-semibold uppercase tracking-wider text-left">DESCRIPTION</TableHead>
+                <TableHead className="py-3 px-6 text-xs text-muted-foreground font-semibold uppercase tracking-wider text-left w-[32%]">SCORE</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {recommendations.map((rec, index) => (
-                <tr
+                <TableRow
                   key={index}
                   onClick={() => handleRowClick(rec)}
-                  className="cursor-pointer transition-colors hover:bg-slate-50"
+                  className="cursor-pointer border-border/40 transition-colors hover:bg-muted/40"
                 >
-                  <td className={`py-5 text-[15px] text-slate-700 font-medium ${index === recommendations.length - 1 ? '' : 'border-b border-slate-100'}`}>
+                  <TableCell className="py-4 px-6 text-sm font-semibold text-foreground">
                     <div className="flex items-center gap-2">
                       {rec.element}
-                      <Info size={14} className="text-slate-400" />
+                      <Info size={14} className="text-muted-foreground/70" />
                     </div>
-                  </td>
-                  <td className={`py-5 text-sm text-slate-500 ${index === recommendations.length - 1 ? '' : 'border-b border-slate-100'}`}>
+                  </TableCell>
+                  <TableCell className="py-4 px-4 text-xs text-muted-foreground max-w-md leading-relaxed">
                     {rec.description}
-                  </td>
-                  <td className={`py-5 ${index === recommendations.length - 1 ? '' : 'border-b border-slate-100'}`}>
+                  </TableCell>
+                  <TableCell className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-500"
                           style={{
@@ -971,69 +340,72 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
                         />
                       </div>
                       <span
-                        className="text-sm font-bold min-w-[40px]"
+                        className="text-xs font-bold min-w-[38px] text-right"
                         style={{ color: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444' }}
                       >{rec.score}%</span>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {/* Mobile: card layout */}
-        <div className="md:hidden flex flex-col gap-3">
+        <div className="md:hidden flex flex-col divide-y divide-border/60 p-2">
           {recommendations.map((rec, index) => (
             <div
               key={index}
               onClick={() => handleRowClick(rec)}
-              className="cursor-pointer p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors"
+              className="cursor-pointer p-4 rounded-xl hover:bg-muted/40 transition-colors"
             >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-semibold text-slate-700">{rec.element}</span>
-                <Info size={14} className="text-slate-400" />
-              </div>
-              <p className="text-xs text-slate-500 mb-3">{rec.description}</p>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${rec.score}%`,
-                      backgroundColor: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444',
-                    }}
-                  />
-                </div>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-sm font-semibold text-foreground">{rec.element}</span>
                 <span
-                  className="text-sm font-bold"
+                  className="text-xs font-bold"
                   style={{ color: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444' }}
                 >{rec.score}%</span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{rec.description}</p>
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${rec.score}%`,
+                    backgroundColor: rec.score >= 70 ? '#10B981' : rec.score >= 40 ? '#F97316' : '#EF4444',
+                  }}
+                />
               </div>
             </div>
           ))}
         </div>
-
-      </div>
+      </Card>
 
       {/* Bouton Rapport PDF */}
       {reportData?.report?.id && (
         <div
           onClick={(e) => { e.stopPropagation(); handleDownloadPdf(); }}
-          className={`mt-3 px-4 py-3 md:px-6 md:py-4 border border-slate-100 rounded-2xl flex justify-between items-center transition-colors hover:bg-slate-50 ${pdfLoading ? 'cursor-wait opacity-60' : 'cursor-pointer'}`}
+          className={`mt-4 px-4 py-3.5 sm:px-6 sm:py-4 border border-border/70 bg-card rounded-2xl flex justify-between items-center transition-all hover:bg-muted/40 hover:border-primary/30 shadow-2xs ${pdfLoading ? 'cursor-wait opacity-60' : 'cursor-pointer'}`}
         >
           <div className="flex items-center gap-3">
-            <Download size={18} className="text-slate-800" />
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Download size={16} />
+            </div>
             <div>
-              <span className="text-sm font-semibold text-slate-900">Rapport PDF</span>
-              <span className="text-xs text-slate-500 ml-2 hidden sm:inline">Télécharger le rapport complet</span>
+              <span className="text-sm font-semibold text-foreground">Rapport d'audit PDF</span>
+              <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">Synthèse exécutive & recommandations</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {pdfLoading ? (
-              <span className="text-[13px] text-slate-500">Téléchargement...</span>
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                Génération...
+              </span>
             ) : (
-              <span className="text-[13px] font-semibold text-slate-800 bg-slate-100 px-3 py-1 rounded-lg">PDF</span>
+              <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-0.5">
+                Télécharger
+              </Badge>
             )}
           </div>
         </div>
@@ -1041,46 +413,48 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
 
       {/* Modal de détails avec Guide d'Implémentation intégré */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border-border p-6 sm:p-8">
           {selectedRec && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="space-y-6">
               <DialogHeader>
-                <DialogTitle style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>
+                <DialogTitle className="text-xl font-bold text-foreground">
                   {selectedRec.element}
                 </DialogTitle>
-                <DialogDescription style={{ fontSize: '14px', color: '#64748B', marginTop: '4px' }}>
+                <DialogDescription className="text-sm text-muted-foreground mt-1">
                   {selectedRec.description}
                 </DialogDescription>
               </DialogHeader>
 
               {/* Score moyen */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
-                <div style={{ fontSize: '36px', fontWeight: 800, color: '#0F172A' }}>{selectedRec.score}<span style={{ fontSize: '18px', color: '#94A3B8' }}>%</span></div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '6px' }}>Score moyen tous modèles</div>
-                  <div style={{ height: '8px', background: '#E2E8F0', borderRadius: '999px' }}>
-                    <div style={{ width: `${selectedRec.score}%`, height: '100%', background: '#1E293B', borderRadius: '999px', transition: 'width 0.5s ease' }} />
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 border border-border/60">
+                <div className="text-3xl font-extrabold text-foreground">
+                  {selectedRec.score}<span className="text-lg text-muted-foreground">%</span>
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs font-medium text-muted-foreground mb-1.5">Score moyen tous modèles</div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${selectedRec.score}%` }} />
                   </div>
                 </div>
               </div>
 
               {/* Scores par modèle */}
               {selectedRec.modelScores && selectedRec.modelScores.length > 0 && (
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Score par modèle</div>
-                  <div className="flex flex-col gap-2.5">
+                <div className="space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Score par modèle</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {selectedRec.modelScores.map((ms: any, idx: number) => (
-                      <div key={idx} className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 min-w-[100px] sm:min-w-[160px] shrink-0">
+                      <div key={idx} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/20 border border-border/40">
+                        <div className="flex items-center gap-2 min-w-[90px] shrink-0">
                           {getModelLogo(ms.model) ? (
-                            <img src={getModelLogo(ms.model)!} alt={ms.model} className="w-4 h-4 object-contain" />
+                            <img src={getModelLogo(ms.model)!} alt={ms.model} className="w-4 h-4 object-contain rounded-xs" />
                           ) : null}
-                          <span className="text-[13px] text-slate-700 font-medium truncate">{ms.model}</span>
+                          <span className="text-xs text-foreground font-medium truncate">{ms.model}</span>
                         </div>
-                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
-                          <div className="h-full bg-slate-800 rounded-full transition-all duration-500" style={{ width: `${ms.score}%` }} />
+                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-primary/80 rounded-full" style={{ width: `${ms.score}%` }} />
                         </div>
-                        <span className="text-[13px] font-bold text-slate-900 min-w-[40px] text-right">{ms.score}%</span>
+                        <span className="text-xs font-bold text-foreground min-w-[34px] text-right">{ms.score}%</span>
                       </div>
                     ))}
                   </div>
@@ -1089,17 +463,17 @@ function RecommendationsTable({ reportData }: { reportData: FullReportData | nul
 
               {/* Plan d'action lié */}
               {planAction.length > 0 && (
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Plan d'action</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Plan d'action</div>
+                  <div className="space-y-2">
                     {planAction.filter((a: string) => a.toLowerCase().includes(selectedRec.element.toLowerCase().split(' ')[0]) || a.toLowerCase().includes(selectedRec.element.toLowerCase().split(' ').pop()!)).slice(0, 4).map((action: string, idx: number) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '10px 14px', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #F1F5F9' }}>
-                        <ChevronRight size={14} style={{ color: '#94A3B8', marginTop: '2px', flexShrink: 0 }} />
-                        <span style={{ fontSize: '13px', color: '#475569', lineHeight: '1.5' }}>{action}</span>
+                      <div key={idx} className="flex items-start gap-2.5 p-3 rounded-xl bg-muted/20 border border-border/40 text-xs text-foreground leading-relaxed">
+                        <ChevronRight size={14} className="text-primary mt-0.5 shrink-0" />
+                        <span>{action}</span>
                       </div>
                     ))}
                     {planAction.filter((a: string) => a.toLowerCase().includes(selectedRec.element.toLowerCase().split(' ')[0]) || a.toLowerCase().includes(selectedRec.element.toLowerCase().split(' ').pop()!)).length === 0 && (
-                      <div style={{ fontSize: '13px', color: '#94A3B8', fontStyle: 'italic' }}>
+                      <div className="text-xs text-muted-foreground italic">
                         Aucune action spécifique trouvée pour cette catégorie.
                       </div>
                     )}
@@ -2551,1408 +1925,18 @@ function AuditGeoSection({ reportData }: { reportData: FullReportData | null }) 
 }
 
 /**
- * Graphique linéaire d'évolution du Score GEO
- */
-// Mapper les noms techniques API vers des noms commerciaux (marque uniquement)
-const getCommercialModelName = (apiName: string): string => {
-  const n = apiName.toLowerCase().trim();
-  if (n.includes('sonar')) return 'Perplexity';
-  if (n.includes('claude')) return 'Claude';
-  if (n.startsWith('gpt') || n === 'chatgpt') return 'ChatGPT';
-  if (n.includes('gemini') || n === 'ai overview' || n === 'ai-overview') return 'Gemini';
-  if (n.includes('mistral') || n.includes('mixtral')) return 'Mistral';
-  if (n.includes('deepseek')) return 'DeepSeek';
-  if (n.includes('llama')) return 'Meta AI';
-  if (n.includes('qwen')) return 'Qwen';
-  if (n.includes('grok')) return 'Grok';
-  return apiName.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-};
-
-function exportToCsv(filename: string, rows: string[][]): void {
-  const csvContent = rows.map(r =>
-    r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-  ).join('\n');
-  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
-
-function GeoScoreChart({ reportData }: { reportData: FullReportData | null }) {
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sortCol, setSortCol] = useState<'name' | 'citations'>('citations');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-
-  const toggleSort = (col: 'name' | 'citations') => {
-    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortCol(col); setSortDir(col === 'citations' ? 'desc' : 'asc'); }
-  };
-  // TODO: Évolution citations - décommenter quand l'API renvoie evolution_citations
-  // const [viewMode, setViewMode] = useState<'table' | 'evolution'>('table');
-  // const evoData = (reportData?.evolution_citations as EvolutionCitations | null);
-  // const evoLoading = false;
-
-  // Extraire les données depuis l'API, regroupées par nom commercial
-  const getDataFromAPI = () => {
-    // Collecter toutes les citations brutes par modèle API
-    const rawEntries: Array<{ apiName: string; citations: number; lastUpdate: string; details: string }> = [];
-    const apiSeen = new Set<string>();
-
-    // Source principale : citations_by_model
-    if (reportData?.analyse_citation?.citations_by_model) {
-      Object.entries(reportData.analyse_citation.citations_by_model).forEach(([modelName, citations]) => {
-        if (!modelName) return;
-        apiSeen.add(modelName.toLowerCase());
-        const matchingAnalysis = reportData.analyses?.find(
-          a => a.llm_name?.toLowerCase() === modelName.toLowerCase()
-        );
-        rawEntries.push({
-          apiName: modelName,
-          citations: citations as number,
-          lastUpdate: matchingAnalysis?.created_at || new Date().toISOString(),
-          details: matchingAnalysis?.modules?.audit_geo?.resume_executif_geo || 'Données de citation disponibles',
-        });
-      });
-    }
-
-    // Source secondaire : detailed_results
-    if (reportData?.analyse_citation?.detailed_results && Array.isArray(reportData.analyse_citation.detailed_results)) {
-      const citationsFromDetails: Record<string, number> = {};
-      reportData.analyse_citation.detailed_results.forEach((r: any) => {
-        const model = r.llm_model || '';
-        if (!model) return;
-        if (!citationsFromDetails[model]) citationsFromDetails[model] = 0;
-        if (r.citation_detected) {
-          citationsFromDetails[model] += (r.mentions || 1);
-        }
-      });
-      Object.entries(citationsFromDetails).forEach(([modelName, citations]) => {
-        if (!apiSeen.has(modelName.toLowerCase())) {
-          rawEntries.push({ apiName: modelName, citations, lastUpdate: new Date().toISOString(), details: 'Données de citation disponibles' });
-        }
-      });
-    }
-
-    // Regrouper par nom commercial (ex: sonar + sonar-pro → Perplexity)
-    const grouped: Record<string, { displayName: string; citations: number; lastUpdate: string; details: string; rawModel: string }> = {};
-    rawEntries.forEach(entry => {
-      const displayName = getCommercialModelName(entry.apiName);
-      if (grouped[displayName]) {
-        grouped[displayName].citations += entry.citations;
-      } else {
-        grouped[displayName] = {
-          displayName,
-          citations: entry.citations,
-          lastUpdate: entry.lastUpdate,
-          details: entry.details,
-          rawModel: entry.apiName,
-        };
-      }
-    });
-
-    // Compléter avec les modèles attendus non présents dans les données
-    // (non analysés lors de cette exécution spécifique)
-    const DEFAULT_EXPECTED_MODELS: { apiName: string; rawModel: string }[] = [
-      { apiName: 'gpt-4o', rawModel: 'gpt-4o' },
-      { apiName: 'claude-4-sonnet', rawModel: 'claude-4-sonnet' },
-      { apiName: 'gemini-2.5-pro', rawModel: 'gemini-2.5-pro' },
-      { apiName: 'mistral-large', rawModel: 'mistral-large' },
-      { apiName: 'sonar-pro', rawModel: 'sonar-pro' },
-      { apiName: 'deepseek-chat', rawModel: 'deepseek-chat' },
-      { apiName: 'qwen-2.5-72b', rawModel: 'qwen-2.5-72b' },
-      { apiName: 'llama-3.1-70b', rawModel: 'llama-3.1-70b' },
-      { apiName: 'grok-4', rawModel: 'grok-4' },
-    ];
-    DEFAULT_EXPECTED_MODELS.forEach(({ apiName, rawModel }) => {
-      const displayName = getCommercialModelName(apiName);
-      if (!grouped[displayName]) {
-        grouped[displayName] = {
-          displayName,
-          citations: -1, // -1 = non analysé (différent de 0 = analysé mais non cité)
-          lastUpdate: new Date().toISOString(),
-          details: 'Modèle non analysé lors de cette exécution.',
-          rawModel,
-        };
-      }
-    });
-
-    return Object.values(grouped).sort((a, b) => {
-      // Les modèles non analysés (-1) vont en bas
-      if (a.citations === -1 && b.citations !== -1) return 1;
-      if (b.citations === -1 && a.citations !== -1) return -1;
-      return b.citations - a.citations;
-    });
-  };
-
-  const rawData = getDataFromAPI();
-  const data = [...rawData].sort((a, b) => {
-    if (sortCol === 'name') {
-      const cmp = a.displayName.localeCompare(b.displayName, 'fr');
-      return sortDir === 'asc' ? cmp : -cmp;
-    }
-    return sortDir === 'asc' ? a.citations - b.citations : b.citations - a.citations;
-  });
-
-  if (data.length === 0) {
-    return (
-      <Card className="rounded-2xl border-slate-200/80 bg-white shadow-xs p-5 w-full">
-        <CardHeader className="p-0 pb-4 flex flex-row items-center justify-between space-y-0">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-              <span>Citations par modèle</span>
-              <InfoTooltip {...HELP.citationsParModele} side="bottom" />
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 py-8 text-center text-sm text-slate-500">
-          Aucune donnée d'analyse disponible pour ce rapport.
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Vérifier si toutes les citations sont à 0 (données API) — exclure les "non analysés" (-1)
-  const analyzedData = data.filter(item => item.citations !== -1);
-  const allCitationsZero = analyzedData.length > 0 && analyzedData.every(item => item.citations === 0);
-  const isApiData = analyzedData.length > 0;
-
-  // Calculer le total des citations (exclure les -1)
-  const totalCitations = analyzedData.reduce((sum, item) => sum + item.citations, 0);
-
-  const handleExportCsv = () => {
-    const rows: string[][] = [['Modèle', 'Citations']];
-    data.forEach(item => rows.push([item.displayName, String(item.citations)]));
-    exportToCsv('citations-par-modele.csv', rows);
-  };
-
-  return (
-    <Card className="rounded-2xl border-slate-200/80 bg-white shadow-xs p-5 w-full">
-      <CardHeader className="p-0 pb-4 flex flex-row items-center justify-between space-y-0">
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-            <span>Citations par modèle</span>
-            <InfoTooltip {...HELP.citationsParModele} side="bottom" />
-          </CardTitle>
-        </div>
-        {data.length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportCsv}
-            className="h-8 gap-1.5 text-xs font-medium rounded-lg cursor-pointer"
-          >
-            <Download size={13} />
-            <span>CSV</span>
-          </Button>
-        )}
-      </CardHeader>
-
-      <CardContent className="p-0 space-y-4">
-        {allCitationsZero && isApiData && (
-          <Alert variant="destructive" className="bg-rose-50 border-rose-200 text-rose-900">
-            <AlertCircle className="h-4 w-4 text-rose-600" />
-            <AlertTitle className="text-sm font-semibold text-rose-900">Aucune citation détectée</AlertTitle>
-            <AlertDescription className="text-xs text-rose-800 leading-relaxed">
-              Votre site n'est <strong>absolument pas cité</strong> dans les réponses dans les moteurs génératifs.
-              Vous perdez actuellement des opportunités de visibilité face à vos concurrents.
-              <strong>Agissez immédiatement</strong> en consultant les recommandations GEO pour éviter de prendre encore plus de retard dans les moteurs génératifs.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {totalCitations === 1 && isApiData && (
-          <Alert className="bg-amber-50 border-amber-200 text-amber-900">
-            <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="text-sm font-semibold text-amber-900">Visibilité très faible</AlertTitle>
-            <AlertDescription className="text-xs text-amber-800 leading-relaxed">
-              Votre site n'est cité qu'<strong>1 seule fois</strong> dans les moteurs génératifs.
-              C'est insuffisant pour garantir une visibilité durable. <strong>Consultez les recommandations GEO</strong> pour améliorer votre présence.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {totalCitations >= 2 && totalCitations <= 4 && isApiData && (
-          <Alert className="bg-amber-50 border-amber-200 text-amber-900">
-            <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="text-sm font-semibold text-amber-900">Visibilité à améliorer</AlertTitle>
-            <AlertDescription className="text-xs text-amber-800 leading-relaxed">
-              Votre site est cité <strong>{totalCitations} fois</strong> dans les moteurs génératifs.
-              C'est un début mais votre visibilité reste limitée. Continuez à optimiser votre contenu en suivant les recommandations GEO.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {totalCitations >= 5 && isApiData && (
-          <Alert className="bg-emerald-50 border-emerald-200 text-emerald-900">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-            <AlertTitle className="text-sm font-semibold text-emerald-900">Excellent ! Vous êtes bien cité</AlertTitle>
-            <AlertDescription className="text-xs text-emerald-800 leading-relaxed">
-              Votre site est cité <strong>{totalCitations} fois</strong> dans les moteurs génératifs.
-              Félicitations ! Vous avez une bonne visibilité. Continuez sur cette lancée pour maintenir et améliorer votre positionnement.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="w-full overflow-x-auto rounded-xl border border-slate-200/70">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50/70 hover:bg-slate-50/70">
-                <TableHead>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleSort('name')}
-                    className="h-auto p-0 font-semibold text-xs text-slate-700 hover:text-slate-900 gap-1 hover:bg-transparent cursor-pointer"
-                  >
-                    <span>Modèle</span>
-                    {sortCol === 'name' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-slate-300">↕</span>}
-                  </Button>
-                </TableHead>
-                <TableHead className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleSort('citations')}
-                    className="h-auto p-0 font-semibold text-xs text-slate-700 hover:text-slate-900 gap-1 hover:bg-transparent ml-auto cursor-pointer"
-                  >
-                    <span>Citations</span>
-                    {sortCol === 'citations' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-slate-300">↕</span>}
-                  </Button>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.map((item, index) => (
-                <TableRow
-                  key={index}
-                  onClick={() => {
-                    setSelectedModel(item.displayName);
-                    setIsModalOpen(true);
-                  }}
-                  className="cursor-pointer hover:bg-slate-50/80 transition-colors"
-                >
-                  <TableCell className="py-3">
-                    <div className="flex items-center gap-2.5">
-                      {getModelLogo(item.rawModel) ? (
-                        <img src={getModelLogo(item.rawModel)!} alt="" className="w-5 h-5 object-contain" />
-                      ) : (
-                        <Zap size={14} className="text-blue-500" />
-                      )}
-                      <span className="font-semibold text-xs text-slate-900">{item.displayName}</span>
-                      <ChevronRight size={13} className="text-slate-400" />
-                    </div>
-                  </TableCell>
-
-                  <TableCell className="py-3 text-right">
-                    {item.citations === -1 ? (
-                      <Badge variant="outline" className="text-[10px] text-slate-400 font-normal italic">
-                        Non analysé
-                      </Badge>
-                    ) : item.citations === 0 && isApiData ? (
-                      <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-200 bg-amber-50 font-medium">
-                        Non cité
-                      </Badge>
-                    ) : item.citations >= 5 ? (
-                      <Badge className="text-[11px] font-bold bg-emerald-50 text-emerald-700 border-emerald-200">
-                        {item.citations} citations
-                      </Badge>
-                    ) : item.citations === 1 ? (
-                      <Badge variant="secondary" className="text-[11px] font-bold text-amber-800 bg-amber-100">
-                        {item.citations} citation
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="text-[11px] font-bold text-slate-800">
-                        {item.citations} citations
-                      </Badge>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-
-      {/* Modal d'analyse détaillée */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedModel && (() => {
-            const selected = data.find(d => d.displayName === selectedModel);
-            const citations = selected?.citations ?? 0;
-
-            const alertConfig = citations === -1
-              ? { bg: '#F1F5F9', border: '#CBD5E1', iconColor: '#94A3B8', titleColor: '#475569', textColor: '#64748B', title: 'Non analysé', message: `${selectedModel} n'a pas été inclus dans cette analyse. Il sera pris en compte lors de la prochaine exécution.` }
-              : citations === 0
-                ? { bg: '#FEE2E2', border: '#FCA5A5', iconColor: '#EF4444', titleColor: '#991B1B', textColor: '#7F1D1D', title: 'Aucune citation', message: `Votre site n'est pas du tout cité par ${selectedModel}. Ce moteur génératif ne vous mentionne dans aucune de ses réponses. Consultez les recommandations GEO pour y remédier.` }
-                : citations <= 5
-                  ? { bg: '#FFF7ED', border: '#FED7AA', iconColor: '#F97316', titleColor: '#9A3412', textColor: '#7C2D12', title: 'Visibilité insuffisante', message: `Votre site n'est cité que ${citations} fois par ${selectedModel}. C'est insuffisant pour garantir une visibilité durable sur ce moteur. Optimisez votre contenu en suivant les recommandations GEO.` }
-                  : { bg: '#F0FDF4', border: '#86EFAC', iconColor: '#10B981', titleColor: '#166534', textColor: '#14532D', title: 'Bonne visibilité', message: `Votre site est cité ${citations} fois par ${selectedModel}. Vous bénéficiez d'une bonne visibilité sur ce moteur génératif. Continuez sur cette lancée !` };
-
-            return (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2" style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A' }}>
-                    {selected && getModelLogo(selected.rawModel) && (
-                      <img src={getModelLogo(selected.rawModel)!} alt="" className="w-6 h-6 object-contain" />
-                    )}
-                    Analyse détaillée - {selectedModel}
-                  </DialogTitle>
-                  <DialogDescription style={{ fontSize: '14px', color: '#64748B', marginTop: '8px' }}>
-                    Informations détaillées sur les citations et la visibilité
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
-                  {/* Alerte contextuelle */}
-                  <div style={{
-                    padding: '16px',
-                    background: alertConfig.bg,
-                    borderRadius: '12px',
-                    border: `1px solid ${alertConfig.border}`,
-                    display: 'flex',
-                    alignItems: 'start',
-                    gap: '12px'
-                  }}>
-                    {citations >= 6
-                      ? <CheckCircle2 size={20} style={{ color: alertConfig.iconColor, flexShrink: 0, marginTop: '2px' }} />
-                      : <AlertCircle size={20} style={{ color: alertConfig.iconColor, flexShrink: 0, marginTop: '2px' }} />
-                    }
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 600, color: alertConfig.titleColor, marginBottom: '4px' }}>
-                        {alertConfig.title}
-                      </div>
-                      <div style={{ fontSize: '13px', color: alertConfig.textColor, lineHeight: '1.5' }}>
-                        {alertConfig.message}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#64748B', marginBottom: '8px' }}>Analyse</div>
-                    <div style={{ fontSize: '15px', color: '#475569', lineHeight: '1.6' }}>
-                      {selected?.details}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-xl">
-                      <div className="text-xs text-slate-500 mb-2">Citations</div>
-                      <div className="text-lg font-bold text-slate-900">
-                        {selected?.citations || 0}
-                      </div>
-                    </div>
-                    <div className="p-4 bg-slate-50 rounded-xl">
-                      <div className="text-xs text-slate-500 mb-2">Dernière mise à jour</div>
-                      <div className="text-sm font-semibold text-slate-900">
-                        {(() => {
-                          const dateStr = selected?.lastUpdate;
-                          if (!dateStr) return 'N/A';
-                          try {
-                            const date = new Date(dateStr);
-                            return date.toLocaleDateString('fr-FR', {
-                              day: 'numeric', month: 'long', year: 'numeric',
-                              hour: '2-digit', minute: '2-digit'
-                            });
-                          } catch { return dateStr; }
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Requêtes détaillées depuis detailed_results */}
-                  {(() => {
-                    const detailed = reportData?.analyse_citation?.detailed_results;
-                    if (!detailed || !Array.isArray(detailed)) return null;
-
-                    // Filtrer les résultats pour ce modèle
-                    const modelResults = detailed.filter((r: any) => {
-                      const name = (r.llm_model || '').toLowerCase();
-                      const sel = selectedModel.toLowerCase();
-                      return name.includes(sel) || sel.includes(name.split('-')[0]);
-                    });
-
-                    if (modelResults.length === 0) return null;
-
-                    const cited = modelResults.filter((r: any) => r.citation_detected);
-                    const notCited = modelResults.filter((r: any) => !r.citation_detected);
-
-                    return (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
-                          Requêtes testées ({modelResults.length})
-                        </div>
-
-                        {cited.length > 0 && (
-                          <div>
-                            <div className="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-slate-600" />
-                              <span>Cité ({cited.length})</span>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              {cited.slice(0, 5).map((r: any, i: number) => (
-                                <div key={i} style={{ padding: '10px 12px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                                  {r.query && (
-                                    <div style={{ fontSize: '13px', fontWeight: 500, color: '#0F172A', marginBottom: r.response_excerpt ? '6px' : 0 }}>
-                                      « {r.query} »
-                                    </div>
-                                  )}
-                                  {r.response_excerpt && (
-                                    <div style={{ fontSize: '12px', color: '#4B5563', lineHeight: '1.5', borderTop: '1px solid #E2E8F0', paddingTop: '6px' }}>
-                                      {r.response_excerpt.length > 200 ? r.response_excerpt.substring(0, 200) + '…' : r.response_excerpt}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                              {cited.length > 5 && (
-                                <div style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center' }}>
-                                  +{cited.length - 5} autres requêtes avec citation
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {notCited.length > 0 && (
-                          <div>
-                            <div className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-1.5">
-                              <XCircle className="w-3.5 h-3.5 text-slate-400" />
-                              <span>Non cité ({notCited.length})</span>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                              {notCited.slice(0, 3).map((r: any, i: number) => (
-                                <div key={i} style={{ padding: '8px 12px', background: '#F9FAFB', borderRadius: '8px', border: '1px solid #E5E7EB' }}>
-                                  <div style={{ fontSize: '13px', color: '#6B7280' }}>
-                                    « {r.query || 'Requête non disponible'} »
-                                  </div>
-                                </div>
-                              ))}
-                              {notCited.length > 3 && (
-                                <div style={{ fontSize: '12px', color: '#6B7280', textAlign: 'center' }}>
-                                  +{notCited.length - 3} autres requêtes sans citation
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
-}
-
-/**
- * Analyse concurrentielle avec Top 5 et sélecteur de modèle
- */
-function CompetitorAnalysis({ reportData }: { reportData: FullReportData | null }) {
-  const [selectedModel, setSelectedModel] = useState<string>('');
-  const [selectedCompetitor, setSelectedCompetitor] = useState<string | null>(null);
-  const [competitorAnalysis, setCompetitorAnalysis] = useState<CompetitorAnalysisResponse | null>(null);
-  const [loadingCompetitors, setLoadingCompetitors] = useState(false);
-
-  // Extraire les modèles disponibles depuis l'API de manière mémorisée
-  const availableModels = useMemo(() => {
-    return reportData?.analyses?.map(a => a.llm_name).filter(Boolean) || [];
-  }, [reportData?.analyses]);
-
-  // Charger l'analyse concurrentielle
-  useEffect(() => {
-    const loadCompetitorAnalysis = async () => {
-      if (!reportData) return;
-
-      // SOURCE 1 (PRIORITAIRE): analyse_concurrentielle_v3
-      // Géré directement dans getCompetitorsFromAPI et le select source_models
-
-      // SOURCE 2: analyse_concurrentielle_v1 ou competitor_analysis ou competitors
-      const competitorData = reportData.analyse_concurrentielle_v1 || reportData.competitor_analysis || (reportData as any).competitors;
-
-      if (competitorData) {
-        let mappedAnalysis: CompetitorAnalysisResponse;
-
-        if (reportData.analyse_concurrentielle_v1) {
-          const reportId = reportData.report?.id || (reportData as any).llmo_report?.id || 0;
-          mappedAnalysis = mapAnalyseConcurrentielleV1ToResponse(reportId, reportData.analyse_concurrentielle_v1);
-        } else {
-          mappedAnalysis = mapApiResponseToCompetitorAnalysisResponse(competitorData);
-        }
-
-        setCompetitorAnalysis(mappedAnalysis);
-
-        if (!selectedModel) {
-          const firstRaw = mappedAnalysis.models_analysis?.[0]?.model_info?.display_name ||
-            mappedAnalysis.models_analysis?.[0]?.model_info?.model_name || '';
-          if (firstRaw) {
-            setSelectedModel(getCommercialModelName(firstRaw));
-          }
-        }
-        return;
-      }
-
-      // SOURCE 3: Recherche par URL si non présent dans le rapport (fallback)
-      const reportUrlValue = reportData.report?.url || (reportData as any)?.llmo_report?.url;
-      if (!reportUrlValue) return;
-
-      try {
-        setLoadingCompetitors(true);
-        const analyses = await listCompetitorAnalyses();
-
-        const reportUrl = reportUrlValue.toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^www\./, '');
-        const reportDomain = extractDomain(reportUrlValue).toLowerCase();
-
-        const matchingAnalysis = analyses.find(analysis => {
-          const analysisUrl = (analysis.url || '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '').replace(/^www\./, '');
-          const analysisDomain = extractDomain(analysis.url || '').toLowerCase();
-
-          return (
-            reportUrl === analysisUrl ||
-            analysisUrl.includes(reportUrl) ||
-            reportUrl.includes(analysisUrl) ||
-            reportDomain === analysisDomain
-          );
-        });
-
-        if (matchingAnalysis) {
-          const fullAnalysis = await getCompetitorAnalysisById(matchingAnalysis.analysis_id);
-          setCompetitorAnalysis(fullAnalysis);
-
-          if (!selectedModel && fullAnalysis.models_analysis && fullAnalysis.models_analysis.length > 0) {
-            const firstRaw = fullAnalysis.models_analysis[0].model_info?.display_name ||
-              fullAnalysis.models_analysis[0].model_info?.model_name || '';
-            if (firstRaw) {
-              setSelectedModel(getCommercialModelName(firstRaw));
-            }
-          }
-        }
-      } catch (error) {
-      } finally {
-        setLoadingCompetitors(false);
-      }
-    };
-
-    loadCompetitorAnalysis();
-  }, [reportData]);
-
-  // Mettre à jour le modèle sélectionné uniquement si nécessaire (modèle plus présent)
-  useEffect(() => {
-    // Noms commerciaux dédupliqués
-    const seen = new Set<string>();
-    const commercialNames = (competitorAnalysis?.models_analysis
-      ?.filter(m => m.competitors && m.competitors.length >= 2)
-      .map(m => getCommercialModelName(m.model_info?.display_name || m.model_info?.model_name || ''))
-      .filter(Boolean) || []).filter(name => {
-        if (seen.has(name)) return false;
-        seen.add(name);
-        return true;
-      });
-
-    if (commercialNames.length > 0) {
-      if (!selectedModel) {
-        setSelectedModel(commercialNames[0]);
-      } else if (!commercialNames.includes(selectedModel)) {
-        setSelectedModel(commercialNames[0]);
-      }
-    }
-  }, [competitorAnalysis]); // Ne pas mettre selectedModel ici pour éviter les boucles de reset
-
-  // Détecter v3
-  const v3Data = reportData?.analyse_concurrentielle_v3;
-  const isV3 = v3Data && v3Data.consolidated_competitors && v3Data.consolidated_competitors.length > 0;
-
-  // Extraire les modèles source uniques depuis v3, dédupliqués par nom commercial
-  const v3Models = useMemo(() => {
-    if (!isV3) return [];
-    const commercialSeen = new Set<string>();
-    const models: { raw: string; commercial: string }[] = [];
-    v3Data!.consolidated_competitors.forEach(c => {
-      c.source_models?.forEach(m => {
-        const commercial = getCommercialModelName(m);
-        if (!commercialSeen.has(commercial)) {
-          commercialSeen.add(commercial);
-          models.push({ raw: m, commercial });
-        }
-      });
-    });
-    return models.sort((a, b) => a.commercial.localeCompare(b.commercial));
-  }, [v3Data, isV3]);
-
-  // Initialiser le modèle sélectionné pour v3 : premier modèle par défaut
-  useEffect(() => {
-    if (isV3 && v3Models.length > 0 && !selectedModel) {
-      setSelectedModel(v3Models[0].commercial);
-    }
-  }, [isV3, v3Models]);
-
-  // Extraire les concurrents depuis les données de l'API, filtrés par modèle sélectionné
-  const getCompetitorsFromAPI = () => {
-    const clientUrl = reportData?.report?.url || (reportData as any)?.llmo_report?.url || '';
-
-    // V3 : filtrer par source_models (comparaison par nom commercial)
-    if (isV3) {
-      let filtered = v3Data!.consolidated_competitors;
-      if (selectedModel && selectedModel !== 'all') {
-        filtered = filtered.filter(c =>
-          c.source_models?.some(m => getCommercialModelName(m) === selectedModel)
-        );
-      }
-      const deduplicated = deduplicateCompetitors(filtered, clientUrl);
-      return deduplicated.slice(0, 5).map(c => ({
-        name: c.name,
-        domain: extractDomain(c.primary_url || c.domain || ''),
-        faviconUrl: c.favicon_url || c.faviconUrl,
-        score: Math.round((c.average_score ?? (c.score != null ? c.score / 100 : 0)) * 100),
-        globalRank: c.global_rank,
-        sourceModels: c.source_models || c.sourceModels,
-      }));
-    }
-
-    if (!competitorAnalysis) return [];
-
-    // Priorité à models_analysis pour filtrer par modèle sélectionné
-    if (competitorAnalysis.models_analysis && selectedModel) {
-      const matchingAnalyses = competitorAnalysis.models_analysis.filter(m => {
-        const rawName = m.model_info?.display_name || m.model_info?.model_name || '';
-        return getCommercialModelName(rawName) === selectedModel;
-      });
-
-      const allCompetitors: any[] = [];
-      matchingAnalyses.forEach(analysis => {
-        (analysis.competitors || []).forEach((comp: any) => {
-          allCompetitors.push(comp);
-        });
-      });
-
-      if (allCompetitors.length > 0) {
-        const deduplicated = deduplicateCompetitors(allCompetitors, clientUrl);
-        return deduplicated
-          .sort((a, b) => (b.similarity_score || b.score || 0) - (a.similarity_score || a.score || 0))
-          .slice(0, 5)
-          .map((comp) => ({
-            name: comp.name,
-            domain: extractDomain(comp.url || comp.primary_url || ''),
-            score: Math.round((comp.similarity_score || (comp.score != null ? comp.score / 100 : 0)) * 100),
-          }));
-      }
-    }
-
-    // Fallback consolidated_competitors
-    if (competitorAnalysis.consolidated_competitors && competitorAnalysis.consolidated_competitors.length > 0) {
-      const deduplicated = deduplicateCompetitors(competitorAnalysis.consolidated_competitors, clientUrl);
-      return deduplicated
-        .slice(0, 5)
-        .map((comp) => ({
-          name: comp.name,
-          domain: extractDomain(comp.primary_url || comp.url || ''),
-          score: Math.round((comp.average_score ?? (comp.score != null ? comp.score / 100 : 0)) * 100),
-          globalRank: comp.global_rank,
-        }));
-    }
-
-    return [];
-  };
-
-  const competitors = getCompetitorsFromAPI();
-
-  // Modèles pour le select (v1/fallback)
-  const competitorModels = useMemo(() => {
-    if (isV3) return [];
-    const raw = competitorAnalysis?.models_analysis
-      ?.filter(m => m.competitors && m.competitors.length >= 2)
-      .map(m => m.model_info?.display_name || m.model_info?.model_name || '')
-      .filter(Boolean) || [];
-    const seen = new Set<string>();
-    return raw.map(m => getCommercialModelName(m)).filter(name => {
-      if (seen.has(name)) return false;
-      seen.add(name);
-      return true;
-    });
-  }, [competitorAnalysis, isV3]);
-
-  // Liste des modèles pour le select
-  const selectModels = isV3 ? v3Models.map(m => m.commercial) : competitorModels;
-
-  return (
-    <Card className="rounded-2xl border-slate-200/80 bg-white shadow-xs p-5 competitor-card">
-      <CardHeader className="p-0 pb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 space-y-0">
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-lg font-bold text-slate-900">Analyse concurrentielle</CardTitle>
-          <InfoTooltip {...HELP.analyseConcurrentielle} side="bottom" />
-        </div>
-        <div className="model-selector flex items-center gap-2">
-          <span className="selector-label text-xs font-medium text-slate-500">Modèle:</span>
-          <Select
-            value={selectedModel}
-            onValueChange={setSelectedModel}
-            disabled={loadingCompetitors || selectModels.length === 0}
-          >
-            <SelectTrigger className="w-full sm:w-[200px] h-9 bg-white border-slate-200">
-              <SelectValue placeholder="Choisir un modèle" />
-            </SelectTrigger>
-            <SelectContent>
-              {selectModels.map(modelName => (
-                <SelectItem key={modelName} value={modelName}>
-                  <div className="flex items-center gap-2">
-                    {getModelLogo(modelName) ? (
-                      <img src={getModelLogo(modelName)!} alt={modelName} className="w-5 h-5 object-contain" />
-                    ) : (
-                      <Zap size={16} className="text-blue-500" />
-                    )}
-                    <span>{modelName}</span>
-                  </div>
-                </SelectItem>
-              ))}
-              {selectModels.length === 0 && (
-                <SelectItem value="none" disabled>Aucun modèle disponible</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-0">
-        <div className="competitors-list space-y-2.5">
-          {loadingCompetitors ? (
-            <div className="py-10 text-center text-sm text-slate-500">
-              Chargement de l'analyse concurrentielle...
-            </div>
-          ) : competitors.length === 0 ? (
-            <div className="py-10 text-center text-sm text-slate-500">
-              Aucune analyse concurrentielle disponible pour ce modèle.
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between pb-1">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Top {competitors.length} Concurrents{selectedModel && selectedModel !== 'all' ? ` - ${getCommercialModelName(selectedModel)}` : ''}
-                </span>
-                <Badge variant="secondary" className="text-xs font-medium bg-slate-100 text-slate-600">
-                  {competitors.length} détecté{competitors.length > 1 ? 's' : ''}
-                </Badge>
-              </div>
-
-              {competitors.map((competitor, index) => (
-                <div
-                  key={index}
-                  className="competitor-item flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-default"
-                >
-                  <img
-                    src={(competitor as any).faviconUrl || `https://www.google.com/s2/favicons?domain=${competitor.domain}&sz=32`}
-                    alt={competitor.domain}
-                    width={22}
-                    height={22}
-                    className="rounded-md flex-shrink-0 bg-white p-0.5 border border-slate-200/60"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
-                  <div className="competitor-info flex-1 min-w-0">
-                    <div className="competitor-name text-sm font-semibold text-slate-800 truncate">{competitor.name}</div>
-                    <div className="competitor-domain text-xs text-slate-500 truncate">{competitor.domain}</div>
-                  </div>
-                  {competitor.score > 0 && (
-                    <Badge variant="outline" className="text-xs font-medium text-slate-600 border-slate-200">
-                      {competitor.score}%
-                    </Badge>
-                  )}
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/**
- * Tableau des domaines avec badges de type
- */
-function DomainsTable({ reportData }: { reportData: FullReportData | null }) {
-  const [selectedDomain, setSelectedDomain] = useState<string | null>(null);
-  const [domainModalOpen, setDomainModalOpen] = useState(false);
-
-  // Calculer le total des citations depuis l'API
-  const getTotalCitationsFromAPI = () => {
-    // Utiliser les données de citation explicites si disponibles (6 dans votre JSON)
-    if (reportData?.analyse_citation?.total_citations !== undefined) {
-      return reportData.analyse_citation.total_citations;
-    }
-
-    if (!reportData?.analyses || reportData.analyses.length === 0) {
-      return 0;
-    }
-
-    return reportData.analyses.reduce((sum, analysis) => {
-      const geoData = analysis.modules?.audit_geo;
-      const citations = geoData?.citations || geoData?.mentions || 0;
-      return sum + Number(citations);
-    }, 0);
-  };
-
-  const totalCitationsFromAPI = getTotalCitationsFromAPI();
-  const hasApiData = reportData?.analyses && reportData.analyses.length > 0;
-
-  // Extraire les domaines cités depuis l'analyse de citation (sources réelles)
-  const getDomainsFromAPI = () => {
-    // Récupérer l'URL du client depuis report ou llmo_report
-    const clientUrl = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || '';
-    const clientSiteName = reportData?.analyse_citation?.client_site_name || '';
-
-    // PRIORITÉ 1 : utiliser competitors_frequently_mentioned (calculé côté backend avec filtre domaine exact)
-    const cfm = reportData?.analyse_citation?.competitors_frequently_mentioned;
-    if (cfm && Array.isArray(cfm) && cfm.length > 0) {
-      return cfm.map((item: any) => {
-        const domain = extractDomain(item.url || '');
-        const isClientSite = clientUrl
-          ? domain.includes(extractDomain(clientUrl))
-          : clientSiteName
-            ? domain.toLowerCase().includes(clientSiteName.toLowerCase())
-            : false;
-        return {
-          icon: item.favicon_url || `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
-          domain,
-          used: `${Math.round(item.percentage ?? 0)} %`,
-          citations: String(item.count ?? 0),
-          type: isClientSite ? 'you' : 'corporate',
-          label: isClientSite ? 'Votre Site' : 'Source',
-          pages: 1,
-          lastSeen: new Date().toLocaleDateString('fr-FR'),
-          description: isClientSite
-            ? `Votre site a été cité ${item.count} fois dans les réponses des modèles d'IA.`
-            : `Source citée ${item.count} fois.`,
-          highlight: isClientSite,
-          models: [],
-          sourceDetails: [{ url: item.url, title: item.name || domain }],
-        };
-      });
-    }
-
-    // Si on a des detailed_results, les utiliser
-    if (reportData?.analyse_citation?.detailed_results && Array.isArray(reportData.analyse_citation.detailed_results)) {
-      const sourcesMap: Record<string, any> = {};
-      const totalCalls = reportData.analyse_citation.total_llm_calls || 1;
-
-      // Parcourir tous les résultats détaillés pour extraire les sources
-      reportData.analyse_citation.detailed_results.forEach((result: any) => {
-        if (result.sources && Array.isArray(result.sources)) {
-          result.sources.forEach((source: any) => {
-            // Ignorer les sources sans URL valide
-            if (!source.url || source.url === null) return;
-
-            try {
-              const domain = extractDomain(source.url);
-              if (!domain) return;
-
-              // Vérifier si c'est le site client
-              const isClientSite = clientUrl ? domain.includes(extractDomain(clientUrl)) :
-                clientSiteName ? domain.toLowerCase().includes(clientSiteName.toLowerCase()) : false;
-
-              if (!sourcesMap[domain]) {
-                sourcesMap[domain] = {
-                  domain: domain,
-                  title: source.title || domain,
-                  mentions: 0,
-                  urls: new Set(),
-                  isClient: isClientSite,
-                  models: new Set()
-                };
-              }
-              sourcesMap[domain].mentions += 1;
-              sourcesMap[domain].urls.add(source.url);
-              if (result.llm_model) sourcesMap[domain].models.add(result.llm_model);
-            } catch (e) {
-              // Ignorer les URLs invalides
-            }
-          });
-        }
-      });
-
-      // Si aucune source avec URL n'a été trouvée, retourner un tableau vide pour passer au fallback
-      if (Object.keys(sourcesMap).length === 0) {
-        return [];
-      }
-
-      return Object.values(sourcesMap).map((s: any) => ({
-        icon: `https://www.google.com/s2/favicons?domain=${s.domain}&sz=32`,
-        domain: s.domain,
-        used: `${Math.round((s.mentions / totalCalls) * 100)} %`,
-        citations: s.mentions.toString(),
-        type: s.isClient ? 'you' : 'corporate',
-        label: s.isClient ? 'Votre Site' : 'Source',
-        pages: s.urls.size,
-        lastSeen: new Date().toLocaleDateString('fr-FR'),
-        description: s.isClient
-          ? `Votre site a été cité ${s.mentions} fois dans les réponses des modèles d'IA.`
-          : `Source externe citée ${s.mentions} fois.`,
-        highlight: s.isClient,
-        models: Array.from(s.models || []),
-        sourceDetails: Array.from(s.urls).map(url => {
-          // Retrouver le titre pour cette URL
-          let title = s.title;
-          reportData.analyse_citation.detailed_results.forEach((res: any) => {
-            const match = res.sources?.find((src: any) => src.url === url);
-            if (match && match.title) title = match.title;
-          });
-          return { url, title };
-        })
-      })).sort((a: any, b: any) => parseFloat(b.citations) - parseFloat(a.citations));
-    }
-
-    // Fallback: utiliser citations_by_model pour générer les domaines par modèle
-    if (reportData?.analyse_citation?.citations_by_model) {
-      const citationsByModel = reportData.analyse_citation.citations_by_model as Record<string, number>;
-      const totalCitations = reportData.analyse_citation.total_citations || 0;
-      const clientUrlFallback = (reportData as any)?.report?.url || (reportData as any)?.llmo_report?.url || reportData.analyse_citation?.client_site_url || '';
-      const clientDomain = clientUrlFallback ? extractDomain(clientUrlFallback) : (reportData.analyse_citation?.client_site_name || '');
-
-      // Créer une entrée pour le domaine client s'il y a des citations
-      const domains: any[] = [];
-
-      // Calculer le nombre de modèles qui ont cité le contenu
-      const modelsThatCited = Object.values(citationsByModel).filter(count => count > 0).length;
-      const totalModels = Object.keys(citationsByModel).length;
-      const usedPercentage = totalModels > 0 ? Math.round((modelsThatCited / totalModels) * 100) : 0;
-
-      if (totalCitations > 0 && clientDomain) {
-        domains.push({
-          icon: `https://www.google.com/s2/favicons?domain=${clientDomain}&sz=32`,
-          domain: clientDomain,
-          used: `${usedPercentage}%`,
-          citations: totalCitations.toString(),
-          type: 'you',
-          label: 'Votre Site',
-          pages: 1,
-          lastSeen: new Date().toLocaleDateString('fr-FR'),
-          description: `Votre site a été cité ${totalCitations} fois par ${modelsThatCited} modèle(s) d'IA sur ${totalModels}.`,
-          highlight: true,
-          sourceDetails: [{ url: clientUrlFallback, title: clientDomain }]
-        });
-      }
-
-      // Ajouter les modèles qui ont cité comme sources
-      Object.entries(citationsByModel).forEach(([model, count]) => {
-        if (count > 0) {
-          const modelUsedPct = totalCitations > 0 ? Math.round((count / totalCitations) * 100) : 0;
-          domains.push({
-            icon: `https://www.google.com/s2/favicons?domain=${model}&sz=32`,
-            domain: model,
-            used: `${modelUsedPct}%`,
-            citations: count.toString(),
-            type: 'model',
-            label: 'Modèle IA',
-            pages: 1,
-            lastSeen: new Date().toLocaleDateString('fr-FR'),
-            description: `${model} a cité votre contenu ${count} fois.`,
-            highlight: false,
-            sourceDetails: []
-          });
-        }
-      });
-
-      return domains.sort((a: any, b: any) => parseFloat(b.citations) - parseFloat(a.citations));
-    }
-
-    return [];
-  };
-
-  const domains = getDomainsFromAPI();
-
-  if (domains.length === 0) {
-    return (
-      <Card id="domaines-les-plus-cites" className="rounded-2xl border-slate-200/80 bg-white shadow-xs overflow-hidden scroll-mt-20 domains-table-card">
-        <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/60 space-y-1">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-lg font-bold text-slate-900">Domaines les plus cités</CardTitle>
-            <InfoTooltip {...HELP.domainesLesPlusCites} />
-          </div>
-          <CardDescription className="text-xs text-slate-500">Sources citées</CardDescription>
-        </CardHeader>
-        <CardContent className="p-10 text-center text-sm text-slate-500 bg-white">
-          Aucune source citée détectée pour ce rapport.
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card id="domaines-les-plus-cites" className="rounded-2xl border-slate-200/80 bg-white shadow-xs overflow-hidden scroll-mt-20 domains-table-card">
-      <CardHeader className="p-5 border-b border-slate-100 bg-slate-50/60 space-y-1">
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-lg font-bold text-slate-900">Domaines les plus cités</CardTitle>
-          <InfoTooltip {...HELP.domainesLesPlusCites} />
-        </div>
-        <CardDescription className="text-xs text-slate-500">Sources citées dans les réponses des modèles d'IA</CardDescription>
-      </CardHeader>
-
-      <CardContent className="p-0">
-        {/* Message si aucune citation trouvée dans l'API */}
-        {hasApiData && totalCitationsFromAPI === 0 ? (
-          <div className="p-6">
-            <Alert variant="destructive" className="bg-red-50/80 border-red-200 text-red-900 max-w-2xl mx-auto">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <AlertTitle className="font-semibold text-red-900 text-base">Aucune citation trouvée</AlertTitle>
-              <AlertDescription className="text-sm text-red-700 leading-relaxed mt-1">
-                Il n'y a pas de citation trouvée car vous n'êtes pas cité dans les moteurs génératifs.
-                Consultez les recommandations pour améliorer votre visibilité et augmenter vos chances d'être cité par les IA.
-              </AlertDescription>
-            </Alert>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <Table className="domains-table min-w-[600px]">
-                <TableHeader>
-                  <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Domaine</TableHead>
-                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Utilisé</TableHead>
-                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Pages</TableHead>
-                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider">Citations moy.</TableHead>
-                    <TableHead className="py-3 px-4 md:px-6 text-xs uppercase text-slate-400 font-semibold tracking-wider text-right">Type</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {domains.map((domain, index) => (
-                    <TableRow
-                      key={index}
-                      className={`cursor-pointer transition-colors ${domain.highlight
-                          ? 'bg-blue-50/60 hover:bg-blue-50/90 font-medium table-row-highlight'
-                          : 'hover:bg-slate-50/80'
-                        }`}
-                      onClick={() => {
-                        setSelectedDomain(domain.domain);
-                        setDomainModalOpen(true);
-                      }}
-                    >
-                      <TableCell className="py-3.5 px-4 md:px-6">
-                        <div className="domain-cell flex items-center gap-3 text-sm md:text-[15px] text-slate-900">
-                          <img src={domain.icon} alt={domain.domain} width={20} height={20} className="rounded flex-shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                          <div className="flex items-center gap-2">
-                            <span className="truncate max-w-[120px] sm:max-w-none font-medium">{domain.domain}</span>
-                            {selectedDomain === domain.domain && <ChevronRight size={14} className="text-blue-500" />}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-3.5 px-4 md:px-6 text-sm text-slate-600 font-semibold">{domain.used}</TableCell>
-                      <TableCell className="py-3.5 px-4 md:px-6 text-sm text-slate-600">{domain.pages}</TableCell>
-                      <TableCell className="py-3.5 px-4 md:px-6 text-sm text-slate-600 font-semibold">{domain.citations}</TableCell>
-                      <TableCell className="py-3.5 px-4 md:px-6 text-right">
-                        <Badge
-                          variant={domain.type === 'you' ? 'default' : 'secondary'}
-                          className={`badge badge-${domain.type} text-[11px] font-semibold uppercase px-2.5 py-0.5 border-0 ${domain.type === 'you'
-                              ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
-                              : domain.type === 'model'
-                                ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-100'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-100'
-                            }`}
-                        >
-                          {domain.label}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Modal Informations détaillées - ouvert au clic sur une source (domaine) */}
-            <Dialog open={domainModalOpen} onOpenChange={(open) => {
-              setDomainModalOpen(open);
-              if (!open) setSelectedDomain(null);
-            }}>
-              <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 gap-0" hideCloseButton>
-                {selectedDomain && (() => {
-                  const dom = domains.find(d => d.domain === selectedDomain);
-                  if (!dom) return null;
-                  return (
-                    <>
-                      <div className="flex-shrink-0 flex items-start justify-between gap-4 p-6 pb-0">
-                        <DialogHeader className="flex-1 space-y-1.5 pr-8">
-                          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-900">
-                            Informations détaillées - {dom.domain}
-                          </DialogTitle>
-                          <DialogDescription className="text-sm text-slate-500">
-                            Source citée dans les réponses des modèles d'IA
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogClose asChild>
-                          <button
-                            type="button"
-                            className="absolute right-4 top-4 rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-                            aria-label="Fermer"
-                          >
-                            <X className="h-5 w-5" />
-                          </button>
-                        </DialogClose>
-                      </div>
-                      <div
-                        className="flex-1 overflow-y-auto min-h-0 px-6 py-4"
-                        style={{ maxHeight: 'calc(90vh - 120px)' }}
-                      >
-                        <div className="flex flex-col gap-4">
-                          <div className="text-sm text-slate-600 leading-relaxed">
-                            {dom.description}
-                          </div>
-                          <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500">
-                            <span>Pages citées : <strong className="text-slate-900">{dom.pages}</strong></span>
-                            <span>Citations moy. : <strong className="text-slate-900">{dom.citations}</strong></span>
-                            <span>Dernière vue : <strong className="text-slate-900">{dom.lastSeen}</strong></span>
-                            <span>Utilisé : <strong className="text-slate-900">{dom.used}</strong></span>
-                          </div>
-                          {dom.models && dom.models.length > 0 && (
-                            <div className="mt-2">
-                              <div className="text-xs font-semibold text-slate-500 mb-2">Cité par</div>
-                              <div className="flex flex-wrap gap-2">
-                                {dom.models.map((model: string, idx: number) => (
-                                  <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-200">
-                                    {getModelLogo(model) ? (
-                                      <img src={getModelLogo(model)!} alt={model} className="w-4 h-4 object-contain" />
-                                    ) : null}
-                                    <span className="text-sm text-slate-700 font-medium">{model}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {dom.sourceDetails && dom.sourceDetails.length > 0 && (
-                            <div className="mt-2">
-                              <div className="text-xs font-semibold text-slate-500 mb-2">URLs sources identifiées</div>
-                              <div className="flex flex-col gap-2">
-                                {dom.sourceDetails.map((src: any, idx: number) => (
-                                  <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                    <div className="text-sm font-semibold text-slate-900 mb-1">{src.title}</div>
-                                    <a
-                                      href={src.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="text-xs text-blue-600 no-underline inline-flex items-center gap-1.5 hover:underline"
-                                    >
-                                      {src.url} <ExternalLink size={12} />
-                                    </a>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  );
-                })()}
-              </DialogContent>
-            </Dialog>
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-/**
  * Vue "Améliorer"
  * Affiche les analyses, graphiques et tableaux de performance
  */
-/**
- * Résumé du Plan d'Action GEO dans la vue d'ensemble
- * Affiche les actions prioritaires avec leur catégorie, priorité et effort
- */
-function PlanActionGeoOverview({ reportData }: { reportData: FullReportData | null }) {
-  if (!reportData?.analyses || reportData.analyses.length === 0) return null;
-
-  // Chercher l'analyse avec le plan d'action GEO le plus complet
-  const analysisWithGeoPlan = reportData.analyses
-    .filter(a => a.modules?.audit_geo?.plan_action_geo && Array.isArray(a.modules.audit_geo.plan_action_geo) && a.modules.audit_geo.plan_action_geo.length > 0)
-    .sort((a, b) => (b.modules?.audit_geo?.plan_action_geo?.length || 0) - (a.modules?.audit_geo?.plan_action_geo?.length || 0))[0];
-
-  if (!analysisWithGeoPlan) return null;
-
-  const auditGeo = analysisWithGeoPlan.modules.audit_geo;
-  const rawPlan = auditGeo.plan_action_geo || [];
-  const scoreGlobal = Math.round(auditGeo.score_global_geo ?? 0);
-
-  // Normaliser les items (supporter string[] ou object[])
-  const planItems = rawPlan.map((item: any) => {
-    if (typeof item === 'string') {
-      return { action: item, categorie: '', priorite: 'moyenne', impact: '', effort: 'moyen' };
-    }
-    return item as { action: string; categorie: string; priorite: string; impact: string; effort: string };
-  });
-
-  if (planItems.length === 0) return null;
-
-  const highPriority = planItems.filter((i: any) => i.priorite?.toLowerCase() === 'haute').length;
-  const medPriority = planItems.filter((i: any) => i.priorite?.toLowerCase() === 'moyenne').length;
-  const lowPriority = planItems.filter((i: any) => i.priorite?.toLowerCase() === 'basse').length;
-
-  const getPriorityStyle = (p: string) => {
-    const pr = (p || '').toLowerCase();
-    if (pr === 'haute') return { bg: '#FEE2E2', color: '#DC2626', label: 'Haute' };
-    if (pr === 'moyenne') return { bg: '#FEF3C7', color: '#D97706', label: 'Moyenne' };
-    return { bg: '#D1FAE5', color: '#059669', label: 'Basse' };
-  };
-
-  const getEffortStyle = (e: string) => {
-    const ef = (e || '').toLowerCase();
-    if (ef === 'faible') return { bg: '#D1FAE5', color: '#059669', label: 'Faible' };
-    if (ef === 'moyen') return { bg: '#FEF3C7', color: '#D97706', label: 'Moyen' };
-    return { bg: '#FEE2E2', color: '#DC2626', label: 'Élevé' };
-  };
-
-  const getCategoryIcon = (cat: string) => {
-    const c = (cat || '').toLowerCase();
-    if (c.includes('structur')) return '-';
-    if (c.includes('crawl') || c.includes('accessib')) return '-';
-    if (c.includes('html') || c.includes('semantique')) return '-';
-    if (c.includes('meta') || c.includes('technique')) return '-';
-    if (c.includes('contenu') || c.includes('optimisation')) return '-';
-    if (c.includes('conform') || c.includes('standard')) return '-';
-    return '-';
-  };
-
-  return (
-    <div style={{
-      background: '#FFFFFF',
-      borderRadius: '16px',
-      border: '1px solid #E2E8F0',
-      overflow: 'hidden'
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '20px 24px',
-        borderBottom: '1px solid #F1F5F9',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '40px', height: '40px', borderRadius: '10px',
-            background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <ListChecks size={20} color="white" />
-          </div>
-          <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
-              Plan d'action GEO
-            </h3>
-            <p style={{ fontSize: '13px', color: '#64748B', margin: 0, marginTop: '2px' }}>
-              {planItems.length} actions identifiées pour améliorer votre visibilité IA
-            </p>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Score GEO badge */}
-          <div style={{
-            padding: '6px 14px',
-            borderRadius: '20px',
-            background: scoreGlobal >= 70 ? '#D1FAE5' : scoreGlobal >= 40 ? '#FEF3C7' : '#FEE2E2',
-            color: scoreGlobal >= 70 ? '#059669' : scoreGlobal >= 40 ? '#D97706' : '#DC2626',
-            fontSize: '14px',
-            fontWeight: 700
-          }}>
-            Score GEO: {scoreGlobal}/100
-          </div>
-        </div>
-      </div>
-
-      {/* Résumé des priorités */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '1px',
-        background: '#F1F5F9',
-        borderBottom: '1px solid #F1F5F9'
-      }}>
-        <div style={{ background: '#FFF', padding: '14px 20px', textAlign: 'center' }}>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: '#DC2626' }}>{highPriority}</div>
-          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>Priorité haute</div>
-        </div>
-        <div style={{ background: '#FFF', padding: '14px 20px', textAlign: 'center' }}>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: '#D97706' }}>{medPriority}</div>
-          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>Priorité moyenne</div>
-        </div>
-        <div style={{ background: '#FFF', padding: '14px 20px', textAlign: 'center' }}>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: '#059669' }}>{lowPriority}</div>
-          <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>Priorité basse</div>
-        </div>
-      </div>
-
-      {/* Liste des actions */}
-      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {planItems.map((item: any, idx: number) => {
-          const priority = getPriorityStyle(item.priorite);
-          const effort = getEffortStyle(item.effort);
-          return (
-            <div key={idx} style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '14px',
-              padding: '14px 16px',
-              borderRadius: '12px',
-              border: '1px solid #E2E8F0',
-              background: '#FAFBFC',
-              transition: 'all 0.2s ease'
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.borderColor = '#CBD5E1'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#FAFBFC'; e.currentTarget.style.borderColor = '#E2E8F0'; }}
-            >
-              {/* Numéro */}
-              <div style={{
-                minWidth: '28px', height: '28px', borderRadius: '8px',
-                background: priority.bg, color: priority.color,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '13px', fontWeight: 700, flexShrink: 0
-              }}>
-                {idx + 1}
-              </div>
-
-              {/* Contenu */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  {item.categorie && (
-                    <span style={{ fontSize: '12px' }}>{getCategoryIcon(item.categorie)}</span>
-                  )}
-                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#1E293B', margin: 0, lineHeight: '1.4' }}>
-                    {item.action}
-                  </p>
-                </div>
-                {item.impact && (
-                  <p style={{ fontSize: '12px', color: '#64748B', margin: 0, marginTop: '4px', lineHeight: '1.4' }}>
-                    {item.impact}
-                  </p>
-                )}
-              </div>
-
-              {/* Badges */}
-              <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'flex-start' }}>
-                <span style={{
-                  padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
-                  background: priority.bg, color: priority.color
-                }}>
-                  {priority.label}
-                </span>
-                <span style={{
-                  padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
-                  background: effort.bg, color: effort.color
-                }}>
-                  {effort.label}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
+function AmeliorerView({ 
+  reportData, 
+  allReports, 
+  onSelectReport 
+}: { 
+  reportData: FullReportData | null; 
+  allReports?: any[]; 
+  onSelectReport?: (id: string) => void;
+}) {
   const [activeTab, setActiveTab] = useState<'citations' | 'concurrents' | 'sources' | 'score' | 'causal'>('citations');
   const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
 
@@ -3965,6 +1949,20 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
       return rawUrl;
     }
   })();
+
+  const domainReports = useMemo(() => {
+    if (!allReports || allReports.length === 0) return [];
+    return allReports.filter((r: any) => {
+      const u = r?.url || r?.client_site_url;
+      if (!u) return false;
+      try {
+        const h = new URL(u.startsWith('http') ? u : `https://${u}`).hostname.replace(/^www\./, '');
+        return h.toLowerCase() === targetDomain.toLowerCase();
+      } catch {
+        return String(u).toLowerCase().includes(targetDomain.toLowerCase());
+      }
+    });
+  }, [allReports, targetDomain]);
 
   const totalCitations = (() => {
     if (reportData?.analyse_citation?.total_citations !== undefined) {
@@ -3981,6 +1979,33 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
   const targetGeoScore = extractTargetGeoScore(reportData);
   const effectiveAgenticScore = extractAgenticScore(reportData) ?? (targetGeoScore != null ? Math.round(targetGeoScore * 0.65) : 58);
 
+  // Extraction des vraies métriques d'audit présentes dans le rapport
+  const firstAnalysis = reportData?.analyses?.[0] as any;
+  const auditGeo = firstAnalysis?.modules?.audit_geo || (reportData as any)?.audit_geo;
+  const semantique = firstAnalysis?.modules?.semantique || (reportData as any)?.semantique;
+
+  const realSchemaScore = auditGeo?.donnees_structurees?.score != null
+    ? Math.round(Number(auditGeo.donnees_structurees.score))
+    : (targetGeoScore ? Math.round(targetGeoScore * 0.85) : 50);
+
+  const realSemanticHtmlScore = auditGeo?.html_semantique?.score != null
+    ? Math.round(Number(auditGeo.html_semantique.score))
+    : (targetGeoScore ? Math.round(targetGeoScore * 0.9) : 60);
+
+  const realClarityScore = semantique?.clarte_score != null
+    ? Math.round(Number(semantique.clarte_score))
+    : (semantique?.score_global != null ? Math.round(Number(semantique.score_global)) : 65);
+
+  const realHasLlmsTxt = Boolean(
+    auditGeo?.accessibilite_crawlers?.llms_txt_present === true ||
+    auditGeo?.accessibilite_crawlers?.llms_txt_present === 'true' ||
+    (effectiveAgenticScore && effectiveAgenticScore >= 70)
+  );
+
+  const realHasOpenApi = Boolean(
+    effectiveAgenticScore && effectiveAgenticScore >= 60
+  );
+
   const unified = useMemo(() => {
     return computeUnifiedScore({
       targetDomain,
@@ -3988,9 +2013,14 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
       totalCitations,
       modelsCount: 9,
       agenticScore: effectiveAgenticScore,
-      schemaScore: targetGeoScore ? Math.round(targetGeoScore * 0.9) : 60,
+      schemaScore: realSchemaScore,
+      semanticHtmlScore: realSemanticHtmlScore,
+      contentClarityScore: realClarityScore,
+      hasLlmsTxt: realHasLlmsTxt,
+      hasOpenApi: realHasOpenApi,
+      journeySuccessRate: effectiveAgenticScore ? Math.round(effectiveAgenticScore * 0.9) : 35,
     });
-  }, [targetDomain, targetGeoScore, totalCitations, effectiveAgenticScore]);
+  }, [targetDomain, targetGeoScore, totalCitations, effectiveAgenticScore, realSchemaScore, realSemanticHtmlScore, realClarityScore, realHasLlmsTxt, realHasOpenApi]);
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
@@ -4054,7 +2084,14 @@ function AmeliorerView({ reportData }: { reportData: FullReportData | null }) {
         {/* Onglet Impact Causal (remplace les 3 blocs) */}
         <TabsContent value="causal" className="mt-0 focus-visible:outline-none focus-visible:ring-0 animate-in fade-in duration-200">
           <div id="section-causal">
-            <CausalImpactTimeline domain={targetDomain} />
+            <CausalImpactTimeline
+              domain={targetDomain}
+              currentCitations={totalCitations}
+              reportDate={reportData?.report?.created_at}
+              domainReports={domainReports}
+              onSelectReport={onSelectReport}
+              activeReportId={reportData?.report?.id ? String(reportData.report.id) : undefined}
+            />
           </div>
         </TabsContent>
 
@@ -4218,6 +2255,17 @@ const Index = () => {
 
   const loading = reportsLoading || reportLoading;
 
+  // État de chargement initial (aucun rapport encore disponible en mémoire)
+  if (loading && !reportData) {
+    return (
+      <div className="ux-dashboard-body">
+        <div className="dashboard-container ux-dashboard p-4 sm:p-6 space-y-6">
+          <IndexSkeletonLoader />
+        </div>
+      </div>
+    );
+  }
+
   // Empty state — aucun rapport
   if (!reportsLoading && reports.length === 0) {
     return (
@@ -4236,19 +2284,19 @@ const Index = () => {
             </div>
 
             {/* Titre */}
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
               Bienvenue sur Viraill
             </h1>
-            <p className="text-slate-500 text-sm max-w-lg mb-8 leading-relaxed">
+            <p className="text-muted-foreground text-sm max-w-lg mb-8 leading-relaxed">
               Vous n'avez pas encore d'analyse. Lancez votre première analyse GEO pour découvrir comment votre site est perçu par les IA génératives.
             </p>
 
             {/* CTA principal */}
             <Button
               onClick={() => setIsNewAnalysisModalOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-indigo-200 gap-2 h-auto"
+              size="lg"
+              className="gap-2 font-semibold shadow-xs"
             >
-
               Lancer ma première analyse
             </Button>
 
@@ -4289,93 +2337,106 @@ const Index = () => {
         {/* Section basse avec contenu dynamique */}
         <div className="bottom-section">
           {loading && reportId ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
-              Chargement des données...
+            <div className="py-2 animate-in fade-in duration-200">
+              <IndexSkeletonLoader onlyBottom={true} />
             </div>
           ) : error && reportId ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: '#EF4444' }}>
-              <div style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600 }}>
-                Erreur lors du chargement
-              </div>
-              <div style={{ fontSize: '13px', color: '#64748B', marginTop: '12px' }}>
-                Vérifiez que le reportId est correct dans l'URL (ex: ?reportId=1)
-              </div>
+            <div className="py-8 max-w-xl mx-auto px-4">
+              <Alert variant="destructive">
+                <AlertCircle className="h-5 w-5" />
+                <AlertTitle>Erreur lors du chargement</AlertTitle>
+                <AlertDescription className="text-xs mt-1">
+                  Vérifiez que l'identifiant de rapport est valide dans l'URL (ex: ?reportId=1).
+                </AlertDescription>
+              </Alert>
             </div>
           ) : (
-            <AmeliorerView reportData={reportData} />
+            <AmeliorerView reportData={reportData} allReports={reports} onSelectReport={handleSelectReport} />
           )}
         </div>
       </div>
 
-      {/* Modal de sélection de rapport */}
+      {/* Modal de sélection de rapport (shadcn standard) */}
       <Dialog open={isReportsModalOpen} onOpenChange={setIsReportsModalOpen}>
-        <DialogContent className="w-[95vw] sm:max-w-[520px] rounded-2xl p-0 overflow-hidden">
-          <DialogHeader style={{ padding: '20px 24px 12px', borderBottom: '1px solid #F1F5F9' }}>
-            <DialogTitle style={{ fontSize: '16px', fontWeight: 600, color: '#1E293B' }}>
-              Mes analyses
-            </DialogTitle>
-            <DialogDescription style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
-              Sélectionnez un rapport pour afficher ses résultats
+        <DialogContent className="w-[95vw] sm:max-w-lg rounded-2xl p-0 overflow-hidden border-border shadow-2xl">
+          <DialogHeader className="px-6 py-4 border-b border-border bg-muted/20">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-base font-semibold text-foreground">
+                Mes analyses
+              </DialogTitle>
+              <Badge variant="secondary" className="text-xs font-semibold">
+                {reports.length} rapport{reports.length > 1 ? "s" : ""}
+              </Badge>
+            </div>
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              Sélectionnez un rapport pour afficher ses résultats d'audit.
             </DialogDescription>
           </DialogHeader>
-          <div style={{ maxHeight: '400px', overflowY: 'auto', padding: '8px' }}>
+
+          <div className="max-h-[380px] overflow-y-auto p-3 space-y-1.5">
             {reports.map((r) => {
               const isActive = String(r.id) === String(reportId);
               let domain = r.url;
-              try { domain = new URL(r.url).hostname; } catch { }
-              const date = new Date(r.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+              try {
+                domain = new URL(r.url).hostname.replace("www.", "");
+              } catch {}
+              const date = new Date(r.createdAt).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              });
+
               return (
                 <button
                   key={r.id}
                   onClick={() => handleSelectReport(r.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    border: isActive ? '2px solid #6366F1' : '1px solid transparent',
-                    background: isActive ? '#EEF2FF' : 'transparent',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'background 0.15s',
-                    marginBottom: '4px',
-                  }}
-                  onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = '#F8FAFC'; }}
-                  onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                  type="button"
+                  className={cn(
+                    "flex items-center gap-3 w-full p-3 rounded-xl border text-left transition-all cursor-pointer",
+                    isActive
+                      ? "border-primary/40 bg-primary/10 shadow-2xs"
+                      : "border-border/60 hover:bg-muted/60 bg-card"
+                  )}
                 >
-                  <div style={{
-                    width: '36px', height: '36px', borderRadius: '10px',
-                    background: isActive ? '#6366F1' : '#F1F5F9',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  }}>
-                    <FileText size={16} style={{ color: isActive ? '#fff' : '#64748B' }} />
+                  <div
+                    className={cn(
+                      "w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
+                      isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    <FileText className="w-4 h-4" />
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+
+                  <div className="flex-1 min-w-0">
+                    <div className={cn("text-sm font-semibold truncate", isActive ? "text-primary" : "text-foreground")}>
                       {domain}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
                       <span>{date}</span>
-                      <span style={{
-                        padding: '1px 6px', borderRadius: '6px', fontSize: '11px', fontWeight: 500,
-                        background: r.status === 'completed' ? '#DCFCE7' : r.status === 'processing' ? '#FEF3C7' : '#FEE2E2',
-                        color: r.status === 'completed' ? '#16A34A' : r.status === 'processing' ? '#D97706' : '#DC2626',
-                      }}>
-                        {r.status === 'completed' ? 'Terminé' : r.status === 'processing' ? 'En cours' : 'Erreur'}
-                      </span>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[10px] px-1.5 py-0 h-4 border-0 font-medium",
+                          r.status === "completed"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : r.status === "processing"
+                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                            : "bg-destructive/10 text-destructive"
+                        )}
+                      >
+                        {r.status === "completed" ? "Terminé" : r.status === "processing" ? "En cours" : "Erreur"}
+                      </Badge>
                     </div>
                   </div>
+
                   {r.metadata?.score != null && (
-                    <div style={{
-                      fontSize: '14px', fontWeight: 700, color: '#6366F1', flexShrink: 0,
-                    }}>
+                    <div className="text-sm font-bold text-primary shrink-0">
                       {Math.round(r.metadata.score)}/100
                     </div>
                   )}
+
                   {isActive && (
-                    <CheckCircle size={18} style={{ color: '#6366F1', flexShrink: 0 }} />
+                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
                   )}
                 </button>
               );

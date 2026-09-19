@@ -114,11 +114,11 @@ export function SetupStep() {
           ))}
         </div>
 
-        <h1 className="text-4xl font-bold text-foreground">Bienvenue sur Virail</h1>
-        <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-          Mesurez et optimisez la visibilité de votre marque dans les réponses des <span className="font-semibold text-meetmind-primary">moteurs génératifs IA</span> : ChatGPT, Perplexity, Gemini, Claude et bien d'autres.
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">Bienvenue sur Viraill</h1>
+        <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto">
+          Mesurez et optimisez la visibilité de votre marque dans les réponses des <span className="font-semibold text-primary">moteurs génératifs IA</span> : ChatGPT, Perplexity, Gemini, Claude et bien d'autres.
         </p>
-        <p className="text-muted-foreground/70 text-sm">
+        <p className="text-muted-foreground/70 text-xs sm:text-sm">
           Commençons par configurer votre type de compte
         </p>
       </div>
@@ -130,44 +130,44 @@ export function SetupStep() {
             className={cn(
               'relative flex cursor-pointer rounded-xl border-2 p-6 transition-all shadow-sm hover:shadow-md',
               accountType === 'agency'
-                ? 'shadow-lg border-meetmind-primary bg-meetmind-primary/5'
-                : 'border-border bg-card hover:border-muted-foreground/30 hover:shadow-md'
+                ? 'shadow-md border-primary bg-primary/5'
+                : 'border-border bg-card hover:border-muted-foreground/30'
             )}
           >
             <RadioGroupItem value="agency" id="agency" className="sr-only" />
             <div className="flex-1">
               <div className="flex items-start gap-3 mb-3">
                 {accountType === 'agency' ? (
-                  <div className="h-6 w-6 rounded-full bg-meetmind-primary flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md">
-                    <Check className="h-4 w-4 text-white" />
+                  <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+                    <Check className="h-4 w-4 text-primary-foreground" />
                   </div>
                 ) : (
                   <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 flex-shrink-0 mt-0.5" />
                 )}
                 <h3 className="font-bold text-xl text-foreground">Agence</h3>
               </div>
-              <p className="text-muted-foreground mb-5 text-base">
+              <p className="text-muted-foreground mb-5 text-sm sm:text-base">
                 Gérez la visibilité LLM de plusieurs marques clientes et suivez leurs mentions dans ChatGPT, Perplexity, Gemini et Claude.
               </p>
               <div className="space-y-2.5 pt-2 border-t border-border">
                 <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'agency' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
+                    accountType === 'agency' ? 'text-primary' : 'text-muted-foreground/50'
                   )} />
                   <span>Suivi multi-clients sur tous les modèles IA</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'agency' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
+                    accountType === 'agency' ? 'text-primary' : 'text-muted-foreground/50'
                   )} />
                   <span>Tableaux de bord par marque</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'agency' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
+                    accountType === 'agency' ? 'text-primary' : 'text-muted-foreground/50'
                   )} />
                   <span>Rapports de visibilité LLM exportables</span>
                 </div>
@@ -180,44 +180,44 @@ export function SetupStep() {
             className={cn(
               'relative flex cursor-pointer rounded-xl border-2 p-6 transition-all shadow-sm hover:shadow-md',
               accountType === 'in-house'
-                ? 'shadow-lg border-meetmind-primary bg-meetmind-primary/5'
-                : 'border-border bg-card hover:border-muted-foreground/30 hover:shadow-md'
+                ? 'shadow-md border-primary bg-primary/5'
+                : 'border-border bg-card hover:border-muted-foreground/30'
             )}
           >
             <RadioGroupItem value="in-house" id="in-house" className="sr-only" />
             <div className="flex-1">
               <div className="flex items-start gap-3 mb-3">
                 {accountType === 'in-house' ? (
-                  <div className="h-6 w-6 rounded-full bg-meetmind-primary flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md">
-                    <Check className="h-4 w-4 text-white" />
+                  <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+                    <Check className="h-4 w-4 text-primary-foreground" />
                   </div>
                 ) : (
                   <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30 flex-shrink-0 mt-0.5" />
                 )}
                 <h3 className="font-bold text-xl text-foreground">Interne</h3>
               </div>
-              <p className="text-muted-foreground mb-5 text-base">
+              <p className="text-muted-foreground mb-5 text-sm sm:text-base">
                 Optimisez la présence de votre marque dans les réponses de ChatGPT, Perplexity, Gemini et Claude.
               </p>
               <div className="space-y-2.5 pt-2 border-t border-border">
                 <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'in-house' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
+                    accountType === 'in-house' ? 'text-primary' : 'text-muted-foreground/50'
                   )} />
                   <span>Suivi de votre marque sur tous les LLM</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'in-house' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
+                    accountType === 'in-house' ? 'text-primary' : 'text-muted-foreground/50'
                   )} />
                   <span>Analytics de citations et mentions IA</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className={cn(
                     "h-4 w-4 flex-shrink-0",
-                    accountType === 'in-house' ? 'text-meetmind-primary' : 'text-muted-foreground/50'
+                    accountType === 'in-house' ? 'text-primary' : 'text-muted-foreground/50'
                   )} />
                   <span>Recommandations GEO personnalisées</span>
                 </div>
@@ -236,6 +236,7 @@ export function SetupStep() {
               placeholder="Ex: Mon Agence Digital"
               value={agencyName}
               onChange={(e) => setAgencyName(e.target.value)}
+              className="h-11"
             />
             <p className="text-xs text-muted-foreground">Le nom de votre agence qui gérera les projets SEO/LLM</p>
           </div>
@@ -246,6 +247,7 @@ export function SetupStep() {
               placeholder="mon-agence.com"
               value={agencyUrl}
               onChange={(e) => setAgencyUrl(e.target.value)}
+              className="h-11"
             />
             <p className="text-xs text-muted-foreground">L'URL de votre site web professionnel</p>
           </div>
@@ -253,30 +255,25 @@ export function SetupStep() {
       )}
 
       <div className="flex justify-end pt-6">
-          <Button
-            onClick={() => {
-              handleNext();
-            }}
-            disabled={!canProceed() || isSubmitting}
-            className={cn(
-              "px-8 py-6 text-base font-semibold transition-all rounded-meetmind-button",
-              canProceed() && !isSubmitting
-                ? "text-white bg-meetmind-primary hover:bg-meetmind-soft-blue shadow-[0_4px_6px_-1px_rgba(26,58,255,0.3),0_2px_4px_-1px_rgba(26,58,255,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(26,58,255,0.4),0_4px_6px_-2px_rgba(26,58,255,0.2)]"
-                : "bg-slate-300 text-slate-500 cursor-not-allowed"
-            )}
-          >
-            {isSubmitting ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                <span className="opacity-80">Continuer</span>
-              </>
-            ) : (
-              <>
-                Continuer
-                <ChevronRight className="ml-2 h-5 w-5" />
-              </>
-            )}
-          </Button>
+        <Button
+          onClick={() => {
+            handleNext();
+          }}
+          disabled={!canProceed() || isSubmitting}
+          className="h-12 px-8 text-base font-semibold rounded-xl"
+        >
+          {isSubmitting ? (
+            <>
+              <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+              <span>Continuer</span>
+            </>
+          ) : (
+            <>
+              <span>Continuer</span>
+              <ChevronRight className="ml-2 h-5 w-5" />
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );

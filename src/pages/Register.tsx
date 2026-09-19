@@ -4,9 +4,11 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, CheckCircle, Clock } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, Clock, Loader2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { RegisterRequest } from '@/types/auth';
 import { PasswordInput } from '@/components/PasswordInput';
@@ -95,207 +97,213 @@ export default function Register() {
         message={rateLimitState.message}
       />
 
-      <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col justify-between">
         {/* Main Content */}
-        <main className="flex-1 flex items-center justify-center py-16 px-4">
+        <main className="flex-1 flex items-center justify-center py-12 px-4">
           <div className="w-full max-w-md mx-auto">
-            <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
-              {showSuccessMessage ? (
-              <div className="space-y-6">
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
+            <Card className="rounded-2xl shadow-xl border-border bg-card">
+              <CardContent className="p-6 sm:p-8">
+                {showSuccessMessage ? (
+                  <div className="space-y-6 text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500/10 rounded-full mb-2">
+                      <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <h2 className="text-2xl font-bold tracking-tight text-foreground">Compte créé avec succès</h2>
+                    <p className="text-sm text-muted-foreground">Vérifiez votre email et cliquez sur le lien pour activer votre compte.</p>
+                    <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
+                        <Clock className="h-4 w-4" />
+                        <span>
+                          Redirection vers la connexion dans {countdown} seconde{countdown > 1 ? 's' : ''}...
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => navigate('/login', { replace: true })}
+                      className="w-full h-11"
+                    >
+                      Aller à la page de connexion maintenant
+                    </Button>
                   </div>
-                  <h2 className="text-2xl md:text-3xl font-semibold text-[#1b1b1f] mb-4">Compte créé avec succès</h2>
-                  <p className="text-sm text-[#6e6e73] mb-4">Vérifiez votre email et cliquez sur le lien pour activer votre compte.</p>
-                  <div className="mt-2 p-4 bg-[#f7f8fc] rounded-lg">
-                    <div className="flex items-center justify-center gap-2 text-[#6e6e73]">
-                      <Clock className="h-4 w-4" />
-                      <p className="text-sm">
-                        Redirection vers la page de connexion dans {countdown} seconde{countdown > 1 ? 's' : ''}...
+                ) : (
+                  <>
+                    {/* En-tête */}
+                    <div className="text-center mb-8">
+                      <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2">
+                        Créer un compte
+                      </h1>
+                      <p className="text-sm text-muted-foreground">
+                        Commencez votre optimisation IA-first dès aujourd&apos;hui
                       </p>
                     </div>
-                  </div>
-                  <button
-                    onClick={() => navigate('/login', { replace: true })}
-                    className="mt-4 bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white px-6 py-3 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg"
-                  >
-                    Aller à la page de connexion maintenant
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* En-tête */}
-                <div className="text-center mb-8">
-                  <h1 className="text-3xl md:text-4xl font-semibold text-[#1b1b1f] mb-3">
-                    Créer un compte
-                  </h1>
-                  <p className="text-[15px] md:text-[16px] text-[#6e6e73]">
-                    Commencez votre optimisation IA-first dès aujourd&apos;hui
-                  </p>
-                </div>
 
-                {/* Formulaire */}
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="block text-[11px] uppercase tracking-wide font-bold text-[#1b1b1f] mb-2 ml-1">
-                            Email
-                          </FormLabel>
-                          <FormControl>
-                            <input
-                              type="email"
-                              placeholder="vous@entreprise.com"
-                              className="w-full bg-[#f7f8fc] rounded-xl px-4 py-3.5 text-sm md:text-[15px] text-[#1b1b1f] placeholder:text-slate-300 border border-transparent focus:bg-white focus:border-[#9cb5ff] focus:ring-0 outline-none transition-all"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Formulaire */}
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs font-semibold text-foreground">
+                                Email
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="email"
+                                  placeholder="vous@entreprise.com"
+                                  className="h-11"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                    <FormField
-                      control={form.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="block text-[11px] uppercase tracking-wide font-bold text-[#1b1b1f] mb-2 ml-1">
-                            Nom d'utilisateur
-                          </FormLabel>
-                          <FormControl>
-                            <input
-                              type="text"
-                              placeholder="Votre nom d'utilisateur"
-                              className="w-full bg-[#f7f8fc] rounded-xl px-4 py-3.5 text-sm md:text-[15px] text-[#1b1b1f] placeholder:text-slate-300 border border-transparent focus:bg-white focus:border-[#9cb5ff] focus:ring-0 outline-none transition-all"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        <FormField
+                          control={form.control}
+                          name="username"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs font-semibold text-foreground">
+                                Nom d'utilisateur
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="text"
+                                  placeholder="Votre nom d'utilisateur"
+                                  className="h-11"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <PasswordInput
-                              value={field.value}
-                              onChange={field.onChange}
-                              username={form.watch('username')}
-                              email={form.watch('email')}
-                              onValidationChange={handlePasswordValidationChange}
-                              disabled={isLoading || isRateLimited}
-                              simpleMode={true}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        <FormField
+                          control={form.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <PasswordInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  username={form.watch('username')}
+                                  email={form.watch('email')}
+                                  onValidationChange={handlePasswordValidationChange}
+                                  disabled={isLoading || isRateLimited}
+                                  simpleMode={true}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                    <FormField
-                      control={form.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="block text-[11px] uppercase tracking-wide font-bold text-[#1b1b1f] mb-2 ml-1">
-                            Confirmer le mot de passe
-                          </FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <input
-                                type={showConfirmPassword ? 'text' : 'password'}
-                                placeholder="••••••••"
-                                className="w-full bg-[#f7f8fc] rounded-xl px-4 py-3.5 pr-12 text-sm md:text-[15px] text-[#1b1b1f] placeholder:text-slate-300 border border-transparent focus:bg-white focus:border-[#9cb5ff] focus:ring-0 outline-none transition-all"
-                                {...field}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                className="absolute inset-y-0 right-3 flex items-center text-[11px] text-[#6e6e73] hover:text-[#1b1b1f] transition-colors"
-                              >
-                                {showConfirmPassword ? 'Masquer' : 'Afficher'}
-                              </button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        <FormField
+                          control={form.control}
+                          name="confirmPassword"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs font-semibold text-foreground">
+                                Confirmer le mot de passe
+                              </FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Input
+                                    type={showConfirmPassword ? 'text' : 'password'}
+                                    placeholder="••••••••"
+                                    className="h-11 pr-10"
+                                    {...field}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute inset-y-0 right-1 h-full px-2.5 text-muted-foreground hover:text-foreground"
+                                  >
+                                    {showConfirmPassword ? (
+                                      <EyeOff className="h-4 w-4" />
+                                    ) : (
+                                      <Eye className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                    <div className="flex items-start gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 mt-1 rounded border-slate-300 text-[#9cb5ff] focus:ring-[#9cb5ff]"
-                        required
-                      />
-                      <span className="text-[#6e6e73] text-[13px] md:text-sm">
-                        J&apos;accepte les{' '}
-                        <Link
-                          to="/terms"
-                          className="text-[#9cb5ff] hover:text-[#8ca5ef] font-medium"
-                        >
-                          conditions générales
-                        </Link>{' '}
-                        et la{' '}
-                        <Link
-                          to="/privacy"
-                          className="text-[#9cb5ff] hover:text-[#8ca5ef] font-medium"
-                        >
-                          politique de confidentialité
-                        </Link>
-                      </span>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isLoading || isRateLimited || (passwordValidation && !passwordValidation.isValid)}
-                      className="w-full bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isLoading ? (
-                        <div className="flex items-center justify-center gap-3">
-                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Création du compte...
+                        <div className="flex items-start gap-2 text-xs pt-1">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 mt-0.5 rounded border-input text-primary focus:ring-primary"
+                            required
+                          />
+                          <span className="text-muted-foreground">
+                            J&apos;accepte les{' '}
+                            <Link
+                              to="/terms"
+                              className="text-primary hover:underline font-medium"
+                            >
+                              conditions générales
+                            </Link>{' '}
+                            et la{' '}
+                            <Link
+                              to="/privacy"
+                              className="text-primary hover:underline font-medium"
+                            >
+                              politique de confidentialité
+                            </Link>
+                          </span>
                         </div>
-                      ) : isRateLimited ? (
-                        `Attendez ${rateLimitState.retryAfter}s`
-                      ) : (
-                        'Créer mon compte'
-                      )}
-                    </button>
-                  </form>
-                </Form>
 
-                {/* Lien vers login */}
-                <div className="mt-6 text-center">
-                  <p className="text-sm md:text-[15px] text-[#6e6e73]">
-                    Déjà un compte ?{' '}
-                    <Link
-                      to="/login"
-                      className="text-[#9cb5ff] hover:text-[#8ca5ef] font-semibold transition-colors"
-                    >
-                      Se connecter
-                    </Link>
-                  </p>
-                </div>
-              </>
-            )}
+                        <Button
+                          type="submit"
+                          disabled={isLoading || isRateLimited || (passwordValidation ? !passwordValidation.isValid : false)}
+                          className="w-full h-11 text-sm font-semibold mt-4"
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Création du compte...
+                            </>
+                          ) : isRateLimited ? (
+                            `Attendez ${rateLimitState.retryAfter}s`
+                          ) : (
+                            'Créer mon compte'
+                          )}
+                        </Button>
+                      </form>
+                    </Form>
+
+                    {/* Lien vers login */}
+                    <div className="mt-6 text-center">
+                      <p className="text-sm text-muted-foreground">
+                        Déjà un compte ?{' '}
+                        <Link
+                          to="/login"
+                          className="text-primary hover:underline font-semibold"
+                        >
+                          Se connecter
+                        </Link>
+                      </p>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        </div>
-      </main>
+        </main>
 
         {/* Footer */}
         <footer className="w-full px-6 py-4 text-center">
-          <p className="text-sm text-[#6e6e73]">© 2025 Virail. Tous droits réservés.</p>
+          <p className="text-xs text-muted-foreground">© 2025 Viraill. Tous droits réservés.</p>
         </footer>
       </div>
     </>
@@ -303,4 +311,3 @@ export default function Register() {
 }
 
 export { Register };
-

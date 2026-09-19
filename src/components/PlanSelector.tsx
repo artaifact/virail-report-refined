@@ -11,6 +11,7 @@ import { Crown, Star, Zap, Check, CreditCard, Users, BarChart3, Shield, ArrowRig
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
 import { modelLogos } from '@/components/ModelLogosCarousel';
+import { PricingSkeletonLoader } from '@/components/pricing/PricingSkeletonLoader';
 
 // Configuration des modèles AI par plan (niveau : starter → intermédiaire → avancé)
 const AI_MODELS_CONFIG = [
@@ -45,6 +46,52 @@ function getAiModelsForPlan(planId: string): { web: string[]; api: string[] } | 
   if (config) return { web: config.web, api: config.api };
   // Fallback par index de plan (1er = starter, 2e = intermédiaire, etc.)
   return null;
+};
+
+// Fonctions de calcul sécurisées des quotas par plan (aucun undefined)
+const getPlanMaxAnalyses = (p: any): string => {
+  const val = p.maxAnalyses ?? p.max_analyses;
+  if (val === -1) return 'Illimitées';
+  if (typeof val === 'number' && val > 0) return `${val} / mois`;
+  if (typeof val === 'string' && val.trim()) {
+    const num = Number(val);
+    if (num === -1) return 'Illimitées';
+    if (!isNaN(num) && num > 0) return `${num} / mois`;
+  }
+  const id = String(p.id || '').toLowerCase();
+  const name = String(p.name || '').toLowerCase();
+  if (id.includes('starter') || name.includes('starter') || id === 'solo' || id === 'standard') return '10 / mois';
+  if (id.includes('intermediaire') || name.includes('intermédiaire') || id.includes('intermediate')) return '50 / mois';
+  if (id.includes('pro') || name.includes('pro') || id.includes('premium')) return '150 / mois';
+  if (id.includes('enterprise') || id.includes('entreprise') || name.includes('entreprise')) return 'Illimitées';
+  return '10 / mois';
+};
+
+const getPlanMaxReports = (p: any): string => {
+  const val = p.maxReports ?? p.max_reports;
+  if (val === -1) return 'Illimités';
+  if (typeof val === 'number' && val > 0) return `${val} domaine${val > 1 ? 's' : ''}`;
+  if (typeof val === 'string' && val.trim()) {
+    const num = Number(val);
+    if (num === -1) return 'Illimités';
+    if (!isNaN(num) && num > 0) return `${num} domaine${num > 1 ? 's' : ''}`;
+  }
+  if (Array.isArray(p.features)) {
+    for (const f of p.features) {
+      const match = String(f).match(/(\d+)\s*nom(?:s)?\s*de\s*domaine/i);
+      if (match) {
+        const count = parseInt(match[1], 10);
+        return `${count} domaine${count > 1 ? 's' : ''}`;
+      }
+    }
+  }
+  const id = String(p.id || '').toLowerCase();
+  const name = String(p.name || '').toLowerCase();
+  if (id.includes('starter') || name.includes('starter') || id === 'solo' || id === 'standard') return '1 domaine';
+  if (id.includes('intermediaire') || name.includes('intermédiaire') || id.includes('intermediate')) return '3 domaines';
+  if (id.includes('pro') || name.includes('pro') || id.includes('premium')) return '5 domaines';
+  if (id.includes('enterprise') || id.includes('entreprise') || name.includes('entreprise')) return '10 domaines';
+  return '1 domaine';
 };
 
 interface PlanSelectorProps {
@@ -295,11 +342,8 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
 
   if (plans.length === 0) {
     return (
-      <div className={`flex items-center justify-center p-8 ${className}`}>
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement des plans...</p>
-        </div>
+      <div className={`p-2 sm:p-4 ${className}`}>
+        <PricingSkeletonLoader />
       </div>
     );
   }
@@ -307,13 +351,13 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
   return (
     <div className={`plan-selector ${className}`}>
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground mb-2">
           Choisissez votre plan
         </h2>
-        <p className="text-lg text-gray-600">
+        <p className="text-muted-foreground">
           Sélectionnez le plan qui correspond le mieux à vos besoins
         </p>
-        <p className="text-sm font-medium text-green-600 mt-1">
+        <p className="text-sm font-medium text-primary mt-1">
           7 jours d'essai gratuit inclus avec le plan Starter
         </p>
       </div>
@@ -322,16 +366,18 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
         {plans.map((plan) => (
           <Card 
             key={plan.id}
-            className={`relative bg-white rounded-xl transition-all duration-200 hover:shadow-md flex flex-col h-full ${
+            className={`relative rounded-xl transition-all duration-200 hover:shadow-md flex flex-col h-full ${
               isCurrentPlan(plan.id)
-                ? 'border-2 border-primary shadow-md'
-                : 'border border-gray-200 shadow-sm'
+                ? 'border-2 border-primary shadow-md bg-card'
+                : 'border border-border bg-card shadow-sm'
             }`}
           >
             {/* Badge recommandé */}
             {plan.id === 'standard' && (
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs font-semibold px-3 py-0.5 rounded-full">
                   Recommandé
+                </Badge>
               </div>
             )}
 
@@ -345,15 +391,12 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
             )}
 
             <CardHeader className="text-center pb-4">
-              {/* <div className="flex items-center justify-center mb-2">
-                {(plan.id)}
-              </div> */}
-              <CardTitle className="text-xl font-bold text-neutral-900">{plan.name}</CardTitle>
+              <CardTitle className="text-xl font-bold text-foreground">{plan.name}</CardTitle>
               <div className="mt-2 flex items-baseline justify-center gap-1 flex-wrap">
-                <span className="text-2xl font-bold text-neutral-900 whitespace-nowrap">
+                <span className="text-2xl font-bold text-foreground whitespace-nowrap">
                   {formatPrice(plan.price)}
                 </span>
-                <span className="text-neutral-500 text-sm whitespace-nowrap">
+                <span className="text-muted-foreground text-sm whitespace-nowrap">
                   /{plan.interval}
                 </span>
               </div>
@@ -361,17 +404,17 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
             <CardContent className="flex flex-col h-full">
               <div className="flex-1 space-y-4">
                 {/* Quotas clairs et explicites */}
-                <div className="space-y-2.5 text-xs text-neutral-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <div className="space-y-2.5 text-xs text-muted-foreground bg-muted/40 p-3 rounded-lg border border-border">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-slate-700">Analyses mensuelles</span>
-                    <span className="font-bold text-slate-900">
-                      {plan.maxAnalyses === -1 ? 'Illimitées' : `${plan.maxAnalyses} / mois`}
+                    <span className="font-medium text-foreground">Analyses mensuelles</span>
+                    <span className="font-bold text-foreground">
+                      {getPlanMaxAnalyses(plan)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-slate-700">Domaines / Rapports</span>
-                    <span className="font-bold text-slate-900">
-                      {plan.maxReports === -1 ? 'Illimités' : `${plan.maxReports} domaine${plan.maxReports > 1 ? 's' : ''}`}
+                    <span className="font-medium text-foreground">Domaines / Rapports</span>
+                    <span className="font-bold text-foreground">
+                      {getPlanMaxReports(plan)}
                     </span>
                   </div>
                 </div>
@@ -382,18 +425,18 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                   const aiModels = getAiModelsForPlan(plan.id) || (AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)] ? { web: AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)].web, api: AI_MODELS_CONFIG[Math.min(planIndex, AI_MODELS_CONFIG.length - 1)].api } : null);
                   if (!aiModels) return null;
                   return (
-                    <div className="pt-3 border-t border-slate-200 space-y-3">
+                    <div className="pt-3 border-t border-border space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Modèles IA Audités</span>
-                        <span className="text-[10px] text-slate-400 font-medium">{aiModels.web.length} moteurs</span>
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Modèles IA Audités</span>
+                        <span className="text-[10px] text-muted-foreground font-medium">{aiModels.web.length} moteurs</span>
                       </div>
 
                       {/* Web UI scraping */}
                       {aiModels.web.length > 0 && (
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-medium text-slate-600">Moteurs génératifs</span>
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 text-slate-500">Web</Badge>
+                            <span className="text-[11px] font-medium text-foreground">Moteurs génératifs</span>
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 text-muted-foreground">Web</Badge>
                           </div>
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {aiModels.web.map((model) => (
@@ -412,7 +455,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                       {/* API Machine-to-Machine */}
                       <div className="space-y-1.5 pt-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-medium text-slate-600">Accès API programmatique</span>
+                          <span className="text-[11px] font-medium text-foreground">Accès API programmatique</span>
                           <Badge variant={aiModels.api.length > 0 ? "default" : "secondary"} className="text-[9px] px-1.5 py-0">
                             {aiModels.api.length > 0 ? 'Inclus' : 'Option'}
                           </Badge>
@@ -430,7 +473,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                             ))}
                           </div>
                         ) : (
-                          <span className="text-[11px] text-slate-400 italic">
+                          <span className="text-[11px] text-muted-foreground italic">
                             Disponible à partir du plan Pro
                           </span>
                         )}
@@ -440,11 +483,11 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
                 })()}
 
                 {/* Liste des fonctionnalités */}
-                <div className="space-y-2 pt-4 border-t border-primary">
+                <div className="space-y-2 pt-4 border-t border-border">
                   {plan.features.map((feature, index) => (
                     <div key={index} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                      <span className="text-sm text-neutral-700">{feature}</span>
+                      <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                      <span className="text-sm text-muted-foreground">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -452,16 +495,10 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
 
               {/* Bouton d'action - aligné en bas */}
               <Button 
-                className={`w-full mt-6 ${
-                  isCurrentPlan(plan.id)
-                    ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
-                    : isDowngrade(plan.id)
-                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300'
-                    : 'bg-primary hover:bg-primary/90 text-primary-foreground'
-                }`}
+                className="w-full mt-6"
                 onClick={() => handlePlanSelection(plan.id)}
                 disabled={isCurrentPlan(plan.id) || isProcessing}
-                variant={isDowngrade(plan.id) ? 'outline' : 'default'}
+                variant={isCurrentPlan(plan.id) ? 'default' : isDowngrade(plan.id) ? 'outline' : 'default'}
               >
                 {isCurrentPlan(plan.id) ? (
                   <>
@@ -490,7 +527,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
       <Dialog open={isDowngradeDialogOpen} onOpenChange={setIsDowngradeDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-gray-900">
+            <DialogTitle>
               Confirmer le changement de plan
             </DialogTitle>
             <DialogDescription className="pt-2">
@@ -498,14 +535,14 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
               <strong>Vous perdrez l'accès à certaines fonctionnalités avancées</strong> dès la prochaine période de facturation.
             </DialogDescription>
           </DialogHeader>
-          <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 text-sm text-amber-800 mt-2">
+          <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/20 text-sm text-amber-600 dark:text-amber-400 mt-2">
             Plan cible : <strong>{plans.find(p => p.id === pendingDowngradePlanId)?.name || pendingDowngradePlanId}</strong>
           </div>
           <div className="flex gap-3 pt-4">
             <Button variant="outline" onClick={() => setIsDowngradeDialogOpen(false)} className="flex-1">
               Annuler
             </Button>
-            <Button onClick={confirmDowngrade} className="flex-1 bg-primary hover:bg-primary/90 text-white">
+            <Button onClick={confirmDowngrade} className="flex-1">
               Confirmer
             </Button>
           </div>
@@ -528,20 +565,20 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
           <div className="space-y-4">
             <div className="text-center space-y-4">
               {selectedPlanId === 'solo' && (
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-sm font-semibold text-green-700 mb-1">
+                <div className="p-4 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                  <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mb-1">
                     7 jours d'essai gratuit
                   </p>
-                  <p className="text-xs text-green-600">
+                  <p className="text-xs text-muted-foreground">
                     Aucun débit pendant l'essai. Annulez à tout moment.
                   </p>
                 </div>
               )}
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600 mb-2">
+              <div className="p-4 bg-muted/40 border border-border rounded-lg">
+                <p className="text-sm text-foreground mb-2">
                   Vous allez être redirigé vers la page de paiement sécurisée de Stripe
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Vos informations de paiement seront traitées de manière sécurisée
                 </p>
               </div>
@@ -559,11 +596,11 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
               <Button 
                 onClick={handlePayment}
                 disabled={isProcessingPayment}
-                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="flex-1"
               >
                 {isProcessingPayment ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Redirection...
                   </>
                 ) : (

@@ -3,6 +3,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthService } from "@/services/authService";
 import { SessionList } from "@/components/SessionList";
 import {
@@ -47,6 +48,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { onboardingService } from "@/services/onboardingService";
+import { SettingsSkeletonLoader } from "@/components/settings/SettingsSkeletonLoader";
 import {
   useAccountDashboard,
   useStripeInvoices,
@@ -71,17 +73,17 @@ interface UserProfile {
 // Composant pour afficher le statut de l'abonnement
 function SubscriptionStatusBadge({ status }: { status: string }) {
   const statusConfig: Record<string, { label: string; className: string }> = {
-    active: { label: "Actif", className: "bg-green-100 text-green-700" },
-    trialing: { label: "Essai", className: "bg-amber-100 text-amber-700" },
-    cancelled: { label: "Annulé", className: "bg-red-100 text-red-700" },
-    inactive: { label: "Inactif", className: "bg-gray-100 text-gray-700" },
-    pending: { label: "En attente", className: "bg-blue-100 text-blue-700" },
+    active: { label: "Actif", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0 font-medium" },
+    trialing: { label: "Essai", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-0 font-medium" },
+    cancelled: { label: "Annulé", className: "bg-destructive/10 text-destructive border-0 font-medium" },
+    inactive: { label: "Inactif", className: "bg-muted text-muted-foreground border-0 font-medium" },
+    pending: { label: "En attente", className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0 font-medium" },
   };
 
   const config = statusConfig[status] || statusConfig.inactive;
 
   return (
-    <Badge variant="secondary" className={config.className}>
+    <Badge variant="outline" className={config.className}>
       {config.label}
     </Badge>
   );
@@ -90,17 +92,17 @@ function SubscriptionStatusBadge({ status }: { status: string }) {
 // Composant pour afficher le statut d'une facture Stripe
 function InvoiceStatusBadge({ status }: { status: string }) {
   const statusConfig: Record<string, { label: string; className: string }> = {
-    paid: { label: "Payée", className: "bg-green-100 text-green-700" },
-    open: { label: "En attente", className: "bg-amber-100 text-amber-700" },
-    void: { label: "Annulée", className: "bg-gray-100 text-gray-700" },
-    uncollectible: { label: "Impayée", className: "bg-red-100 text-red-700" },
-    draft: { label: "Brouillon", className: "bg-blue-100 text-blue-700" },
+    paid: { label: "Payée", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0 font-medium" },
+    open: { label: "En attente", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-0 font-medium" },
+    void: { label: "Annulée", className: "bg-muted text-muted-foreground border-0 font-medium" },
+    uncollectible: { label: "Impayée", className: "bg-destructive/10 text-destructive border-0 font-medium" },
+    draft: { label: "Brouillon", className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0 font-medium" },
   };
 
-  const config = statusConfig[status] || { label: status, className: "bg-gray-100 text-gray-700" };
+  const config = statusConfig[status] || { label: status, className: "bg-muted text-muted-foreground border-0 font-medium" };
 
   return (
-    <Badge variant="secondary" className={config.className}>
+    <Badge variant="outline" className={config.className}>
       {config.label}
     </Badge>
   );
@@ -396,572 +398,605 @@ const Settings = () => {
 
   if (isDashboardLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background text-foreground pb-12">
         <div className="max-w-6xl mx-auto px-4 py-6 md:px-6 md:py-8">
-          <DashboardSkeleton />
+          <SettingsSkeletonLoader />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-6 md:px-6 md:py-8">
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Paramètres du compte</h1>
-          <p className="text-gray-600 mt-1">
+    <div className="min-h-screen bg-background text-foreground pb-12">
+      <div className="max-w-6xl mx-auto px-4 py-6 md:px-6 md:py-8 space-y-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Paramètres du compte</h1>
+          <p className="text-muted-foreground text-sm mt-1">
             Gérez votre abonnement, vos informations de facturation et vos préférences.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Informations personnelles */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Informations personnelles</h2>
+          <Card className="border-border bg-card shadow-xs">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base font-semibold text-foreground">Informations personnelles</CardTitle>
+            </CardHeader>
 
-            <div className="mb-6">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                <span className="text-2xl sm:text-3xl font-semibold text-white">{getInitial()}</span>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
-                  Prénom
-                </Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="border-gray-300"
-                />
+            <CardContent className="space-y-4">
+              <div className="mb-2">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-2xl">
+                  {getInitial()}
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
-                  Nom
-                </Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="border-gray-300"
-                />
-              </div>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="firstName" className="text-xs font-medium text-foreground">
+                    Prénom
+                  </Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Email</Label>
-                <Input
-                  type="email"
-                  value={userProfile?.email || ""}
-                  disabled
-                  className="bg-gray-50 border-gray-200"
-                />
-              </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="lastName" className="text-xs font-medium text-foreground">
+                    Nom
+                  </Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
 
-              {dashboard?.member_since && (
-                <p className="text-sm text-gray-500">
-                  Membre depuis {formatDate(dashboard.member_since)}
-                </p>
-              )}
-            </div>
-          </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-foreground">Email</Label>
+                  <Input
+                    type="email"
+                    value={userProfile?.email || ""}
+                    disabled
+                    className="bg-muted/40 text-muted-foreground text-sm"
+                  />
+                </div>
+
+                {dashboard?.member_since && (
+                  <p className="text-xs text-muted-foreground pt-1">
+                    Membre depuis {formatDate(dashboard.member_since)}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Abonnement */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Mon Abonnement</h2>
+          <Card className="border-border bg-card shadow-xs">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 space-y-0">
+              <CardTitle className="text-base font-semibold text-foreground">Mon Abonnement</CardTitle>
               {dashboard?.subscription && (
                 <SubscriptionStatusBadge status={dashboard.subscription.status} />
               )}
-            </div>
+            </CardHeader>
 
-            {dashboard?.has_subscription && dashboard.subscription ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-                  <Crown className="h-8 w-8 text-blue-600" />
+            <CardContent>
+              {dashboard?.has_subscription && dashboard.subscription ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl border border-primary/20">
+                    <Crown className="h-7 w-7 text-primary shrink-0" />
+                    <div>
+                      <p className="font-semibold text-foreground">{dashboard.subscription.plan_name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {formatCurrency(dashboard.subscription.plan_price, dashboard.subscription.currency)}
+                        /{dashboard.subscription.interval === "month" ? "mois" : "an"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between py-1 border-b border-border/50">
+                      <span className="text-muted-foreground">Date de début</span>
+                      <span className="font-medium text-foreground">{formatDate(dashboard.subscription.start_date)}</span>
+                    </div>
+                    {dashboard.subscription.next_billing_date && (
+                      <div className="flex justify-between py-1 border-b border-border/50">
+                        <span className="text-muted-foreground">Prochaine facturation</span>
+                        <span className="font-medium text-foreground">{formatDate(dashboard.subscription.next_billing_date)}</span>
+                      </div>
+                    )}
+                    {dashboard.subscription.trial_end && (
+                      <div className="flex justify-between py-1 border-b border-border/50">
+                        <span className="text-muted-foreground">Fin de l'essai</span>
+                        <span className="font-medium text-amber-600 dark:text-amber-400">{formatDate(dashboard.subscription.trial_end)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between py-1">
+                      <span className="text-muted-foreground">Renouvellement auto</span>
+                      <span className="font-medium text-foreground">
+                        {dashboard.subscription.auto_renew ? "Activé" : "Désactivé"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-border">
+                    <Button onClick={handleOpenBillingPortal} variant="outline" size="sm" disabled={billingPortal.isPending} className="text-xs">
+                      {billingPortal.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      ) : (
+                        <SettingsIcon className="h-3.5 w-3.5 mr-1.5" />
+                      )}
+                      Gérer sur Stripe
+                    </Button>
+                    <Button onClick={() => navigate("/pricing")} size="sm" className="text-xs font-semibold">
+                      <ArrowUpRight className="h-3.5 w-3.5 mr-1.5" />
+                      Changer de forfait
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6 space-y-3">
+                  <div className="w-12 h-12 mx-auto bg-muted rounded-full flex items-center justify-center text-muted-foreground">
+                    <Crown className="h-6 w-6" />
+                  </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{dashboard.subscription.plan_name}</p>
-                    <p className="text-sm text-gray-600">
-                      {formatCurrency(dashboard.subscription.plan_price, dashboard.subscription.currency)}
-                      /{dashboard.subscription.interval === "month" ? "mois" : "an"}
-                    </p>
+                    <p className="text-sm font-semibold text-foreground">Aucun abonnement actif</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Passez à un forfait supérieur pour débloquer plus d'audits et de modèles IA.</p>
                   </div>
+                  <Button onClick={() => navigate("/pricing")} size="sm" className="font-semibold text-xs">
+                    <ArrowUpRight className="h-3.5 w-3.5 mr-1.5" />
+                    Découvrir nos offres
+                  </Button>
                 </div>
+              )}
+            </CardContent>
+          </Card>
 
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Date de début</span>
-                    <span className="font-medium">{formatDate(dashboard.subscription.start_date)}</span>
+          {/* Utilisation */}
+          <Card className="border-border bg-card shadow-xs">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 space-y-0">
+              <CardTitle className="text-base font-semibold text-foreground">Utilisation du mois</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+
+            <CardContent>
+              {dashboard?.usage && dashboard.usage.length > 0 ? (
+                <div className="space-y-4">
+                  {dashboard.usage.map((item) => (
+                    <div key={item.feature} className="space-y-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="font-medium text-foreground">{item.feature_label}</span>
+                        <span className="text-muted-foreground">
+                          {item.used} / {item.limit === -1 ? "∞" : item.limit}
+                        </span>
+                      </div>
+                      <Progress
+                        value={item.limit === -1 ? 0 : item.percentage}
+                        className="h-2"
+                      />
+                      {item.reset_date && (
+                        <p className="text-[11px] text-muted-foreground">
+                          Réinitialisation le {formatDate(item.reset_date)}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground text-xs">
+                  Aucune donnée d'utilisation disponible
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Moyen de paiement */}
+          <Card className="border-border bg-card shadow-xs">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 space-y-0">
+              <CardTitle className="text-base font-semibold text-foreground">Moyen de paiement</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+
+            <CardContent>
+              {defaultPaymentMethod ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3.5 p-3.5 bg-muted/40 rounded-xl border border-border">
+                    <div className="w-12 h-8 bg-foreground text-background rounded-md flex items-center justify-center shadow-xs">
+                      <span className="text-[11px] font-bold uppercase">
+                        {defaultPaymentMethod.brand || "Card"}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground">
+                        •••• •••• •••• {defaultPaymentMethod.last4}
+                      </p>
+                      {defaultPaymentMethod.exp_month && defaultPaymentMethod.exp_year && (
+                        <p className="text-xs text-muted-foreground">
+                          Expire {String(defaultPaymentMethod.exp_month).padStart(2, '0')}/{defaultPaymentMethod.exp_year}
+                        </p>
+                      )}
+                    </div>
+                    {defaultPaymentMethod.is_default && (
+                      <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0">
+                        Par défaut
+                      </Badge>
+                    )}
                   </div>
-                  {dashboard.subscription.next_billing_date && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Prochaine facturation</span>
-                      <span className="font-medium">{formatDate(dashboard.subscription.next_billing_date)}</span>
+
+                  {/* Prochaine facture */}
+                  {upcomingInvoice && (
+                    <div className="p-3 bg-primary/5 rounded-xl border border-primary/20 text-xs text-primary flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5 shrink-0" />
+                      <span>Prochaine facture :</span>
+                      <strong className="font-semibold">
+                        {formatCurrency(upcomingInvoice.total, upcomingInvoice.currency)}
+                      </strong>
+                      {upcomingInvoice.next_payment_attempt && (
+                        <span>le {formatDate(upcomingInvoice.next_payment_attempt)}</span>
+                      )}
                     </div>
                   )}
-                  {dashboard.subscription.trial_end && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Fin de l'essai</span>
-                      <span className="font-medium text-amber-600">{formatDate(dashboard.subscription.trial_end)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Renouvellement auto</span>
-                    <span className="font-medium">
-                      {dashboard.subscription.auto_renew ? "Activé" : "Désactivé"}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-100">
-                  <Button onClick={handleOpenBillingPortal} variant="outline" size="sm" disabled={billingPortal.isPending}>
+                  <Button
+                    onClick={handleOpenBillingPortal}
+                    variant="outline"
+                    className="w-full text-xs"
+                    disabled={billingPortal.isPending}
+                  >
                     {billingPortal.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                     ) : (
-                      <SettingsIcon className="h-4 w-4 mr-2" />
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
                     )}
                     Gérer sur Stripe
                   </Button>
-                  <Button onClick={() => navigate("/pricing")} size="sm" className="bg-blue-600 hover:bg-blue-700">
-                    <ArrowUpRight className="h-4 w-4 mr-2" />
-                    Améliorer
+                </div>
+              ) : (
+                <div className="text-center py-6 space-y-3">
+                  <div className="w-12 h-12 mx-auto bg-muted rounded-full flex items-center justify-center text-muted-foreground">
+                    <CreditCard className="h-6 w-6" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Aucun moyen de paiement enregistré</p>
+                  <Button
+                    onClick={handleOpenBillingPortal}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    disabled={billingPortal.isPending}
+                  >
+                    {billingPortal.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                    )}
+                    Ajouter sur Stripe
                   </Button>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                  <Crown className="h-8 w-8 text-gray-400" />
-                </div>
-                <p className="text-gray-600 mb-4">Aucun abonnement actif</p>
-                <Button onClick={() => navigate("/pricing")} className="bg-blue-600 hover:bg-blue-700">
-                  <ArrowUpRight className="h-4 w-4 mr-2" />
-                  Découvrir nos offres
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Utilisation */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Utilisation du mois</h2>
-              <TrendingUp className="h-5 w-5 text-gray-400" />
-            </div>
-
-            {dashboard?.usage && dashboard.usage.length > 0 ? (
-              <div className="space-y-5">
-                {dashboard.usage.map((item) => (
-                  <div key={item.feature} className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-gray-700">{item.feature_label}</span>
-                      <span className="text-gray-600">
-                        {item.used}/{item.limit === -1 ? "∞" : item.limit}
-                      </span>
-                    </div>
-                    <Progress
-                      value={item.limit === -1 ? 0 : item.percentage}
-                      className={cn(
-                        "h-2",
-                        item.percentage >= 90 && "bg-red-100 [&>div]:bg-red-500",
-                        item.percentage >= 70 && item.percentage < 90 && "bg-amber-100 [&>div]:bg-amber-500"
-                      )}
-                    />
-                    {item.reset_date && (
-                      <p className="text-xs text-gray-500">
-                        Réinitialisation le {formatDate(item.reset_date)}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-gray-500">
-                <p>Aucune donnée d'utilisation disponible</p>
-              </div>
-            )}
-          </div>
-
-          {/* Moyen de paiement */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Moyen de paiement</h2>
-              <CreditCard className="h-5 w-5 text-gray-400" />
-            </div>
-
-            {defaultPaymentMethod ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="w-14 h-9 bg-gradient-to-r from-slate-700 to-slate-900 rounded-md flex items-center justify-center shadow">
-                    <span className="text-white text-xs font-bold uppercase">
-                      {defaultPaymentMethod.brand || "Card"}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">
-                      •••• •••• •••• {defaultPaymentMethod.last4}
-                    </p>
-                    {defaultPaymentMethod.exp_month && defaultPaymentMethod.exp_year && (
-                      <p className="text-sm text-gray-500">
-                        Expire {String(defaultPaymentMethod.exp_month).padStart(2, '0')}/{defaultPaymentMethod.exp_year}
-                      </p>
-                    )}
-                  </div>
-                  {defaultPaymentMethod.is_default && (
-                    <Badge variant="secondary" className="bg-green-100 text-green-700">
-                      Par défaut
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Prochaine facture */}
-                {upcomingInvoice && (
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="flex items-center flex-wrap gap-2 text-sm text-blue-700">
-                      <Calendar className="h-4 w-4" />
-                      <span>Prochaine facture :</span>
-                      <span className="font-semibold">
-                        {formatCurrency(upcomingInvoice.total, upcomingInvoice.currency)}
-                      </span>
-                      {upcomingInvoice.next_payment_attempt && (
-                        <span className="text-blue-600">
-                          le {formatDate(upcomingInvoice.next_payment_attempt)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <Button
-                  onClick={handleOpenBillingPortal}
-                  variant="outline"
-                  className="w-full"
-                  disabled={billingPortal.isPending}
-                >
-                  {billingPortal.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                  )}
-                  Gérer sur Stripe
-                </Button>
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                  <CreditCard className="h-8 w-8 text-gray-400" />
-                </div>
-                <p className="text-gray-600 mb-4">Aucun moyen de paiement enregistré</p>
-                <Button
-                  onClick={handleOpenBillingPortal}
-                  variant="outline"
-                  disabled={billingPortal.isPending}
-                >
-                  {billingPortal.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <CreditCard className="h-4 w-4 mr-2" />
-                  )}
-                  Ajouter sur Stripe
-                </Button>
-              </div>
-            )}
-          </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Informations du compte */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Informations du compte</h2>
+          <Card className="border-border bg-card shadow-xs lg:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 space-y-0">
+              <div>
+                <CardTitle className="text-base font-semibold text-foreground">Informations du compte</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                  Renseignez votre organisation et domaine principal
+                </CardDescription>
+              </div>
               {accountData && !isEditingAccount && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEditingAccount(true)}
-                  className="gap-2 text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900"
+                  className="gap-1.5 text-xs"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                   Modifier
                 </Button>
               )}
-            </div>
+            </CardHeader>
 
-            {isAccountDataLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-9 w-full" />
-                  </div>
-                ))}
-              </div>
-            ) : accountData ? (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {accountData.account_type && (
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">Type de compte</Label>
-                      <Input
-                        value={accountData.account_type === "agency" ? "Agence" : "In-house"}
-                        disabled
-                        className="bg-gray-50 border-gray-200"
-                      />
+            <CardContent>
+              {isAccountDataLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="space-y-1.5">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-9 w-full" />
                     </div>
-                  )}
-
-                  {accountData.location_country && (
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">Pays</Label>
-                      <Input
-                        value={`${accountData.location_country}${accountData.location_country_code ? ` (${accountData.location_country_code})` : ""}`}
-                        disabled
-                        className="bg-gray-50 border-gray-200"
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="brandName" className="text-sm font-medium text-gray-700">Marque</Label>
-                    <Input
-                      id="brandName"
-                      value={editBrandName}
-                      onChange={(e) => setEditBrandName(e.target.value)}
-                      placeholder="Nom de votre marque"
-                      disabled={!isEditingAccount}
-                      className={!isEditingAccount ? "bg-gray-50 border-gray-200 text-gray-700" : "border-gray-300"}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="brandUrl" className="text-sm font-medium text-gray-700">URL de la marque</Label>
-                    <Input
-                      id="brandUrl"
-                      value={editBrandUrl}
-                      onChange={(e) => setEditBrandUrl(e.target.value)}
-                      placeholder="https://votre-marque.com"
-                      disabled={!isEditingAccount}
-                      className={!isEditingAccount ? "bg-gray-50 border-gray-200 text-gray-700" : "border-gray-300"}
-                    />
-                  </div>
-
-                  {accountData.account_type === "agency" && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="agencyName" className="text-sm font-medium text-gray-700">Agence</Label>
+                  ))}
+                </div>
+              ) : accountData ? (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {accountData.account_type && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-foreground">Type de compte</Label>
                         <Input
-                          id="agencyName"
-                          value={editAgencyName}
-                          onChange={(e) => setEditAgencyName(e.target.value)}
-                          placeholder="Nom de votre agence"
-                          disabled={!isEditingAccount}
-                          className={!isEditingAccount ? "bg-gray-50 border-gray-200 text-gray-700" : "border-gray-300"}
+                          value={accountData.account_type === "agency" ? "Agence" : "In-house"}
+                          disabled
+                          className="bg-muted/40 text-muted-foreground text-sm"
                         />
                       </div>
+                    )}
 
-                      <div className="space-y-2">
-                        <Label htmlFor="agencyUrl" className="text-sm font-medium text-gray-700">URL de l’agence</Label>
+                    {accountData.location_country && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-foreground">Pays</Label>
                         <Input
-                          id="agencyUrl"
-                          value={editAgencyUrl}
-                          onChange={(e) => setEditAgencyUrl(e.target.value)}
-                          placeholder="https://votre-agence.com"
-                          disabled={!isEditingAccount}
-                          className={!isEditingAccount ? "bg-gray-50 border-gray-200 text-gray-700" : "border-gray-300"}
+                          value={`${accountData.location_country}${accountData.location_country_code ? ` (${accountData.location_country_code})` : ""}`}
+                          disabled
+                          className="bg-muted/40 text-muted-foreground text-sm"
                         />
                       </div>
-                    </>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="brandName" className="text-xs font-medium text-foreground">Marque</Label>
+                      <Input
+                        id="brandName"
+                        value={editBrandName}
+                        onChange={(e) => setEditBrandName(e.target.value)}
+                        placeholder="Nom de votre marque"
+                        disabled={!isEditingAccount}
+                        className={!isEditingAccount ? "bg-muted/40 text-muted-foreground text-sm" : "text-sm"}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="brandUrl" className="text-xs font-medium text-foreground">URL de la marque</Label>
+                      <Input
+                        id="brandUrl"
+                        value={editBrandUrl}
+                        onChange={(e) => setEditBrandUrl(e.target.value)}
+                        placeholder="https://votre-marque.com"
+                        disabled={!isEditingAccount}
+                        className={!isEditingAccount ? "bg-muted/40 text-muted-foreground text-sm" : "text-sm"}
+                      />
+                    </div>
+
+                    {accountData.account_type === "agency" && (
+                      <>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="agencyName" className="text-xs font-medium text-foreground">Agence</Label>
+                          <Input
+                            id="agencyName"
+                            value={editAgencyName}
+                            onChange={(e) => setEditAgencyName(e.target.value)}
+                            placeholder="Nom de votre agence"
+                            disabled={!isEditingAccount}
+                            className={!isEditingAccount ? "bg-muted/40 text-muted-foreground text-sm" : "text-sm"}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label htmlFor="agencyUrl" className="text-xs font-medium text-foreground">URL de l’agence</Label>
+                          <Input
+                            id="agencyUrl"
+                            value={editAgencyUrl}
+                            onChange={(e) => setEditAgencyUrl(e.target.value)}
+                            placeholder="https://votre-agence.com"
+                            disabled={!isEditingAccount}
+                            className={!isEditingAccount ? "bg-muted/40 text-muted-foreground text-sm" : "text-sm"}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {isEditingAccount && (
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCancelEditAccount}
+                        disabled={isSavingAccount}
+                        className="gap-1.5 text-xs"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        Annuler
+                      </Button>
+                      <Button
+                        onClick={handleSaveAccountData}
+                        disabled={isSavingAccount}
+                        size="sm"
+                        className="gap-1.5 text-xs font-semibold"
+                      >
+                        {isSavingAccount ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : null}
+                        {isSavingAccount ? "Enregistrement..." : "Enregistrer"}
+                      </Button>
+                    </div>
                   )}
                 </div>
-
-                {isEditingAccount && (
-                  <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCancelEditAccount}
-                      disabled={isSavingAccount}
-                      className="gap-2 text-gray-500 hover:text-gray-700"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                      Annuler
-                    </Button>
-                    <Button
-                      onClick={handleSaveAccountData}
-                      disabled={isSavingAccount}
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 gap-2"
-                    >
-                      {isSavingAccount ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : null}
-                      {isSavingAccount ? "Enregistrement..." : "Enregistrer"}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">Aucune information de compte disponible.</p>
-            )}
-          </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Aucune information de compte disponible.</p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Sessions actives */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm lg:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <Shield className="h-5 w-5 text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900">Sécurité & Sessions</h2>
-            </div>
-            <p className="text-sm text-gray-600 mb-6">
-              Gérez les appareils connectés à votre compte et déconnectez les sessions suspectes.
-            </p>
-            <SessionList />
-          </div>
+          <Card className="border-border bg-card shadow-xs lg:col-span-2">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base font-semibold text-foreground">Sécurité & Sessions</CardTitle>
+              </div>
+              <CardDescription className="text-xs text-muted-foreground">
+                Gérez les appareils connectés à votre compte et déconnectez les sessions suspectes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SessionList />
+            </CardContent>
+          </Card>
 
           {/* Factures Stripe */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4 md:p-6 shadow-sm lg:col-span-2">
-            <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Mes Factures</h2>
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={handleOpenBillingPortal}
-                  variant="outline"
-                  size="sm"
-                  disabled={billingPortal.isPending}
-                >
-                  {billingPortal.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                  )}
-                  Portail Stripe
-                </Button>
+          <Card className="border-border bg-card shadow-xs lg:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-4 space-y-0">
+              <div>
+                <CardTitle className="text-base font-semibold text-foreground">Mes Factures</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                  Consultez et téléchargez vos reçus de paiement
+                </CardDescription>
               </div>
-            </div>
-
-            {isInvoicesLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : invoicesData?.invoices && invoicesData.invoices.length > 0 ? (
-              <>
-                <div className="overflow-x-auto">
-                  <Table className="min-w-[600px]">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>N° Facture</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Montant</TableHead>
-                        <TableHead>Statut</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {invoicesData.invoices.map((invoice) => (
-                        <TableRow key={invoice.id} className="group">
-                          <TableCell className="font-medium">{invoice.number}</TableCell>
-                          <TableCell>{formatDate(invoice.created)}</TableCell>
-                          <TableCell className="font-semibold">
-                            {formatCurrency(invoice.total, invoice.currency)}
-                          </TableCell>
-                          <TableCell>
-                            <InvoiceStatusBadge status={invoice.status} />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setSelectedInvoice(invoice)}
-                                title="Voir le détail"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              {invoice.pdf_url && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => window.open(invoice.pdf_url!, '_blank')}
-                                  title="Télécharger le PDF"
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {invoice.hosted_invoice_url && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => window.open(invoice.hosted_invoice_url!, '_blank')}
-                                  title="Voir sur Stripe"
-                                >
-                                  <ExternalLink className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {invoicesData.has_more && (
-                  <div className="flex justify-center mt-4 pt-4 border-t border-gray-100">
-                    <Button
-                      variant="outline"
-                      onClick={handleLoadMoreInvoices}
-                    >
-                      Charger plus
-                      <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </div>
+              <Button
+                onClick={handleOpenBillingPortal}
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1.5"
+                disabled={billingPortal.isPending}
+              >
+                {billingPortal.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-3.5 w-3.5" />
                 )}
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                  <FileText className="h-8 w-8 text-gray-400" />
+                Portail Stripe
+              </Button>
+            </CardHeader>
+
+            <CardContent>
+              {isInvoicesLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
                 </div>
-                <p className="text-gray-600">Aucune facture pour le moment</p>
-              </div>
-            )}
-          </div>
+              ) : invoicesData?.invoices && invoicesData.invoices.length > 0 ? (
+                <>
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-[600px]">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>N° Facture</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Montant</TableHead>
+                          <TableHead>Statut</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {invoicesData.invoices.map((invoice) => (
+                          <TableRow key={invoice.id} className="group">
+                            <TableCell className="font-medium text-xs">{invoice.number}</TableCell>
+                            <TableCell className="text-xs">{formatDate(invoice.created)}</TableCell>
+                            <TableCell className="font-semibold text-xs">
+                              {formatCurrency(invoice.total, invoice.currency)}
+                            </TableCell>
+                            <TableCell>
+                              <InvoiceStatusBadge status={invoice.status} />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setSelectedInvoice(invoice)}
+                                  title="Voir le détail"
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                                {invoice.pdf_url && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => window.open(invoice.pdf_url!, '_blank')}
+                                    title="Télécharger le PDF"
+                                    className="h-7 w-7 p-0"
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                {invoice.hosted_invoice_url && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => window.open(invoice.hosted_invoice_url!, '_blank')}
+                                    title="Voir sur Stripe"
+                                    className="h-7 w-7 p-0"
+                                  >
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {invoicesData.has_more && (
+                    <div className="flex justify-center mt-4 pt-4 border-t border-border">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleLoadMoreInvoices}
+                        className="text-xs gap-1.5"
+                      >
+                        Charger plus
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 mx-auto mb-3 bg-muted rounded-full flex items-center justify-center text-muted-foreground">
+                    <FileText className="h-6 w-6" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Aucune facture pour le moment</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Stats globales */}
           {dashboard?.total_spent !== undefined && dashboard.total_spent > 0 && (
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-4 md:p-6 shadow-sm lg:col-span-2 text-white">
-              <h2 className="text-lg font-semibold mb-4">Récapitulatif</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div>
-                  <p className="text-blue-200 text-sm">Total dépensé</p>
-                  <p className="text-lg sm:text-2xl font-bold">{formatCurrency(dashboard.total_spent)}</p>
+            <Card className="border-border bg-card shadow-xs lg:col-span-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base font-semibold text-foreground">Récapitulatif financier</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                  <div className="p-3 rounded-xl bg-muted/40 border border-border">
+                    <p className="text-xs text-muted-foreground">Total dépensé</p>
+                    <p className="text-lg font-bold text-foreground mt-0.5">{formatCurrency(dashboard.total_spent)}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-muted/40 border border-border">
+                    <p className="text-xs text-muted-foreground">Factures</p>
+                    <p className="text-lg font-bold text-foreground mt-0.5">{invoicesData?.invoices?.length || 0}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-muted/40 border border-border">
+                    <p className="text-xs text-muted-foreground">Membre depuis</p>
+                    <p className="text-lg font-bold text-foreground mt-0.5">
+                      {dashboard.member_since
+                        ? new Date(dashboard.member_since).toLocaleDateString("fr-FR", {
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "—"}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-muted/40 border border-border">
+                    <p className="text-xs text-muted-foreground">Statut</p>
+                    <p className="text-lg font-bold text-foreground mt-0.5">
+                      {dashboard.has_subscription ? "Premium" : "Gratuit"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-blue-200 text-sm">Factures</p>
-                  <p className="text-lg sm:text-2xl font-bold">{invoicesData?.invoices?.length || 0}</p>
-                </div>
-                <div>
-                  <p className="text-blue-200 text-sm">Membre depuis</p>
-                  <p className="text-lg sm:text-2xl font-bold">
-                    {dashboard.member_since
-                      ? new Date(dashboard.member_since).toLocaleDateString("fr-FR", {
-                          month: "short",
-                          year: "numeric",
-                        })
-                      : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-blue-200 text-sm">Statut</p>
-                  <p className="text-lg sm:text-2xl font-bold">
-                    {dashboard.has_subscription ? "Premium" : "Gratuit"}
-                  </p>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>

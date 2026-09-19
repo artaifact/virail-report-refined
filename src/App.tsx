@@ -4,9 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import * as React from "react";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Separator } from "@/components/ui/separator";
+import { AppHeader } from "@/components/AppHeader";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PaymentProvider } from "@/contexts/PaymentContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -91,11 +91,7 @@ function MainLayout() {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <SidebarInset className="flex-1 overflow-x-hidden">
-          <header className="flex h-12 shrink-0 items-center gap-2 px-4 border-b border-border bg-background/95 backdrop-blur-sm md:hidden">
-            <SidebarTrigger className="-ml-1 h-8 w-8 text-muted-foreground" />
-            <Separator orientation="vertical" className="mr-1 h-4" />
-            <span className="text-sm font-medium text-foreground truncate">{domainName || "Viraill"}</span>
-          </header>
+          <AppHeader domainName={domainName} />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/analyses" element={<Analyses />} />

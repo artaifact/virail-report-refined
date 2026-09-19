@@ -239,215 +239,196 @@ const SiteOptimization: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex-1 min-h-screen bg-background">
+    <div className="flex-1 min-h-screen bg-background text-foreground">
       <div className="max-w-6xl mx-auto">
         {/* Hero Header Section */}
-        <div className="relative overflow-hidden bg-card px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-12 border-b border-border">
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 bg-neutral-50/50"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center justify-between">
+        <div className="px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10 border-b border-border bg-card">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div className="max-w-3xl">
-              {/* <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center">
-                  <Rocket className="w-6 h-6 text-white" />
-                </div>
-                <Badge className="bg-neutral-900 text-white border-neutral-900">
-                  🚀 Optimisation IA
-                </Badge>
-              </div> */}
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-3">
+                <Rocket className="w-3.5 h-3.5" />
+                Moteur d'Optimisation IA
+              </div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-2">
                 Optimisation de Sites
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 leading-relaxed">
-                Optimisez vos contenus avec l'intelligence artificielle et boostez vos performances.
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                Optimisez vos contenus et structures pour maximiser votre visibilité sur les moteurs de réponse et agents IA.
               </p>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-                <Dialog open={isAnalysisDialogOpen} onOpenChange={setIsAnalysisDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm font-semibold px-6 py-3 h-auto"
-                      disabled={isAnalyzing}
-                    >
-                      {isAnalyzing ? <Loader2 className="h-5 w-5 mr-2 animate-spin text-blue-600" /> : <BarChart3 className="h-5 w-5 mr-2" />}
-                      {isAnalyzing ? "Analyse en cours..." : "Nouvelle Optimisation"}
-                    </Button>
-                  </DialogTrigger>
-                </Dialog>
-                {/* <Button 
-                  variant="outline"
-                  className="border-neutral-200 text-neutral-700 hover:bg-neutral-50 px-6 py-3 h-auto"
-                  onClick={() => navigate('/analyses')}
-                >
-                  <Brain className="h-5 w-5 mr-2" />
-                  Voir les analyses
-                </Button> */}
-              </div>
             </div>
             
+            <div className="flex items-center gap-3 shrink-0">
+              <Dialog open={isAnalysisDialogOpen} onOpenChange={setIsAnalysisDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    className="gap-2 shadow-sm font-semibold"
+                    disabled={isAnalyzing}
+                  >
+                    {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
+                    {isAnalyzing ? "Analyse en cours..." : "Nouvelle Optimisation"}
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 space-y-8">
-        {/* Dialog */}
-        <Dialog open={isAnalysisDialogOpen} onOpenChange={setIsAnalysisDialogOpen}>
-          <DialogContent className="sm:max-w-md bg-card text-foreground border border-border">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-foreground">
-                <Rocket className="h-5 w-5 text-foreground" />
-                Optimisation GEO
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Entrez l'URL du site web que vous souhaitez optimiser directement avec notre moteur GEO.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="site-analysis-url" className="text-foreground">URL du site web</Label>
-                <Input
-                  id="site-analysis-url"
-                  placeholder="exemple.com"
-                  value={newAnalysisUrl}
-                  onChange={(e) => setNewAnalysisUrl(e.target.value)}
-                  disabled={isAnalyzing}
-                  className="border border-border focus:border-primary bg-card text-foreground"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-foreground">Type d'analyse</Label>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="site-analysis-optimization"
-                    checked={includeOptimization}
-                    onCheckedChange={(checked) => setIncludeOptimization(checked as boolean)}
-                    disabled={isAnalyzing}
-                  />
-                  <Label htmlFor="site-analysis-optimization" className="text-sm font-normal text-foreground">
-                    Inclure l'optimisation automatique
-                  </Label>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {includeOptimization 
-                    ? "Analyse complète avec recommandations d'optimisation" 
-                    : "Analyse simple sans optimisation"
-                  }
-                </p>
-              </div>
-              
-              {isAnalyzing && (
+        {/* Main Content */}
+        <div className="px-4 py-6 sm:px-6 md:px-8 space-y-8">
+          {/* Dialog */}
+          <Dialog open={isAnalysisDialogOpen} onOpenChange={setIsAnalysisDialogOpen}>
+            <DialogContent className="sm:max-w-md bg-card text-foreground border border-border">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-foreground">
+                  <Rocket className="h-5 w-5 text-primary" />
+                  Optimisation GEO
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Entrez l'URL du site web que vous souhaitez optimiser directement avec notre moteur GEO.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Progression de l'analyse</span>
-                    <span>{Math.round(analysisProgress)}%</span>
+                  <Label htmlFor="site-analysis-url" className="text-foreground">URL du site web</Label>
+                  <Input
+                    id="site-analysis-url"
+                    placeholder="exemple.com"
+                    value={newAnalysisUrl}
+                    onChange={(e) => setNewAnalysisUrl(e.target.value)}
+                    disabled={isAnalyzing}
+                    className="border border-border focus:border-primary bg-background text-foreground"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-foreground">Type d'analyse</Label>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="site-analysis-optimization"
+                      checked={includeOptimization}
+                      onCheckedChange={(checked) => setIncludeOptimization(checked as boolean)}
+                      disabled={isAnalyzing}
+                    />
+                    <Label htmlFor="site-analysis-optimization" className="text-sm font-normal text-foreground cursor-pointer">
+                      Inclure l'optimisation automatique
+                    </Label>
                   </div>
-                  <Progress value={analysisProgress} className="h-3" />
+                  <p className="text-xs text-muted-foreground">
+                    {includeOptimization 
+                      ? "Analyse complète avec recommandations d'optimisation" 
+                      : "Analyse simple sans optimisation"
+                    }
+                  </p>
                 </div>
-              )}
-              
-              <div className="flex gap-2 pt-4">
-                <Button 
-                  onClick={handleStartNewAnalysis}
-                  disabled={!newAnalysisUrl.trim() || isAnalyzing}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  {isAnalyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" /> : <Rocket className="h-4 w-4 mr-2" />}
-                  {isAnalyzing ? 'Optimisation en cours...' : 'Lancer l\'Optimisation'}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setIsAnalysisDialogOpen(false);
-                    setNewAnalysisUrl("");
-                  }}
-                  disabled={isAnalyzing}
-                  className="border border-border text-foreground hover:bg-muted"
-                >
-                  Annuler
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-
-        {/* Sites Overview */}
-        <SiteUrlsOverview />
-
-        {/* Enhanced Guide */}
-        <Card className="border border-border shadow-sm bg-card overflow-hidden">
-          <CardHeader className="bg-muted">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-3 text-xl text-foreground">
-                  <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center">
-                    <Settings className="h-5 w-5 text-foreground" />
+                
+                {isAnalyzing && (
+                  <div className="space-y-2 pt-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Progression de l'analyse</span>
+                      <span className="font-mono font-medium">{Math.round(analysisProgress)}%</span>
+                    </div>
+                    <Progress value={analysisProgress} className="h-2" />
                   </div>
-                  Comment procéder ?
-                </CardTitle>
-                <CardDescription className="mt-2 text-muted-foreground">
-                  Guide rapide pour optimiser le contenu de vos sites avec l'IA
-                </CardDescription>
-              </div>
-              <Badge className="bg-muted text-foreground">Guide</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-              <div className="group space-y-4">
-                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <span className="text-primary-foreground font-bold text-lg">1</span>
+                )}
+                
+                <div className="flex gap-2 pt-4 justify-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsAnalysisDialogOpen(false);
+                      setNewAnalysisUrl("");
+                    }}
+                    disabled={isAnalyzing}
+                  >
+                    Annuler
+                  </Button>
+                  <Button 
+                    onClick={handleStartNewAnalysis}
+                    disabled={!newAnalysisUrl.trim() || isAnalyzing}
+                    className="gap-2"
+                  >
+                    {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+                    {isAnalyzing ? 'Optimisation en cours...' : 'Lancer l\'Optimisation'}
+                  </Button>
                 </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Sites Overview */}
+          <SiteUrlsOverview />
+
+          {/* Enhanced Guide */}
+          <Card className="border border-border shadow-sm bg-card overflow-hidden">
+            <CardHeader className="bg-muted/30 border-b border-border">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-bold text-foreground text-lg mb-2">Sélectionnez un site</h4>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Choisissez un site parmi ceux déjà analysés ou lancez une nouvelle analyse GEO pour découvrir de nouvelles opportunités.
-                  </p>
+                  <CardTitle className="flex items-center gap-3 text-lg text-foreground">
+                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary">
+                      <Settings className="h-4 w-4" />
+                    </div>
+                    Comment procéder ?
+                  </CardTitle>
+                  <CardDescription className="mt-1 text-muted-foreground text-xs sm:text-sm">
+                    Guide rapide pour optimiser le contenu de vos sites avec l'IA
+                  </CardDescription>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Analyse automatique</span>
+                <Badge variant="secondary">Guide</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="group space-y-3 p-4 rounded-xl bg-muted/20 border border-border/50">
+                  <div className="w-9 h-9 bg-primary/10 text-primary font-bold rounded-lg flex items-center justify-center text-sm">
+                    1
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground text-base mb-1">Sélectionnez un site</h4>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      Choisissez un site parmi ceux déjà analysés ou lancez une nouvelle analyse GEO pour découvrir de nouvelles opportunités.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                    <CheckCircle className="h-3.5 w-3.5 text-primary" />
+                    <span>Analyse automatique</span>
+                  </div>
+                </div>
+                
+                <div className="group space-y-3 p-4 rounded-xl bg-muted/20 border border-border/50">
+                  <div className="w-9 h-9 bg-primary/10 text-primary font-bold rounded-lg flex items-center justify-center text-sm">
+                    2
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground text-base mb-1">Configurez l'optimisation</h4>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      Définissez votre stratégie, audience cible et contraintes pour une optimisation textuelle personnalisée et efficace.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                    <Settings className="h-3.5 w-3.5 text-primary" />
+                    <span>Personnalisation avancée</span>
+                  </div>
+                </div>
+                
+                <div className="group space-y-3 p-4 rounded-xl bg-muted/20 border border-border/50">
+                  <div className="w-9 h-9 bg-primary/10 text-primary font-bold rounded-lg flex items-center justify-center text-sm">
+                    3
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground text-base mb-1">Obtenez vos résultats</h4>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      Récupérez le contenu optimisé avec une analyse détaillée et des recommandations d'amélioration basées sur l'IA.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                    <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                    <span>Résultats mesurables</span>
+                  </div>
                 </div>
               </div>
-              
-              <div className="group space-y-4">
-                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <span className="text-primary-foreground font-bold text-lg">2</span>
-                </div>
-                <div>
-                  <h4 className="font-bold text-foreground text-lg mb-2">Configurez l'optimisation</h4>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Définissez votre stratégie, audience cible et contraintes pour une optimisation textuelle personnalisée et efficace.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Settings className="h-4 w-4" />
-                  <span>Personnalisation avancée</span>
-                </div>
-              </div>
-              
-              <div className="group space-y-4">
-                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <span className="text-primary-foreground font-bold text-lg">3</span>
-                </div>
-                <div>
-                  <h4 className="font-bold text-foreground text-lg mb-2">Obtenez vos résultats</h4>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Récupérez le contenu optimisé avec une analyse détaillée et des recommandations d'amélioration basées sur l'IA.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>Résultats mesurables</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

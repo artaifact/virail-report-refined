@@ -195,7 +195,7 @@ export function ProjectStep() {
         <Button
           onClick={handleBack}
           variant="outline"
-          className="px-6 border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
+          className="h-12 px-6 rounded-xl"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Précédent
@@ -203,21 +203,16 @@ export function ProjectStep() {
         <Button
           onClick={handleNext}
           disabled={!canProceed() || isSubmitting}
-          className={cn(
-            "px-8 py-6 text-base font-semibold transition-all rounded-meetmind-button",
-            canProceed() && !isSubmitting
-              ? "text-white bg-meetmind-primary hover:bg-meetmind-soft-blue shadow-[0_4px_6px_-1px_rgba(26,58,255,0.3),0_2px_4px_-1px_rgba(26,58,255,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(26,58,255,0.4),0_4px_6px_-2px_rgba(26,58,255,0.2)]"
-              : "bg-muted text-muted-foreground cursor-not-allowed"
-          )}
+          className="h-12 px-8 text-base font-semibold rounded-xl"
         >
           {isSubmitting ? (
             <>
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-              <span className="opacity-80">Continuer</span>
+              <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+              <span>Continuer</span>
             </>
           ) : (
             <>
-              Continuer
+              <span>Continuer</span>
               <ChevronRight className="ml-2 h-5 w-5" />
             </>
           )}

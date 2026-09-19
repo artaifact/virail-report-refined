@@ -3,8 +3,33 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Info, Download, Edit, Plus, ChevronDown, ChevronUp, Search, BarChart3, MoreVertical, X, Trash2 } from "lucide-react";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { 
+  Info, 
+  Download, 
+  Edit, 
+  Plus, 
+  ChevronDown, 
+  ChevronUp, 
+  Search, 
+  BarChart3, 
+  MoreVertical, 
+  X, 
+  Trash2, 
+  CheckCircle2, 
+  XCircle,
+  Sparkles
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -154,305 +179,257 @@ const OptimizationAgent = () => {
 
   const getColorClass = (color: string, type: 'indicator' | 'dot' = 'indicator') => {
     const colors = {
-      purple: type === 'indicator' ? 'bg-[#7C3AED]' : 'bg-[#7C3AED]',
-      green: type === 'indicator' ? 'bg-[#10B981]' : 'bg-[#10B981]',
-      orange: type === 'indicator' ? 'bg-[#F97316]' : 'bg-[#F97316]',
-      teal: type === 'indicator' ? 'bg-[#14B8A6]' : 'bg-[#14B8A6]'
+      purple: 'bg-purple-500',
+      green: 'bg-emerald-500',
+      orange: 'bg-amber-500',
+      teal: 'bg-teal-500',
+      blue: 'bg-blue-500'
     };
-    return colors[color as keyof typeof colors] || 'bg-gray-500';
+    return colors[color as keyof typeof colors] || 'bg-muted-foreground';
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F6F7] p-3 sm:p-4 md:p-6">
-      <div className="mx-auto space-y-6" style={{ maxWidth: '1700px' }}>
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header avec titre et filtres */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Prompts.</h1>
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Prompts & Sujets</h1>
+              <p className="text-muted-foreground text-sm mt-1">
+                Explorez les sujets et prompts qui génèrent la visibilité dans les moteurs de réponse et agents IA.
+              </p>
+            </div>
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-              <div className="relative">
-                <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px] border-gray-300 bg-white hover:bg-gray-50">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15 nov - 21 nov">15 nov - 21 nov</SelectItem>
-                    <SelectItem value="8 nov - 14 nov">8 nov - 14 nov</SelectItem>
-                    <SelectItem value="1 nov - 7 nov">1 nov - 7 nov</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="relative">
-                <Select value={regionFilter} onValueChange={setRegionFilter}>
-                  <SelectTrigger className="w-full sm:w-[180px] border-gray-300 bg-white hover:bg-gray-50">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="France">France</SelectItem>
-                    <SelectItem value="États-Unis">États-Unis</SelectItem>
-                    <SelectItem value="Royaume-Uni">Royaume-Uni</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button variant="outline" className="border-gray-300 bg-white hover:bg-gray-50">
-                <Search className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Ajouter un filtre</span>
-                <span className="sm:hidden">Filtre</span>
-              </Button>
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="w-full sm:w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="15 nov - 21 nov">15 nov - 21 nov</SelectItem>
+                  <SelectItem value="8 nov - 14 nov">8 nov - 14 nov</SelectItem>
+                  <SelectItem value="1 nov - 7 nov">1 nov - 7 nov</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={regionFilter} onValueChange={setRegionFilter}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="France">France</SelectItem>
+                  <SelectItem value="États-Unis">États-Unis</SelectItem>
+                  <SelectItem value="Royaume-Uni">Royaume-Uni</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            Explorez les sujets et prompts qui génèrent la visibilité dans les moteurs de réponse, avec des insights sur la pertinence de la marque et les performances.
-          </p>
         </div>
 
         {/* Section principale avec Topics et Brand Relevance */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Panel Topics */}
-          <Card className="border-gray-200 shadow-sm">
-            <CardHeader className="pb-3">
+          <Card className="border border-border bg-card shadow-sm">
+            <CardHeader className="pb-3 border-b border-border">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-gray-900">Sujets</CardTitle>
-                <Info className="h-4 w-4 text-gray-400" />
+                <CardTitle className="text-base font-semibold text-foreground">Sujets Principaux</CardTitle>
+                <Info className="h-4 w-4 text-muted-foreground" />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Sujet</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">% du total</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Prompts</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topics.map((topic, index) => (
-                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-3 h-3 ${getColorClass(topic.color)}`} style={{ borderRadius: '2px' }}></span>
-                            <span className="text-sm text-gray-900">{topic.name}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-gray-700">{topic.percentage}%</td>
-                        <td className="py-3 px-4 text-sm text-gray-700">{topic.prompts}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>Sujet</TableHead>
+                    <TableHead className="text-right">% du total</TableHead>
+                    <TableHead className="text-right">Prompts</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topics.map((topic, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <div className="flex items-center gap-2.5">
+                          <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${getColorClass(topic.color)}`}></span>
+                          <span className="text-sm font-medium text-foreground">{topic.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">{topic.percentage}%</TableCell>
+                      <TableCell className="text-right font-mono text-sm font-semibold">{topic.prompts}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
 
           {/* Panel Brand Relevance */}
-          <Card className="border-gray-200 shadow-sm">
-            <CardHeader className="pb-3">
+          <Card className="border border-border bg-card shadow-sm">
+            <CardHeader className="pb-3 border-b border-border">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-gray-900">Pertinence de la Marque</CardTitle>
-                <Info className="h-4 w-4 text-gray-400" />
+                <CardTitle className="text-base font-semibold text-foreground">Pertinence de la Marque</CardTitle>
+                <Info className="h-4 w-4 text-muted-foreground" />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tag</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">% du total</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Prompts</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {brandRelevance.map((item, index) => (
-                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-3 h-3 ${getColorClass(item.color)}`} style={{ borderRadius: '2px' }}></span>
-                            <span className="text-sm text-gray-900">{item.tag}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-gray-700">{item.percentage}%</td>
-                        <td className="py-3 px-4 text-sm text-gray-700">{item.prompts}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>Tag</TableHead>
+                    <TableHead className="text-right">% du total</TableHead>
+                    <TableHead className="text-right">Prompts</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {brandRelevance.map((item, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <div className="flex items-center gap-2.5">
+                          <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${getColorClass(item.color)}`}></span>
+                          <span className="text-sm font-medium text-foreground">{item.tag}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">{item.percentage}%</TableCell>
+                      <TableCell className="text-right font-mono text-sm font-semibold">{item.prompts}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>
 
         {/* Section Prompts */}
-        <Card className="border-gray-200 shadow-sm">
+        <Card className="border border-border bg-card shadow-sm">
           <CardHeader>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
-              <CardTitle className="text-lg font-semibold text-gray-900">Prompts</CardTitle>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2">
+              <CardTitle className="text-lg font-semibold text-foreground">Détail des Prompts</CardTitle>
               <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" className="border-gray-300">
-                  <Download className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Exporter CSV</span>
-                  <span className="sm:hidden">CSV</span>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Exporter CSV
                 </Button>
-                <Button variant="outline" size="sm" className="border-gray-300" onClick={handleOpenEditTopics}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Modifier les Sujets</span>
-                  <span className="sm:hidden">Sujets</span>
+                <Button variant="outline" size="sm" className="gap-2" onClick={handleOpenEditTopics}>
+                  <Edit className="h-4 w-4" />
+                  Modifier les Sujets
                 </Button>
-                <Button size="sm" className="bg-black text-white hover:bg-gray-900">
-                  <Plus className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Ajouter un Prompt</span>
-                  <span className="sm:hidden">Ajouter</span>
+                <Button size="sm" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Ajouter un Prompt
                 </Button>
               </div>
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Rechercher des Prompts"
+                placeholder="Rechercher des prompts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 border-gray-300"
+                className="pl-9"
               />
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Sujets/Prompts</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Mot-clé Associé</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Volume de Prompt</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Visibilité</th>
-                    <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Citation</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[40%]">Sujets / Prompts</TableHead>
+                    <TableHead>Mot-clé Associé</TableHead>
+                    <TableHead>Volume</TableHead>
+                    <TableHead>Visibilité</TableHead>
+                    <TableHead>Citation</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {promptsData.map((prompt, index) => (
                     <React.Fragment key={index}>
                       {/* Ligne du topic principal */}
-                      <tr 
-                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                      <TableRow 
+                        className="cursor-pointer hover:bg-muted/50 transition-colors font-medium"
                         onClick={() => toggleTopic(prompt.topic)}
                       >
-                        <td className="py-4 px-4">
+                        <TableCell>
+                          <div className="flex items-center gap-2.5">
+                            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${getColorClass(prompt.color)}`}></span>
+                            <span className="text-foreground">{prompt.topic}</span>
+                            <Badge variant="secondary" className="ml-1 text-xs">
+                              {prompt.prompts} prompts
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{prompt.relatedKeyword || '—'}</TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${getColorClass(prompt.color, 'dot')}`}></span>
-                            <span className="text-sm font-medium text-gray-900">{prompt.topic}</span>
-                            <span className="text-sm text-gray-500 ml-1">{prompt.prompts} Prompts</span>
+                            <Progress value={prompt.volume} className="w-24 h-2" />
+                            <span className="text-xs font-mono text-muted-foreground">{prompt.volume}%</span>
                           </div>
-                        </td>
-                        <td className="py-4 px-4 text-sm text-gray-500">{prompt.relatedKeyword || '-'}</td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div className="h-full bg-gray-300 rounded-full" style={{ width: `${prompt.volume}%` }}></div>
-                            </div>
-                            <span className="text-sm text-gray-700 min-w-[35px]">{prompt.volume}%</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div className="h-full bg-gray-300 rounded-full" style={{ width: `${prompt.visibility}%` }}></div>
-                            </div>
-                            <span className="text-sm text-gray-700 min-w-[35px]">{prompt.visibility}%</span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Progress value={prompt.visibility} className="w-24 h-2" />
+                            <span className="text-xs font-mono text-muted-foreground">{prompt.visibility}%</span>
                             {expandedTopic === prompt.topic ? (
-                              <ChevronUp className="h-3 w-3 text-gray-400 cursor-pointer" />
+                              <ChevronUp className="h-4 w-4 text-muted-foreground ml-1" />
                             ) : (
-                              <ChevronDown className="h-3 w-3 text-gray-400 cursor-pointer" />
+                              <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />
                             )}
                           </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div className="h-full bg-gray-300 rounded-full" style={{ width: `${prompt.citation}%` }}></div>
-                            </div>
-                            <span className="text-sm text-gray-700 min-w-[35px]">{prompt.citation}%</span>
-                            <ChevronDown className="h-3 w-3 text-gray-400 cursor-pointer" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Progress value={prompt.citation} className="w-24 h-2" />
+                            <span className="text-xs font-mono text-muted-foreground">{prompt.citation}%</span>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                       
-                      {/* Lignes des prompts individuels (affichées si le topic est expandé) */}
-                      {expandedTopic === prompt.topic && (
-                        <>
-                          {/* Header du topic expandé */}
-                          <tr className="bg-white border-b border-gray-200">
-                            <td colSpan={5} className="py-4 px-4">
-                              <div className="space-y-1">
-                                <h3 className="text-sm font-semibold text-gray-900 mb-2">Sujets/Prompts</h3>
-                                <div className="flex items-center gap-2">
-                                  <span className={`w-2 h-2 rounded-full ${getColorClass(prompt.color, 'dot')}`}></span>
-                                  <span className="text-sm font-medium text-gray-900">{prompt.topic}</span>
-                                </div>
-                                <span className="text-sm text-gray-500 ml-4">{prompt.prompts} Prompts</span>
-                              </div>
-                            </td>
-                          </tr>
-                          
-                          {/* Prompts individuels */}
-                          {prompt.individualPrompts?.map((individualPrompt, promptIndex) => (
-                            <tr key={promptIndex} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                              <td className="py-3 px-4">
-                                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                                  <Checkbox className="border-gray-300" />
-                                  <span 
-                                    className="text-sm text-gray-900 cursor-pointer hover:text-blue-600"
-                                    onClick={() => handlePromptClick(individualPrompt.text, individualPrompt.keyword, prompt.topic)}
-                                  >
-                                    {individualPrompt.text}
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-700">{individualPrompt.keyword}</span>
-                                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 rounded-full">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                    <span className="text-xs text-gray-600 font-medium">Lié à la Catégorie</span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center gap-2">
-                                  <BarChart3 className="h-4 w-4 text-gray-400" />
-                                  <span className="text-sm text-gray-700">{individualPrompt.volume}%</span>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                    <div className="h-full bg-gray-300 rounded-full" style={{ width: `${individualPrompt.visibility}%` }}></div>
-                                  </div>
-                                  <span className="text-sm text-gray-700 min-w-[35px]">{individualPrompt.visibility}%</span>
-                                  {promptIndex === 0 ? (
-                                    <ChevronUp className="h-3 w-3 text-gray-400 cursor-pointer" />
-                                  ) : (
-                                    <MoreVertical className="h-3 w-3 text-gray-400 cursor-pointer" />
-                                  )}
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                    <div className="h-full bg-gray-300 rounded-full" style={{ width: `${individualPrompt.citation}%` }}></div>
-                                  </div>
-                                  <span className="text-sm text-gray-700 min-w-[35px]">{individualPrompt.citation}%</span>
-                                  <MoreVertical className="h-3 w-3 text-gray-400 cursor-pointer" />
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </>
-                      )}
+                      {/* Lignes des prompts individuels si le topic est expandé */}
+                      {expandedTopic === prompt.topic && prompt.individualPrompts?.map((individualPrompt, promptIndex) => (
+                        <TableRow key={promptIndex} className="bg-muted/20 hover:bg-muted/40 transition-colors border-l-2 border-l-primary">
+                          <TableCell className="pl-8">
+                            <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                              <Checkbox />
+                              <span 
+                                className="text-sm text-foreground cursor-pointer hover:text-primary transition-colors font-normal"
+                                onClick={() => handlePromptClick(individualPrompt.text, individualPrompt.keyword, prompt.topic)}
+                              >
+                                {individualPrompt.text}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono text-muted-foreground">{individualPrompt.keyword}</span>
+                              <Badge variant="outline" className="text-xs">
+                                Catégorie
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1 text-sm font-mono text-muted-foreground">
+                              <BarChart3 className="h-3.5 w-3.5" />
+                              <span>{individualPrompt.volume}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Progress value={individualPrompt.visibility} className="w-24 h-2" />
+                              <span className="text-xs font-mono text-muted-foreground">{individualPrompt.visibility}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Progress value={individualPrompt.citation} className="w-24 h-2" />
+                              <span className="text-xs font-mono text-muted-foreground">{individualPrompt.citation}%</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </React.Fragment>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
@@ -460,188 +437,153 @@ const OptimizationAgent = () => {
 
       {/* Dialog pour la vue détaillée du prompt */}
       <Dialog open={selectedPrompt !== null} onOpenChange={() => setSelectedPrompt(null)}>
-        <DialogContent className="w-[95vw] max-w-[1700px] max-h-[90vh] overflow-y-auto p-0" hideCloseButton={true}>
+        <DialogContent className="w-[95vw] max-w-5xl max-h-[90vh] overflow-y-auto p-0 bg-card border border-border text-foreground" hideCloseButton={true}>
           {selectedPrompt && (
-            <div className="bg-white">
+            <div>
               {/* Header */}
-              <div className="border-b border-gray-200 p-4 sm:p-6 bg-white relative">
+              <div className="border-b border-border p-4 sm:p-6 bg-muted/20 relative">
                 <Button 
                   variant="ghost" 
                   size="icon"
                   onClick={() => setSelectedPrompt(null)}
-                  className="absolute top-4 right-4 h-9 w-9 rounded-full hover:bg-gray-100 hover:scale-110 transition-all duration-200 z-10"
+                  className="absolute top-4 right-4 h-8 w-8 rounded-full"
                   aria-label="Fermer"
                 >
-                  <X className="h-5 w-5 text-gray-600 hover:text-gray-900" />
+                  <X className="h-4 w-4" />
                 </Button>
                 
                 <div className="flex flex-col sm:flex-row items-start justify-between pr-12 gap-3">
                   <div className="flex-1 sm:pr-6">
-                    <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">{selectedPrompt.text}</h2>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-sm text-gray-600">Mot-clé Associé :</span>
-                      <div className="px-3 py-1.5 bg-gray-100 rounded-full">
-                        <span className="text-sm text-gray-700">{selectedPrompt.keyword}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                        <span className="text-xs text-gray-600 font-medium">Category Related</span>
-                      </div>
+                    <h2 className="text-lg sm:text-xl font-bold text-foreground mb-2">{selectedPrompt.text}</h2>
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      <span className="text-muted-foreground">Mot-clé Associé :</span>
+                      <Badge variant="secondary" className="font-mono">
+                        {selectedPrompt.keyword}
+                      </Badge>
+                      <Badge variant="outline" className="border-primary/30 text-primary">
+                        Catégorie Liée
+                      </Badge>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="border-gray-300 bg-white hover:bg-gray-50">
+                    <Badge variant="outline" className="text-xs font-normal">
                       {regionFilter}
-                    </Button>
-                    <Button variant="outline" size="sm" className="border-gray-300 bg-white hover:bg-gray-50">
+                    </Badge>
+                    <Badge variant="outline" className="text-xs font-normal">
                       {dateFilter}
-                    </Button>
+                    </Badge>
                   </div>
                 </div>
               </div>
 
               <div className="p-4 sm:p-6 space-y-6">
-                {/* Prompt Visibility */}
-                <Card className="border-gray-200 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-gray-900">Visibilité du Prompt</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64 bg-white border border-gray-200 rounded-lg flex items-center justify-center relative">
-                      <div className="absolute bottom-4 right-4 flex items-center gap-2">
-                        <div className="text-2xl font-bold text-gray-400">0%</div>
-                        <div className="text-sm text-gray-500">21 nov</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
                 {/* Leaderboard & Mention Rate */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Leaderboard */}
-                  <Card className="border-gray-200 shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold text-gray-900">Classement</CardTitle>
+                  <Card className="border border-border bg-card shadow-sm">
+                    <CardHeader className="pb-3 border-b border-border">
+                      <CardTitle className="text-base font-semibold text-foreground">Classement des Marques</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b border-gray-200">
-                              <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Sujet</th>
-                              <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Mentions</th>
-                              <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Visibilité</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {leaderboardData.map((item, index) => (
-                              <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                <td className="py-3 px-4">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-lg">📊</span>
-                                    <span className="text-sm text-gray-900">{item.topic}</span>
-                                  </div>
-                                </td>
-                                <td className="py-3 px-4 text-sm text-gray-700">{item.mentions}</td>
-                                <td className="py-3 px-4 text-sm text-gray-700">{item.visibility}%</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead>Sujet</TableHead>
+                            <TableHead className="text-right">Mentions</TableHead>
+                            <TableHead className="text-right">Visibilité</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {leaderboardData.map((item, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-medium text-foreground">{item.topic}</TableCell>
+                              <TableCell className="text-right font-mono">{item.mentions}</TableCell>
+                              <TableCell className="text-right font-mono font-semibold">{item.visibility}%</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </CardContent>
                   </Card>
 
                   {/* Mention Rate by Platform */}
-                  <Card className="border-gray-200 shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold text-gray-900">Taux de Mention par Plateforme</CardTitle>
+                  <Card className="border border-border bg-card shadow-sm">
+                    <CardHeader className="pb-3 border-b border-border">
+                      <CardTitle className="text-base font-semibold text-foreground">Taux de Mention par Moteur IA</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b border-gray-200">
-                              <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Plateforme</th>
-                              <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Taux de Mention</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {platformData.map((item, index) => (
-                              <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                <td className="py-3 px-4">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-lg">{item.logo}</span>
-                                    <span className="text-sm text-gray-900">{item.platform}</span>
-                                  </div>
-                                </td>
-                                <td className="py-3 px-4 text-sm text-gray-700">{item.mentionRate}%</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead>Plateforme</TableHead>
+                            <TableHead className="text-right">Taux de Mention</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {platformData.map((item, index) => (
+                            <TableRow key={index}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <span>{item.logo}</span>
+                                  <span className="text-sm font-medium text-foreground">{item.platform}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-semibold">{item.mentionRate}%</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Answer History */}
-                <Card className="border-gray-200 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-gray-900">Historique des Réponses</CardTitle>
+                <Card className="border border-border bg-card shadow-sm">
+                  <CardHeader className="pb-3 border-b border-border">
+                    <CardTitle className="text-base font-semibold text-foreground">Historique des Réponses d'Agents</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-gray-200">
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Plateforme</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Aperçu de la Réponse</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Mentionné</th>
-                            <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Concurrents</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {answerHistory.map((answer, index) => (
-                            <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                              <td className="py-3 px-4 text-sm text-gray-700">{answer.date}</td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg">{answer.logo}</span>
-                                  <span className="text-sm text-gray-900">{answer.platform}</span>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4 max-w-md">
-                                <p className="text-sm text-gray-900 leading-relaxed">{answer.answerPreview}</p>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center justify-center">
-                                  {answer.mentioned ? (
-                                    <span className="text-green-500">✓</span>
-                                  ) : (
-                                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                                      <X className="h-3 w-3 text-gray-400" />
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center justify-center">
-                                  {answer.competitors ? (
-                                    <span className="text-green-500">✓</span>
-                                  ) : (
-                                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                                      <X className="h-3 w-3 text-gray-400" />
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead>Date</TableHead>
+                          <TableHead>Plateforme</TableHead>
+                          <TableHead className="w-[50%]">Aperçu de la Réponse</TableHead>
+                          <TableHead className="text-center">Mentionné</TableHead>
+                          <TableHead className="text-center">Concurrents</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {answerHistory.map((answer, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="text-xs font-mono text-muted-foreground whitespace-nowrap">{answer.date}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                <span>{answer.logo}</span>
+                                <span className="text-xs font-medium text-foreground">{answer.platform}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{answer.answerPreview}</p>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {answer.mentioned ? (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mx-auto" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-muted-foreground/50 mx-auto" />
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {answer.competitors ? (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mx-auto" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-muted-foreground/50 mx-auto" />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </CardContent>
                 </Card>
               </div>
@@ -652,36 +594,35 @@ const OptimizationAgent = () => {
 
       {/* Dialog pour modifier les sujets */}
       <Dialog open={isEditTopicsOpen} onOpenChange={setIsEditTopicsOpen}>
-        <DialogContent className="w-[95vw] max-w-2xl p-0" hideCloseButton={true}>
-          <div className="bg-white">
+        <DialogContent className="w-[95vw] max-w-lg p-0 bg-card border border-border text-foreground" hideCloseButton={true}>
+          <div>
             {/* Header */}
-            <div className="border-b border-gray-200 p-6 relative">
+            <div className="border-b border-border p-6 relative">
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => setIsEditTopicsOpen(false)}
-                className="absolute top-4 right-4 h-8 w-8 rounded-full hover:bg-gray-100"
+                className="absolute top-4 right-4 h-8 w-8 rounded-full"
                 aria-label="Fermer"
               >
-                <X className="h-4 w-4 text-gray-600" />
+                <X className="h-4 w-4" />
               </Button>
               
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Modifier les Sujets</h2>
-              <p className="text-sm text-gray-600">
-                Nous avons importé vos prompts et sujets, vérifiez votre import ...
+              <h2 className="text-lg font-bold text-foreground mb-1">Modifier les Sujets</h2>
+              <p className="text-xs text-muted-foreground">
+                Gérez vos sujets et taxonomies pour le regroupement des prompts.
               </p>
             </div>
 
             {/* Content */}
             <div className="p-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Sujets</h3>
-              <div className="space-y-3 mb-6">
+              <div className="space-y-3 mb-4">
                 {editableTopics.map((topic, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    className="flex items-center gap-2.5 p-2 rounded-lg border border-border bg-muted/20"
                   >
-                    <span className={`w-3 h-3 rounded-full ${getColorClass(topic.color, 'dot')}`}></span>
+                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${getColorClass(topic.color)}`}></span>
                     <Input
                       value={topic.name}
                       onChange={(e) => {
@@ -689,48 +630,47 @@ const OptimizationAgent = () => {
                         updated[index] = { ...updated[index], name: e.target.value };
                         setEditableTopics(updated);
                       }}
-                      className="flex-1 text-sm border-gray-300 bg-white"
+                      className="flex-1 text-sm h-8"
                     />
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteTopic(index)}
-                      className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-gray-100"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
                       aria-label="Supprimer"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 ))}
               </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAddTopic}
+                className="w-full gap-2 border-dashed"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Ajouter un Sujet
+              </Button>
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-200 p-6 flex items-center justify-between">
+            <div className="border-t border-border p-4 flex items-center justify-end gap-2 bg-muted/20">
               <Button
                 variant="outline"
-                onClick={handleAddTopic}
-                className="border-gray-300"
+                size="sm"
+                onClick={() => setIsEditTopicsOpen(false)}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Ajouter un Sujet
+                Annuler
               </Button>
-              
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditTopicsOpen(false)}
-                  className="border-gray-300 bg-white"
-                >
-                  Annuler
-                </Button>
-                <Button
-                  onClick={handleSaveTopics}
-                  className="bg-black text-white hover:bg-gray-900"
-                >
-                  Enregistrer
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                onClick={handleSaveTopics}
+              >
+                Enregistrer
+              </Button>
             </div>
           </div>
         </DialogContent>

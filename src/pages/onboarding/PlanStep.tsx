@@ -312,7 +312,7 @@ export function PlanStep() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="w-10 h-10 border-3 border-meetmind-primary/20 border-t-meetmind-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-muted-foreground text-sm">Chargement des plans...</p>
         </div>
       </div>
@@ -322,11 +322,11 @@ export function PlanStep() {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold text-foreground">Choisissez votre plan</h1>
-        <p className="text-muted-foreground text-lg">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">Choisissez votre plan</h1>
+        <p className="text-muted-foreground text-base sm:text-lg">
           Commencez gratuitement ou débloquez plus de fonctionnalités
         </p>
-        <p className="text-sm font-medium text-green-600">
+        <p className="text-sm font-medium text-primary">
           7 jours d'essai gratuit sur le plan Starter
         </p>
       </div>
@@ -344,7 +344,7 @@ export function PlanStep() {
               className={cn(
                 'relative flex flex-col rounded-xl border-2 cursor-pointer transition-all overflow-hidden',
                 isSelected
-                  ? 'shadow-lg border-meetmind-primary bg-meetmind-primary/5'
+                  ? 'shadow-md border-primary bg-primary/5'
                   : 'border-border bg-card hover:border-muted-foreground/30 hover:shadow-sm'
               )}
               onClick={() => setSelectedPlanId(plan.id)}
@@ -352,7 +352,7 @@ export function PlanStep() {
               {/* Badge recommandé */}
               {isRecommended && (
                 <div className="absolute -top-0 left-0 right-0 flex justify-center">
-                  <span className="text-xs font-semibold text-white bg-meetmind-primary px-3 py-1 rounded-b-lg">
+                  <span className="text-xs font-semibold text-primary-foreground bg-primary px-3 py-1 rounded-b-lg">
                     Recommandé
                   </span>
                 </div>
@@ -364,7 +364,7 @@ export function PlanStep() {
                 <div className="mt-2">
                   <span className={cn(
                     'text-3xl font-bold',
-                    isSelected ? 'text-meetmind-primary' : 'text-foreground'
+                    isSelected ? 'text-primary' : 'text-foreground'
                   )}>
                     {formatPrice(plan.price)}
                   </span>
@@ -372,7 +372,7 @@ export function PlanStep() {
                     <span className="text-sm text-muted-foreground">/mois</span>
                   )}
                   {plan.id === 'solo' && (
-                    <div className="text-xs font-medium text-green-600 mt-1">7 jours gratuits</div>
+                    <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mt-1">7 jours gratuits</div>
                   )}
                 </div>
               </div>
@@ -382,13 +382,33 @@ export function PlanStep() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Analyses</span>
                   <span className="font-medium text-foreground">
-                    {(plan as any).maxAnalyses === -1 ? 'Illimitées' : `${(plan as any).maxAnalyses || 0}/mois`}
+                    {(() => {
+                      const a = (plan as any).maxAnalyses ?? (plan as any).max_analyses;
+                      if (a === -1) return 'Illimitées';
+                      if (typeof a === 'number' && a > 0) return `${a}/mois`;
+                      const id = String(plan.id || '').toLowerCase();
+                      if (id.includes('starter') || id === 'solo' || id === 'standard') return '10/mois';
+                      if (id.includes('intermediaire') || id.includes('intermediate')) return '50/mois';
+                      if (id.includes('pro') || id.includes('premium')) return '150/mois';
+                      if (id.includes('enterprise') || id.includes('entreprise')) return 'Illimitées';
+                      return `${a || 10}/mois`;
+                    })()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Rapports</span>
                   <span className="font-medium text-foreground">
-                    {(plan as any).maxReports === -1 ? 'Illimités' : `${(plan as any).maxReports || 0}/mois`}
+                    {(() => {
+                      const r = (plan as any).maxReports ?? (plan as any).max_reports;
+                      if (r === -1) return 'Illimités';
+                      if (typeof r === 'number' && r > 0) return `${r} domaine${r > 1 ? 's' : ''}`;
+                      const id = String(plan.id || '').toLowerCase();
+                      if (id.includes('starter') || id === 'solo' || id === 'standard') return '1 domaine';
+                      if (id.includes('intermediaire') || id.includes('intermediate')) return '3 domaines';
+                      if (id.includes('pro') || id.includes('premium')) return '5 domaines';
+                      if (id.includes('enterprise') || id.includes('entreprise')) return '10 domaines';
+                      return `${r || 1} domaine${(r || 1) > 1 ? 's' : ''}`;
+                    })()}
                   </span>
                 </div>
               </div>
@@ -425,7 +445,7 @@ export function PlanStep() {
                 <div className="space-y-1.5">
                   {plan.features.slice(0, 4).map((feature, index) => (
                     <div key={index} className="flex items-center gap-2 text-sm">
-                      <Check className="h-3.5 w-3.5 text-meetmind-green-accent flex-shrink-0" />
+                      <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />
                       <span className="text-muted-foreground text-xs">{feature}</span>
                     </div>
                   ))}
@@ -436,7 +456,7 @@ export function PlanStep() {
               <div className={cn(
                 "px-5 py-3 text-center text-sm font-medium transition-colors",
                 isSelected
-                  ? "bg-meetmind-primary text-white"
+                  ? "bg-primary text-primary-foreground"
                   : "bg-muted/50 text-muted-foreground"
               )}>
                 {isSelected ? 'Sélectionné' : 'Sélectionner'}
@@ -452,10 +472,10 @@ export function PlanStep() {
           <p className="text-sm font-medium text-foreground mb-3">
             Inclus dans {plans.find(p => p.id === selectedPlanId)?.name} :
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {plans.find(p => p.id === selectedPlanId)?.features.slice(0, 6).map((feature, index) => (
               <div key={index} className="flex items-center gap-2 text-sm">
-                <Check className="h-4 w-4 text-meetmind-green-accent flex-shrink-0" />
+                <Check className="h-4 w-4 text-primary flex-shrink-0" />
                 <span className="text-muted-foreground">{feature}</span>
               </div>
             ))}
@@ -467,7 +487,7 @@ export function PlanStep() {
         <Button
           onClick={handleBack}
           variant="outline"
-          className="px-6 border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
+          className="h-12 px-6 rounded-xl"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Précédent
@@ -475,17 +495,12 @@ export function PlanStep() {
         <Button
           onClick={handleSelectPlan}
           disabled={isSubmitting}
-          className={cn(
-            "px-8 py-6 text-base font-semibold transition-all rounded-meetmind-button",
-            !isSubmitting
-              ? "text-white bg-meetmind-primary hover:bg-meetmind-soft-blue shadow-[0_4px_6px_-1px_rgba(26,58,255,0.3),0_2px_4px_-1px_rgba(26,58,255,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(26,58,255,0.4),0_4px_6px_-2px_rgba(26,58,255,0.2)]"
-              : "bg-muted text-muted-foreground cursor-not-allowed"
-          )}
+          className="h-12 px-8 text-base font-semibold rounded-xl"
         >
           {isSubmitting ? (
             <>
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-              <span className="opacity-80">Finalisation</span>
+              <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+              <span>Finalisation</span>
             </>
           ) : (
             <>
@@ -500,7 +515,7 @@ export function PlanStep() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-meetmind-primary" />
+              <CreditCard className="h-5 w-5 text-primary" />
               Finaliser le paiement
             </DialogTitle>
             <DialogDescription>
@@ -514,13 +529,13 @@ export function PlanStep() {
                 <span className="font-medium text-foreground">
                   {plans.find(p => p.id === selectedPlanId)?.name}
                 </span>
-                <span className="font-bold text-meetmind-primary">
+                <span className="font-bold text-primary">
                   {formatPrice(plans.find(p => p.id === selectedPlanId)?.price || 0)}/mois
                 </span>
               </div>
               {selectedPlanId === 'solo' && (
-                <div className="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-xs font-semibold text-green-700">7 jours d'essai gratuit — aucun débit immédiat</p>
+                <div className="mt-2 p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                  <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">7 jours d'essai gratuit — aucun débit immédiat</p>
                 </div>
               )}
               <p className="text-sm text-muted-foreground mt-2">
@@ -532,7 +547,7 @@ export function PlanStep() {
               <Button
                 variant="outline"
                 onClick={() => setIsPaymentDialogOpen(false)}
-                className="flex-1 border-border"
+                className="flex-1"
                 disabled={isProcessingPayment}
               >
                 Annuler
@@ -540,11 +555,11 @@ export function PlanStep() {
               <Button
                 onClick={handlePayment}
                 disabled={isProcessingPayment}
-                className="flex-1 bg-meetmind-primary hover:bg-meetmind-soft-blue text-white"
+                className="flex-1"
               >
                 {isProcessingPayment ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
                     Redirection...
                   </>
                 ) : (

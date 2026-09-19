@@ -66,7 +66,7 @@ function PlanCard({ plan, onSaved }: { plan: AdminPlan; onSaved: () => void }) {
             <CardTitle className="text-base font-semibold">{plan.name}</CardTitle>
             <Badge variant="outline" className="text-xs font-mono">{plan.id}</Badge>
             {!plan.is_active && (
-              <Badge variant="outline" className="text-xs bg-gray-50 text-gray-500">Inactif</Badge>
+              <Badge variant="secondary" className="text-xs">Inactif</Badge>
             )}
           </div>
           <div className="flex gap-1 shrink-0">
@@ -93,8 +93,8 @@ function PlanCard({ plan, onSaved }: { plan: AdminPlan; onSaved: () => void }) {
         {feedback && (
           <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
             feedback.type === 'success'
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-              : 'bg-rose-50 text-rose-700 border border-rose-200'
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+              : 'bg-destructive/10 text-destructive border border-destructive/20'
           }`}>
             {feedback.type === 'success'
               ? <CheckCircle className="h-4 w-4 shrink-0" />
@@ -142,7 +142,7 @@ function PlanCard({ plan, onSaved }: { plan: AdminPlan; onSaved: () => void }) {
             <Button
               onClick={save}
               disabled={saving}
-              className="w-full h-9 text-sm bg-primary hover:bg-primary/90"
+              className="w-full h-9 text-sm"
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -154,11 +154,11 @@ function PlanCard({ plan, onSaved }: { plan: AdminPlan; onSaved: () => void }) {
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 p-2.5 bg-muted rounded-lg">
+            <div className="flex items-center gap-2 p-2.5 bg-muted/50 border border-border rounded-lg">
               <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-xs font-mono text-muted-foreground break-all">
                 {plan.stripe_price_id || (
-                  <span className="text-rose-500 font-semibold">⚠ Aucun Price ID Stripe</span>
+                  <span className="text-destructive font-semibold">⚠ Aucun Price ID Stripe</span>
                 )}
               </span>
             </div>
@@ -166,7 +166,7 @@ function PlanCard({ plan, onSaved }: { plan: AdminPlan; onSaved: () => void }) {
               <ul className="space-y-1">
                 {plan.features.map((f, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0" />
                     {f}
                   </li>
                 ))}
@@ -239,7 +239,7 @@ export default function AdminPlans() {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <div className="flex items-center gap-3 p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700">
+          <div className="flex items-center gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive">
             <AlertCircle className="h-5 w-5 shrink-0" />
             <p className="text-sm">{error}</p>
           </div>

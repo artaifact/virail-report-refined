@@ -5,10 +5,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { LoginRequest } from '@/types/auth';
 import { RateLimitBanner } from '@/components/RateLimitBanner';
 import { useRateLimit } from '@/hooks/useRateLimit';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Nom d\'utilisateur requis'),
@@ -58,133 +62,139 @@ export default function Login() {
         message={rateLimitState.message}
       />
 
-      <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col justify-between">
         {/* Main Content */}
-        <main className="flex-1 flex items-center justify-center py-16 px-4">
+        <main className="flex-1 flex items-center justify-center py-12 px-4">
           <div className="w-full max-w-md mx-auto">
-            <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
-              {/* En-tête */}
-              <div className="text-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-semibold text-[#1b1b1f] mb-3">
-                  Se connecter
-                </h1>
-                <p className="text-[15px] md:text-[16px] text-[#6e6e73]">
-                  Accédez à votre tableau de bord Virail
-                </p>
-              </div>
+            <Card className="rounded-2xl shadow-xl border-border bg-card">
+              <CardContent className="p-6 sm:p-8">
+                {/* En-tête */}
+                <div className="text-center mb-8">
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2">
+                    Se connecter
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    Accédez à votre tableau de bord Viraill
+                  </p>
+                </div>
 
-              {/* Formulaire */}
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="block text-[11px] uppercase tracking-wide font-bold text-[#1b1b1f] mb-2 ml-1">
-                          Nom d'utilisateur
-                        </FormLabel>
-                        <FormControl>
-                          <input
-                            type="text"
-                            placeholder="Votre nom d'utilisateur"
-                            disabled={isRateLimited}
-                            className="w-full bg-[#f7f8fc] rounded-xl px-4 py-3.5 text-sm md:text-[15px] text-[#1b1b1f] placeholder:text-slate-300 border border-transparent focus:bg-white focus:border-[#9cb5ff] focus:ring-0 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="block text-[11px] uppercase tracking-wide font-bold text-[#1b1b1f] mb-2 ml-1">
-                          Mot de passe
-                        </FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <input
-                              type={showPassword ? 'text' : 'password'}
-                              placeholder="••••••••"
+                {/* Formulaire */}
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold text-foreground">
+                            Nom d'utilisateur
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="text"
+                              placeholder="Votre nom d'utilisateur"
                               disabled={isRateLimited}
-                              className="w-full bg-[#f7f8fc] rounded-xl px-4 py-3.5 pr-12 text-sm md:text-[15px] text-[#1b1b1f] placeholder:text-slate-300 border border-transparent focus:bg-white focus:border-[#9cb5ff] focus:ring-0 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="h-11"
                               {...field}
                             />
-                            <button
-                              type="button"
-                              onClick={() => setShowPassword(!showPassword)}
-                              className="absolute inset-y-0 right-3 flex items-center text-[11px] text-[#6e6e73] hover:text-[#1b1b1f] transition-colors"
-                            >
-                              {showPassword ? 'Masquer' : 'Afficher'}
-                            </button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <div className="flex items-center justify-between text-sm mt-1">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 rounded border-slate-300 text-[#9cb5ff] focus:ring-[#9cb5ff]"
-                      />
-                      <span className="text-[#6e6e73] text-[13px] md:text-sm">
-                        Se souvenir de moi
-                      </span>
-                    </label>
-                    <Link
-                      to="/forgot-password"
-                      className="text-[13px] md:text-sm text-[#9cb5ff] hover:text-[#8ca5ef] transition-colors font-medium"
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold text-foreground">
+                            Mot de passe
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="••••••••"
+                                disabled={isRateLimited}
+                                className="h-11 pr-10"
+                                {...field}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute inset-y-0 right-1 h-full px-2.5 text-muted-foreground hover:text-foreground"
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex items-center justify-between text-xs pt-1">
+                      <label className="flex items-center gap-2 cursor-pointer select-none text-muted-foreground hover:text-foreground">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded border-input text-primary focus:ring-primary"
+                        />
+                        <span>Se souvenir de moi</span>
+                      </label>
+                      <Link
+                        to="/forgot-password"
+                        className="text-primary hover:underline font-medium"
+                      >
+                        Mot de passe oublié ?
+                      </Link>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isLoading || isRateLimited}
+                      className="w-full h-11 text-sm font-semibold mt-4"
                     >
-                      Mot de passe oublié ?
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Connexion en cours...
+                        </>
+                      ) : isRateLimited ? (
+                        `Attendez ${rateLimitState.retryAfter}s`
+                      ) : (
+                        'Se connecter'
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+
+                {/* Lien vers register */}
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Pas encore de compte ?{' '}
+                    <Link
+                      to="/register"
+                      className="text-primary hover:underline font-semibold"
+                    >
+                      S&apos;inscrire
                     </Link>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isLoading || isRateLimited}
-                    className="w-full bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center justify-center gap-3">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Connexion en cours...
-                      </div>
-                    ) : isRateLimited ? (
-                      `Attendez ${rateLimitState.retryAfter}s`
-                    ) : (
-                      'Se connecter'
-                    )}
-                  </button>
-                </form>
-              </Form>
-
-              {/* Lien vers register */}
-              <div className="mt-6 text-center">
-                <p className="text-sm md:text-[15px] text-[#6e6e73]">
-                  Pas encore de compte ?{' '}
-                  <Link
-                    to="/register"
-                    className="text-[#9cb5ff] hover:text-[#8ca5ef] font-semibold transition-colors"
-                  >
-                    S&apos;inscrire
-                  </Link>
-                </p>
-              </div>
-            </div>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </main>
 
         {/* Footer */}
         <footer className="w-full px-6 py-4 text-center">
-          <p className="text-sm text-[#6e6e73]">© 2025 Virail. Tous droits réservés.</p>
+          <p className="text-xs text-muted-foreground">© 2025 Viraill. Tous droits réservés.</p>
         </footer>
       </div>
     </>
@@ -192,4 +202,3 @@ export default function Login() {
 }
 
 export { Login };
-

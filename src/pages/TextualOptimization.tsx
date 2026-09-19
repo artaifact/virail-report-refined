@@ -185,308 +185,273 @@ const TextualOptimization: React.FC = () => {
 
       {/* Navigation Tabs */}
       <div className="px-4 py-4 sm:px-6 md:px-8 md:py-6">
-        <div className="flex items-center justify-center">
-          <div className="bg-card rounded-xl p-1.5 sm:p-2 shadow-lg border border-transparent inline-block relative">
-            {/* Indicateur animé qui se déplace */}
-            <div
-              className="absolute top-2 bottom-2 bg-primary rounded-lg transition-all duration-300 ease-in-out"
-              style={{
-                width: 'calc(33.333% - 0.2rem)',
-                left: '0.5rem',
-                transform: activeTab === 'Résumé' ? 'translateX(0)' :
-                  activeTab === 'Modifications' ? 'translateX(calc(100% + 0.2rem))' :
-                    activeTab === 'Analyse' ? 'translateX(calc(200% + 0.4rem))' :
-                      'translateX(0)'
-              }}
-            ></div>
-
-            <div className="relative flex items-center justify-center space-x-0 z-10">
-              <button
-                onClick={() => setActiveTab('Résumé')}
-                className="px-3 py-2 sm:px-6 sm:py-3 text-sm sm:text-base transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
-                style={{ color: activeTab === 'Résumé' ? 'white' : 'var(--muted-foreground)' }}
-              >
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="flex items-center justify-center">
+            <TabsList className="grid grid-cols-3 max-w-md w-full h-11 bg-muted p-1">
+              <TabsTrigger value="Résumé" className="text-sm font-medium">
                 Résumé
-              </button>
-              <button
-                onClick={() => setActiveTab('Modifications')}
-                className="px-3 py-2 sm:px-6 sm:py-3 text-sm sm:text-base transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
-                style={{ color: activeTab === 'Modifications' ? 'white' : 'var(--muted-foreground)' }}
-              >
+              </TabsTrigger>
+              <TabsTrigger value="Modifications" className="text-sm font-medium">
                 Modifications
-              </button>
-              <button
-                onClick={() => setActiveTab('Analyse')}
-                className="px-3 py-2 sm:px-6 sm:py-3 text-sm sm:text-base transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20"
-                style={{ color: activeTab === 'Analyse' ? 'white' : 'var(--muted-foreground)' }}
-              >
+              </TabsTrigger>
+              <TabsTrigger value="Analyse" className="text-sm font-medium">
                 Analyse
-              </button>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* Debug Info */}
+          {error && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>Erreur: {error}</AlertDescription>
+            </Alert>
+          )}
+
+          {isLoading && (
+            <div className="mt-4 p-4 bg-muted/50 border border-border rounded-lg text-center">
+              <p className="text-sm text-muted-foreground">Chargement des optimisations...</p>
             </div>
-        </div>
-      </div>
+          )}
 
-        {/* Debug Info */}
-      {error && (
-          <div className="mt-4 p-4 bg-muted border border-border rounded-lg">
-            <p className="text-foreground font-medium">Erreur: {error}</p>
-          </div>
-        )}
-
-        {isLoading && (
-          <div className="mt-4 p-4 bg-muted border border-border rounded-lg">
-            <p className="text-foreground font-medium">Chargement des optimisations...</p>
-          </div>
-        )}
-
-        {/* Contenu conditionnel selon l'onglet actif */}
-        {activeTab === 'Résumé' && (
-          <div className="mt-8 space-y-6">
-
-            {/* Optimisation actuelle */}
-            {currentOptimization && (
+          {/* Contenu conditionnel selon l'onglet actif */}
+          <TabsContent value="Résumé" className="mt-6 space-y-6">
+            {currentOptimization ? (
               <div className="space-y-6">
                 {/* Informations générales */}
-                <Card className="bg-card border-none shadow-sm">
-                  <CardHeader className="bg-muted">
-            <div className="flex items-center justify-between">
-              <div>
-                        <CardTitle className="flex items-center gap-3 text-xl text-foreground">
+                <Card className="border border-border bg-card shadow-sm">
+                  <CardHeader className="bg-muted/30 border-b border-border">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <CardTitle className="text-xl text-foreground">
                           Optimisation #{currentOptimization.id}
-                </CardTitle>
-                        <CardDescription className="mt-2 text-muted-foreground">
-                          URL: {currentOptimization.url} • {new Date(currentOptimization.created_at).toLocaleDateString()}
+                        </CardTitle>
+                        <CardDescription className="mt-1 text-muted-foreground">
+                          URL: <span className="font-mono">{currentOptimization.url}</span> • {new Date(currentOptimization.created_at).toLocaleDateString()}
                         </CardDescription>
-              </div>
-                      <Badge className="bg-muted text-foreground">{currentOptimization.analysis_llm}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6 text-foreground">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <div className="text-xl sm:text-2xl font-bold">{currentOptimization.input_parameters.original_text_words}</div>
-                        <div className="text-sm text-muted-foreground">Mots originaux</div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold">{currentOptimization.optimized_text.split(' ').length}</div>
-                        <div className="text-sm text-muted-foreground">Mots optimisés</div>
-                        </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold">{currentOptimization.input_parameters.primary_strategy}</div>
-                        <div className="text-sm text-muted-foreground">Stratégie</div>
-                        </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold">{currentOptimization.input_parameters.tone}</div>
-                        <div className="text-sm text-muted-foreground">Ton</div>
+                      <Badge variant="secondary" className="self-start sm:self-auto font-mono">
+                        {currentOptimization.analysis_llm}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6 text-foreground">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="text-center p-3 rounded-lg bg-muted/30 border border-border/50">
+                        <div className="text-2xl font-bold font-mono text-foreground">{currentOptimization.input_parameters.original_text_words}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Mots originaux</div>
                       </div>
-            </div>
-          </CardContent>
-        </Card>
+                      <div className="text-center p-3 rounded-lg bg-muted/30 border border-border/50">
+                        <div className="text-2xl font-bold font-mono text-foreground">{currentOptimization.optimized_text.split(' ').length}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Mots optimisés</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-muted/30 border border-border/50">
+                        <div className="text-base sm:text-lg font-semibold truncate text-foreground">{currentOptimization.input_parameters.primary_strategy}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Stratégie</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-muted/30 border border-border/50">
+                        <div className="text-base sm:text-lg font-semibold truncate text-foreground">{currentOptimization.input_parameters.tone}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Ton</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Texte optimisé */}
-                <Card className="bg-card border-none shadow-sm">
-              <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-foreground">
+                <Card className="border border-border bg-card shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-foreground">
                       Texte Optimisé
                     </CardTitle>
-                <CardDescription className="text-muted-foreground">
-                      Version optimisée du contenu avec les améliorations appliquées
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                    <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
-                      <p className="text-foreground leading-relaxed whitespace-pre-wrap">
+                    <CardDescription>
+                      Version optimisée du contenu avec les enrichissements sémantiques appliqués
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-muted/40 rounded-xl p-4 sm:p-5 max-h-96 overflow-y-auto border border-border/60">
+                      <p className="text-foreground leading-relaxed whitespace-pre-wrap text-sm sm:text-base">
                         {currentOptimization.optimized_text}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Checklist de conformité */}
-                <Card className="bg-card border-none shadow-sm">
-              <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-foreground">
+                <Card className="border border-border bg-card shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-foreground">
                       Checklist de Conformité
                     </CardTitle>
-                <CardDescription className="text-muted-foreground">
-                      Vérification des critères d'optimisation
+                    <CardDescription>
+                      Vérification des critères d'optimisation et d'autorité sémantique
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {Object.entries(currentOptimization.analysis_details.checklist).map(([key, value]) => (
+                        <div key={key} className={`flex items-center gap-2 p-2.5 rounded-lg border text-sm ${value ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-400' : 'bg-destructive/5 border-destructive/20 text-destructive'}`}>
+                          <span className="font-bold">{value ? '✓' : '✗'}</span>
+                          <span className="truncate">{key}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <h3 className="text-base font-semibold text-foreground mb-1">Aucune optimisation sélectionnée</h3>
+                <p className="text-sm text-muted-foreground">Sélectionnez une optimisation dans la liste ou lancez-en une nouvelle.</p>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Onglet Modifications */}
+          <TabsContent value="Modifications" className="mt-6">
+            <Card className="border border-border bg-card shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  Modifications Apportées
+                </CardTitle>
+                <CardDescription>
+                  Détail des modifications effectuées lors de l'optimisation
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {Object.entries(currentOptimization.analysis_details.checklist).map(([key, value]) => (
-                        <div key={key} className="flex items-center gap-2">
-                          {value ? (
-                            <span className="text-green-600">✓</span>
-                          ) : (
-                            <span className="text-red-600">✗</span>
-                          )}
-                          <span className={`text-sm ${value ? 'text-green-700' : 'text-red-700'}`}>
-                            {key}
-                          </span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-              </div>
-            )}
-          </div>
-        )}
-
-
-            {/* Onglet Modifications */}
-        {activeTab === 'Modifications' && (
-          <div className="mt-8">
-            <Card className="bg-card border-none shadow-sm">
-                <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  Modifications Apportées
-                </CardTitle>
-                  <CardDescription>
-                  Détail des modifications effectuées lors de l'optimisation
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
                 {currentOptimization ? (
                   <div className="space-y-4">
                     {currentOptimization.analysis_details.modifications.map((modification, index) => (
-                      <div key={index} className="border border-border rounded-lg p-4">
-                        <div className="flex items-start justify-between mb-2">
+                      <div key={index} className="border border-border rounded-xl p-4 bg-muted/20">
+                        <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-2">
-                              <Badge 
-                              variant="outline" 
+                            <Badge 
+                              variant="secondary"
                               className={
-                                modification.impact === 'Positif' ? 'border-border text-foreground' :
-                                modification.impact === 'Optimisation' ? 'border-border text-foreground' :
-                                modification.impact === 'Neutre' ? 'border-border text-muted-foreground' :
-                                'border-border text-foreground'
+                                modification.impact === 'Positif' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0' :
+                                modification.impact === 'Optimisation' ? 'bg-primary/10 text-primary border-0' :
+                                'border border-border text-muted-foreground'
                               }
-                              >
-                                {modification.impact}
-                              </Badge>
+                            >
+                              {modification.impact}
+                            </Badge>
                             <Badge variant="outline">{modification.type}</Badge>
-                            </div>
                           </div>
-                        <div className="space-y-2">
+                        </div>
+                        <div className="space-y-1.5 text-sm">
                           <div>
-                            <span className="font-medium text-muted-foreground">Catégorie:</span>
-                            <span className="ml-2 text-foreground">{modification.categorie}</span>
+                            <span className="font-medium text-muted-foreground">Catégorie :</span>
+                            <span className="ml-2 text-foreground font-semibold">{modification.categorie}</span>
                           </div>
                           <div>
-                            <span className="font-medium text-muted-foreground">Modification:</span>
+                            <span className="font-medium text-muted-foreground">Modification :</span>
                             <span className="ml-2 text-foreground">{modification.modification}</span>
                           </div>
                           <div>
-                            <span className="font-medium text-muted-foreground">Justification:</span>
-                            <span className="ml-2 text-foreground">{modification.justification}</span>
+                            <span className="font-medium text-muted-foreground">Justification :</span>
+                            <span className="ml-2 text-muted-foreground italic">{modification.justification}</span>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <h3 className="text-xl font-semibold text-foreground mb-2">Aucune optimisation</h3>
-                    <p className="text-muted-foreground">Sélectionnez une optimisation pour voir les modifications</p>
+                  <div className="text-center py-12">
+                    <h3 className="text-base font-semibold text-foreground mb-1">Aucune optimisation</h3>
+                    <p className="text-sm text-muted-foreground">Sélectionnez une optimisation pour voir les modifications.</p>
                   </div>
                 )}
-                </CardContent>
-              </Card>
-          </div>
-        )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        {/* Onglet Analyse */}
-        {activeTab === 'Analyse' && (
-          <div className="mt-8">
-            <Card className="bg-card border-none shadow-sm">
-                <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
+          {/* Onglet Analyse */}
+          <TabsContent value="Analyse" className="mt-6">
+            <Card className="border border-border bg-card shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">
                   Analyse des Optimisations
                 </CardTitle>
                 <CardDescription>
-                  Analysez les performances de vos optimisations
+                  Analysez les gains sémantiques et la couverture conceptuelle
                 </CardDescription>
-                </CardHeader>
-                <CardContent>
+              </CardHeader>
+              <CardContent>
                 {currentOptimization ? (
                   <div className="space-y-6">
                     {/* Analyse sémantique */}
-                        <div>
-                      <h4 className="text-lg font-semibold text-foreground mb-4">Analyse Sémantique</h4>
-                      <div className="grid gap-4">
+                    <div>
+                      <h4 className="text-base font-semibold text-foreground mb-3">Analyse Sémantique</h4>
+                      <div className="grid gap-3">
                         {currentOptimization.analysis_details.semantic_analysis.map((analysis, index) => (
-                          <div key={index} className="border border-border rounded-lg p-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                          <div key={index} className="border border-border rounded-xl p-4 bg-muted/20">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                               <div>
-                                <span className="text-sm font-medium text-muted-foreground">Avant</span>
-                                <p className="text-foreground">{analysis.Avant}</p>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Avant</span>
+                                <p className="text-foreground mt-0.5">{analysis.Avant}</p>
+                              </div>
+                              <div>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Après</span>
+                                <p className="text-foreground mt-0.5">{analysis.Après}</p>
+                              </div>
+                              <div>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Métrique</span>
+                                <p className="text-foreground mt-0.5">{analysis.Métrique}</p>
+                              </div>
+                              <div>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amélioration</span>
+                                <p className="text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">{analysis.Amélioration}</p>
+                              </div>
+                            </div>
                           </div>
-                              <div>
-                                <span className="text-sm font-medium text-muted-foreground">Après</span>
-                                <p className="text-foreground">{analysis.Après}</p>
-                        </div>
-                              <div>
-                                <span className="text-sm font-medium text-muted-foreground">Métrique</span>
-                                <p className="text-foreground">{analysis.Métrique}</p>
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-muted-foreground">Amélioration</span>
-                                <p className="text-green-600 font-medium">{analysis.Amélioration}</p>
-                              </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                      </div>
-                  </div>
+                    </div>
 
                     {/* Mapping sémantique */}
-                  <div>
-                      <h4 className="text-lg font-semibold text-foreground mb-4">Mapping Sémantique</h4>
+                    <div>
+                      <h4 className="text-base font-semibold text-foreground mb-3">Mapping Sémantique</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="border border-border rounded-lg p-4">
-                          <h5 className="font-medium text-muted-foreground mb-2">Entités Clés</h5>
-                          <p className="text-foreground">{currentOptimization.analysis_details.semantic_mapping.entites_cles}</p>
-                          </div>
-                        <div className="border border-border rounded-lg p-4">
-                          <h5 className="font-medium text-muted-foreground mb-2">Concepts Centraux</h5>
-                          <p className="text-foreground">{currentOptimization.analysis_details.semantic_mapping.concepts_centraux}</p>
+                        <div className="border border-border rounded-xl p-4 bg-muted/20">
+                          <h5 className="font-semibold text-foreground text-sm mb-1.5">Entités Clés</h5>
+                          <p className="text-muted-foreground text-sm leading-relaxed">{currentOptimization.analysis_details.semantic_mapping.entites_cles}</p>
                         </div>
-                        <div className="border border-border rounded-lg p-4">
-                          <h5 className="font-medium text-muted-foreground mb-2">Champs Sémantiques</h5>
-                          <p className="text-foreground">{currentOptimization.analysis_details.semantic_mapping.champs_semantiques}</p>
+                        <div className="border border-border rounded-xl p-4 bg-muted/20">
+                          <h5 className="font-semibold text-foreground text-sm mb-1.5">Concepts Centraux</h5>
+                          <p className="text-muted-foreground text-sm leading-relaxed">{currentOptimization.analysis_details.semantic_mapping.concepts_centraux}</p>
+                        </div>
+                        <div className="border border-border rounded-xl p-4 bg-muted/20">
+                          <h5 className="font-semibold text-foreground text-sm mb-1.5">Champs Sémantiques</h5>
+                          <p className="text-muted-foreground text-sm leading-relaxed">{currentOptimization.analysis_details.semantic_mapping.champs_semantiques}</p>
+                        </div>
+                        <div className="border border-border rounded-xl p-4 bg-muted/20">
+                          <h5 className="font-semibold text-foreground text-sm mb-1.5">Relations Conceptuelles</h5>
+                          <p className="text-muted-foreground text-sm leading-relaxed">{currentOptimization.analysis_details.semantic_mapping.relations_conceptuelles}</p>
+                        </div>
+                      </div>
                     </div>
-                        <div className="border border-border rounded-lg p-4">
-                          <h5 className="font-medium text-muted-foreground mb-2">Relations Conceptuelles</h5>
-                          <p className="text-foreground">{currentOptimization.analysis_details.semantic_mapping.relations_conceptuelles}</p>
-                  </div>
-                            </div>
-                            </div>
 
                     {/* Sources */}
                     <div>
-                      <h4 className="text-lg font-semibold text-foreground mb-4">Sources</h4>
+                      <h4 className="text-base font-semibold text-foreground mb-3">Sources</h4>
                       <div className="space-y-2">
                         {currentOptimization.analysis_details.sources.map((source, index) => (
-                          <div key={index} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                          <div key={index} className="flex items-center gap-2 p-3 bg-muted/30 border border-border rounded-lg text-sm">
                             <span className="text-foreground">{source}</span>
                           </div>
                         ))}
                       </div>
                     </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                    <h3 className="text-xl font-semibold text-foreground mb-2">Aucune optimisation</h3>
-                    <p className="text-muted-foreground">Sélectionnez une optimisation pour voir l'analyse</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-          </div>
-        )}
-
-                      </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <h3 className="text-base font-semibold text-foreground mb-1">Aucune optimisation</h3>
+                    <p className="text-sm text-muted-foreground">Sélectionnez une optimisation pour voir l'analyse.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
                       
       {/* Dialog pour créer une nouvelle optimisation */}
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>

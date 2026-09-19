@@ -37,7 +37,13 @@ export function usePayment() {
 
       // Charger les plans
       const plansData = await apiService.getPlans();
-      setPlans(plansData.plans || []);
+      const rawPlans = (plansData?.plans || []) as any[];
+      const normalizedPlans = rawPlans.map((p: any) => ({
+        ...p,
+        maxAnalyses: p.maxAnalyses ?? p.max_analyses,
+        maxReports: p.maxReports ?? p.max_reports,
+      }));
+      setPlans(normalizedPlans);
 
       // Charger l'abonnement actuel
       try {

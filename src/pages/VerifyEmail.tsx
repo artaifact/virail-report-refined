@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthService } from '@/services/authService';
 import { CheckCircle, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 const VerifyEmail: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -26,26 +28,28 @@ const VerifyEmail: React.FC = () => {
         setStatus('error');
         setErrorMessage(err.message || 'Une erreur est survenue lors de la vérification.');
       });
-  }, []);
+  }, [searchParams]);
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
-        <main className="flex-1 flex items-center justify-center py-16 px-4">
+      <div className="min-h-screen bg-background flex flex-col justify-between">
+        <main className="flex-1 flex items-center justify-center py-12 px-4">
           <div className="w-full max-w-md mx-auto">
-            <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100 text-center">
-              <Loader2 className="h-12 w-12 text-[#9cb5ff] animate-spin mx-auto mb-6" />
-              <h1 className="text-2xl font-semibold text-[#1b1b1f] mb-2">
-                Vérification en cours...
-              </h1>
-              <p className="text-[15px] text-[#6e6e73]">
-                Veuillez patienter pendant que nous activons votre compte.
-              </p>
-            </div>
+            <Card className="rounded-2xl shadow-xl border-border bg-card">
+              <CardContent className="p-6 sm:p-8 text-center">
+                <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto mb-6" />
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mb-2">
+                  Vérification en cours...
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Veuillez patienter pendant que nous activons votre compte.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </main>
         <footer className="w-full px-6 py-4 text-center">
-          <p className="text-sm text-[#6e6e73]">© 2025 Viraill. Tous droits réservés.</p>
+          <p className="text-xs text-muted-foreground">© 2025 Viraill. Tous droits réservés.</p>
         </footer>
       </div>
     );
@@ -53,33 +57,33 @@ const VerifyEmail: React.FC = () => {
 
   if (status === 'success') {
     return (
-      <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
-        <main className="flex-1 flex items-center justify-center py-16 px-4">
+      <div className="min-h-screen bg-background flex flex-col justify-between">
+        <main className="flex-1 flex items-center justify-center py-12 px-4">
           <div className="w-full max-w-md mx-auto">
-            <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
-              <div className="text-center mb-8">
-                <div className="mx-auto w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+            <Card className="rounded-2xl shadow-xl border-border bg-card">
+              <CardContent className="p-6 sm:p-8 text-center">
+                <div className="mx-auto w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <h1 className="text-3xl md:text-4xl font-semibold text-[#1b1b1f] mb-3">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2">
                   Email vérifié !
                 </h1>
-                <p className="text-[15px] md:text-[16px] text-[#6e6e73]">
+                <p className="text-sm text-muted-foreground mb-6">
                   Votre adresse email a été confirmée avec succès. Vous pouvez maintenant vous connecter.
                 </p>
-              </div>
 
-              <button
-                onClick={() => navigate('/login')}
-                className="w-full bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg"
-              >
-                Retour à la connexion
-              </button>
-            </div>
+                <Button
+                  onClick={() => navigate('/login')}
+                  className="w-full h-11"
+                >
+                  Retour à la connexion
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </main>
         <footer className="w-full px-6 py-4 text-center">
-          <p className="text-sm text-[#6e6e73]">© 2025 Viraill. Tous droits réservés.</p>
+          <p className="text-xs text-muted-foreground">© 2025 Viraill. Tous droits réservés.</p>
         </footer>
       </div>
     );
@@ -87,36 +91,34 @@ const VerifyEmail: React.FC = () => {
 
   // Erreur
   return (
-    <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
-      <main className="flex-1 flex items-center justify-center py-16 px-4">
+    <div className="min-h-screen bg-background flex flex-col justify-between">
+      <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md mx-auto">
-          <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
-            <div className="text-center mb-8">
-              <div className="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
-                <AlertCircle className="h-8 w-8 text-red-600" />
+          <Card className="rounded-2xl shadow-xl border-border bg-card">
+            <CardContent className="p-6 sm:p-8 text-center">
+              <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+                <AlertCircle className="h-8 w-8 text-destructive" />
               </div>
-              <h1 className="text-3xl md:text-4xl font-semibold text-[#1b1b1f] mb-3">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2">
                 Lien invalide
               </h1>
-              <p className="text-[15px] md:text-[16px] text-[#6e6e73]">
+              <p className="text-sm text-muted-foreground mb-6">
                 {errorMessage}
               </p>
-            </div>
 
-            <button
-              onClick={() => navigate('/login')}
-              className="w-full bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg"
-            >
-              <span className="inline-flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
+              <Button
+                onClick={() => navigate('/login')}
+                className="w-full h-11"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
                 Retour à la connexion
-              </span>
-            </button>
-          </div>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </main>
       <footer className="w-full px-6 py-4 text-center">
-        <p className="text-sm text-[#6e6e73]">© 2025 Viraill. Tous droits réservés.</p>
+        <p className="text-xs text-muted-foreground">© 2025 Viraill. Tous droits réservés.</p>
       </footer>
     </div>
   );

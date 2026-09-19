@@ -111,13 +111,13 @@ export function TopicsStep() {
   return (
     <div className="space-y-8">
       <div className="text-center space-y-3">
-        <h1 className="text-4xl font-bold text-foreground">Quel est votre type de site ?</h1>
-        <p className="text-muted-foreground max-w-xl mx-auto text-lg">
-          Sélectionnez le type qui correspond le mieux à votre activité pour des <span className="font-semibold text-meetmind-primary">recommandations personnalisées</span>.
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">Quel est votre type de site ?</h1>
+        <p className="text-muted-foreground max-w-xl mx-auto text-base sm:text-lg">
+          Sélectionnez le type qui correspond le mieux à votre activité pour des <span className="font-semibold text-primary">recommandations personnalisées</span>.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {siteTypes.map((type) => {
           const isSelected = selectedType === type.id;
           return (
@@ -126,7 +126,7 @@ export function TopicsStep() {
               className={cn(
                 'flex flex-col items-center gap-2 p-5 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md',
                 isSelected
-                  ? 'shadow-lg border-meetmind-primary bg-meetmind-primary/5'
+                  ? 'shadow-md border-primary bg-primary/5'
                   : 'border-border bg-card hover:border-muted-foreground/30'
               )}
               onClick={() => setSelectedType(type.id)}
@@ -134,8 +134,8 @@ export function TopicsStep() {
               <div className="flex items-center gap-3 w-full">
                 <div className="flex-shrink-0">
                   {isSelected ? (
-                    <div className="h-6 w-6 rounded-full bg-meetmind-primary flex items-center justify-center shadow-md">
-                      <Check className="h-4 w-4 text-white" />
+                    <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center shadow-sm">
+                      <Check className="h-4 w-4 text-primary-foreground" />
                     </div>
                   ) : (
                     <div className="h-6 w-6 rounded-full border-2 border-muted-foreground/30" />
@@ -158,7 +158,7 @@ export function TopicsStep() {
         <Button
           onClick={handleBack}
           variant="outline"
-          className="px-6 border-border text-foreground hover:bg-muted hover:border-muted-foreground/30"
+          className="h-12 px-6 rounded-xl"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Précédent
@@ -166,21 +166,16 @@ export function TopicsStep() {
         <Button
           onClick={handleNext}
           disabled={!canProceed() || isSubmitting}
-          className={cn(
-            'px-8 py-6 text-base font-semibold transition-all rounded-meetmind-button',
-            canProceed() && !isSubmitting
-              ? 'text-white bg-meetmind-primary hover:bg-meetmind-soft-blue shadow-[0_4px_6px_-1px_rgba(26,58,255,0.3),0_2px_4px_-1px_rgba(26,58,255,0.2)] hover:shadow-[0_10px_15px_-3px_rgba(26,58,255,0.4),0_4px_6px_-2px_rgba(26,58,255,0.2)]'
-              : 'bg-muted text-muted-foreground cursor-not-allowed'
-          )}
+          className="h-12 px-8 text-base font-semibold rounded-xl"
         >
           {isSubmitting ? (
             <>
-              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-              <span className="opacity-80">Continuer</span>
+              <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+              <span>Continuer</span>
             </>
           ) : (
             <>
-              Continuer
+              <span>Continuer</span>
               <ChevronRight className="ml-2 h-5 w-5" />
             </>
           )}

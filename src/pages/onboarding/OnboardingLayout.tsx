@@ -87,7 +87,7 @@ export function OnboardingLayout() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="w-10 h-10 border-3 border-meetmind-primary/20 border-t-meetmind-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-muted-foreground text-sm">Chargement...</p>
         </div>
       </div>
@@ -104,7 +104,7 @@ export function OnboardingLayout() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="w-10 h-10 border-3 border-meetmind-primary/20 border-t-meetmind-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-10 h-10 border-3 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-muted-foreground text-sm">Redirection...</p>
         </div>
       </div>

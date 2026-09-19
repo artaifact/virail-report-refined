@@ -43,7 +43,7 @@ export function OnboardingBreadcrumb({
                 className={cn(
                   'font-medium transition-colors flex items-center gap-2',
                   isCurrent
-                    ? 'font-semibold text-meetmind-primary'
+                    ? 'font-semibold text-primary'
                     : isCompleted
                     ? 'text-muted-foreground hover:text-foreground'
                     : 'text-muted-foreground/40',
@@ -52,7 +52,7 @@ export function OnboardingBreadcrumb({
                 )}
               >
                 {isCompleted && !isCurrent && (
-                  <Check className="h-4 w-4 text-meetmind-primary" />
+                  <Check className="h-4 w-4 text-primary" />
                 )}
                 {step.label}
               </button>

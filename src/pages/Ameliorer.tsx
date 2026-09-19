@@ -3,6 +3,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import './Index.css';
 import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Wand2,
   Cpu,
@@ -49,6 +52,8 @@ import { generateFullRemediationPatch, createPullRequestPayload } from '@/servic
 import { HELP } from '@/lib/help-content';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
+import { AmeliorerSkeletonLoader } from '@/components/optimizer/AmeliorerSkeletonLoader';
+import { Skeleton } from '@/components/ui/skeleton';
 import type {
   FullReportData,
   BulkJobProgress,
@@ -306,7 +311,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     { key: 'entity_coverage', label: 'Couverture entités', icon: Globe, color: '#06B6D4', score: Math.round(coBreakdown.entity_coverage ?? 0) },
     { key: 'content_clarity', label: 'Clarté contenu', icon: FileText, color: '#F59E0B', score: Math.round(coBreakdown.content_clarity ?? 0) },
     { key: 'meta_completeness', label: 'Métadonnées', icon: Globe, color: '#10B981', score: Math.round(coBreakdown.meta_completeness ?? 0) },
-  ].filter(c => c.score > 0) : null;
+  ].filter(c => typeof c.score === 'number' && !isNaN(c.score)) : null;
 
   // Fallback : scores depuis audit_geo
   const getScore = (audit: any, key: string): number | null => {
@@ -512,90 +517,60 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     const meta = fileTabsMeta[activeOptTab] || fileTabsMeta.schemas;
     const Icon = meta.icon;
     return (
-      <div style={{ background: '#FFFFFF', borderRadius: '14px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '7px', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Icon size={14} style={{ color: '#64748B' }} />
+      <Card className="border-border/60 shadow-xs bg-card rounded-2xl overflow-hidden">
+        <div className="p-4 sm:px-6 sm:py-4 border-b border-border/60 bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Icon size={16} />
             </div>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>{title}</div>
-              <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '1px' }}>{description}</div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-foreground truncate">{title}</div>
+              <div className="text-xs text-muted-foreground truncate">{description}</div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge variant="outline" className="text-[10px] font-medium border-border/80 uppercase tracking-wider px-2 py-0">
+              {meta.badge}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => handleCopy(content, copyKey)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '7px',
-                border: '1px solid #EEEDF5', cursor: 'pointer', fontSize: '11px', fontWeight: 500, transition: 'all 0.2s',
-                background: copied === copyKey ? '#F1F5F9' : '#FFFFFF', color: copied === copyKey ? '#334155' : '#64748B',
-              }}
+              className="h-8 text-xs gap-1.5"
             >
-              {copied === copyKey ? <><Check size={11} /> Copie</> : <><Copy size={11} /> Copier</>}
-            </button>
-            <button
+              {copied === copyKey ? (
+                <>
+                  <Check size={13} className="text-emerald-500" />
+                  <span>Copié</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={13} />
+                  <span>Copier</span>
+                </>
+              )}
+            </Button>
+            <Button
+              size="sm"
               onClick={() => downloadFile(content, filename, fileType)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 12px', borderRadius: '7px',
-                border: 'none', cursor: 'pointer', fontSize: '11px', fontWeight: 600,
-                background: '#334155', color: '#FFFFFF', transition: 'all 0.2s',
-              }}
+              className="h-8 text-xs gap-1.5 shadow-xs font-semibold"
             >
-              <Download size={11} /> Télécharger
-            </button>
+              <Download size={13} />
+              <span>Télécharger</span>
+            </Button>
           </div>
         </div>
-        <div style={{ position: 'relative' }}>
-          <div style={{ position: 'absolute', top: '8px', right: '12px', padding: '2px 8px', borderRadius: '5px', background: '#F1F5F9', fontSize: '10px', fontWeight: 600, color: '#64748B', letterSpacing: '0.5px' }}>
-            {meta.badge}
-          </div>
-          <pre style={{
-            padding: '16px 20px', margin: 0, fontSize: '12px', fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-            color: '#334155', overflowX: 'auto', maxHeight: '500px', background: '#FAFAFC', lineHeight: '1.6',
-            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-          }}>
+        <div className="relative">
+          <pre className="p-4 sm:p-5 text-xs font-mono text-foreground bg-muted/30 overflow-x-auto max-h-[480px] leading-relaxed whitespace-pre-wrap break-all select-all">
             {(() => {
               const raw = fileType === 'application/json'
                 ? (() => { try { return JSON.stringify(JSON.parse(content), null, 2); } catch { return content; } })()
                 : content;
-              if (fileType !== 'text/html') return raw;
-              // Coloration syntaxique HTML basique
-              const parts: React.ReactNode[] = [];
-              const regex = /(<!--[\s\S]*?-->)|(<\/?[a-zA-Z][a-zA-Z0-9-]*)((?:\s+[a-zA-Z:_][\w:.-]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*))?)*)\s*(\/?>)/g;
-              let lastIndex = 0;
-              let m;
-              while ((m = regex.exec(raw)) !== null) {
-                if (m.index > lastIndex) parts.push(raw.slice(lastIndex, m.index));
-                if (m[1]) {
-                  // Commentaire
-                  parts.push(<span key={m.index} style={{ color: '#94A3B8', fontStyle: 'italic' }}>{m[1]}</span>);
-                } else {
-                  // Tag
-                  const tagParts: React.ReactNode[] = [];
-                  tagParts.push(<span key={`t${m.index}`} style={{ color: '#0F172A', fontWeight: 500 }}>{m[2]}</span>);
-                  // Attributs
-                  if (m[3]) {
-                    const attrRegex = /(\s+)([a-zA-Z:_][\w:.-]*)(\s*=\s*)?("[^"]*"|'[^']*'|[^\s>]*)?/g;
-                    let am;
-                    while ((am = attrRegex.exec(m[3])) !== null) {
-                      tagParts.push(am[1]); // espace
-                      tagParts.push(<span key={`a${m.index}-${am.index}`} style={{ color: '#64748B' }}>{am[2]}</span>);
-                      if (am[3]) tagParts.push(am[3]); // =
-                      if (am[4]) tagParts.push(<span key={`v${m.index}-${am.index}`} style={{ color: '#0369A1' }}>{am[4]}</span>);
-                    }
-                  }
-                  tagParts.push(<span key={`c${m.index}`} style={{ color: '#0F172A', fontWeight: 500 }}>{m[4]}</span>);
-                  parts.push(<span key={m.index}>{tagParts}</span>);
-                }
-                lastIndex = m.index + m[0].length;
-              }
-              if (lastIndex < raw.length) parts.push(raw.slice(lastIndex));
-              return parts;
+              return raw;
             })()}
           </pre>
         </div>
-      </div>
+      </Card>
     );
   };
 
@@ -603,63 +578,44 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
     <div className="view-content" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
       {/* ═══ NAVIGATION ═══ */}
-      <div className="flex gap-1 p-1 bg-slate-50 rounded-xl border border-[#EEEDF5] overflow-x-auto scrollbar-none">
-        {tabs.map(tab => {
-          const isActive = activeOptTab === tab.id;
-          const hasContent = tab.id === 'overview' || tab.has;
-          return (
-            <Tooltip key={tab.id}>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => hasContent && setActiveOptTab(tab.id)}
-                  className="shrink-0 px-3 sm:px-3.5 py-2 text-xs sm:text-[12.5px] rounded-[9px] transition-all whitespace-nowrap"
-                  style={{
-                    fontWeight: isActive ? 600 : 500,
-                    color: isActive ? '#0F172A' : hasContent ? '#64748B' : '#CBD5E1',
-                    background: isActive ? '#FFFFFF' : 'transparent',
-                    border: isActive ? '1px solid #E2E8F0' : '1px solid transparent',
-                    boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                    cursor: hasContent ? 'pointer' : 'default',
-                  }}
-                >
-                  {tab.id === 'agentic' && (
-                    <Cpu size={13} style={{ display: 'inline-block', marginRight: '6px', verticalAlign: '-1px', color: isActive ? '#1A3AFF' : '#64748B' }} />
-                  )}
-                  {tab.label}
-                  {(tab as any).beta && (
-                    <span
-                      className="inline-block ml-1.5 align-middle"
-                      style={{
-                        fontSize: '9px', fontWeight: 700, letterSpacing: '0.6px',
-                        padding: '1px 5px', borderRadius: '4px',
-                        background: isActive ? '#EDE9FE' : '#F5F3FF',
-                        color: '#7C3AED',
-                        textTransform: 'uppercase',
-                      }}
+      <div className="overflow-x-auto pb-1 scrollbar-none">
+        <Tabs value={activeOptTab} onValueChange={(val: any) => setActiveOptTab(val)} className="w-auto">
+          <TabsList className="bg-muted/80 p-1 rounded-xl border border-border/60 flex-nowrap h-auto gap-1">
+            {tabs.map((tab) => {
+              const hasContent = tab.id === 'overview' || tab.has;
+              return (
+                <Tooltip key={tab.id}>
+                  <TooltipTrigger asChild>
+                    <TabsTrigger
+                      value={tab.id}
+                      disabled={!hasContent}
+                      className="gap-1.5 px-3 sm:px-3.5 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      Beta
-                    </span>
+                      {tab.id === 'agentic' && (
+                        <Cpu className="h-3.5 w-3.5 text-primary shrink-0" />
+                      )}
+                      <span>{tab.label}</span>
+                      {(tab as any).beta && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                          Beta
+                        </span>
+                      )}
+                      {tab.id !== 'overview' && tab.has && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/70 shrink-0" />
+                      )}
+                    </TabsTrigger>
+                  </TooltipTrigger>
+                  {tab.tooltip && (
+                    <TooltipContent side="bottom" sideOffset={8} className="max-w-[280px] p-3 rounded-xl border border-border shadow-lg bg-popover text-popover-foreground">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1">{tab.tooltip.title}</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{tab.tooltip.description}</p>
+                    </TooltipContent>
                   )}
-                  {tab.id !== 'overview' && tab.has && (
-                    <span className="inline-block w-[5px] h-[5px] rounded-full ml-1.5 align-middle"
-                      style={{ background: isActive ? '#0F172A' : '#CBD5E1' }}
-                    />
-                  )}
-                </button>
-              </TooltipTrigger>
-              {tab.tooltip && (
-                <TooltipContent side="bottom" sideOffset={8} className="max-w-[280px] p-0 overflow-hidden rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgba(15,23,42,0.12)] bg-white font-sans">
-                  <div className="px-4 pt-4 pb-2">
-                    <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#1A3AFF]">{tab.tooltip.title}</p>
-                  </div>
-                  <div className="px-4 pb-4">
-                    <p className="text-[13px] leading-relaxed text-slate-500">{tab.tooltip.description}</p>
-                  </div>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          );
-        })}
+                </Tooltip>
+              );
+            })}
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* ═══ CONTENU DES ONGLETS ═══ */}
@@ -1362,9 +1318,33 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px 24px' }}>
             {selectedPageLoading && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '40px 0', color: '#64748B' }}>
-                <Loader2 size={18} className="animate-spin" />
-                <span style={{ fontSize: '14px' }}>Chargement des donnees...</span>
+              <div className="space-y-4 py-4 animate-in fade-in duration-200">
+                <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-3 items-start">
+                  <div className="p-4 rounded-xl bg-muted/40 border border-border flex flex-col items-center justify-center space-y-1.5 text-center">
+                    <Skeleton className="h-8 w-12 rounded" />
+                    <Skeleton className="h-3 w-10 rounded" />
+                  </div>
+                  <div className="space-y-2.5 pt-1">
+                    <div className="space-y-1">
+                      <Skeleton className="h-3 w-28 rounded" />
+                      <Skeleton className="h-2 w-full rounded-full" />
+                    </div>
+                    <div className="space-y-1">
+                      <Skeleton className="h-3 w-32 rounded" />
+                      <Skeleton className="h-2 w-4/5 rounded-full" />
+                    </div>
+                    <div className="space-y-1">
+                      <Skeleton className="h-3 w-24 rounded" />
+                      <Skeleton className="h-2 w-3/5 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Skeleton className="h-7 w-24 rounded-md" />
+                  <Skeleton className="h-7 w-28 rounded-md" />
+                  <Skeleton className="h-7 w-20 rounded-md" />
+                </div>
+                <Skeleton className="h-44 w-full rounded-xl" />
               </div>
             )}
 
@@ -1789,6 +1769,7 @@ export default function Ameliorer() {
   const { report: reportData, loading: reportLoading } = useReport(effectiveReportId);
   const { plan } = usePayment();
   const isStarter = plan === 'starter';
+  const isLoading = reportLoading || (reportsLoading && !reportData);
 
   const domainName = useMemo(() => {
     if (!reportData?.report?.url) return null;
@@ -1810,8 +1791,13 @@ export default function Ameliorer() {
               <Wand2 className="w-3.5 h-3.5" />
               <span>OPTIMISATION TECHNIQUE & CONTENUS MACHINE</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-              Améliorer votre visibilité IA — <span className="text-[#1A3AFF]">{domainName || 'Rapport'}</span>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2 flex-wrap">
+              <span>Améliorer votre visibilité IA —</span>
+              {isLoading && !domainName ? (
+                <Skeleton className="h-7 w-36 rounded-lg inline-block" />
+              ) : (
+                <span className="text-[#1A3AFF]">{domainName || 'Rapport'}</span>
+              )}
             </h1>
             <p className="text-xs sm:text-[13px] text-slate-500 mt-1 font-normal">
               Schémas JSON-LD, balises meta, documentation llms.txt, robots.txt et simulations d'agents pour maximiser vos citations.
@@ -1821,11 +1807,8 @@ export default function Ameliorer() {
       </div>
 
       {/* Content */}
-      {reportLoading ? (
-        <div className="p-16 text-center space-y-3 bg-white border border-slate-200/80 rounded-2xl">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#1A3AFF]" />
-          <p className="text-sm font-medium text-slate-700">Chargement des données d'optimisation...</p>
-        </div>
+      {isLoading ? (
+        <AmeliorerSkeletonLoader />
       ) : !reportData ? (
         <div className="p-16 text-center space-y-3 bg-white border border-slate-200/80 rounded-2xl">
           <p className="text-sm font-medium text-slate-700">Aucun rapport sélectionné.</p>

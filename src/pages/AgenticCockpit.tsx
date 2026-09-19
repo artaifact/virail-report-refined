@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import {
   Search,
   Loader2,
@@ -181,102 +182,104 @@ export default function AgenticCockpit() {
   };
 
   return (
-    <div className="dashboard-container ux-dashboard font-sans" style={{ minHeight: '100vh', padding: '24px 20px' }}>
-      <div className="space-y-6">
-        {/* Top Banner */}
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-sm">
-          <div className="max-w-3xl space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted border border-border text-xs font-semibold text-foreground">
-              <Cpu className="w-3.5 h-3.5 text-muted-foreground" />
-              <span>Audit d'Éligibilité Machine & Protocoles Agentiques (M2M)</span>
-            </div>
-
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              Cockpit d'Éligibilité & Distribution <span className="text-foreground">Agentique</span>
-            </h1>
-
-            <p className="text-xs sm:text-[13.5px] text-muted-foreground leading-relaxed font-normal">
-              Auditez la découvrabilité et l'achetabilité machine de votre plateforme face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achat).
-              Détectez les risques de <strong className="font-semibold text-foreground">disqualification silencieuse</strong> sur les 5 piliers et générez le pack de remédiation technique instantané.
-            </p>
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      {/* Top Banner */}
+      <div className="rounded-2xl bg-card border border-border p-6 sm:p-8 shadow-xs">
+        <div className="max-w-3xl space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted border border-border text-xs font-semibold text-foreground">
+            <Cpu className="w-3.5 h-3.5 text-primary" />
+            <span>Audit d'Éligibilité Machine & Protocoles Agentiques (M2M)</span>
           </div>
+
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            Cockpit d'Éligibilité & Distribution <span className="text-primary">Agentique</span>
+          </h1>
+
+          <p className="text-xs sm:text-[13.5px] text-muted-foreground leading-relaxed font-normal">
+            Auditez la découvrabilité et l'achetabilité machine de votre plateforme face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achat).
+            Détectez les risques de <strong className="font-semibold text-foreground">disqualification silencieuse</strong> sur les 5 piliers et générez le pack de remédiation technique instantané.
+          </p>
         </div>
+      </div>
 
-        {/* Control Card */}
-        <Card className="rounded-xl border border-border bg-card shadow-sm">
-          <CardContent className="p-4 sm:p-5 space-y-3.5">
-            <form onSubmit={(e) => handleScan(e)} className="flex flex-col sm:flex-row gap-2.5">
-              <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="Entrez l'URL à auditer (ex: https://tally.so)"
-                  required
-                  className="pl-10 h-11 text-xs sm:text-sm font-mono bg-muted/40 border-border rounded-xl"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="h-11 px-6 rounded-xl font-semibold text-xs sm:text-[13px] bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all gap-2 flex-shrink-0 cursor-pointer disabled:opacity-50"
-              >
-                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                {loading ? 'Audit en cours...' : "Lancer l'audit agentique"}
-              </Button>
-            </form>
-
-            {/* Quick Presets & Remediate Switch */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5 text-xs">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-slate-400 text-xs font-medium">Exemples rapides :</span>
-                {PRESETS.map((p) => (
-                  <button
-                    key={p.name}
-                    type="button"
-                    onClick={() => {
-                      setUrl(p.url);
-                      handleScan(undefined, p.url);
-                    }}
-                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50/80 hover:bg-white text-slate-600 hover:text-slate-900 transition-all font-medium text-xs cursor-pointer dark:bg-slate-800/40 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="toggle-remediate"
-                  checked={remediate}
-                  onCheckedChange={setRemediate}
-                />
-                <Label htmlFor="toggle-remediate" className="text-xs text-slate-500 dark:text-slate-400 cursor-pointer font-normal">
-                  Générer le Pack de Remédiation
-                </Label>
-              </div>
+      {/* Control Card */}
+      <Card className="rounded-xl border border-border bg-card shadow-xs">
+        <CardContent className="p-4 sm:p-5 space-y-3.5">
+          <form onSubmit={(e) => handleScan(e)} className="flex flex-col sm:flex-row gap-2.5">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="Entrez l'URL à auditer (ex: https://tally.so)"
+                required
+                className="pl-10 h-11 text-xs sm:text-sm font-mono bg-muted/40 border-border rounded-xl"
+              />
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Error display */}
-        {error && (
-          <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-between">
-            <span>{error}</span>
             <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleScan()}
-              className="rounded-lg h-7 text-xs border border-rose-200 text-rose-700 bg-white hover:bg-rose-50"
+              type="submit"
+              disabled={loading}
+              className="h-11 px-6 rounded-xl font-semibold text-xs sm:text-[13px] bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all gap-2 shrink-0 cursor-pointer disabled:opacity-50"
             >
-              Réessayer
+              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              {loading ? 'Audit en cours...' : "Lancer l'audit agentique"}
             </Button>
-          </div>
-        )}
+          </form>
 
-        {/* Skeleton Loading State */}
+          {/* Quick Presets & Remediate Switch */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-muted-foreground text-xs font-medium">Exemples rapides :</span>
+              {PRESETS.map((p) => (
+                <button
+                  key={p.name}
+                  type="button"
+                  onClick={() => {
+                    setUrl(p.url);
+                    handleScan(undefined, p.url);
+                  }}
+                  className="px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors font-medium text-xs cursor-pointer"
+                >
+                  {p.name}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Switch
+                id="toggle-remediate"
+                checked={remediate}
+                onCheckedChange={setRemediate}
+              />
+              <Label htmlFor="toggle-remediate" className="text-xs text-muted-foreground cursor-pointer font-normal">
+                Générer le Pack de Remédiation
+              </Label>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Error display */}
+      {error && (
+        <Alert variant="destructive" className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-xs">{error}</AlertDescription>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleScan()}
+            className="h-7 text-xs border-destructive/30"
+          >
+            Réessayer
+          </Button>
+        </Alert>
+      )}
+
+      {/* Skeleton Loading State */}
         {loading && <AgenticSkeletonLoader />}
 
         {/* Results View */}
@@ -463,6 +466,5 @@ export default function AgenticCockpit() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
+    );
+  }

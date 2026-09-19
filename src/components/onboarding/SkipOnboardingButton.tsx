@@ -22,7 +22,7 @@ export function SkipOnboardingButton({ onSkip }: SkipOnboardingButtonProps) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Annuler</AlertDialogCancel>
-          <AlertDialogAction onClick={onSkip} className="bg-slate-900 hover:bg-slate-800">
+          <AlertDialogAction onClick={onSkip}>
             Passer
           </AlertDialogAction>
         </AlertDialogFooter>

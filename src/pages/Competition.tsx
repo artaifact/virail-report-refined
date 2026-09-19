@@ -41,6 +41,7 @@ import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { HELP } from '@/lib/help-content';
+import { CompetitionSkeletonLoader } from "@/components/competitive-analysis/CompetitionSkeletonLoader";
 
 // === UTILITAIRES ===
 function exportToCsvCompetition(filename: string, rows: string[][]): void {
@@ -213,7 +214,8 @@ const Competition = () => {
   const latestReportId = explicitReportId || getLatestReportId(reports);
 
   // Charger le rapport complet pour accéder à analyse_concurrentielle_v3 et materiality_matrix
-  const { report: reportData } = useReport(latestReportId);
+  const { report: reportData, loading: reportLoading } = useReport(latestReportId);
+  const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
 
   // Données v3, materiality_matrix et benchmark depuis le rapport
   const v3Data = reportData?.analyse_concurrentielle_v3 as AnalyseConcurrentielleV3 | null | undefined;
@@ -242,6 +244,7 @@ const Competition = () => {
 
   // Fonction pour charger une analyse par ID
   const loadAnalysisById = async (analysisId: number) => {
+    setIsAnalysisLoading(true);
     try {
       setMiniLLMResults([]);
 
@@ -263,6 +266,8 @@ const Competition = () => {
         }
       }
     } catch (error) {
+    } finally {
+      setIsAnalysisLoading(false);
     }
   };
 
@@ -317,20 +322,20 @@ const Competition = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F6F7] p-3 md:p-6">
-      <div className="w-full space-y-6">
+    <div className="min-h-screen bg-background text-foreground p-3 md:p-6 lg:p-8">
+      <div className="w-full max-w-7xl mx-auto space-y-6">
         {/* Bouton Télécharger le rapport (PDF) */}
         <div className="flex justify-end">
           <Button
             onClick={handleExportPdf}
             disabled={isExportingPdf || !reportData}
             variant="outline"
-            className="gap-2 border-indigo-200 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100/70 text-xs font-semibold rounded-xl cursor-pointer disabled:opacity-50 shadow-xs"
+            className="gap-2 border-border text-foreground hover:bg-muted text-xs font-semibold rounded-xl cursor-pointer disabled:opacity-50 shadow-xs"
           >
             {isExportingPdf ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
             ) : (
-              <Download className="w-3.5 h-3.5 text-indigo-600" />
+              <Download className="w-3.5 h-3.5 text-primary" />
             )}
             <span>{isExportingPdf ? 'Génération PDF...' : 'Télécharger le rapport (PDF)'}</span>
           </Button>
@@ -340,69 +345,36 @@ const Competition = () => {
 
             {/* Affichage des erreurs */}
             {error && (
-              <Card className="border-gray-200 bg-gray-50 shadow-sm">
+              <Card className="border-border bg-card shadow-xs">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 text-primary animate-spin" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Veuillez patienter</h3>
-                      <p className="text-gray-600 mt-1">Votre analyse est en cours de finalisation. Les résultats vont s'afficher dès qu'ils sont prêts.</p>
+                      <h3 className="text-base font-semibold text-foreground">Veuillez patienter</h3>
+                      <p className="text-muted-foreground text-xs mt-0.5">Votre analyse est en cours de finalisation. Les résultats vont s'afficher dès qu'ils sont prêts.</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* État vide - Squelette */}
-            {!currentAnalysis && !error && (
-              <Card className="bg-white border-gray-200 shadow-sm" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                <CardContent className="p-4 md:p-8">
-                  <div className="space-y-6">
-                    {/* Squelette header */}
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-gray-100 animate-pulse" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-5 w-48 bg-gray-100 rounded-lg animate-pulse" />
-                        <div className="h-3 w-32 bg-gray-50 rounded-lg animate-pulse" />
-                      </div>
-                    </div>
+            {/* État de chargement - Skeleton Haute-Fidélité */}
+            {(reportsLoading || reportLoading || isAnalysisLoading || (!currentAnalysis && !error && !!latestReportId)) && (
+              <CompetitionSkeletonLoader />
+            )}
 
-                    {/* Squelette cards concurrents */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="p-5 rounded-xl border border-gray-100 bg-gray-50/50">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="w-8 h-8 rounded-lg bg-gray-200 animate-pulse" />
-                            <div className="flex-1 space-y-2">
-                              <div className="h-4 w-36 bg-gray-200 rounded animate-pulse" />
-                              <div className="h-3 w-24 bg-gray-100 rounded animate-pulse" />
-                            </div>
-                            <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse" />
-                          </div>
-                          <div className="space-y-2">
-                            <div className="h-2 w-full bg-gray-100 rounded-full animate-pulse" />
-                            <div className="h-2 w-3/4 bg-gray-100 rounded-full animate-pulse" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Squelette graphique */}
-                    <div className="p-6 rounded-xl border border-gray-100 bg-gray-50/50">
-                      <div className="h-4 w-40 bg-gray-200 rounded animate-pulse mb-4 mx-auto" />
-                      <div className="h-48 w-full bg-gray-100 rounded-lg animate-pulse" />
-                    </div>
-
-                    {/* Message */}
-                    <div className="text-center py-4">
-                      <p className="text-gray-400 text-sm">
-                        Aucune analyse disponible
-                      </p>
-                    </div>
+            {/* État vide si aucun rapport */}
+            {!reportsLoading && !reportLoading && !isAnalysisLoading && !latestReportId && !error && (
+              <Card className="bg-card border-border shadow-xs rounded-2xl p-12 text-center">
+                <div className="max-w-md mx-auto space-y-3">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                    <Target className="w-6 h-6" />
                   </div>
-                </CardContent>
+                  <h3 className="text-base font-semibold text-foreground">Aucune analyse concurrentielle disponible</h3>
+                  <p className="text-xs text-muted-foreground">Veuillez lancer une nouvelle analyse pour mesurer votre positionnement face à vos concurrents.</p>
+                </div>
               </Card>
             )}
 
@@ -828,48 +800,57 @@ const Competition = () => {
 
                 {/* Avantages concurrentiels et axes d'amélioration */}
                 {(currentAnalysis.target_positioning?.competitive_advantages?.length || 0) > 0 || (currentAnalysis.target_positioning?.improvement_areas?.length || 0) > 0 ? (
-                  <Card className="bg-white border-gray-200 shadow-sm">
-                    <CardHeader className="border-b border-gray-200">
-                      <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">Analyse qualitative<InfoTooltip {...HELP.analyseQualitative} /></CardTitle>
-                      <CardDescription className="text-gray-600">
+                  <Card className="border-border/60 shadow-xs bg-card">
+                    <CardHeader className="border-b border-border/60 px-6 py-4">
+                      <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+                        Analyse qualitative
+                        <InfoTooltip {...HELP.analyseQualitative} />
+                      </CardTitle>
+                      <CardDescription className="text-xs text-muted-foreground">
                         Points forts identifiés et axes d'amélioration recommandés
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-6">
                       <div className="grid md:grid-cols-2 gap-4">
                         {/* Points forts */}
-                        <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                          <h4 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4" />
+                        <div className="p-4 rounded-xl bg-muted/20 border border-border/60 space-y-3">
+                          <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-emerald-500" />
                             Points forts
                             <InfoTooltip {...HELP.pointsForts} side="right" />
                           </h4>
                           {(currentAnalysis.target_positioning?.competitive_advantages || []).length > 0 ? (
-                            <ul className="space-y-2 list-disc list-inside">
+                            <ul className="space-y-2">
                               {currentAnalysis.target_positioning!.competitive_advantages.map((item, idx) => (
-                                <li key={idx} className="text-sm text-gray-900">{item}</li>
+                                <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2 leading-relaxed">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                                  <span>{item}</span>
+                                </li>
                               ))}
                             </ul>
                           ) : (
-                            <div className="text-sm text-gray-600">Aucun point fort listé</div>
+                            <div className="text-xs text-muted-foreground italic">Aucun point fort listé</div>
                           )}
                         </div>
 
                         {/* Axes d'amélioration */}
-                        <div className="p-4 rounded-lg bg-orange-50 border border-orange-200">
-                          <h4 className="text-sm font-semibold text-orange-700 mb-3 flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4" />
+                        <div className="p-4 rounded-xl bg-muted/20 border border-border/60 space-y-3">
+                          <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-amber-500" />
                             Axes d'amélioration
                             <InfoTooltip {...HELP.axesDamelioration} side="right" />
                           </h4>
                           {(currentAnalysis.target_positioning?.improvement_areas || []).length > 0 ? (
-                            <ul className="space-y-2 list-disc list-inside">
+                            <ul className="space-y-2">
                               {currentAnalysis.target_positioning!.improvement_areas.map((item, idx) => (
-                                <li key={idx} className="text-sm text-gray-900">{item}</li>
+                                <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2 leading-relaxed">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                                  <span>{item}</span>
+                                </li>
                               ))}
                             </ul>
                           ) : (
-                            <div className="text-sm text-gray-600">Aucun axe d'amélioration listé</div>
+                            <div className="text-xs text-muted-foreground italic">Aucun axe d'amélioration listé</div>
                           )}
                         </div>
 

@@ -95,7 +95,7 @@ export const OraStyleScoreOverview: React.FC<OraStyleScoreOverviewProps> = ({
   const findScore = (keys: string[], defaultVal: number): number => {
     for (const key of keys) {
       const match = scores.find(s => s.key === key || s.label.toLowerCase().includes(key));
-      if (match && typeof match.score === 'number' && match.score > 0) {
+      if (match && typeof match.score === 'number' && match.score >= 0) {
         return match.score;
       }
     }

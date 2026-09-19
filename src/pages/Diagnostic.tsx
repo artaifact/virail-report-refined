@@ -152,11 +152,11 @@ export default function Diagnostic() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
+        return <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />;
       case 'error':
-        return <XCircle className="h-5 w-5 text-red-500" />;
+        return <XCircle className="h-5 w-5 text-destructive" />;
       case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
+        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
       default:
         return null;
     }
@@ -165,11 +165,11 @@ export default function Diagnostic() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'success':
-        return <Badge className="bg-green-100 text-green-800">Succès</Badge>;
+        return <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">Succès</Badge>;
       case 'error':
-        return <Badge className="bg-red-100 text-red-800">Erreur</Badge>;
+        return <Badge variant="destructive">Erreur</Badge>;
       case 'warning':
-        return <Badge className="bg-yellow-100 text-yellow-800">Avertissement</Badge>;
+        return <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">Avertissement</Badge>;
       default:
         return null;
     }
@@ -180,21 +180,20 @@ export default function Diagnostic() {
   const warningCount = results.filter(r => r.status === 'warning').length;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-6 w-6" />
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <AlertTriangle className="h-5 w-5 text-primary" />
               Diagnostic de l'application
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-3">
               <Button 
                 onClick={runDiagnostics} 
                 disabled={isRunning}
-                className="bg-blue-600 hover:bg-blue-700"
               >
                 {isRunning ? 'Diagnostic en cours...' : 'Lancer le diagnostic'}
               </Button>
@@ -209,11 +208,11 @@ export default function Diagnostic() {
             </div>
             
             {results.length > 0 && (
-              <div className="grid gap-2">
-                <div className="flex gap-4 text-sm">
-                  <span className="text-green-600">✅ {successCount} succès</span>
-                  <span className="text-yellow-600">⚠️ {warningCount} avertissements</span>
-                  <span className="text-red-600">❌ {errorCount} erreurs</span>
+              <div className="pt-2 border-t border-border">
+                <div className="flex flex-wrap gap-4 text-xs font-medium">
+                  <span className="text-emerald-600 dark:text-emerald-400">✅ {successCount} succès</span>
+                  <span className="text-amber-600 dark:text-amber-400">⚠️ {warningCount} avertissements</span>
+                  <span className="text-destructive">❌ {errorCount} erreurs</span>
                 </div>
               </div>
             )}
@@ -223,16 +222,16 @@ export default function Diagnostic() {
         {results.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Résultats du diagnostic</CardTitle>
+              <CardTitle className="text-foreground">Résultats du diagnostic</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {results.map((result, index) => (
-                  <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
+                  <div key={index} className="flex items-center gap-3 p-3 border border-border bg-muted/20 rounded-lg">
                     {getStatusIcon(result.status)}
-                    <div className="flex-1">
-                      <div className="font-medium">{result.name}</div>
-                      <div className="text-sm text-gray-600">{result.message}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm text-foreground">{result.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">{result.message}</div>
                     </div>
                     {getStatusBadge(result.status)}
                   </div>

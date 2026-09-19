@@ -1,128 +1,235 @@
-
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import * as React from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  BarChart3,
+  Wrench,
+  Cpu,
+  CreditCard,
+  Settings,
+  HelpCircle,
+  TrendingUp,
+  ShieldCheck,
+  Zap,
+  Globe,
+} from "lucide-react";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
-import { Search, ArrowRight } from "lucide-react";
 
-interface SearchResult {
+interface SearchAction {
   title: string;
   description: string;
   path: string;
-  category: string;
+  category: "Navigation" | "Métriques" | "Actions" | "Système";
+  icon?: React.ComponentType<{ className?: string }>;
 }
 
-const GlobalSearch = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState("");
+const SEARCH_ITEMS: SearchAction[] = [
+  // Navigation principale
+  {
+    title: "Vue d'ensemble",
+    description: "Score global, aperçu des métriques et citations",
+    path: "/",
+    category: "Navigation",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Analyse Concurrentielle",
+    description: "Comparaison des parts de voix et citations",
+    path: "/competition",
+    category: "Navigation",
+    icon: BarChart3,
+  },
+  {
+    title: "Plan d'actions & Améliorer",
+    description: "Feuille de route et correctifs sémantiques",
+    path: "/ameliorer",
+    category: "Navigation",
+    icon: Wrench,
+  },
+  {
+    title: "Cockpit Agentique",
+    description: "Protocoles machine-to-machine et conformité LLM",
+    path: "/agentic",
+    category: "Navigation",
+    icon: Cpu,
+  },
+  {
+    title: "Facturation & Abonnements",
+    description: "Gestion des formules et consommation",
+    path: "/pricing",
+    category: "Navigation",
+    icon: CreditCard,
+  },
+  {
+    title: "Paramètres du compte",
+    description: "Profil, équipe et préférences",
+    path: "/settings",
+    category: "Navigation",
+    icon: Settings,
+  },
+  {
+    title: "Aide & Documentation",
+    description: "Guides méthodologiques et assistance",
+    path: "/help",
+    category: "Navigation",
+    icon: HelpCircle,
+  },
 
-  const searchData: SearchResult[] = [
-    { title: "CLS (Cumulative Layout Shift)", description: "Métrique Core Web Vitals", path: "/technical", category: "Performance" },
-    { title: "Backlinks", description: "Analyse des liens entrants", path: "/competition", category: "Autorité" },
-    { title: "E-E-A-T Score", description: "Expertise, Expérience, Autorité, Trust", path: "/eeat", category: "Confiance" },
-    { title: "Score global", description: "Vue d'ensemble des performances SEO", path: "/", category: "Dashboard" },
-    { title: "Quick Wins", description: "Actions rapides à impact immédiat", path: "/", category: "Actions" },
-    { title: "Tâches Kanban", description: "Suivi des recommandations", path: "/tasks", category: "Suivi" }
-  ];
+  // Métriques & Analyses clés
+  {
+    title: "Score GEO Global",
+    description: "Visibilité dans les moteurs génératifs (ChatGPT, Perplexity...)",
+    path: "/",
+    category: "Métriques",
+    icon: Globe,
+  },
+  {
+    title: "Score E-E-A-T",
+    description: "Expertise, Expérience, Autorité et Confiance",
+    path: "/ameliorer",
+    category: "Métriques",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Citations LLM",
+    description: "Mentions directes et sources d'entraînement",
+    path: "/competition",
+    category: "Métriques",
+    icon: TrendingUp,
+  },
 
-  const filteredResults = query 
-    ? searchData.filter(item => 
-        item.title.toLowerCase().includes(query.toLowerCase()) ||
-        item.description.toLowerCase().includes(query.toLowerCase()) ||
-        item.category.toLowerCase().includes(query.toLowerCase())
-      )
-    : [];
+  // Actions & Quick Wins
+  {
+    title: "Quick Wins",
+    description: "Actions rapides à impact immédiat sur le référencement",
+    path: "/ameliorer",
+    category: "Actions",
+    icon: Zap,
+  },
+];
 
-  useEffect(() => {
+export const GlobalSearch = () => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
         e.preventDefault();
-        setIsOpen(true);
-      }
-      if (e.key === 'Escape') {
-        setIsOpen(false);
-        setQuery("");
+        setIsOpen((open) => !open);
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  if (!isOpen) return null;
+  const handleSelect = (path: string) => {
+    setIsOpen(false);
+    navigate(path);
+  };
+
+  const navItems = SEARCH_ITEMS.filter((item) => item.category === "Navigation");
+  const metricItems = SEARCH_ITEMS.filter((item) => item.category === "Métriques");
+  const actionItems = SEARCH_ITEMS.filter((item) => item.category === "Actions");
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-20 z-50">
-      <Card className="w-full max-w-2xl mx-4">
-        <CardContent className="p-0">
-          <div className="flex items-center gap-3 p-4 border-b border-gray-200">
-            <Search className="h-5 w-5 text-gray-400" />
-            <Input
-              placeholder="Rechercher métriques, pages, actions..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="border-0 focus:ring-0 text-lg"
-              autoFocus
-            />
-            <kbd className="px-2 py-1 text-xs text-gray-500 bg-gray-100 rounded">Esc</kbd>
-          </div>
+    <CommandDialog open={isOpen} onOpenChange={setIsOpen}>
+      <CommandInput placeholder="Rechercher une page, métrique ou action... (⌘K)" />
+      <CommandList className="max-h-[360px] py-2">
+        <CommandEmpty className="py-8 text-center text-sm text-muted-foreground">
+          Aucun résultat trouvé pour votre recherche.
+        </CommandEmpty>
 
-          {query && (
-            <div className="max-h-96 overflow-y-auto">
-              {filteredResults.length > 0 ? (
-                <div className="space-y-1 p-2">
-                  {filteredResults.map((result, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer group"
-                      onClick={() => {
-                        window.location.href = result.path;
-                        setIsOpen(false);
-                        setQuery("");
-                      }}
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-gray-900">{result.title}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {result.category}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600">{result.description}</p>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
-                    </div>
-                  ))}
+        <CommandGroup heading="Pages & Navigation">
+          {navItems.map((item) => {
+            const Icon = item.icon || LayoutDashboard;
+            return (
+              <CommandItem
+                key={item.title}
+                value={`${item.title} ${item.description}`}
+                onSelect={() => handleSelect(item.path)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer aria-selected:bg-accent aria-selected:text-accent-foreground"
+              >
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-foreground">
+                  <Icon className="h-4 w-4" />
                 </div>
-              ) : (
-                <div className="p-8 text-center text-gray-500">
-                  <Search className="h-8 w-8 mx-auto mb-3 text-gray-300" />
-                  <p>Aucun résultat pour "{query}"</p>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="font-medium text-sm text-foreground truncate">{item.title}</span>
+                  <span className="text-xs text-muted-foreground truncate">{item.description}</span>
                 </div>
-              )}
-            </div>
-          )}
+                <Badge variant="outline" className="text-[10px] font-normal shrink-0">
+                  {item.category}
+                </Badge>
+              </CommandItem>
+            );
+          })}
+        </CommandGroup>
 
-          {!query && (
-            <div className="p-4 text-sm text-gray-500">
-              <p className="mb-2">Recherche rapide :</p>
-              <div className="flex flex-wrap gap-2">
-                {["CLS", "E-E-A-T", "Backlinks", "Quick Wins"].map(term => (
-                  <Badge 
-                    key={term}
-                    variant="outline" 
-                    className="cursor-pointer hover:bg-gray-100"
-                    onClick={() => setQuery(term)}
-                  >
-                    {term}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        <CommandSeparator className="my-1" />
+
+        <CommandGroup heading="Métriques & Indicateurs">
+          {metricItems.map((item) => {
+            const Icon = item.icon || TrendingUp;
+            return (
+              <CommandItem
+                key={item.title}
+                value={`${item.title} ${item.description}`}
+                onSelect={() => handleSelect(item.path)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer aria-selected:bg-accent aria-selected:text-accent-foreground"
+              >
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="font-medium text-sm text-foreground truncate">{item.title}</span>
+                  <span className="text-xs text-muted-foreground truncate">{item.description}</span>
+                </div>
+                <Badge variant="secondary" className="text-[10px] font-normal shrink-0">
+                  {item.category}
+                </Badge>
+              </CommandItem>
+            );
+          })}
+        </CommandGroup>
+
+        <CommandSeparator className="my-1" />
+
+        <CommandGroup heading="Recommandations">
+          {actionItems.map((item) => {
+            const Icon = item.icon || Zap;
+            return (
+              <CommandItem
+                key={item.title}
+                value={`${item.title} ${item.description}`}
+                onSelect={() => handleSelect(item.path)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer aria-selected:bg-accent aria-selected:text-accent-foreground"
+              >
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="font-medium text-sm text-foreground truncate">{item.title}</span>
+                  <span className="text-xs text-muted-foreground truncate">{item.description}</span>
+                </div>
+                <Badge variant="outline" className="text-[10px] font-normal shrink-0">
+                  {item.category}
+                </Badge>
+              </CommandItem>
+            );
+          })}
+        </CommandGroup>
+      </CommandList>
+    </CommandDialog>
   );
 };
 

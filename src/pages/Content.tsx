@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Video, MessageSquare, Twitter, Users, Copy, Download, Globe, Target, Zap } from "lucide-react";
+import { FileText, Video, MessageSquare, Twitter, Users, Copy, Download, Globe, Target, Zap, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { StatsCard } from "@/components/ui/stats-card";
 
@@ -64,7 +64,7 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
       setGeneratedContent(content);
       setIsGenerating(false);
       toast.success("Contenu généré avec succès !");
-    }, 2000);
+    }, 1500);
   };
 
   const copyToClipboard = () => {
@@ -73,39 +73,36 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
   };
 
   return (
-    <div className="flex-1 space-y-6 p-8 pt-6">
-      <div className="flex items-center justify-between">
+    <div className="flex-1 space-y-6 p-4 sm:p-6 md:p-8 bg-background text-foreground min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Génération de contenu GEO</h2>
-          <p className="text-muted-foreground">Créez du contenu optimisé pour votre audience géographique</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Génération de contenu GEO</h1>
+          <p className="text-muted-foreground text-sm sm:text-base mt-1">Créez du contenu optimisé pour votre audience géographique et vos personas IA</p>
         </div>
-        <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
-          <Target className="h-3 w-3 mr-1" />
-          IA Optimisée
+        <Badge variant="secondary" className="self-start sm:self-auto gap-1.5 py-1 px-3">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          Moteur Génératif IA
         </Badge>
       </div>
 
       {/* Statistiques rapides */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         <StatsCard
           title="Score de localisation"
           value="85%"
           icon={Globe}
-          variant="success"
           description="Optimisation géographique"
         />
         <StatsCard
           title="Mots-clés régionaux"
           value="12"
           icon={Target}
-          variant="info"
           description="Mots-clés ciblés"
         />
         <StatsCard
           title="Optimisation mobile"
           value="Excellent"
           icon={Zap}
-          variant="success"
           description="Performance mobile"
         />
       </div>
@@ -114,38 +111,38 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
         {/* Formulaires de génération */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="article" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="article" className="flex items-center gap-1">
-                <FileText className="h-3 w-3" />
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto p-1 bg-muted">
+              <TabsTrigger value="article" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
+                <FileText className="h-3.5 w-3.5" />
                 Article
               </TabsTrigger>
-              <TabsTrigger value="video-script" className="flex items-center gap-1">
-                <Video className="h-3 w-3" />
+              <TabsTrigger value="video-script" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
+                <Video className="h-3.5 w-3.5" />
                 Script
               </TabsTrigger>
-              <TabsTrigger value="video-desc" className="flex items-center gap-1">
-                <Video className="h-3 w-3" />
-                Desc. vidéo
+              <TabsTrigger value="video-desc" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
+                <Video className="h-3.5 w-3.5" />
+                Desc.
               </TabsTrigger>
-              <TabsTrigger value="social-post" className="flex items-center gap-1">
-                <MessageSquare className="h-3 w-3" />
+              <TabsTrigger value="social-post" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
+                <MessageSquare className="h-3.5 w-3.5" />
                 Post
               </TabsTrigger>
-              <TabsTrigger value="twitter" className="flex items-center gap-1">
-                <Twitter className="h-3 w-3" />
+              <TabsTrigger value="twitter" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
+                <Twitter className="h-3.5 w-3.5" />
                 Tweet
               </TabsTrigger>
-              <TabsTrigger value="reddit" className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
+              <TabsTrigger value="reddit" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
+                <Users className="h-3.5 w-3.5" />
                 Reddit
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="article">
-              <Card className="border-0 shadow-md hover:shadow-lg transition-all duration-300">
+              <Card className="border border-border bg-card shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary-600" />
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary" />
                     Génération d'article
                   </CardTitle>
                   <CardDescription>Créez un article de blog optimisé pour votre zone géographique</CardDescription>
@@ -157,13 +154,12 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                       <Input 
                         id="article-title" 
                         placeholder="Ex: Guide voyage Paris 2024"
-                        className="border-neutral-200 focus:border-primary-500"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="article-location">Zone géographique</Label>
-                      <Select>
-                        <SelectTrigger className="border-neutral-200 focus:border-primary-500">
+                      <Select defaultValue="france">
+                        <SelectTrigger id="article-location">
                           <SelectValue placeholder="Sélectionner une région" />
                         </SelectTrigger>
                         <SelectContent>
@@ -179,13 +175,12 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                     <Input 
                       id="article-keywords" 
                       placeholder="voyage, paris, guide, 2024"
-                      className="border-neutral-200 focus:border-primary-500"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="article-length">Longueur souhaitée</Label>
-                    <Select>
-                      <SelectTrigger className="border-neutral-200 focus:border-primary-500">
+                    <Select defaultValue="moyen">
+                      <SelectTrigger id="article-length">
                         <SelectValue placeholder="Sélectionner la longueur" />
                       </SelectTrigger>
                       <SelectContent>
@@ -201,8 +196,9 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                       keywords: (document.getElementById("article-keywords") as HTMLInputElement)?.value
                     })}
                     disabled={isGenerating}
-                    className="w-full bg-primary-600 hover:bg-primary-700"
+                    className="w-full gap-2"
                   >
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     {isGenerating ? "Génération en cours..." : "Générer l'article"}
                   </Button>
                 </CardContent>
@@ -210,13 +206,13 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
             </TabsContent>
 
             <TabsContent value="video-script">
-              <Card className="border-0 shadow-md hover:shadow-lg transition-all duration-300">
+              <Card className="border border-border bg-card shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Video className="h-5 w-5 text-primary-600" />
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Video className="h-5 w-5 text-primary" />
                     Script de vidéo
                   </CardTitle>
-                  <CardDescription>Créez un script engageant pour vos vidéos</CardDescription>
+                  <CardDescription>Créez un script engageant pour vos vidéos YouTube ou TikTok</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
@@ -225,13 +221,12 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                       <Input 
                         id="video-title" 
                         placeholder="Ex: Top 5 destinations été 2024"
-                        className="border-neutral-200 focus:border-primary-500"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="video-duration">Durée souhaitée</Label>
-                      <Select>
-                        <SelectTrigger className="border-neutral-200 focus:border-primary-500">
+                      <Select defaultValue="court">
+                        <SelectTrigger id="video-duration">
                           <SelectValue placeholder="Durée" />
                         </SelectTrigger>
                         <SelectContent>
@@ -247,7 +242,6 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                     <Input 
                       id="video-audience" 
                       placeholder="Ex: Jeunes voyageurs français"
-                      className="border-neutral-200 focus:border-primary-500"
                     />
                   </div>
                   <Button 
@@ -255,8 +249,9 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                       title: (document.getElementById("video-title") as HTMLInputElement)?.value 
                     })}
                     disabled={isGenerating}
-                    className="w-full bg-primary-600 hover:bg-primary-700"
+                    className="w-full gap-2"
                   >
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     {isGenerating ? "Génération en cours..." : "Générer le script"}
                   </Button>
                 </CardContent>
@@ -264,13 +259,13 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
             </TabsContent>
 
             <TabsContent value="video-desc">
-              <Card className="border-0 shadow-md hover:shadow-lg transition-all duration-300">
+              <Card className="border border-border bg-card shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Video className="h-5 w-5 text-primary-600" />
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Video className="h-5 w-5 text-primary" />
                     Description de vidéo
                   </CardTitle>
-                  <CardDescription>Optimisez vos descriptions YouTube</CardDescription>
+                  <CardDescription>Optimisez vos descriptions avec timestamps et mots-clés</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -278,22 +273,22 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                     <Input 
                       id="video-desc-title" 
                       placeholder="Titre de la vidéo"
-                      className="border-neutral-200 focus:border-primary-500"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="video-desc-points">Points clés à mentionner</Label>
                     <Textarea 
                       id="video-desc-points" 
-                      placeholder="Points clés à mentionner"
-                      className="border-neutral-200 focus:border-primary-500"
+                      placeholder="Points clés à mentionner..."
+                      className="min-h-[100px]"
                     />
                   </div>
                   <Button 
                     onClick={() => handleGenerate("video-desc", {})}
                     disabled={isGenerating}
-                    className="w-full bg-primary-600 hover:bg-primary-700"
+                    className="w-full gap-2"
                   >
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     {isGenerating ? "Génération en cours..." : "Générer la description"}
                   </Button>
                 </CardContent>
@@ -301,10 +296,10 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
             </TabsContent>
 
             <TabsContent value="social-post">
-              <Card className="border-0 shadow-md hover:shadow-lg transition-all duration-300">
+              <Card className="border border-border bg-card shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-primary-600" />
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-primary" />
                     Publication sociale
                   </CardTitle>
                   <CardDescription>Créez des posts optimisés pour vos réseaux sociaux</CardDescription>
@@ -313,8 +308,8 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="social-platform">Plateforme</Label>
-                      <Select>
-                        <SelectTrigger className="border-neutral-200 focus:border-primary-500">
+                      <Select defaultValue="linkedin">
+                        <SelectTrigger id="social-platform">
                           <SelectValue placeholder="Choisir la plateforme" />
                         </SelectTrigger>
                         <SelectContent>
@@ -329,7 +324,6 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                       <Input 
                         id="social-location" 
                         placeholder="Ex: France, Paris"
-                        className="border-neutral-200 focus:border-primary-500"
                       />
                     </div>
                   </div>
@@ -338,7 +332,6 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                     <Input 
                       id="social-topic" 
                       placeholder="Ex: Offres spéciales été"
-                      className="border-neutral-200 focus:border-primary-500"
                     />
                   </div>
                   <Button 
@@ -347,8 +340,9 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
                       location: (document.getElementById("social-location") as HTMLInputElement)?.value
                     })}
                     disabled={isGenerating}
-                    className="w-full bg-primary-600 hover:bg-primary-700"
+                    className="w-full gap-2"
                   >
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     {isGenerating ? "Génération en cours..." : "Générer le post"}
                   </Button>
                 </CardContent>
@@ -356,73 +350,71 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
             </TabsContent>
 
             <TabsContent value="twitter">
-              <Card className="border-0 shadow-md hover:shadow-lg transition-all duration-300">
+              <Card className="border border-border bg-card shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Twitter className="h-5 w-5 text-primary-600" />
-                    Tweet optimisé
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Twitter className="h-5 w-5 text-primary" />
+                    Post X (Twitter)
                   </CardTitle>
-                  <CardDescription>Créez des tweets engageants</CardDescription>
+                  <CardDescription>Créez des threads et tweets percutants</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="twitter-topic">Sujet du tweet</Label>
+                    <Label htmlFor="twitter-topic">Sujet du post</Label>
                     <Input 
                       id="twitter-topic" 
-                      placeholder="Sujet du tweet"
-                      className="border-neutral-200 focus:border-primary-500"
+                      placeholder="Ex: 3 astuces pour voyager moins cher"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="twitter-hashtags">Hashtags cibles</Label>
                     <Input 
                       id="twitter-hashtags" 
-                      placeholder="Hashtags cibles"
-                      className="border-neutral-200 focus:border-primary-500"
+                      placeholder="#voyage #astuce #bonplan"
                     />
                   </div>
                   <Button 
                     onClick={() => handleGenerate("twitter", {})}
                     disabled={isGenerating}
-                    className="w-full bg-primary-600 hover:bg-primary-700"
+                    className="w-full gap-2"
                   >
-                    {isGenerating ? "Génération en cours..." : "Générer le tweet"}
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {isGenerating ? "Génération en cours..." : "Générer le post"}
                   </Button>
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="reddit">
-              <Card className="border-0 shadow-md hover:shadow-lg transition-all duration-300">
+              <Card className="border border-border bg-card shadow-sm">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary-600" />
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
                     Post Reddit
                   </CardTitle>
-                  <CardDescription>Créez des posts pour les communautés Reddit</CardDescription>
+                  <CardDescription>Créez des posts adaptés aux codes des communautés Reddit</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="reddit-subreddit">Subreddit cible</Label>
                     <Input 
                       id="reddit-subreddit" 
-                      placeholder="Subreddit cible"
-                      className="border-neutral-200 focus:border-primary-500"
+                      placeholder="r/voyage, r/france"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="reddit-title">Titre du post</Label>
                     <Input 
                       id="reddit-title" 
-                      placeholder="Titre du post"
-                      className="border-neutral-200 focus:border-primary-500"
+                      placeholder="Titre accrocheur et informatif"
                     />
                   </div>
                   <Button 
                     onClick={() => handleGenerate("reddit", {})}
                     disabled={isGenerating}
-                    className="w-full bg-primary-600 hover:bg-primary-700"
+                    className="w-full gap-2"
                   >
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                     {isGenerating ? "Génération en cours..." : "Générer le post Reddit"}
                   </Button>
                 </CardContent>
@@ -433,43 +425,46 @@ Découvrez les secrets des voyageurs expérimentés pour économiser jusqu'à 40
 
         {/* Aperçu du contenu généré */}
         <div className="space-y-6">
-          <Card className="border-0 shadow-md hover:shadow-lg transition-all duration-300">
+          <Card className="border border-border bg-card shadow-sm sticky top-20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary-600" />
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
                 Contenu généré
               </CardTitle>
-              <CardDescription>Aperçu et actions</CardDescription>
+              <CardDescription>Aperçu et copie en un clic</CardDescription>
             </CardHeader>
             <CardContent>
               {generatedContent ? (
                 <div className="space-y-4">
-                  <div className="bg-neutral-50 p-4 rounded-lg max-h-96 overflow-y-auto border border-neutral-200">
-                    <pre className="whitespace-pre-wrap text-sm text-neutral-700">{generatedContent}</pre>
+                  <div className="bg-muted/40 p-4 rounded-xl max-h-[420px] overflow-y-auto border border-border">
+                    <pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">{generatedContent}</pre>
                   </div>
                   <div className="flex gap-2">
                     <Button 
                       size="sm" 
                       onClick={copyToClipboard}
-                      className="bg-primary-600 hover:bg-primary-700"
+                      className="gap-1.5 flex-1"
                     >
-                      <Copy className="h-4 w-4 mr-1" />
+                      <Copy className="h-4 w-4" />
                       Copier
                     </Button>
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="border-neutral-200 hover:bg-neutral-50"
+                      className="gap-1.5"
                     >
-                      <Download className="h-4 w-4 mr-1" />
+                      <Download className="h-4 w-4" />
                       Exporter
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div className="text-center text-neutral-500 py-8">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-neutral-300" />
-                  <p>Sélectionnez un type de contenu et cliquez sur "Générer" pour voir le résultat ici.</p>
+                <div className="text-center text-muted-foreground py-12 px-4">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground mb-1">Aucun contenu généré</p>
+                  <p className="text-xs text-muted-foreground">Sélectionnez un format et remplissez le formulaire pour générer votre premier texte.</p>
                 </div>
               )}
             </CardContent>

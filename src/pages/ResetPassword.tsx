@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { AuthService } from '@/services/authService';
-import { ArrowLeft, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 const ResetPassword: React.FC = () => {
   usePageTitle('Réinitialiser le mot de passe');
@@ -96,34 +98,34 @@ const ResetPassword: React.FC = () => {
   // Succès
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
-        <main className="flex-1 flex items-center justify-center py-16 px-4">
+      <div className="min-h-screen bg-background flex flex-col justify-between">
+        <main className="flex-1 flex items-center justify-center py-12 px-4">
           <div className="w-full max-w-md mx-auto">
-            <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
-              <div className="text-center mb-8">
-                <div className="mx-auto w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+            <Card className="rounded-2xl shadow-xl border-border bg-card">
+              <CardContent className="p-6 sm:p-8 text-center">
+                <div className="mx-auto w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <h1 className="text-3xl md:text-4xl font-semibold text-[#1b1b1f] mb-3">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2">
                   Mot de passe réinitialisé !
                 </h1>
-                <p className="text-[15px] md:text-[16px] text-[#6e6e73]">
+                <p className="text-sm text-muted-foreground mb-6">
                   Votre mot de passe a été mis à jour avec succès. Vous pouvez maintenant vous connecter.
                 </p>
-              </div>
 
-              <button
-                onClick={() => navigate('/login')}
-                className="w-full bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg"
-              >
-                Se connecter
-              </button>
-            </div>
+                <Button
+                  onClick={() => navigate('/login')}
+                  className="w-full h-11"
+                >
+                  Se connecter
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </main>
 
         <footer className="w-full px-6 py-4 text-center">
-          <p className="text-sm text-[#6e6e73]">© 2025 Virail. Tous droits réservés.</p>
+          <p className="text-xs text-muted-foreground">© 2025 Viraill. Tous droits réservés.</p>
         </footer>
       </div>
     );
@@ -132,34 +134,34 @@ const ResetPassword: React.FC = () => {
   // Token invalide
   if (!token) {
     return (
-      <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
-        <main className="flex-1 flex items-center justify-center py-16 px-4">
+      <div className="min-h-screen bg-background flex flex-col justify-between">
+        <main className="flex-1 flex items-center justify-center py-12 px-4">
           <div className="w-full max-w-md mx-auto">
-            <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
-              <div className="text-center mb-8">
-                <div className="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
-                  <AlertCircle className="h-8 w-8 text-red-600" />
+            <Card className="rounded-2xl shadow-xl border-border bg-card">
+              <CardContent className="p-6 sm:p-8 text-center">
+                <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+                  <AlertCircle className="h-8 w-8 text-destructive" />
                 </div>
-                <h1 className="text-3xl md:text-4xl font-semibold text-[#1b1b1f] mb-3">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2">
                   Lien invalide
                 </h1>
-                <p className="text-[15px] md:text-[16px] text-[#6e6e73]">
+                <p className="text-sm text-muted-foreground mb-6">
                   Ce lien de réinitialisation est invalide ou a expiré.
                 </p>
-              </div>
 
-              <button
-                onClick={() => navigate('/forgot-password')}
-                className="w-full bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg"
-              >
-                Demander un nouveau lien
-              </button>
-            </div>
+                <Button
+                  onClick={() => navigate('/forgot-password')}
+                  className="w-full h-11"
+                >
+                  Demander un nouveau lien
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </main>
 
         <footer className="w-full px-6 py-4 text-center">
-          <p className="text-sm text-[#6e6e73]">© 2025 Virail. Tous droits réservés.</p>
+          <p className="text-xs text-muted-foreground">© 2025 Viraill. Tous droits réservés.</p>
         </footer>
       </div>
     );
@@ -167,129 +169,135 @@ const ResetPassword: React.FC = () => {
 
   // Formulaire
   return (
-    <div className="min-h-screen bg-[#f7f8fc] flex flex-col">
-      <main className="flex-1 flex items-center justify-center py-16 px-4">
+    <div className="min-h-screen bg-background flex flex-col justify-between">
+      <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md mx-auto">
-          <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl border border-slate-100">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl md:text-4xl font-semibold text-[#1b1b1f] mb-3">
-                Nouveau mot de passe
-              </h1>
-              <p className="text-[15px] md:text-[16px] text-[#6e6e73]">
-                Entrez votre nouveau mot de passe ci-dessous.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label htmlFor="password" className="block text-[11px] uppercase tracking-wide font-bold text-[#1b1b1f] mb-2 ml-1">
+          <Card className="rounded-2xl shadow-xl border-border bg-card">
+            <CardContent className="p-6 sm:p-8">
+              <div className="text-center mb-8">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2">
                   Nouveau mot de passe
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Votre nouveau mot de passe"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    className="w-full bg-[#f7f8fc] rounded-xl px-4 py-3.5 pr-12 text-sm md:text-[15px] text-[#1b1b1f] placeholder:text-slate-300 border border-transparent focus:bg-white focus:border-[#9cb5ff] focus:ring-0 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-[#1b1b1f] transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-
-                {password && (
-                  <div className="space-y-1 text-xs mt-2">
-                    {passwordValidation.errors.map((criterion, index) => (
-                      <div
-                        key={index}
-                        className={`flex items-center ${criterion.condition ? 'text-green-600' : 'text-red-500'}`}
-                      >
-                        <div className={`w-1 h-1 rounded-full mr-2 ${criterion.condition ? 'bg-green-500' : 'bg-red-500'}`} />
-                        {criterion.message}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Entrez votre nouveau mot de passe ci-dessous.
+                </p>
               </div>
 
-              <div>
-                <label htmlFor="confirmPassword" className="block text-[11px] uppercase tracking-wide font-bold text-[#1b1b1f] mb-2 ml-1">
-                  Confirmer le mot de passe
-                </label>
-                <div className="relative">
-                  <input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Confirmez votre mot de passe"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    className="w-full bg-[#f7f8fc] rounded-xl px-4 py-3.5 pr-12 text-sm md:text-[15px] text-[#1b1b1f] placeholder:text-slate-300 border border-transparent focus:bg-white focus:border-[#9cb5ff] focus:ring-0 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-[#1b1b1f] transition-colors"
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="password" className="text-xs font-semibold text-foreground">
+                    Nouveau mot de passe
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Votre nouveau mot de passe"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="h-11 pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-1 h-full px-2.5 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+
+                  {password && (
+                    <div className="space-y-1 text-xs mt-2">
+                      {passwordValidation.errors.map((criterion, index) => (
+                        <div
+                          key={index}
+                          className={`flex items-center text-xs ${criterion.condition ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}
+                        >
+                          <div className={`w-1.5 h-1.5 rounded-full mr-2 ${criterion.condition ? 'bg-emerald-500' : 'bg-destructive'}`} />
+                          {criterion.message}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {confirmPassword && (
-                  <div className={`text-xs flex items-center mt-2 ${passwordsMatch ? 'text-green-600' : 'text-red-500'}`}>
-                    <div className={`w-1 h-1 rounded-full mr-2 ${passwordsMatch ? 'bg-green-500' : 'bg-red-500'}`} />
-                    {passwordsMatch ? 'Les mots de passe correspondent' : 'Les mots de passe ne correspondent pas'}
+                <div className="space-y-1.5">
+                  <label htmlFor="confirmPassword" className="text-xs font-semibold text-foreground">
+                    Confirmer le mot de passe
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="Confirmez votre mot de passe"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="h-11 pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-1 h-full px-2.5 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+
+                  {confirmPassword && (
+                    <div className={`text-xs flex items-center mt-2 ${passwordsMatch ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full mr-2 ${passwordsMatch ? 'bg-emerald-500' : 'bg-destructive'}`} />
+                      {passwordsMatch ? 'Les mots de passe correspondent' : 'Les mots de passe ne correspondent pas'}
+                    </div>
+                  )}
+                </div>
+
+                {error && (
+                  <div className="flex items-start gap-2.5 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-xs text-destructive">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <p className="font-medium">{error}</p>
                   </div>
                 )}
+
+                <Button
+                  type="submit"
+                  disabled={isLoading || !passwordValidation.isValid || !passwordsMatch}
+                  className="w-full h-11 font-semibold mt-4"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Réinitialisation en cours...
+                    </>
+                  ) : (
+                    'Réinitialiser le mot de passe'
+                  )}
+                </Button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center text-sm text-primary hover:underline font-medium"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-1.5" />
+                  Retour à la connexion
+                </Link>
               </div>
-
-              {error && (
-                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm">
-                  <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-red-700 font-medium">{error}</p>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isLoading || !passwordValidation.isValid || !passwordsMatch}
-                className="w-full bg-[#9cb5ff] hover:bg-[#8ca5ef] text-white py-3.5 rounded-[10px] text-[15px] md:text-[16px] font-semibold transition-colors shadow-md hover:shadow-lg mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Réinitialisation en cours...
-                  </div>
-                ) : (
-                  'Réinitialiser le mot de passe'
-                )}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <Link
-                to="/login"
-                className="inline-flex items-center text-sm text-[#9cb5ff] hover:text-[#8ca5ef] font-semibold transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Retour à la connexion
-              </Link>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
 
       <footer className="w-full px-6 py-4 text-center">
-        <p className="text-sm text-[#6e6e73]">© 2025 Virail. Tous droits réservés.</p>
+        <p className="text-xs text-muted-foreground">© 2025 Viraill. Tous droits réservés.</p>
       </footer>
     </div>
   );

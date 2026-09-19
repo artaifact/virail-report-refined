@@ -312,20 +312,24 @@ const ApiDemo = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <Card>
+    <div className="flex-1 p-4 sm:p-6 md:p-8 space-y-6 bg-background text-foreground min-h-screen">
+      <Card className="border border-border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-6 w-6" />
-            Démonstration des Appels API Optimisés
-          </CardTitle>
-          <CardDescription>
-            Testez les différentes stratégies pour faire deux appels API et comparez leurs performances
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <Zap className="h-5 w-5" />
+            </div>
             <div>
+              <CardTitle className="text-xl">Démonstration des Appels API Optimisés</CardTitle>
+              <CardDescription>
+                Testez les différentes stratégies d'appels API et observez les temps de réponse
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="url">URL à analyser</Label>
               <Input
                 id="url"
@@ -334,19 +338,19 @@ const ApiDemo = () => {
                 placeholder="https://example.com"
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="model">Modèle pour /optimize</Label>
-              <select
-                id="model"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                <option value="gpt-4o">GPT-4O</option>
-                <option value="gpt-4">GPT-4</option>
-                <option value="claude-3-5-sonnet">Claude 3.5 Sonnet</option>
-                <option value="claude-3-opus">Claude 3 Opus</option>
-              </select>
+              <Select value={model} onValueChange={setModel}>
+                <SelectTrigger id="model">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gpt-4o">GPT-4O</SelectItem>
+                  <SelectItem value="gpt-4">GPT-4</SelectItem>
+                  <SelectItem value="claude-3-5-sonnet">Claude 3.5 Sonnet</SelectItem>
+                  <SelectItem value="claude-3-opus">Claude 3 Opus</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
@@ -354,19 +358,19 @@ const ApiDemo = () => {
             <Button 
               onClick={runParallelAnalysis}
               disabled={loading !== null}
-              className="h-24 flex flex-col gap-1"
+              className="h-24 flex flex-col gap-1 items-center justify-center"
               variant="outline"
             >
               {loading === 'parallel' ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                  En cours...
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <span className="text-sm font-medium">En cours...</span>
                 </>
               ) : (
                 <>
-                  <span className="text-lg">⚡</span>
-                  <span>Appels Parallèles</span>
-                  <small className="text-xs opacity-60">Plus rapide</small>
+                  <span className="text-xl">⚡</span>
+                  <span className="font-semibold text-sm">Appels Parallèles</span>
+                  <span className="text-xs text-muted-foreground">Plus rapide (simultané)</span>
                 </>
               )}
             </Button>
@@ -374,19 +378,19 @@ const ApiDemo = () => {
             <Button 
               onClick={runSequentialAnalysis}
               disabled={loading !== null}
-              className="h-24 flex flex-col gap-1"
+              className="h-24 flex flex-col gap-1 items-center justify-center"
               variant="outline"
             >
               {loading === 'sequential' ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                  En cours...
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <span className="text-sm font-medium">En cours...</span>
                 </>
               ) : (
                 <>
-                  <span className="text-lg">🔗</span>
-                  <span>Appels Séquentiels</span>
-                  <small className="text-xs opacity-60">2ème dépend du 1er</small>
+                  <span className="text-xl">🔗</span>
+                  <span className="font-semibold text-sm">Appels Séquentiels</span>
+                  <span className="text-xs text-muted-foreground">2ème dépend du 1er</span>
                 </>
               )}
             </Button>
@@ -394,46 +398,48 @@ const ApiDemo = () => {
             <Button 
               onClick={runOptimizedAnalysis}
               disabled={loading !== null}
-              className="h-24 flex flex-col gap-1"
+              className="h-24 flex flex-col gap-1 items-center justify-center"
               variant="outline"
             >
               {loading === 'optimized' ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                  En cours...
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <span className="text-sm font-medium">En cours...</span>
                 </>
               ) : (
                 <>
-                  <span className="text-lg">🎯</span>
-                  <span>Auto-optimisé</span>
-                  <small className="text-xs opacity-60">Sélection intelligente</small>
+                  <span className="text-xl">🎯</span>
+                  <span className="font-semibold text-sm">Auto-optimisé</span>
+                  <span className="text-xs text-muted-foreground">Sélection intelligente</span>
                 </>
               )}
             </Button>
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-medium mb-2">💡 Explication des Stratégies</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
-              <div>
-                <strong>⚡ Parallèle:</strong>
-                <p>Lance l'analyse principale + récupération de métadonnées simultanément.</p>
+          <div className="bg-muted/30 p-4 rounded-xl border border-border space-y-3">
+            <h4 className="font-semibold text-sm flex items-center gap-1.5 text-foreground">
+              <span>💡</span> Explication des Stratégies
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div className="space-y-1">
+                <strong className="text-foreground">⚡ Parallèle:</strong>
+                <p className="text-muted-foreground">Lance l'analyse principale + récupération de métadonnées simultanément.</p>
               </div>
-              <div>
-                <strong>🔗 Séquentiel:</strong>
-                <p>Lance l'analyse, puis utilise ses résultats pour l'optimisation.</p>
+              <div className="space-y-1">
+                <strong className="text-foreground">🔗 Séquentiel:</strong>
+                <p className="text-muted-foreground">Lance l'analyse, puis utilise ses résultats pour l'optimisation.</p>
               </div>
-              <div>
-                <strong>🎯 Auto-optimisé:</strong>
-                <p>Choisit automatiquement la meilleure stratégie selon le contexte.</p>
+              <div className="space-y-1">
+                <strong className="text-foreground">🎯 Auto-optimisé:</strong>
+                <p className="text-muted-foreground">Choisit automatiquement la meilleure stratégie selon le contexte.</p>
               </div>
             </div>
-            <div className="border-t pt-3">
-              <h5 className="font-medium text-sm mb-1">🎯 Endpoints utilisés :</h5>
-              <div className="text-xs space-y-1">
-                <div><strong>Tous :</strong> <code>POST /analyze</code> avec <code>{"{"}"url": "..."{"}"}</code></div>
-                <div><strong>Parallèle :</strong> <code>POST /analyze/config</code> avec métadonnées</div>
-                <div><strong>Séquentiel :</strong> <code>POST /optimize</code> avec <code>{"{"}"url": "...", "model": "{model}"{"}"}</code></div>
+            <div className="border-t border-border/60 pt-3">
+              <h5 className="font-semibold text-xs text-foreground mb-1.5">🎯 Endpoints utilisés :</h5>
+              <div className="text-xs space-y-1 text-muted-foreground">
+                <div><strong className="text-foreground">Tous :</strong> <code className="bg-muted px-1 py-0.5 rounded font-mono">POST /analyze</code></div>
+                <div><strong className="text-foreground">Parallèle :</strong> <code className="bg-muted px-1 py-0.5 rounded font-mono">POST /analyze/config</code> avec métadonnées</div>
+                <div><strong className="text-foreground">Séquentiel :</strong> <code className="bg-muted px-1 py-0.5 rounded font-mono">POST /optimize</code></div>
               </div>
             </div>
           </div>
@@ -441,47 +447,49 @@ const ApiDemo = () => {
       </Card>
 
       {results.length > 0 && (
-        <Card>
+        <Card className="border border-border bg-card shadow-sm">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              📊 Résultats des Tests
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <span>📊</span> Résultats des Tests
+              </CardTitle>
               <Button 
                 onClick={() => setResults([])}
                 variant="outline" 
                 size="sm"
-                className="flex items-center gap-1"
+                className="gap-1.5"
               >
                 <RotateCcw className="h-4 w-4" />
                 Vider
               </Button>
-            </CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {results.map((test, index) => (
-                <div key={index} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-2 mb-3">
+                <div key={index} className="border border-border rounded-xl p-4 bg-muted/20 space-y-3">
+                  <div className="flex items-center gap-2">
                     <span className="text-xl">{test.icon}</span>
-                    <Badge className={`${test.color} text-white`}>{test.type}</Badge>
-                    <Badge variant="secondary" className="flex items-center gap-1">
+                    <Badge variant="secondary" className="font-medium">{test.type}</Badge>
+                    <Badge variant="outline" className="font-mono text-xs">
                       ⏱️ {test.duration}
                     </Badge>
                   </div>
                   
-                  <p className="text-sm text-gray-600 mb-3">{test.description}</p>
+                  <p className="text-xs text-muted-foreground">{test.description}</p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <strong>Report ID:</strong> {test.result?.reportId || 'N/A'}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className="p-2 rounded bg-background border border-border">
+                      <span className="text-muted-foreground">Report ID:</span> <span className="font-mono font-medium text-foreground">{test.result?.reportId || 'N/A'}</span>
                     </div>
-                    <div>
-                      <strong>Status:</strong> {test.result?.status || 'N/A'}
+                    <div className="p-2 rounded bg-background border border-border">
+                      <span className="text-muted-foreground">Status:</span> <span className="font-medium text-foreground">{test.result?.status || 'N/A'}</span>
                     </div>
                     
                     {test.result?.metadata && (
                       <div className="md:col-span-2">
-                        <strong>Métadonnées (appels parallèles):</strong>
-                        <div className="bg-green-50 border border-green-200 p-2 rounded text-xs mt-1 max-h-32 overflow-y-auto">
+                        <strong className="text-muted-foreground block mb-1">Métadonnées (appels parallèles):</strong>
+                        <div className="bg-muted/50 border border-border p-3 rounded-lg text-xs font-mono max-h-32 overflow-y-auto">
                           <pre>{JSON.stringify(test.result.metadata, null, 2)}</pre>
                         </div>
                       </div>
@@ -489,8 +497,8 @@ const ApiDemo = () => {
                     
                     {test.result?.optimizationResults && (
                       <div className="md:col-span-2">
-                        <strong>Résultats d'optimisation (appels séquentiels):</strong>
-                        <div className="bg-blue-50 border border-blue-200 p-2 rounded text-xs mt-1 max-h-32 overflow-y-auto">
+                        <strong className="text-muted-foreground block mb-1">Résultats d'optimisation (appels séquentiels):</strong>
+                        <div className="bg-muted/50 border border-border p-3 rounded-lg text-xs font-mono max-h-32 overflow-y-auto">
                           <pre>{JSON.stringify(test.result.optimizationResults, null, 2)}</pre>
                         </div>
                       </div>
@@ -498,8 +506,8 @@ const ApiDemo = () => {
 
                     {test.result?.error && (
                       <div className="md:col-span-2">
-                        <strong>Erreur:</strong>
-                        <div className="bg-red-50 border border-red-200 p-2 rounded text-xs mt-1">
+                        <strong className="text-destructive block mb-1">Erreur:</strong>
+                        <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-lg text-xs text-destructive">
                           {test.result.error}
                         </div>
                       </div>

@@ -124,8 +124,8 @@ const UsageQuota: React.FC<UsageQuotaProps> = ({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <TrendingUp className="h-5 w-5 text-primary" />
               {compact ? 'Quotas' : `Utilisation - Plan ${currentPlan.name}`}
             </CardTitle>
             {!compact && (
@@ -136,7 +136,6 @@ const UsageQuota: React.FC<UsageQuotaProps> = ({
           </div>
           <Badge 
             variant={currentPlan.id === 'free' ? 'secondary' : 'default'}
-            className={currentPlan.id === 'pro' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : ''}
           >
             {currentPlan.name}
           </Badge>
@@ -145,7 +144,7 @@ const UsageQuota: React.FC<UsageQuotaProps> = ({
       
       <CardContent className="space-y-6">
         {/* Grille des quotas */}
-        <div className={`quota-grid ${compact ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-2'}`}>
+        <div className={`grid gap-4 ${compact ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-2'}`}>
           {features.map((feature) => {
             const limits = usageLimits[`can_use_${feature.type}` as keyof typeof usageLimits];
             const percentage = getUsagePercentage(feature.type);
@@ -154,35 +153,30 @@ const UsageQuota: React.FC<UsageQuotaProps> = ({
             return (
               <div 
                 key={feature.type}
-                className={`quota-card p-4 rounded-lg border transition-all ${
-                  isLimited ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'
+                className={`p-4 rounded-lg border transition-all ${
+                  isLimited ? 'border-destructive/30 bg-destructive/5' : 'border-border bg-card'
                 }`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    {feature.icon}
-                    <span className="font-medium text-sm">{feature.name}</span>
+                    <span className="text-muted-foreground">{feature.icon}</span>
+                    <span className="font-medium text-sm text-foreground">{feature.name}</span>
                   </div>
                   {getStatusIcon(feature.type)}
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-gray-600">
+                  <div className="flex justify-between text-xs text-muted-foreground">
                     <span>Utilisé</span>
-                    <span>{limits?.used || 0} / {limits?.limit === -1 ? '∞' : limits?.limit || 0}</span>
+                    <span className="font-medium text-foreground">{limits?.used || 0} / {limits?.limit === -1 ? '∞' : limits?.limit || 0}</span>
                   </div>
                   
                   {limits?.limit !== -1 && (
-                    <div className={`progress-bar h-2 rounded-full ${getProgressBgColor(percentage)}`}>
-                      <div 
-                        className={`progress-fill h-full rounded-full transition-all duration-300 ${getProgressColor(percentage)}`}
-                        style={{ width: `${Math.min(percentage, 100)}%` }}
-                      ></div>
-                    </div>
+                    <Progress value={Math.min(percentage, 100)} className="h-2" />
                   )}
 
                   {isLimited && (
-                    <p className="text-xs text-red-600 mt-1">
+                    <p className="text-xs text-destructive mt-1">
                       {limits?.reason || 'Limite atteinte'}
                     </p>
                   )}
@@ -194,22 +188,22 @@ const UsageQuota: React.FC<UsageQuotaProps> = ({
 
         {/* Actions si limite atteinte ou proche */}
         {(anyLimitReached || isNearLimit) && currentPlan.id !== 'pro' && showUpgradePrompt && (
-          <div className="pt-4 border-t">
-            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-lg">
+          <div className="pt-4 border-t border-border">
+            <div className="bg-primary/5 border border-primary/20 p-4 rounded-lg">
               <div className="flex items-start gap-3">
-                <Crown className="h-5 w-5 text-purple-600 mt-0.5" />
+                <Crown className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                 <div className="flex-1">
-                  <h4 className="font-semibold text-purple-900 mb-1">
+                  <h4 className="font-semibold text-foreground mb-1">
                     {anyLimitReached ? 'Limite atteinte !' : 'Bientôt à la limite'}
                   </h4>
-                  <p className="text-sm text-purple-700 mb-3">
+                  <p className="text-sm text-muted-foreground mb-3">
                     {anyLimitReached
                       ? 'Passez à un plan supérieur pour continuer à utiliser toutes les fonctionnalités.'
                       : 'Pensez à passer à un plan supérieur pour éviter les interruptions.'
                     }
                   </p>
                   <Link to="/pricing">
-                    <Button size="sm" className="bg-gradient-to-r from-purple-600 to-indigo-600">
+                    <Button size="sm">
                       <Crown className="h-4 w-4 mr-2" />
                       Voir les plans
                     </Button>
@@ -222,42 +216,40 @@ const UsageQuota: React.FC<UsageQuotaProps> = ({
 
         {/* Plan gratuit - incitation à l'upgrade */}
         {isOnFreePlan && showUpgradePrompt && (
-          <div className="pt-4 border-t">
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
-              <div className="text-center">
-                <Crown className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                <h4 className="font-semibold text-gray-900 mb-1">
-                  Débloquez tout le potentiel
-                </h4>
-                <p className="text-sm text-gray-600 mb-3">
-                  Analyses illimitées, rapports avancés, support prioritaire et plus encore.
-                </p>
-                <Link to="/pricing">
-                  <Button size="sm" className="bg-gradient-to-r from-purple-600 to-indigo-600">
-                    <Crown className="h-4 w-4 mr-2" />
-                    Découvrir Premium
-                  </Button>
-                </Link>
-              </div>
+          <div className="pt-4 border-t border-border">
+            <div className="bg-muted/40 border border-border p-4 rounded-lg text-center">
+              <Crown className="h-8 w-8 text-primary mx-auto mb-2" />
+              <h4 className="font-semibold text-foreground mb-1">
+                Débloquez tout le potentiel
+              </h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                Analyses illimitées, rapports avancés, support prioritaire et plus encore.
+              </p>
+              <Link to="/pricing">
+                <Button size="sm">
+                  <Crown className="h-4 w-4 mr-2" />
+                  Découvrir Premium
+                </Button>
+              </Link>
             </div>
           </div>
         )}
 
         {/* Avertissement d'usage élevé */}
         {isNearLimit && !anyLimitReached && (
-          <div className="pt-4 border-t">
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg">
+          <div className="pt-4 border-t border-border">
+            <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-lg">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
                 <div className="flex-1">
-                  <h4 className="font-semibold text-yellow-900 mb-1">
+                  <h4 className="font-semibold text-foreground mb-1">
                     Usage élevé détecté
                   </h4>
-                  <p className="text-sm text-yellow-700 mb-3">
+                  <p className="text-sm text-muted-foreground mb-3">
                     Vous approchez de vos limites d'usage. Pensez à passer à un plan supérieur pour éviter les interruptions.
                   </p>
                   <Link to="/pricing">
-                    <Button size="sm" variant="outline" className="border-yellow-600 text-yellow-700 hover:bg-yellow-100">
+                    <Button size="sm" variant="outline">
                       Voir les plans
                     </Button>
                   </Link>

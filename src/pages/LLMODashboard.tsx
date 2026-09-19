@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TrendingUp, TrendingDown, Target, Zap, ArrowRight, ChevronDown, CheckCircle, Circle, Users, Download } from "lucide-react";
 import { useReport } from "@/hooks/useReports";
 import { mapApiDataToMatrix } from "@/services/matrixMapper";
@@ -416,13 +418,13 @@ const LLMODashboard = () => {
                   const geoData = analysisWithGeoPlan.modules.audit_geo;
                   return (
                     <div className="flex flex-wrap gap-2 justify-center">
-                      <Badge variant="outline" className="bg-muted/50 text-green-700 border-green-200 px-3 py-1 text-xs">
+                      <Badge variant="secondary" className="px-3 py-1 text-xs font-medium">
                         Plan GEO: {geoData.plan_action_geo.length} actions
                       </Badge>
-                      <Badge variant="outline" className="bg-muted/50 text-blue-700 border-blue-200 px-3 py-1 text-xs">
+                      <Badge variant="outline" className="px-3 py-1 text-xs font-medium border-primary/20 text-primary">
                         Score GEO: {geoData.score_global_geo}/100
                       </Badge>
-                      <Badge variant="outline" className="bg-muted/50 text-purple-700 border-purple-200 px-3 py-1 text-xs">
+                      <Badge variant="secondary" className="px-3 py-1 text-xs font-medium">
                         Checklist: {checklistItems.length} items
                       </Badge>
                     </div>
@@ -433,25 +435,20 @@ const LLMODashboard = () => {
             </div>
           )}
 
-          {/* Ligne de transition colorée */}
-          <div className="relative mb-6">
-            <div className="h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto max-w-md"></div>
-          </div>
-
           {/* Sous-titre */}
-          <p className="text-sm sm:text-lg text-muted-foreground text-center">
-            Compréhension instantanée · Présentation actionnable · Focus sur l'impact
+          <p className="text-sm text-muted-foreground text-center max-w-lg mx-auto">
+            Vue synthétique et actionnable de votre visibilité dans les moteurs de recherche IA.
           </p>
         </div>
 
         {/* Cartes d'indicateurs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Carte Score Global (progress circulaire) */}
-          <Card className="bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300">
-            <CardContent className="p-3 sm:p-5">
+          <Card className="bg-card border border-border/60 shadow-xs hover:border-primary/40 transition-colors">
+            <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">SCORE GEO GLOBAL</span>
-                <span className="text-xs text-muted-foreground">en direct</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">SCORE GEO GLOBAL</span>
+                <span className="text-[10px] text-muted-foreground font-medium">en direct</span>
               </div>
               {(() => {
                 const val = (() => {
@@ -461,46 +458,48 @@ const LLMODashboard = () => {
                 const pct = Math.max(0, Math.min(100, val));
                 return (
                   <div className="mt-4 flex items-center justify-center">
-                    <div className="relative h-24 w-24">
+                    <div className="relative h-20 w-20">
                       <div
                         className="absolute inset-0 rounded-full"
                         style={{
-                          background: `conic-gradient(#16a34a ${pct * 3.6}deg, #e5e7eb 0deg)`
+                          background: `conic-gradient(hsl(var(--primary)) ${pct * 3.6}deg, hsl(var(--muted)) 0deg)`
                         }}
                       />
-                      <div className="absolute inset-1 bg-card rounded-full flex items-center justify-center border border-border">
+                      <div className="absolute inset-1.5 bg-card rounded-full flex items-center justify-center border border-border/60">
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-foreground">{pct}</div>
-                          <div className="text-xs text-muted-foreground">/100</div>
+                          <div className="text-xl font-bold text-foreground">{pct}</div>
+                          <div className="text-[10px] text-muted-foreground">/100</div>
                         </div>
                       </div>
                     </div>
                   </div>
                 );
               })()}
-              <div className="mt-3 text-center text-sm text-muted-foreground">Performance générale</div>
+              <div className="mt-3 text-center text-xs text-muted-foreground">Performance générale</div>
             </CardContent>
           </Card>
 
           {/* Carte Top Gap (barre) */}
-          <Card className="bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300">
-            <CardContent className="p-3 sm:p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">TOP GAP</span>
-                <Target className="w-4 h-4 text-muted-foreground" />
+          <Card className="bg-card border border-border/60 shadow-xs hover:border-primary/40 transition-colors">
+            <CardContent className="p-4 sm:p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">TOP GAP</span>
+                  <Target className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="mt-3 text-base font-semibold text-foreground">Schema.org</div>
               </div>
-              <div className="mt-3 text-lg font-semibold text-foreground">Schema.org</div>
               {(() => {
                 const val = (() => {
                   const a = report?.analyses?.find(an => an.modules?.audit_geo?.donnees_score);
                   return a?.modules?.audit_geo?.donnees_score || 0;
                 })();
                 return (
-                  <div className="mt-2">
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div className="h-2 rounded-full bg-primary" style={{ width: `${val}%` }} />
+                  <div className="mt-3">
+                    <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${val}%` }} />
                     </div>
-                    <div className="mt-1 text-sm text-muted-foreground">Performance: {val}/100</div>
+                    <div className="mt-1.5 text-xs text-muted-foreground">Performance: {val}/100</div>
                   </div>
                 );
               })()}
@@ -508,30 +507,33 @@ const LLMODashboard = () => {
           </Card>
 
           {/* Carte Gain Rapide */}
-          <Card className="bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300">
-            <CardContent className="p-3 sm:p-5">
+          <Card className="bg-card border border-border/60 shadow-xs hover:border-primary/40 transition-colors">
+            <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">GAIN RAPIDE</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">GAIN RAPIDE</span>
                 <TrendingUp className="w-4 h-4 text-primary" />
               </div>
-              <div className="mt-3 text-lg font-semibold text-foreground">Balises Hn</div>
-              <div className="mt-1 text-sm text-muted-foreground">+ métadonnées</div>
-              <div className="mt-3 flex items-center gap-2">
-                <span className="text-xs px-2 py-0.5 rounded-full border bg-muted/50 text-green-700 border-green-200">Effort faible</span>
-                <span className="text-xs px-2 py-0.5 rounded-full border bg-muted/50 text-green-700 border-green-200">Impact moyen</span>
+              <div className="mt-3 text-base font-semibold text-foreground">Balises Hn</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">+ métadonnées</div>
+              <div className="mt-3 flex items-center gap-1.5">
+                <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0">Effort faible</Badge>
+                <Badge variant="outline" className="text-[10px] font-medium px-2 py-0">Impact moyen</Badge>
               </div>
             </CardContent>
           </Card>
 
           {/* Carte Action Immédiate */}
-          <Card className="bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300">
-            <CardContent className="p-3 sm:p-5">
+          <Card className="bg-card border border-border/60 shadow-xs hover:border-primary/40 transition-colors">
+            <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">ACTION IMMÉDIATE</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">ACTION IMMÉDIATE</span>
                 <Zap className="w-4 h-4 text-primary" />
               </div>
-              <div className="mt-3 text-lg font-semibold text-foreground">llms.txt</div>
-              <div className="mt-1 text-sm text-muted-foreground">+ sitemap</div>
+              <div className="mt-3 text-base font-semibold text-foreground">llms.txt</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">+ sitemap XML</div>
+              <div className="mt-3">
+                <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0">Prêt à déployer</Badge>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -539,78 +541,64 @@ const LLMODashboard = () => {
 
         {/* Menu de navigation */}
         <div className="mt-8 flex justify-center">
-          <div className="bg-card rounded-xl p-2 shadow-lg border border-transparent inline-block relative overflow-x-auto max-w-full">
-            {/* Indicateur animé qui se déplace */}
-            <div
-              className="absolute top-2 bottom-2 bg-primary rounded-lg transition-all duration-300 ease-in-out hidden sm:block"
-              style={{
-                width: 'calc(25% - 0.25rem)',
-                left: '0.5rem',
-                transform: activeTab === 'Résumé' ? 'translateX(0)' :
-                  activeTab === 'Preuves' ? 'translateX(calc(100% + 0.25rem))' :
-                    activeTab === 'Détails' ? 'translateX(calc(200% + 0.5rem))' :
-                      activeTab === 'Action' ? 'translateX(calc(300% + 0.75rem))' :
-                        'translateX(0)'
-              }}
-            ></div>
-
-            <div className="relative flex items-center justify-center space-x-0 z-10 flex-nowrap">
-              <button
-                onClick={() => setActiveTab('Résumé')}
-                className="px-3 sm:px-6 py-2 sm:py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20 text-sm sm:text-base whitespace-nowrap"
-                style={{ color: activeTab === 'Résumé' ? 'white' : '#6b7280', backgroundColor: activeTab === 'Résumé' ? 'hsl(var(--primary))' : 'transparent' }}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
+            <TabsList className="bg-muted/80 p-1 rounded-xl border border-border/60">
+              <TabsTrigger
+                value="Résumé"
+                className="rounded-lg text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs px-3 sm:px-6 transition-all"
               >
                 Résumé
-              </button>
-              <button
-                onClick={() => setActiveTab('Preuves')}
-                className="px-3 sm:px-6 py-2 sm:py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20 text-sm sm:text-base whitespace-nowrap"
-                style={{ color: activeTab === 'Preuves' ? 'white' : '#6b7280', backgroundColor: activeTab === 'Preuves' ? 'hsl(var(--primary))' : 'transparent' }}
+              </TabsTrigger>
+              <TabsTrigger
+                value="Preuves"
+                className="rounded-lg text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs px-3 sm:px-6 transition-all"
               >
                 Preuves
-              </button>
-              <button
-                onClick={() => setActiveTab('Détails')}
-                className="px-3 sm:px-6 py-2 sm:py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20 text-sm sm:text-base whitespace-nowrap"
-                style={{ color: activeTab === 'Détails' ? 'white' : '#6b7280', backgroundColor: activeTab === 'Détails' ? 'hsl(var(--primary))' : 'transparent' }}
+              </TabsTrigger>
+              <TabsTrigger
+                value="Détails"
+                className="rounded-lg text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs px-3 sm:px-6 transition-all"
               >
                 Détails
-              </button>
-              <button
-                onClick={() => setActiveTab('Action')}
-                className="px-3 sm:px-6 py-2 sm:py-3 transition-all duration-300 font-medium rounded-lg border border-transparent relative z-20 text-sm sm:text-base whitespace-nowrap"
-                style={{ color: activeTab === 'Action' ? 'white' : '#6b7280', backgroundColor: activeTab === 'Action' ? 'hsl(var(--primary))' : 'transparent' }}
+              </TabsTrigger>
+              <TabsTrigger
+                value="Action"
+                className="rounded-lg text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs px-3 sm:px-6 transition-all"
               >
                 Action
-              </button>
-            </div>
-          </div>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Contenu conditionnel selon l'onglet actif */}
         {activeTab === 'Résumé' && (
           <div className="mt-6 sm:mt-8 space-y-4 sm:space-y-6">
-            <Card className="bg-card border border-border shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-foreground text-center text-xl">
-                  Top 5 Priorités
-                </CardTitle>
+            <Card className="bg-card border border-border/60 shadow-xs rounded-2xl overflow-hidden">
+              <CardHeader className="px-6 py-4 border-b border-border/60 bg-muted/20 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-semibold text-foreground">
+                    Top 5 Priorités d'Optimisation
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Actions clés recommandées classées par niveau d'impact et d'effort
+                  </p>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto -mx-2 sm:mx-0">
-                  <table className="w-full min-w-[640px]">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">#</th>
-                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Priorité</th>
-                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Impact</th>
-                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Effort</th>
-                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Pourquoi</th>
-                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Prochaine action</th>
-                        <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">Statut</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[640px]">
+                    <TableHeader className="bg-muted/30">
+                      <TableRow className="border-border/60 hover:bg-transparent">
+                        <TableHead className="w-12 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">#</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Axe d'amélioration</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prochaine action</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Impact</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Effort</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right pr-6">Statut</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {(() => {
                         const analysisWithGeoPlan = report?.analyses?.find(analysis =>
                           analysis.modules?.audit_geo?.plan_action_geo &&
@@ -621,149 +609,159 @@ const LLMODashboard = () => {
                         const geoData = analysisWithGeoPlan?.modules?.audit_geo;
                         const planActions = geoData?.plan_action_geo || [];
 
-                        // Fonction pour calculer l'impact basé sur le score (plus le score est bas, plus l'impact est élevé)
+                        // Fonction pour calculer l'impact basé sur le score
                         const getImpact = (score: number) => {
-                          if (score < 20) return 5; // Impact maximum - score très faible
-                          if (score < 40) return 4; // Impact élevé - score faible
-                          if (score < 60) return 3; // Impact moyen - score moyen
-                          if (score < 80) return 2; // Impact faible - score bon
-                          return 1; // Impact très faible - score excellent
+                          if (score < 20) return 5;
+                          if (score < 40) return 4;
+                          if (score < 60) return 3;
+                          if (score < 80) return 2;
+                          return 1;
                         };
 
-                        // Fonction pour calculer l'effort basé sur le type d'action (plus c'est complexe, plus l'effort est élevé)
+                        // Fonction pour calculer l'effort
                         const getEffort = (action: string) => {
-                          if (action.includes('JSON-LD') || action.includes('Schema.org') || action.includes('structurées')) return 5; // Effort maximum
-                          if (action.includes('HTML') || action.includes('balises') || action.includes('hiérarchie')) return 4; // Effort élevé
-                          if (action.includes('métadonnées') || action.includes('Open Graph')) return 3; // Effort moyen
-                          if (action.includes('robots.txt') || action.includes('sitemap')) return 2; // Effort faible
-                          if (action.includes('répétitions') || action.includes('lisibilité')) return 4; // Effort élevé pour le contenu
-                          return 3; // Effort par défaut
+                          if (action.includes('JSON-LD') || action.includes('Schema.org') || action.includes('structurées')) return 5;
+                          if (action.includes('HTML') || action.includes('balises') || action.includes('hiérarchie')) return 4;
+                          if (action.includes('métadonnées') || action.includes('Open Graph')) return 3;
+                          if (action.includes('robots.txt') || action.includes('sitemap')) return 2;
+                          if (action.includes('répétitions') || action.includes('lisibilité')) return 4;
+                          return 3;
                         };
 
-                        // Fonction pour obtenir le statut basé sur le score
+                        // Statut
                         const getStatus = (score: number) => {
                           if (score < 20) return {
                             label: 'Critique',
-                            color: 'bg-red-500 hover:bg-red-600',
+                            variant: 'destructive' as const,
+                            className: 'bg-destructive/10 text-destructive border-0',
                             description: 'Action urgente requise'
                           };
                           if (score < 40) return {
-                            label: 'Urgent',
-                            color: 'bg-red-400 hover:bg-red-500',
-                            description: 'Priorité haute'
+                            label: 'Prioritaire',
+                            variant: 'outline' as const,
+                            className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-0',
+                            description: 'Amélioration importante'
                           };
                           if (score < 60) return {
-                            label: 'À améliorer',
-                            color: 'bg-orange-500 hover:bg-orange-600',
-                            description: 'Amélioration nécessaire'
+                            label: 'Important',
+                            variant: 'secondary' as const,
+                            className: 'border-0',
+                            description: 'Optimisation recommandée'
                           };
                           if (score < 80) return {
-                            label: 'Correct',
-                            color: 'bg-muted/500 hover:bg-yellow-600',
-                            description: 'Peut être optimisé'
+                            label: 'Modéré',
+                            variant: 'outline' as const,
+                            className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0',
+                            description: 'Ajustement mineur'
                           };
                           return {
-                            label: 'Excellent',
-                            color: 'bg-primary hover:bg-primary',
-                            description: 'Performance optimale'
+                            label: 'Optimisé',
+                            variant: 'outline' as const,
+                            className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0',
+                            description: 'Bon niveau de performance'
                           };
                         };
 
-                        // Priorités avec leurs données correspondantes
                         const priorities = [
                           {
                             id: 1,
                             name: 'Schema.org',
                             action: planActions[2] || 'Intégrer des données structurées Schema.org',
                             score: geoData?.donnees_score || 0,
-                            why: 'LLM lisent mieux les données structurées'
+                            why: 'Les LLMs lisent et indexent prioritairement les données structurées'
                           },
                           {
                             id: 2,
                             name: 'Hn & sections',
                             action: planActions[1] || 'Ajouter une hiérarchie claire de titres',
                             score: geoData?.html_score || 0,
-                            why: 'Structure claire pour les crawlers'
+                            why: 'Structure de contenu limpide pour les crawlers d’IA'
                           },
                           {
                             id: 3,
                             name: 'Métadonnées',
                             action: planActions[3] || 'Ajouter des métadonnées techniques',
                             score: geoData?.meta_score || 0,
-                            why: 'Informations riches pour LLM'
+                            why: 'Informations contextuelles riches pour LLMs'
                           },
                           {
                             id: 4,
                             name: 'Contenu',
                             action: planActions[4] || 'Éviter les répétitions inutiles',
                             score: geoData?.contenu_score || 0,
-                            why: 'Qualité et pertinence du contenu'
+                            why: 'Qualité, densité d’information et pertinence lexicale'
                           },
                           {
                             id: 5,
                             name: 'Robots.txt & sitemap',
                             action: planActions[5] || 'Mettre en place robots.txt et sitemap.xml',
                             score: geoData?.crawlers_score || 0,
-                            why: 'Crawl IA optimisé'
+                            why: 'Accessibilité optimale garantie pour les robots IA'
                           }
                         ];
 
-                        return priorities.map((priority, index) => {
+                        return priorities.map((priority) => {
                           const impact = getImpact(priority.score);
                           const effort = getEffort(priority.action);
                           const status = getStatus(priority.score);
 
                           return (
-                            <tr key={priority.id} className={index < priorities.length - 1 ? "border-b border-border" : ""}>
-                              <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">{priority.id}</td>
-                              <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-foreground text-xs sm:text-sm">{priority.name}</td>
-                              <td className="py-2 sm:py-3 px-2 sm:px-4">
+                            <TableRow key={priority.id} className="border-border/40 hover:bg-muted/30">
+                              <TableCell className="font-semibold text-center text-xs text-muted-foreground">{priority.id}</TableCell>
+                              <TableCell className="font-semibold text-sm text-foreground">
+                                <div className="flex items-center gap-1.5">
+                                  <span>{priority.name}</span>
+                                  <InfoTooltip title={priority.name} description={priority.why} />
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground leading-relaxed max-w-sm">
+                                {priority.action}
+                              </TableCell>
+                              <TableCell>
                                 {(() => {
                                   const level = impact >= 4 ? 'Haut' : impact >= 3 ? 'Moyen' : 'Faible';
-                                  // Palette 100% verte (intensité croissante)
-                                  const cls = level === 'Haut'
-                                    ? 'bg-green-200 text-muted-foreground border-green-300'
-                                    : level === 'Moyen'
-                                      ? 'bg-muted text-green-700 border-green-200'
-                                      : 'bg-muted/50 text-green-700 border-green-200';
                                   return (
-                                    <span className={`text-xs px-2 py-1 rounded-full border ${cls}`}>
+                                    <Badge variant="outline" className={cn(
+                                      "text-[10px] font-medium border-0 px-2 py-0",
+                                      level === 'Haut' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                                      level === 'Moyen' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                                      'bg-muted text-muted-foreground'
+                                    )}>
                                       {level}
-                                    </span>
+                                    </Badge>
                                   );
                                 })()}
-                              </td>
-                              <td className="py-2 sm:py-3 px-2 sm:px-4">
+                              </TableCell>
+                              <TableCell>
                                 {(() => {
                                   const e = Math.min(Math.max(effort, 1), 5);
                                   return (
-                                    <div className="flex items-center gap-2">
-                                      <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="flex items-center gap-0.5">
                                         {[0, 1, 2, 3, 4].map((i) => (
-                                          <div key={i} className={`h-2 w-2 rounded-full ${i < e ? 'bg-primary' : 'bg-muted'}`} />
+                                          <div key={i} className={`h-1.5 w-1.5 rounded-full ${i < e ? 'bg-primary' : 'bg-muted'}`} />
                                         ))}
                                       </div>
-                                      <span className="text-xs text-muted-foreground">{e}/5</span>
+                                      <span className="text-[10px] text-muted-foreground font-mono">{e}/5</span>
                                     </div>
                                   );
                                 })()}
-                              </td>
-                              <td className="py-2 sm:py-3 px-2 sm:px-4 text-muted-foreground text-xs sm:text-sm">{priority.why}</td>
-                              <td className="py-2 sm:py-3 px-2 sm:px-4 text-muted-foreground text-xs sm:text-sm">{priority.action}</td>
-                              <td className="py-2 sm:py-3 px-2 sm:px-4">
+                              </TableCell>
+                              <TableCell className="text-right pr-6">
                                 <Badge
-                                  className={`${status.color} text-white font-medium px-3 py-1 rounded-full transition-all duration-200 shadow-sm hover:shadow-md cursor-default`}
+                                  variant={status.variant}
+                                  className={cn("text-[10px] font-medium px-2 py-0 cursor-default", status.className)}
                                   title={status.description}
                                 >
                                   {status.label}
                                 </Badge>
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           );
                         });
                       })()}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>

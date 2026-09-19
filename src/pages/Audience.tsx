@@ -1,132 +1,135 @@
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Users, UserPlus, Target, Globe } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 const Audience = () => {
   usePageTitle('Audience');
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Audience</h2>
+    <div className="flex-1 space-y-6 p-4 sm:p-6 md:p-8 bg-background text-foreground min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Audience & Démographie</h1>
+          <p className="text-muted-foreground text-sm sm:text-base mt-1">
+            Analyse de votre audience cible, répartition par pays et profils de recherche.
+          </p>
+        </div>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border border-border bg-card shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total abonnés</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total abonnés</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <Users className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24,157</div>
-            <p className="text-xs text-muted-foreground">+12.4% ce mois</p>
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-foreground">24,157</div>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">+12.4% ce mois</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border border-border bg-card shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Nouveaux cette semaine</CardTitle>
-            <UserPlus className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nouveaux cette semaine</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <UserPlus className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">573</div>
-            <p className="text-xs text-muted-foreground">+18.7% vs semaine dernière</p>
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-foreground">573</div>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">+18.7% vs semaine dernière</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border border-border bg-card shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux d'engagement</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Taux d'engagement</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-600 dark:text-purple-400">
+              <Target className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8.9%</div>
-            <p className="text-xs text-muted-foreground">+2.1% ce mois</p>
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-foreground">8.9%</div>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">+2.1% ce mois</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border border-border bg-card shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Portée globale</CardTitle>
-            <Globe className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Portée globale</CardTitle>
+            <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400">
+              <Globe className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">156K</div>
-            <p className="text-xs text-muted-foreground">+7.3% ce mois</p>
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-foreground">156K</div>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">+7.3% ce mois</p>
           </CardContent>
         </Card>
       </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="lg:col-span-4 border border-border bg-card shadow-sm">
           <CardHeader>
-            <CardTitle>Démographie de l'audience</CardTitle>
-            <CardDescription>Répartition par âge et localisation</CardDescription>
+            <CardTitle className="text-lg">Démographie de l'audience</CardTitle>
+            <CardDescription>Répartition par tranches d'âge</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium mb-2">Répartition par âge</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <div className="w-16 text-sm">18-24</div>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2 mx-2">
-                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: '35%' }}></div>
-                    </div>
-                    <div className="w-10 text-sm text-right">35%</div>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-16 text-sm">25-34</div>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2 mx-2">
-                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: '42%' }}></div>
-                    </div>
-                    <div className="w-10 text-sm text-right">42%</div>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-16 text-sm">35-44</div>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2 mx-2">
-                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: '18%' }}></div>
-                    </div>
-                    <div className="w-10 text-sm text-right">18%</div>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-16 text-sm">45+</div>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2 mx-2">
-                      <div className="bg-blue-600 h-2 rounded-full" style={{ width: '5%' }}></div>
-                    </div>
-                    <div className="w-10 text-sm text-right">5%</div>
-                  </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-16 text-sm font-medium text-muted-foreground">18-24</div>
+                  <Progress value={35} className="flex-1 h-2" />
+                  <div className="w-12 text-sm text-right font-mono font-semibold text-foreground">35%</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-16 text-sm font-medium text-muted-foreground">25-34</div>
+                  <Progress value={42} className="flex-1 h-2" />
+                  <div className="w-12 text-sm text-right font-mono font-semibold text-foreground">42%</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-16 text-sm font-medium text-muted-foreground">35-44</div>
+                  <Progress value={18} className="flex-1 h-2" />
+                  <div className="w-12 text-sm text-right font-mono font-semibold text-foreground">18%</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-16 text-sm font-medium text-muted-foreground">45+</div>
+                  <Progress value={5} className="flex-1 h-2" />
+                  <div className="w-12 text-sm text-right font-mono font-semibold text-foreground">5%</div>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="col-span-3">
+        <Card className="lg:col-span-3 border border-border bg-card shadow-sm">
           <CardHeader>
-            <CardTitle>Top pays</CardTitle>
-            <CardDescription>Répartition géographique</CardDescription>
+            <CardTitle className="text-lg">Top pays</CardTitle>
+            <CardDescription>Répartition géographique des requêtes</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">France</span>
-                <span className="text-sm font-medium">45.2%</span>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+                <span className="text-sm font-medium text-foreground">France</span>
+                <span className="text-sm font-mono font-semibold text-foreground">45.2%</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Canada</span>
-                <span className="text-sm font-medium">23.1%</span>
+              <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+                <span className="text-sm font-medium text-foreground">Canada</span>
+                <span className="text-sm font-mono font-semibold text-foreground">23.1%</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Belgique</span>
-                <span className="text-sm font-medium">12.8%</span>
+              <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+                <span className="text-sm font-medium text-foreground">Belgique</span>
+                <span className="text-sm font-mono font-semibold text-foreground">12.8%</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Suisse</span>
-                <span className="text-sm font-medium">8.4%</span>
+              <div className="flex items-center justify-between py-1.5 border-b border-border/50">
+                <span className="text-sm font-medium text-foreground">Suisse</span>
+                <span className="text-sm font-mono font-semibold text-foreground">8.4%</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Autres</span>
-                <span className="text-sm font-medium">10.5%</span>
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-sm font-medium text-muted-foreground">Autres</span>
+                <span className="text-sm font-mono font-semibold text-muted-foreground">10.5%</span>
               </div>
             </div>
           </CardContent>

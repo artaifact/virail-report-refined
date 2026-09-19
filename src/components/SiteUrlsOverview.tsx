@@ -258,18 +258,18 @@ const SiteUrlsOverview: React.FC = () => {
 
   // Fonction pour obtenir la couleur du score
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
+    if (score >= 60) return 'text-amber-600 dark:text-amber-400';
+    return 'text-rose-600 dark:text-rose-400';
   };
 
   // Fonction pour obtenir le badge de statut
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'analyzed':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Analysé</Badge>;
+        return <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0">Analysé</Badge>;
       case 'analyzing':
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">En cours</Badge>;
+        return <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0">En cours</Badge>;
       case 'error':
         return <Badge variant="destructive">Erreur</Badge>;
       default:
@@ -279,25 +279,25 @@ const SiteUrlsOverview: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="border border-border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Globe className="h-5 w-5 text-primary" />
             Sites Analysés
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div key={i} className="flex items-center justify-between p-4 bg-muted/40 rounded-xl border border-border/50">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-200 rounded-lg animate-pulse" />
+                  <div className="w-10 h-10 bg-muted rounded-lg animate-pulse" />
                   <div className="space-y-2">
-                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-                    <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+                    <div className="h-3 w-24 bg-muted rounded animate-pulse" />
                   </div>
                 </div>
-                <div className="h-8 w-24 bg-gray-200 rounded animate-pulse" />
+                <div className="h-8 w-24 bg-muted rounded animate-pulse" />
               </div>
             ))}
           </div>
@@ -307,19 +307,19 @@ const SiteUrlsOverview: React.FC = () => {
   }
 
   return (
-    <Card>
+    <Card className="border border-border bg-card shadow-sm">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Globe className="h-5 w-5 text-primary" />
               Sites Analysés pour Optimisation
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-muted-foreground mt-1">
               Sélectionnez un site pour lancer une optimisation textuelle de son contenu
             </CardDescription>
           </div>
-          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+          <Badge variant="secondary" className="self-start sm:self-auto font-mono">
             {filteredSites.length} site{filteredSites.length > 1 ? 's' : ''}
           </Badge>
         </div>
@@ -328,12 +328,12 @@ const SiteUrlsOverview: React.FC = () => {
       <CardContent className="space-y-4">
         {/* Barre de recherche */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher un site..."
+            placeholder="Rechercher un site par nom ou URL..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-9"
           />
         </div>
 
@@ -341,8 +341,8 @@ const SiteUrlsOverview: React.FC = () => {
 
         {/* Gestion des erreurs */}
         {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-sm">{error}</p>
+          <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <p className="text-destructive text-sm font-medium">{error}</p>
             <Button 
               variant="outline" 
               size="sm" 
@@ -357,21 +357,24 @@ const SiteUrlsOverview: React.FC = () => {
         {/* Liste des sites */}
         <div className="space-y-3">
           {filteredSites.length === 0 ? (
-            <div className="text-center py-8">
-              <Globe className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <div className="text-center py-10 px-4">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3 text-muted-foreground">
+                <Globe className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-semibold text-foreground mb-1">
                 {searchTerm ? 'Aucun site trouvé' : 'Aucun site analysé'}
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
                 {searchTerm 
-                  ? 'Essayez de modifier votre recherche' 
-                  : 'Commencez par analyser des sites pour pouvoir les optimiser'
+                  ? 'Essayez de modifier votre terme de recherche.' 
+                  : 'Commencez par analyser des sites pour pouvoir les optimiser avec l\'IA.'
                 }
               </p>
               {!searchTerm && (
                 <Button 
                   onClick={() => navigate('/analyses')}
-                  className="flex items-center gap-2"
+                  className="gap-2"
+                  size="sm"
                 >
                   <BarChart3 className="h-4 w-4" />
                   Aller aux analyses
@@ -382,59 +385,60 @@ const SiteUrlsOverview: React.FC = () => {
             filteredSites.map((site) => (
               <div 
                 key={site.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group gap-3"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-card hover:bg-muted/40 rounded-xl border border-border transition-colors group gap-4"
               >
                 <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Globe className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 text-primary">
+                    <Globe className="h-5 w-5" />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h4 className="font-medium text-gray-900 truncate">
+                      <h4 className="font-semibold text-foreground truncate text-sm sm:text-base">
                         {site.title || site.domain}
                       </h4>
                       {getStatusBadge(site.status)}
                       {site.hasOptimization && (
-                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                          <Zap className="h-3 w-3 mr-1" />
+                        <Badge variant="secondary" className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-0 gap-1 text-xs">
+                          <Zap className="h-3 w-3" />
                           {site.optimizationCount} opt.
                         </Badge>
                       )}
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-500">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                       <div className="flex items-center gap-1 min-w-0">
-                        <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                        <ExternalLink className="h-3 w-3 shrink-0" />
                         <span className="truncate">{site.url}</span>
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="hidden sm:inline text-muted-foreground/40">•</div>
+                      <div className="flex items-center gap-1 shrink-0">
                         <Clock className="h-3 w-3" />
                         <span>{formatDate(site.analysisDate)}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-right flex-shrink-0 hidden sm:block">
-                    <div className={`text-2xl font-bold ${getScoreColor(site.score || 0)}`}>
+                  <div className="text-right shrink-0 hidden sm:block">
+                    <div className={`text-2xl font-bold font-mono ${getScoreColor(site.score || 0)}`}>
                       {site.score || '--'}
                     </div>
-                    <div className="text-xs text-gray-500">Score LLMO</div>
+                    <div className="text-xs text-muted-foreground">Score LLMO</div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-3">
-                  <div className="text-left sm:hidden flex-shrink-0">
-                    <div className={`text-xl font-bold ${getScoreColor(site.score || 0)}`}>
+                <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-border">
+                  <div className="text-left sm:hidden shrink-0">
+                    <div className={`text-xl font-bold font-mono ${getScoreColor(site.score || 0)}`}>
                       {site.score || '--'}
                     </div>
-                    <div className="text-xs text-gray-500">Score LLMO</div>
+                    <div className="text-xs text-muted-foreground">Score LLMO</div>
                   </div>
                   <Button
                     onClick={() => handleOptimizeSite(site)}
                     variant="outline"
                     size="sm"
-                    className="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-2"
+                    className="flex items-center gap-2 group-hover:border-primary/50 group-hover:text-primary transition-colors"
                   >
                     <FileText className="h-4 w-4" />
                     Optimiser
@@ -450,13 +454,14 @@ const SiteUrlsOverview: React.FC = () => {
         {filteredSites.length > 0 && (
           <>
             <Separator />
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-gray-600">
-              <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-muted-foreground pt-1">
+              <div className="flex flex-wrap items-center gap-3">
                 <span>
                   {filteredSites.filter(s => s.hasOptimization).length} site{filteredSites.filter(s => s.hasOptimization).length > 1 ? 's' : ''} avec optimisation
                 </span>
+                <span>•</span>
                 <span>
-                  Score moyen: {Math.round(filteredSites.reduce((acc, site) => acc + (site.score || 0), 0) / filteredSites.length)}
+                  Score moyen: <strong className="text-foreground font-semibold">{Math.round(filteredSites.reduce((acc, site) => acc + (site.score || 0), 0) / filteredSites.length)}</strong>
                 </span>
               </div>
               
@@ -465,18 +470,18 @@ const SiteUrlsOverview: React.FC = () => {
                   variant="outline" 
                   size="sm"
                   onClick={() => navigate('/analyses')}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1.5"
                 >
-                  <BarChart3 className="h-3 w-3" />
+                  <BarChart3 className="h-3.5 w-3.5" />
                   Voir analyses
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => navigate('/optimisation/textuelle')}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1.5"
                 >
-                  <Target className="h-3 w-3" />
+                  <Target className="h-3.5 w-3.5" />
                   Nouvelle optimisation
                 </Button>
               </div>

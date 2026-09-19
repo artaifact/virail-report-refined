@@ -85,104 +85,57 @@ const PaymentTest: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p>Chargement des données de paiement...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-sm text-muted-foreground">Chargement des données de paiement...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2">🧪 Test du Système de Paiement</h1>
-        <p className="text-gray-600">Vérification de l'intégration avec le backend</p>
+    <div className="container mx-auto p-4 md:p-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-1">🧪 Test du Système de Paiement</h1>
+        <p className="text-muted-foreground text-sm">Vérification de l'intégration avec le backend</p>
       </div>
 
       {/* État actuel */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Crown className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Crown className="h-5 w-5 text-primary" />
             État de l'abonnement
           </CardTitle>
         </CardHeader>
         <CardContent>
           {currentSubscription ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span>Plan actuel:</span>
+                <span className="text-sm text-muted-foreground">Plan actuel :</span>
                 <Badge variant="outline">{currentSubscription.currentPlan?.name || 'Inconnu'}</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span>Status:</span>
+                <span className="text-sm text-muted-foreground">Statut :</span>
                 <Badge variant={currentSubscription.subscription?.status === 'active' ? 'default' : 'secondary'}>
                   {currentSubscription.subscription?.status || 'Inconnu'}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span>Date de fin:</span>
-                <span>{currentSubscription.subscription?.end_date || 'N/A'}</span>
+                <span className="text-sm text-muted-foreground">Date de fin :</span>
+                <span className="text-sm font-medium text-foreground">{currentSubscription.subscription?.end_date || 'N/A'}</span>
               </div>
             </div>
           ) : (
-            <p className="text-gray-500">Aucun abonnement actif</p>
+            <p className="text-sm text-muted-foreground">Aucun abonnement actif</p>
           )}
         </CardContent>
       </Card>
 
-      {/* Quotas d'usage */}
-      {/* <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            Quotas d'usage
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {usageLimits ? (
-            <div className="space-y-4">
-              {['analysis', 'report', 'competitor_analysis', 'optimize'].map(feature => {
-                const key = `can_use_${feature}` as keyof typeof usageLimits;
-                const limits = usageLimits[key];
-                const percentage = getUsagePercentage(feature as any);
-                
-                return (
-                  <div key={feature} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="capitalize">{feature.replace('_', ' ')}:</span>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={limits?.allowed ? 'default' : 'secondary'}>
-                          {limits?.allowed ? '✅' : '❌'}
-                        </Badge>
-                        <span className="text-sm text-gray-600">
-                          {limits?.used || 0}/{limits?.limit === -1 ? '∞' : limits?.limit || 0}
-                        </span>
-                      </div>
-                    </div>
-                    {limits?.limit > 0 && (
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.min(percentage, 100)}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-gray-500">Aucune donnée de quota disponible</p>
-          )}
-        </CardContent>
-      </Card> */}
-
       {/* Tests de fonctionnalités */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Star className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Star className="h-5 w-5 text-primary" />
             Tests de fonctionnalités
           </CardTitle>
           <CardDescription>
@@ -205,6 +158,7 @@ const PaymentTest: React.FC = () => {
               onClick={testAnalysis}
               disabled={isTesting || !canUseFeature('analysis')}
               className="flex items-center gap-2"
+              variant="outline"
             >
               {getStatusIcon(getTestStatus('analysis'))}
               Test Analyse
@@ -214,6 +168,7 @@ const PaymentTest: React.FC = () => {
               onClick={testCompetitorAnalysis}
               disabled={isTesting || !canUseFeature('competitor_analysis')}
               className="flex items-center gap-2"
+              variant="outline"
             >
               {getStatusIcon(getTestStatus('competitor_analysis'))}
               Test Concurrents
@@ -223,6 +178,7 @@ const PaymentTest: React.FC = () => {
               onClick={testOptimization}
               disabled={isTesting || !canUseFeature('optimize')}
               className="flex items-center gap-2"
+              variant="outline"
             >
               {getStatusIcon(getTestStatus('optimization'))}
               Test Optimisation
@@ -232,17 +188,17 @@ const PaymentTest: React.FC = () => {
           {/* Résultats des tests */}
           {Object.keys(testResults).length > 0 && (
             <div className="mt-6 space-y-2">
-              <h4 className="font-semibold">Résultats des tests:</h4>
+              <h4 className="text-sm font-semibold text-foreground">Résultats des tests :</h4>
               {Object.entries(testResults).map(([testName, result]: [string, any]) => (
-                <div key={testName} className="p-3 border rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
+                <div key={testName} className="p-3 border border-border bg-muted/30 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
                     {getStatusIcon(result.success ? 'success' : 'error')}
-                    <span className="font-medium capitalize">{testName.replace('_', ' ')}</span>
+                    <span className="font-medium text-sm text-foreground capitalize">{testName.replace('_', ' ')}</span>
                   </div>
                   {result.success ? (
-                    <p className="text-sm text-green-600">✅ Test réussi</p>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400">✅ Test réussi</p>
                   ) : (
-                    <p className="text-sm text-red-600">❌ {result.error}</p>
+                    <p className="text-xs text-destructive">❌ {result.error}</p>
                   )}
                 </div>
               ))}
@@ -254,20 +210,20 @@ const PaymentTest: React.FC = () => {
       {/* Plans disponibles */}
       <Card>
         <CardHeader>
-          <CardTitle>Plans disponibles</CardTitle>
+          <CardTitle className="text-foreground">Plans disponibles</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {plans.map(plan => (
-              <div key={plan.id} className="p-4 border rounded-lg">
-                <h4 className="font-semibold">{plan.name}</h4>
-                <p className="text-2xl font-bold">{plan.price}€</p>
-                <p className="text-sm text-gray-600">{plan.interval}</p>
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs">Analyses: {plan.max_analyses === -1 ? '∞' : plan.max_analyses}</p>
-                  <p className="text-xs">Rapports: {plan.max_reports === -1 ? '∞' : plan.max_reports}</p>
-                  <p className="text-xs">Concurrents: {plan.max_competitor_analyses === -1 ? '∞' : plan.max_competitor_analyses}</p>
-                  <p className="text-xs">Optimisations: {plan.max_optimizations === -1 ? '∞' : plan.max_optimizations}</p>
+              <div key={plan.id} className="p-4 border border-border bg-card rounded-lg space-y-2">
+                <h4 className="font-semibold text-foreground">{plan.name}</h4>
+                <p className="text-2xl font-bold text-foreground">{plan.price}€</p>
+                <p className="text-xs text-muted-foreground">/{plan.interval}</p>
+                <div className="mt-2 space-y-1 pt-2 border-t border-border text-xs text-muted-foreground">
+                  <p>Analyses: {plan.max_analyses === -1 ? '∞' : plan.max_analyses}</p>
+                  <p>Rapports: {plan.max_reports === -1 ? '∞' : plan.max_reports}</p>
+                  <p>Concurrents: {plan.max_competitor_analyses === -1 ? '∞' : plan.max_competitor_analyses}</p>
+                  <p>Optimisations: {plan.max_optimizations === -1 ? '∞' : plan.max_optimizations}</p>
                 </div>
               </div>
             ))}
@@ -277,12 +233,12 @@ const PaymentTest: React.FC = () => {
 
       {/* Erreurs */}
       {error && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-destructive/30 bg-destructive/5">
           <CardHeader>
-            <CardTitle className="text-red-800">Erreur</CardTitle>
+            <CardTitle className="text-destructive text-base">Erreur</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-red-600">{error}</p>
+            <p className="text-sm text-destructive">{error}</p>
           </CardContent>
         </Card>
       )}

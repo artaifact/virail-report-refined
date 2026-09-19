@@ -1,12 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
-import { usePageTitle } from '@/hooks/usePageTitle';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { apiService } from "@/services/apiService";
 import { AdminService } from "@/services/adminService";
-import { Loader2, Users, BarChart3, Shield, UserCheck, ArrowLeft, Mail, CreditCard, Clock } from "lucide-react";
+import {
+  Loader2,
+  Users,
+  BarChart3,
+  Shield,
+  UserCheck,
+  Mail,
+  CreditCard,
+  Clock,
+  Search,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { UserDetails } from "@/components/admin/UserDetails";
 import { MessageManagement } from "@/components/admin/MessageManagement";
@@ -28,7 +44,8 @@ type WaitlistEntry = {
 };
 
 export default function AdminWaitlist() {
-  usePageTitle('Admin - Waitlist');
+  usePageTitle("Admin - Plateforme");
+
   // États pour la waitlist
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);
@@ -40,8 +57,10 @@ export default function AdminWaitlist() {
   } | null>(null);
   const [query, setQuery] = useState("");
 
-  // États pour la gestion des utilisateurs
-  const [activeTab, setActiveTab] = useState<'waitlist' | 'users' | 'pending-users' | 'create-admin' | 'messages' | 'subscriptions'>('waitlist');
+  // États pour la navigation admin
+  const [activeTab, setActiveTab] = useState<
+    "waitlist" | "users" | "pending-users" | "create-admin" | "messages" | "subscriptions"
+  >("waitlist");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<number | null>(null);
@@ -51,21 +70,20 @@ export default function AdminWaitlist() {
   // États pour la création d'admin
   const [createAdminLoading, setCreateAdminLoading] = useState(false);
   const [createAdminForm, setCreateAdminForm] = useState({
-    email: '',
-    username: '',
-    password: ''
+    email: "",
+    username: "",
+    password: "",
   });
   const [createAdminMessage, setCreateAdminMessage] = useState<{
-    type: 'success' | 'error';
+    type: "success" | "error";
     text: string;
   } | null>(null);
 
-  // Fonction pour créer un admin
   const handleCreateAdmin = async () => {
     if (!createAdminForm.email || !createAdminForm.username || !createAdminForm.password) {
       setCreateAdminMessage({
-        type: 'error',
-        text: 'Veuillez remplir tous les champs'
+        type: "error",
+        text: "Veuillez remplir tous les champs obligatoires.",
       });
       return;
     }
@@ -75,35 +93,33 @@ export default function AdminWaitlist() {
 
     try {
       const result = await AdminService.createAdmin(createAdminForm);
-      
+
       if (result.success) {
         setCreateAdminMessage({
-          type: 'success',
-          text: result.message
+          type: "success",
+          text: result.message,
         });
-        // Réinitialiser le formulaire
         setCreateAdminForm({
-          email: '',
-          username: '',
-          password: ''
+          email: "",
+          username: "",
+          password: "",
         });
       } else {
         setCreateAdminMessage({
-          type: 'error',
-          text: result.message
+          type: "error",
+          text: result.message,
         });
       }
-    } catch (error) {
+    } catch {
       setCreateAdminMessage({
-        type: 'error',
-        text: 'Erreur lors de la création du compte admin'
+        type: "error",
+        text: "Erreur inattendue lors de la création du compte administrateur.",
       });
     } finally {
       setCreateAdminLoading(false);
     }
   };
 
-  // Charger les données de la waitlist
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -117,7 +133,7 @@ export default function AdminWaitlist() {
           setEntries(list);
           setSummary(stats);
         }
-      } catch (e) {
+      } catch {
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -128,14 +144,13 @@ export default function AdminWaitlist() {
     };
   }, []);
 
-  // Vérifier les privilèges admin
   useEffect(() => {
     const checkAdminAccess = async () => {
       try {
         setAdminLoading(true);
         const isAdmin = await AdminService.checkAdminPrivileges();
         setHasAdminAccess(isAdmin);
-      } catch (error) {
+      } catch {
         setHasAdminAccess(false);
       } finally {
         setAdminLoading(false);
@@ -145,454 +160,433 @@ export default function AdminWaitlist() {
     checkAdminAccess();
   }, []);
 
-  // Gestion de la navigation admin
-  const handleUserSelect = (userId: number) => {
-    setSelectedUserId(userId);
-  };
+  const handleUserSelect = (userId: number) => setSelectedUserId(userId);
+  const handleBackToUserList = () => setSelectedUserId(null);
 
-  const handleBackToUserList = () => {
-    setSelectedUserId(null);
-  };
+  const handleMessageSelect = (messageId: number) => setSelectedMessageId(messageId);
+  const handleBackToMessageList = () => setSelectedMessageId(null);
 
-  const handleMessageSelect = (messageId: number) => {
-    setSelectedMessageId(messageId);
-  };
-
-  const handleBackToMessageList = () => {
-    setSelectedMessageId(null);
-  };
-
-  const handleSubscriptionSelect = (subscriptionId: number) => {
+  const handleSubscriptionSelect = (subscriptionId: number) =>
     setSelectedSubscriptionId(subscriptionId);
-  };
-
-  const handleBackToSubscriptionList = () => {
-    setSelectedSubscriptionId(null);
-  };
+  const handleBackToSubscriptionList = () => setSelectedSubscriptionId(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return entries;
-    return entries.filter(e =>
-      e.name.toLowerCase().includes(q) ||
-      e.email.toLowerCase().includes(q) ||
-      e.status.toLowerCase().includes(q)
+    return entries.filter(
+      (e) =>
+        e.name.toLowerCase().includes(q) ||
+        e.email.toLowerCase().includes(q) ||
+        e.status.toLowerCase().includes(q)
     );
   }, [entries, query]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-950 dark:to-slate-900">
-      <div className="max-w-7xl mx-auto px-3 py-4 sm:px-4 md:px-6 md:py-8">
-        {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Administration
+    <div className="min-h-screen bg-background pb-12">
+      {/* Header */}
+      <div className="border-b border-border bg-card/60 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto space-y-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1.5 px-2.5 py-0.5 text-xs font-semibold border-primary/20 bg-primary/5 text-primary">
+              <Shield className="h-3 w-3" />
+              Espace Administration
+            </Badge>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Gestion de la plateforme
           </h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            Gérez votre plateforme depuis ce tableau de bord
+          <p className="text-sm text-muted-foreground max-w-2xl">
+            Pilotez les inscriptions sur liste d'attente, les utilisateurs, les abonnements et les messages.
           </p>
         </div>
+      </div>
 
-        {/* Onglets de navigation */}
-        <div className="flex flex-wrap gap-2 mb-6 md:mb-8">
-          <button
-            onClick={() => setActiveTab('waitlist')}
-            className={`group relative px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              activeTab === 'waitlist'
-                ? 'bg-primary text-primary-foreground shadow-md'
-                : 'bg-white dark:bg-slate-800 text-muted-foreground hover:text-foreground hover:shadow-sm'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              <span>Liste d'attente</span>
-            </div>
-            {activeTab === 'waitlist' && (
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary-foreground rounded-full" />
-            )}
-          </button>
-          
-          {hasAdminAccess && (
-            <>
-              <button
-                onClick={() => setActiveTab('users')}
-                className={`group relative px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  activeTab === 'users'
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'bg-white dark:bg-slate-800 text-muted-foreground hover:text-foreground hover:shadow-sm'
-                }`}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Navigation Tabs */}
+        <div className="overflow-x-auto pb-1">
+          <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="w-auto">
+            <TabsList className="bg-muted/80 p-1 rounded-xl border border-border/60">
+              <TabsTrigger
+                value="waitlist"
+                className="gap-2 rounded-lg text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-xs px-3 sm:px-4"
               >
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  <span>Utilisateurs</span>
-                </div>
-                {activeTab === 'users' && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary-foreground rounded-full" />
-                )}
-              </button>
+                <Users className="h-4 w-4" />
+                <span>Liste d'attente</span>
+              </TabsTrigger>
 
-              <button
-                onClick={() => setActiveTab('pending-users')}
-                className={`group relative px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  activeTab === 'pending-users'
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'bg-white dark:bg-slate-800 text-muted-foreground hover:text-foreground hover:shadow-sm'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span>En attente</span>
-                </div>
-                {activeTab === 'pending-users' && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary-foreground rounded-full" />
-                )}
-              </button>
+              {hasAdminAccess && (
+                <>
+                  <TabsTrigger
+                    value="users"
+                    className="gap-2 rounded-lg text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-xs px-3 sm:px-4"
+                  >
+                    <UserCheck className="h-4 w-4" />
+                    <span>Utilisateurs</span>
+                  </TabsTrigger>
 
-              <button
-                onClick={() => setActiveTab('create-admin')}
-                className={`group relative px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  activeTab === 'create-admin'
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'bg-white dark:bg-slate-800 text-muted-foreground hover:text-foreground hover:shadow-sm'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <UserCheck className="h-4 w-4" />
-                  <span>Créer Admin</span>
-                </div>
-                {activeTab === 'create-admin' && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary-foreground rounded-full" />
-                )}
-              </button>
+                  <TabsTrigger
+                    value="pending-users"
+                    className="gap-2 rounded-lg text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-xs px-3 sm:px-4"
+                  >
+                    <Clock className="h-4 w-4" />
+                    <span>En attente</span>
+                  </TabsTrigger>
 
-              <button
-                onClick={() => setActiveTab('messages')}
-                className={`group relative px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  activeTab === 'messages'
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'bg-white dark:bg-slate-800 text-muted-foreground hover:text-foreground hover:shadow-sm'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <span>Messages</span>
-                </div>
-                {activeTab === 'messages' && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary-foreground rounded-full" />
-                )}
-              </button>
+                  <TabsTrigger
+                    value="messages"
+                    className="gap-2 rounded-lg text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-xs px-3 sm:px-4"
+                  >
+                    <Mail className="h-4 w-4" />
+                    <span>Messages</span>
+                  </TabsTrigger>
 
-              <button
-                onClick={() => setActiveTab('subscriptions')}
-                className={`group relative px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  activeTab === 'subscriptions'
-                    ? 'bg-primary text-primary-foreground shadow-md'
-                    : 'bg-white dark:bg-slate-800 text-muted-foreground hover:text-foreground hover:shadow-sm'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  <span>Abonnements</span>
-                </div>
-                {activeTab === 'subscriptions' && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary-foreground rounded-full" />
-                )}
-              </button>
-            </>
-          )}
+                  <TabsTrigger
+                    value="subscriptions"
+                    className="gap-2 rounded-lg text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-xs px-3 sm:px-4"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    <span>Abonnements</span>
+                  </TabsTrigger>
+
+                  <TabsTrigger
+                    value="create-admin"
+                    className="gap-2 rounded-lg text-xs sm:text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-xs px-3 sm:px-4"
+                  >
+                    <Shield className="h-4 w-4" />
+                    <span>Créer Admin</span>
+                  </TabsTrigger>
+                </>
+              )}
+            </TabsList>
+          </Tabs>
         </div>
 
-      {/* Contenu conditionnel selon l'onglet actif */}
-      {activeTab === 'waitlist' && (
-        <>
-          {/* Statistiques de la waitlist */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <Card className="border-none shadow-sm bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950 dark:to-blue-900/50">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">Total</p>
-                    <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">
-                      {summary ? summary.total_entries : '-'}
-                    </div>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Entrées accumulées</p>
+        {/* Onglet Waitlist */}
+        {activeTab === "waitlist" && (
+          <div className="space-y-6">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+              <Card className="border-border shadow-xs">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Total Inscrits
+                  </CardTitle>
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <Users className="h-4 w-4" />
                   </div>
-                  <div className="h-12 w-12 rounded-full bg-blue-200/50 dark:bg-blue-800/50 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-blue-600 dark:text-blue-300" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl sm:text-3xl font-bold text-foreground">
+                    {summary ? summary.total_entries : "—"}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                  <p className="text-xs text-muted-foreground mt-1">Inscrits liste d'attente</p>
+                </CardContent>
+              </Card>
 
-            <Card className="border-none shadow-sm bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950 dark:to-emerald-900/50">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 mb-1">7 derniers jours</p>
-                    <div className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
-                      {summary ? summary.recent_entries_7_days : '-'}
-                    </div>
-                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Nouvelles entrées</p>
+              <Card className="border-border shadow-xs">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    7 derniers jours
+                  </CardTitle>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <BarChart3 className="h-4 w-4" />
                   </div>
-                  <div className="h-12 w-12 rounded-full bg-emerald-200/50 dark:bg-emerald-800/50 flex items-center justify-center">
-                    <BarChart3 className="w-6 h-6 text-emerald-600 dark:text-emerald-300" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl sm:text-3xl font-bold text-foreground">
+                    {summary ? summary.recent_entries_7_days : "—"}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                  <p className="text-xs text-muted-foreground mt-1">Nouvelles inscriptions récentes</p>
+                </CardContent>
+              </Card>
 
-            <Card className="border-none shadow-sm bg-white dark:bg-slate-800">
-              <CardContent className="pt-6">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-3">Répartition des statuts</p>
-                  <div className="flex flex-wrap gap-2">
-                    {summary ? (
+              <Card className="border-border shadow-xs sm:col-span-2 lg:col-span-1">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Répartition par statut
+                  </CardTitle>
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <Shield className="h-4 w-4" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {summary && summary.status_breakdown ? (
                       Object.entries(summary.status_breakdown).map(([k, v]) => (
-                        <Badge 
-                          key={k} 
-                          variant="outline" 
-                          className="text-xs bg-primary/5 text-primary border-primary/20"
+                        <Badge
+                          key={k}
+                          variant="outline"
+                          className="text-xs bg-muted/60 text-foreground border-border font-medium"
                         >
                           {k}: {v}
                         </Badge>
                       ))
                     ) : (
-                      <span className="text-xs text-neutral-500">-</span>
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Waitlist Table Card */}
+            <Card className="border-border shadow-xs overflow-hidden">
+              <CardHeader className="px-6 py-4 border-b border-border bg-muted/20">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base font-semibold text-foreground">
+                      Entrées de la liste d'attente
+                    </CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                      {filtered.length} inscription{filtered.length > 1 ? "s" : ""} trouvée{filtered.length > 1 ? "s" : ""}
+                    </CardDescription>
+                  </div>
+                  <div className="relative w-full sm:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher nom, email..."
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      className="pl-9 h-9 text-xs"
+                    />
+                  </div>
                 </div>
+              </CardHeader>
+
+              <CardContent className="p-0">
+                {loading ? (
+                  <div className="py-16 flex flex-col items-center justify-center text-muted-foreground gap-3">
+                    <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                    <span className="text-sm font-medium">Chargement de la liste d'attente...</span>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-[650px]">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-16">ID</TableHead>
+                          <TableHead>Nom</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Statut</TableHead>
+                          <TableHead className="text-right">Date d'inscription</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filtered.map((e) => (
+                          <TableRow key={e.id}>
+                            <TableCell className="font-mono text-xs text-muted-foreground">
+                              #{e.id}
+                            </TableCell>
+                            <TableCell className="font-medium text-foreground">
+                              {e.name || "—"}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{e.email}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className="text-xs bg-primary/5 text-primary border-primary/20 font-medium"
+                              >
+                                {e.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right text-xs text-muted-foreground">
+                              {new Date(e.created_at).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {filtered.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={5} className="py-12 text-center text-muted-foreground text-xs">
+                              Aucune entrée trouvée.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
+        )}
 
-          {/* Tableau de la waitlist */}
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-                <CardTitle className="text-sm font-medium">Entrées de la liste d'attente</CardTitle>
-                <div className="w-full sm:w-64">
-                  <Input placeholder="Rechercher nom, email, statut…" value={query} onChange={(e) => setQuery(e.target.value)} />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="py-12 flex items-center justify-center text-neutral-500">
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin text-blue-600"/> Chargement…
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-[600px] w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-neutral-500">
-                        <th className="py-2 pr-4">ID</th>
-                        <th className="py-2 pr-4">Nom</th>
-                        <th className="py-2 pr-4">Email</th>
-                        <th className="py-2 pr-4">Statut</th>
-                        <th className="py-2 pr-4">Créé le</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filtered.map((e) => (
-                        <tr key={e.id} className="border-t">
-                          <td className="py-2 pr-4">{e.id}</td>
-                          <td className="py-2 pr-4">{e.name}</td>
-                          <td className="py-2 pr-4">{e.email}</td>
-                          <td className="py-2 pr-4"><Badge variant="outline">{e.status}</Badge></td>
-                          <td className="py-2 pr-4">{new Date(e.created_at).toLocaleString()}</td>
-                        </tr>
-                      ))}
-                      {filtered.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="py-8 text-center text-neutral-500">Aucun résultat</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </>
-      )}
-
-      {/* Onglet Gestion des utilisateurs */}
-      {activeTab === 'users' && (
-        <div>
-          {adminLoading ? (
-            <Card>
-              <CardContent className="p-8">
-                <div className="flex justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ) : selectedUserId ? (
-            <UserDetails 
-              userId={selectedUserId} 
-              onBack={handleBackToUserList}
-              className="w-full"
-            />
-          ) : (
-            <UserManagement 
-              className="w-full"
-              onUserSelect={handleUserSelect}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Onglet Utilisateurs en attente */}
-      {activeTab === 'pending-users' && (
-        <div className="space-y-6">
-          <PendingUsersManagement className="w-full" />
-        </div>
-      )}
-
-      {/* Onglet Créer Admin */}
-      {activeTab === 'create-admin' && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCheck className="h-5 w-5" />
-                Créer un compte administrateur
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Email</label>
-                  <Input
-                    type="email"
-                    placeholder="admin@viraill.com"
-                    value={createAdminForm.email}
-                    onChange={(e) => setCreateAdminForm(prev => ({ ...prev, email: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Nom d'utilisateur</label>
-                  <Input
-                    type="text"
-                    placeholder="admin"
-                    value={createAdminForm.username}
-                    onChange={(e) => setCreateAdminForm(prev => ({ ...prev, username: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Mot de passe</label>
-                <Input
-                  type="password"
-                  placeholder="Mot de passe sécurisé"
-                  value={createAdminForm.password}
-                  onChange={(e) => setCreateAdminForm(prev => ({ ...prev, password: e.target.value }))}
-                />
-              </div>
-              
-              {createAdminMessage && (
-                <div className={`p-3 rounded-lg ${
-                  createAdminMessage.type === 'success' 
-                    ? 'bg-green-50 text-green-700 border border-green-200' 
-                    : 'bg-red-50 text-red-700 border border-red-200'
-                }`}>
-                  {createAdminMessage.text}
-                </div>
-              )}
-
-              <Button
-                onClick={handleCreateAdmin}
-                disabled={createAdminLoading}
+        {/* Onglet Utilisateurs */}
+        {activeTab === "users" && (
+          <div>
+            {adminLoading ? (
+              <Card className="border-border">
+                <CardContent className="p-12 flex items-center justify-center">
+                  <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                </CardContent>
+              </Card>
+            ) : selectedUserId ? (
+              <UserDetails
+                userId={selectedUserId}
+                onBack={handleBackToUserList}
                 className="w-full"
-              >
-                {createAdminLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
-                    Création en cours...
-                  </>
-                ) : (
-                  <>
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    Créer le compte admin
-                  </>
+              />
+            ) : (
+              <UserManagement className="w-full" onUserSelect={handleUserSelect} />
+            )}
+          </div>
+        )}
+
+        {/* Onglet Utilisateurs en attente */}
+        {activeTab === "pending-users" && (
+          <div className="space-y-6">
+            <PendingUsersManagement className="w-full" />
+          </div>
+        )}
+
+        {/* Onglet Créer Admin */}
+        {activeTab === "create-admin" && (
+          <div className="max-w-2xl space-y-6">
+            <Card className="border-border shadow-xs">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <Shield className="h-4 w-4 text-primary" />
+                  Créer un compte administrateur
+                </CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
+                  Ce compte disposera des permissions complètes sur l'ensemble de la plateforme.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="admin-email" className="text-xs font-medium">
+                      Email professionnel
+                    </Label>
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      placeholder="admin@viraill.com"
+                      value={createAdminForm.email}
+                      onChange={(e) =>
+                        setCreateAdminForm((prev) => ({ ...prev, email: e.target.value }))
+                      }
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="admin-username" className="text-xs font-medium">
+                      Nom d'utilisateur
+                    </Label>
+                    <Input
+                      id="admin-username"
+                      type="text"
+                      placeholder="admin"
+                      value={createAdminForm.username}
+                      onChange={(e) =>
+                        setCreateAdminForm((prev) => ({ ...prev, username: e.target.value }))
+                      }
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="admin-pass" className="text-xs font-medium">
+                    Mot de passe sécurisé
+                  </Label>
+                  <Input
+                    id="admin-pass"
+                    type="password"
+                    placeholder="Au moins 8 caractères"
+                    value={createAdminForm.password}
+                    onChange={(e) =>
+                      setCreateAdminForm((prev) => ({ ...prev, password: e.target.value }))
+                    }
+                    className="text-sm"
+                  />
+                </div>
+
+                {createAdminMessage && (
+                  <Alert
+                    variant={createAdminMessage.type === "success" ? "default" : "destructive"}
+                    className="py-2.5"
+                  >
+                    {createAdminMessage.type === "success" ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4" />
+                    )}
+                    <AlertTitle className="text-xs font-semibold">
+                      {createAdminMessage.type === "success" ? "Succès" : "Erreur"}
+                    </AlertTitle>
+                    <AlertDescription className="text-xs mt-0.5">
+                      {createAdminMessage.text}
+                    </AlertDescription>
+                  </Alert>
                 )}
-              </Button>
-            </CardContent>
-          </Card>
 
-          {/* Instructions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Instructions</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>• Le compte admin aura tous les privilèges d'administration</p>
-              <p>• L'email doit être unique dans le système</p>
-              <p>• Le nom d'utilisateur doit être unique</p>
-              <p>• Le mot de passe doit être sécurisé (minimum 8 caractères)</p>
-              <p>• Le compte sera automatiquement activé et vérifié</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Onglet Messages */}
-      {activeTab === 'messages' && (
-        <div className="space-y-6">
-          {adminLoading ? (
-            <Card>
-              <CardContent className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-                  <p className="text-muted-foreground">Chargement des messages...</p>
-                </div>
+                <Button
+                  onClick={handleCreateAdmin}
+                  disabled={createAdminLoading}
+                  className="w-full gap-2 font-semibold"
+                >
+                  {createAdminLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <UserCheck className="h-4 w-4" />
+                  <span>{createAdminLoading ? "Création en cours..." : "Créer le compte admin"}</span>
+                </Button>
               </CardContent>
             </Card>
-          ) : selectedMessageId ? (
-            <MessageDetails 
-              messageId={selectedMessageId} 
-              onBack={handleBackToMessageList}
-              className="w-full"
-            />
-          ) : (
-            <MessageManagement 
-              className="w-full"
-              onMessageSelect={handleMessageSelect}
-            />
-          )}
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Onglet Abonnements */}
-      {activeTab === 'subscriptions' && (
-        <div className="space-y-6">
-          {adminLoading ? (
-            <Card>
-              <CardContent className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-                  <p className="text-muted-foreground">Chargement des abonnements...</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : selectedSubscriptionId ? (
-            <SubscriptionDetails 
-              subscriptionId={selectedSubscriptionId} 
-              onBack={handleBackToSubscriptionList}
-              className="w-full"
-            />
-          ) : (
-            <SubscriptionManagement 
-              className="w-full"
-              onSubscriptionSelect={handleSubscriptionSelect}
-            />
-          )}
-        </div>
-      )}
+        {/* Onglet Messages */}
+        {activeTab === "messages" && (
+          <div>
+            {adminLoading ? (
+              <Card className="border-border">
+                <CardContent className="flex items-center justify-center py-16">
+                  <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                </CardContent>
+              </Card>
+            ) : selectedMessageId ? (
+              <MessageDetails
+                messageId={selectedMessageId}
+                onBack={handleBackToMessageList}
+                className="w-full"
+              />
+            ) : (
+              <MessageManagement className="w-full" onMessageSelect={handleMessageSelect} />
+            )}
+          </div>
+        )}
+
+        {/* Onglet Abonnements */}
+        {activeTab === "subscriptions" && (
+          <div>
+            {adminLoading ? (
+              <Card className="border-border">
+                <CardContent className="flex items-center justify-center py-16">
+                  <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                </CardContent>
+              </Card>
+            ) : selectedSubscriptionId ? (
+              <SubscriptionDetails
+                subscriptionId={selectedSubscriptionId}
+                onBack={handleBackToSubscriptionList}
+                className="w-full"
+              />
+            ) : (
+              <SubscriptionManagement
+                className="w-full"
+                onSubscriptionSelect={handleSubscriptionSelect}
+              />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-
-

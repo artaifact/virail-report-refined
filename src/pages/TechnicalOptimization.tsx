@@ -4,131 +4,150 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { 
   Code, 
   Zap, 
   Database, 
   Monitor, 
-  CheckCircle, 
+  CheckCircle2, 
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  Image,
+  Gauge
 } from 'lucide-react';
 
 const TechnicalOptimization: React.FC = () => {
   usePageTitle('Optimisation technique');
   return (
-    <div className="p-3 sm:p-4 md:p-6 space-y-6">
+    <div className="flex-1 p-4 sm:p-6 md:p-8 space-y-6 bg-background text-foreground min-h-screen">
       {/* En-tête */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
-          <Code className="h-7 w-7 sm:h-8 sm:w-8 text-blue-600" />
-          Optimisation Technique
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Recommandations d'optimisation pour améliorer les performances techniques de votre site.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <Code className="h-5 w-5" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              Optimisation Technique
+            </h1>
+          </div>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Recommandations d'optimisation pour améliorer les performances techniques et le crawl de votre site.
+          </p>
+        </div>
       </div>
 
       <Separator />
 
       {/* Vue d'ensemble des performances */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-600" />
-              Score Global
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        <Card className="border border-border bg-card shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+              <span>Score Global</span>
+              <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">85/100</div>
-            <p className="text-xs text-gray-500 mt-1">Bon niveau général</p>
+            <div className="text-3xl font-bold font-mono text-emerald-600 dark:text-emerald-400">85<span className="text-lg text-muted-foreground font-normal">/100</span></div>
+            <p className="text-xs text-muted-foreground mt-1">Bon niveau technique général</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Zap className="h-4 w-4 text-orange-600" />
-              Vitesse de Chargement
+        <Card className="border border-border bg-card shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+              <span>Vitesse de Chargement</span>
+              <Zap className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">2.4s</div>
-            <p className="text-xs text-gray-500 mt-1">À optimiser</p>
+            <div className="text-3xl font-bold font-mono text-amber-600 dark:text-amber-400">2.4<span className="text-lg text-muted-foreground font-normal">s</span></div>
+            <p className="text-xs text-muted-foreground mt-1">Optimisations requises pour les LLM bots</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Monitor className="h-4 w-4 text-blue-600" />
-              Performance Mobile
+        <Card className="border border-border bg-card shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+              <span>Performance Mobile</span>
+              <Monitor className="h-4 w-4 text-primary" />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">78/100</div>
-            <p className="text-xs text-gray-500 mt-1">Améliorations possibles</p>
+            <div className="text-3xl font-bold font-mono text-primary">78<span className="text-lg text-muted-foreground font-normal">/100</span></div>
+            <p className="text-xs text-muted-foreground mt-1">Marge de progression sur les Core Web Vitals</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Recommandations prioritaires */}
-      <Card>
+      <Card className="border border-border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
-            Recommandations Prioritaires
-          </CardTitle>
-          <CardDescription>
-            Actions recommandées pour améliorer significativement les performances
-          </CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Recommandations Prioritaires</CardTitle>
+              <CardDescription>
+                Actions recommandées pour améliorer significativement les performances
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row items-start gap-3 p-3 bg-red-50 rounded-lg border border-red-200">
-              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <h4 className="font-medium text-red-900">Optimisation des images</h4>
-                <p className="text-sm text-red-700 mt-1">
-                  Les images représentent 60% du poids de la page. Compresser et convertir en WebP peut réduire le temps de chargement de 40%.
-                </p>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <Badge variant="destructive" className="text-xs">Priorité Haute</Badge>
-                  <Badge variant="outline" className="text-xs">Impact: -40% temps de chargement</Badge>
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 bg-destructive/5 rounded-xl border border-destructive/20">
+              <div className="flex items-start gap-3">
+                <Image className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-foreground text-sm sm:text-base">Optimisation des images</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Les images représentent 60% du poids de la page. Compresser et convertir en WebP/AVIF peut réduire le temps de chargement de 40%.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <Badge variant="destructive" className="text-xs">Priorité Haute</Badge>
+                    <Badge variant="outline" className="text-xs">Impact: -40% temps de chargement</Badge>
+                  </div>
                 </div>
               </div>
-              <Button size="sm" variant="outline" className="self-start sm:self-auto">
+              <Button size="sm" variant="default" className="shrink-0 self-start sm:self-center">
                 Corriger
               </Button>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-              <Database className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <h4 className="font-medium text-orange-900">Cache navigateur</h4>
-                <p className="text-sm text-orange-700 mt-1">
-                  Configurer des en-têtes de cache appropriés pour les ressources statiques peut améliorer les visites répétées.
-                </p>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <Badge variant="secondary" className="text-xs">Priorité Moyenne</Badge>
-                  <Badge variant="outline" className="text-xs">Impact: +25% vitesse retour</Badge>
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 bg-amber-500/5 rounded-xl border border-amber-500/20">
+              <div className="flex items-start gap-3">
+                <Database className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-foreground text-sm sm:text-base">Cache navigateur & CDN</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Configurer des en-têtes de cache appropriés (Cache-Control: max-age=31536000) pour les ressources statiques afin d'accélérer les crawls répétés.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <Badge variant="secondary" className="text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border-0">Priorité Moyenne</Badge>
+                    <Badge variant="outline" className="text-xs">Impact: +25% vitesse retour</Badge>
+                  </div>
                 </div>
               </div>
-              <Button size="sm" variant="outline" className="self-start sm:self-auto">
+              <Button size="sm" variant="outline" className="shrink-0 self-start sm:self-center">
                 Configurer
               </Button>
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-              <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium text-green-900">Minification CSS/JS</h4>
-                <p className="text-sm text-green-700 mt-1">
-                  Les fichiers CSS et JavaScript sont déjà minifiés. Bon travail !
-                </p>
-                <div className="flex gap-2 mt-2">
-                  <Badge variant="default" className="text-xs bg-green-600">Optimisé</Badge>
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-4 p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/20">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-foreground text-sm sm:text-base">Minification CSS/JS & Compression Brotli</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Les fichiers CSS et JavaScript sont correctement minifiés et compressés. Conforme aux recommandations de Google et des moteurs d'indexation.
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0">Optimisé</Badge>
+                  </div>
                 </div>
               </div>
             </div>
@@ -138,78 +157,78 @@ const TechnicalOptimization: React.FC = () => {
 
       {/* Détails techniques */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="border border-border bg-card shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Métriques Core Web Vitals</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-primary" />
+              Métriques Core Web Vitals
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">LCP (Largest Contentful Paint)</span>
-                <Badge variant="secondary">2.1s</Badge>
+              <div className="flex justify-between items-center text-sm">
+                <span className="font-medium text-foreground">LCP (Largest Contentful Paint)</span>
+                <Badge variant="secondary" className="font-mono">2.1s</Badge>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-orange-500 h-2 rounded-full" style={{ width: '70%' }}></div>
-              </div>
+              <Progress value={70} className="h-2" />
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">FID (First Input Delay)</span>
-                <Badge variant="default" className="bg-green-600">45ms</Badge>
+              <div className="flex justify-between items-center text-sm">
+                <span className="font-medium text-foreground">FID (First Input Delay)</span>
+                <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0 font-mono">45ms</Badge>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-500 h-2 rounded-full" style={{ width: '90%' }}></div>
-              </div>
+              <Progress value={90} className="h-2" />
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">CLS (Cumulative Layout Shift)</span>
-                <Badge variant="default" className="bg-green-600">0.08</Badge>
+              <div className="flex justify-between items-center text-sm">
+                <span className="font-medium text-foreground">CLS (Cumulative Layout Shift)</span>
+                <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0 font-mono">0.08</Badge>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-500 h-2 rounded-full" style={{ width: '85%' }}></div>
-              </div>
+              <Progress value={85} className="h-2" />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border border-border bg-card shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Analyse des Ressources</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Database className="h-4 w-4 text-primary" />
+              Analyse des Ressources
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Images</span>
+              <div className="flex justify-between items-center py-1 border-b border-border/50">
+                <span className="text-sm font-medium text-foreground">Images</span>
                 <div className="text-right">
-                  <div className="text-sm font-medium">2.1 MB</div>
-                  <div className="text-xs text-gray-500">60% du total</div>
+                  <div className="text-sm font-semibold font-mono text-foreground">2.1 MB</div>
+                  <div className="text-xs text-muted-foreground">60% du total</div>
                 </div>
               </div>
               
-              <div className="flex justify-between items-center">
-                <span className="text-sm">JavaScript</span>
+              <div className="flex justify-between items-center py-1 border-b border-border/50">
+                <span className="text-sm font-medium text-foreground">JavaScript</span>
                 <div className="text-right">
-                  <div className="text-sm font-medium">580 KB</div>
-                  <div className="text-xs text-gray-500">16% du total</div>
+                  <div className="text-sm font-semibold font-mono text-foreground">580 KB</div>
+                  <div className="text-xs text-muted-foreground">16% du total</div>
                 </div>
               </div>
               
-              <div className="flex justify-between items-center">
-                <span className="text-sm">CSS</span>
+              <div className="flex justify-between items-center py-1 border-b border-border/50">
+                <span className="text-sm font-medium text-foreground">CSS</span>
                 <div className="text-right">
-                  <div className="text-sm font-medium">120 KB</div>
-                  <div className="text-xs text-gray-500">3% du total</div>
+                  <div className="text-sm font-semibold font-mono text-foreground">120 KB</div>
+                  <div className="text-xs text-muted-foreground">3% du total</div>
                 </div>
               </div>
               
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Autres</span>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-sm font-medium text-foreground">Autres (Fonts, HTML)</span>
                 <div className="text-right">
-                  <div className="text-sm font-medium">750 KB</div>
-                  <div className="text-xs text-gray-500">21% du total</div>
+                  <div className="text-sm font-semibold font-mono text-foreground">750 KB</div>
+                  <div className="text-xs text-muted-foreground">21% du total</div>
                 </div>
               </div>
             </div>

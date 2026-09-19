@@ -1,4 +1,3 @@
-
 import { ChevronRight, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -8,22 +7,22 @@ interface BreadcrumbProps {
 
 export const BreadcrumbCustom = ({ items }: BreadcrumbProps) => {
   return (
-    <nav className="flex items-center space-x-1 text-sm text-gray-600 mb-6">
-      <Home className="h-4 w-4" />
+    <nav aria-label="Fil d'Ariane" className="flex items-center space-x-1.5 text-xs text-muted-foreground mb-4">
+      <Home className="h-3.5 w-3.5" />
       {items.map((item, index) => (
-        <div key={index} className="flex items-center space-x-1">
-          <ChevronRight className="h-4 w-4 text-gray-400" />
+        <div key={index} className="flex items-center space-x-1.5">
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
           {item.onClick ? (
             <Button
               variant="ghost"
               size="sm"
               onClick={item.onClick}
-              className="p-0 h-auto font-normal text-blue-600 hover:text-blue-800 hover:bg-transparent"
+              className="p-0 h-auto font-normal text-muted-foreground hover:text-foreground hover:bg-transparent"
             >
               {item.label}
             </Button>
           ) : (
-            <span className="font-medium text-gray-900">{item.label}</span>
+            <span className="font-medium text-foreground truncate max-w-[200px] sm:max-w-md">{item.label}</span>
           )}
         </div>
       ))}
