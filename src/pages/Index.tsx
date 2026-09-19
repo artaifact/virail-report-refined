@@ -1984,26 +1984,49 @@ function AmeliorerView({
   const auditGeo = firstAnalysis?.modules?.audit_geo || (reportData as any)?.audit_geo;
   const semantique = firstAnalysis?.modules?.semantique || (reportData as any)?.semantique;
 
-  const realSchemaScore = auditGeo?.donnees_structurees?.score != null
+  // Source prioritaire : crawl_optimizer de l'API (aligné avec la page Améliorer)
+  const co = reportData?.crawl_optimizer as any;
+  const coAnalyze = co?.analyze;
+  const coSimulate = co?.simulate;
+  const coBreakdown =
+    coAnalyze?.score?.breakdown ??
+    coSimulate?.comparison?.optimized_score?.breakdown ??
+    coSimulate?.comparison?.original_score?.breakdown ??
+    co?.score?.breakdown;
+
+  const realSchemaScore = coBreakdown?.structured_data != null
+    ? Math.round(Number(coBreakdown.structured_data))
+    : auditGeo?.donnees_structurees?.score != null
     ? Math.round(Number(auditGeo.donnees_structurees.score))
-    : (targetGeoScore ? Math.round(targetGeoScore * 0.85) : 50);
+    : 0;
 
-  const realSemanticHtmlScore = auditGeo?.html_semantique?.score != null
+  const realSemanticHtmlScore = coBreakdown?.semantic_html != null
+    ? Math.round(Number(coBreakdown.semantic_html))
+    : auditGeo?.html_semantique?.score != null
     ? Math.round(Number(auditGeo.html_semantique.score))
-    : (targetGeoScore ? Math.round(targetGeoScore * 0.9) : 60);
+    : 50;
 
-  const realClarityScore = semantique?.clarte_score != null
+  const realEntityCoverageScore = coBreakdown?.entity_coverage != null
+    ? Math.round(Number(coBreakdown.entity_coverage))
+    : 50;
+
+  const realClarityScore = coBreakdown?.content_clarity != null
+    ? Math.round(Number(coBreakdown.content_clarity))
+    : semantique?.clarte_score != null
     ? Math.round(Number(semantique.clarte_score))
     : (semantique?.score_global != null ? Math.round(Number(semantique.score_global)) : 65);
 
   const realHasLlmsTxt = Boolean(
+    reportData?.crawl_optimizer?.llms_txt?.exists === true ||
+    (reportData as any)?.crawl_optimizer?.optimize?.llms_txt ||
     auditGeo?.accessibilite_crawlers?.llms_txt_present === true ||
     auditGeo?.accessibilite_crawlers?.llms_txt_present === 'true' ||
-    (effectiveAgenticScore && effectiveAgenticScore >= 70)
+    (effectiveAgenticScore && effectiveAgenticScore >= 75)
   );
 
   const realHasOpenApi = Boolean(
-    effectiveAgenticScore && effectiveAgenticScore >= 60
+    (reportData as any)?.crawl_optimizer?.optimize?.openapi ||
+    (effectiveAgenticScore && effectiveAgenticScore >= 70)
   );
 
   const unified = useMemo(() => {
@@ -2015,12 +2038,13 @@ function AmeliorerView({
       agenticScore: effectiveAgenticScore,
       schemaScore: realSchemaScore,
       semanticHtmlScore: realSemanticHtmlScore,
+      entityCoverageScore: realEntityCoverageScore,
       contentClarityScore: realClarityScore,
       hasLlmsTxt: realHasLlmsTxt,
       hasOpenApi: realHasOpenApi,
       journeySuccessRate: effectiveAgenticScore ? Math.round(effectiveAgenticScore * 0.9) : 35,
     });
-  }, [targetDomain, targetGeoScore, totalCitations, effectiveAgenticScore, realSchemaScore, realSemanticHtmlScore, realClarityScore, realHasLlmsTxt, realHasOpenApi]);
+  }, [targetDomain, targetGeoScore, totalCitations, effectiveAgenticScore, realSchemaScore, realSemanticHtmlScore, realEntityCoverageScore, realClarityScore, realHasLlmsTxt, realHasOpenApi]);
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);

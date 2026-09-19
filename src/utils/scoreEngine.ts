@@ -100,7 +100,7 @@ export function computeUnifiedScore(input: ScoreCalculationInput): UnifiedAction
 
   // ─── 2. Calcul Niveau 2 : Être compris et choisi (30%) ─────────────────────────
   const l2Raw = (
-    (schemaScore ?? 50) * 0.35 +
+    (schemaScore ?? 0) * 0.35 +
     (semanticHtmlScore ?? 50) * 0.25 +
     (entityCoverageScore ?? 50) * 0.20 +
     (contentClarityScore ?? 50) * 0.20
@@ -117,7 +117,7 @@ export function computeUnifiedScore(input: ScoreCalculationInput): UnifiedAction
     status: getStatusForLevel(2, l2Score),
     description: 'Mesure la lisibilité du contenu pour les bots, la densité Schema.org et la couverture des entités.',
     metrics: [
-      { id: 'structured_data', label: 'Données structurées (Schema.org)', score: schemaScore ?? 50, weight: 0.35 },
+      { id: 'structured_data', label: 'Données structurées (Schema.org)', score: schemaScore ?? 0, weight: 0.35 },
       { id: 'semantic_html', label: 'Structure sémantique HTML', score: semanticHtmlScore ?? 50, weight: 0.25 },
       { id: 'entity_coverage', label: 'Exposition des entités clés', score: entityCoverageScore ?? 50, weight: 0.20 },
       { id: 'content_clarity', label: 'Clarté factuelle pour LLM', score: contentClarityScore ?? 50, weight: 0.20 },
@@ -125,7 +125,9 @@ export function computeUnifiedScore(input: ScoreCalculationInput): UnifiedAction
     keyObservations: [
       (schemaScore ?? 0) >= 70
         ? 'Données Schema.org riches et conformes.'
-        : 'Données structurées incomplètes ou absentes (opportunité de gain rapide).',
+        : (schemaScore ?? 0) > 0
+        ? 'Données structurées incomplètes (opportunité de gain rapide).'
+        : 'Données structurées Schema.org absentes (opportunité critique d’optimisation).',
     ],
   };
 

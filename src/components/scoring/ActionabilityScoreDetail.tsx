@@ -44,11 +44,11 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
   const navigate = useNavigate();
   const [isMethodologyOpen, setIsMethodologyOpen] = useState(false);
   const [expandedLevels, setExpandedLevels] = useState<Record<number, boolean>>({
-    1: false,
-    2: false,
-    3: false,
+    1: true,
+    2: true,
+    3: true,
   });
-  const [allExpanded, setAllExpanded] = useState(false);
+  const [allExpanded, setAllExpanded] = useState(true);
 
   const overallScore = unified?.overallScore ?? (unified as any)?.score ?? 63;
   const grade = unified?.grade || 'C';
@@ -66,7 +66,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
   const l1SourceAuthority = level1?.metrics?.[1]?.score ?? Math.round(l1CitationRate * 0.9);
   const l1Sentiment = level1?.metrics?.[2]?.score ?? Math.round(l1CitationRate * 1.05);
 
-  const l2Schema = level2?.metrics?.[0]?.score ?? 50;
+  const l2Schema = level2?.metrics?.[0]?.score ?? 0;
   const l2Html = level2?.metrics?.[1]?.score ?? 50;
   const l2Clarity = level2?.metrics?.[3]?.score ?? level2?.metrics?.[2]?.score ?? 50;
 
@@ -75,10 +75,15 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
   const l3Journeys = level3?.metrics?.[4]?.score ?? 0;
 
   const toggleLevel = (lvl: number) => {
-    setExpandedLevels(prev => ({
-      ...prev,
-      [lvl]: !prev[lvl],
-    }));
+    setExpandedLevels(prev => {
+      const updated = {
+        ...prev,
+        [lvl]: !prev[lvl],
+      };
+      const allActive = Object.values(updated).every(Boolean);
+      setAllExpanded(allActive);
+      return updated;
+    });
   };
 
   const toggleAll = () => {
@@ -266,10 +271,14 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
       </div>
 
       {/* ─── The 3 Canonical Pillars Cards with Progressive Disclosure ────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5 items-start">
         {/* Niveau 1 : Être trouvé & cité */}
-        <Card className="rounded-xl border border-border shadow-xs flex flex-col justify-between bg-card transition-all hover:border-border/80">
-          <CardHeader className="p-5 pb-3 space-y-2.5">
+        <Card className="rounded-xl border border-border shadow-xs flex flex-col bg-card transition-all hover:border-border/80">
+          <CardHeader 
+            className="p-5 pb-3 space-y-2.5 cursor-pointer select-none"
+            onClick={() => toggleLevel(1)}
+            title="Cliquer pour afficher ou masquer les détails"
+          >
             <div className="flex items-center justify-between gap-2">
               <Badge variant="outline" className="text-xs font-normal">
                 Niveau 1 (40%)
@@ -337,7 +346,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
               </div>
             </CardContent>
           ) : (
-            <CardContent className="p-5 pt-0 pb-2">
+            <CardContent className="p-5 pt-0 pb-3">
               <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 bg-muted/30 px-2.5 py-1.5 rounded-lg border border-border/40">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                 <span className="truncate">{level1?.keyObservations?.[0] || 'Présence recensée · 3 indicateurs monitorés'}</span>
@@ -345,7 +354,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
             </CardContent>
           )}
 
-          <CardFooter className="p-4 pt-1 border-t border-border/50 mt-2">
+          <CardFooter className="p-4 pt-1 border-t border-border/50 mt-auto">
             <Button
               variant="ghost"
               size="sm"
@@ -359,8 +368,12 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
         </Card>
 
         {/* Niveau 2 : Être compris & choisi */}
-        <Card className="rounded-xl border border-border shadow-xs flex flex-col justify-between bg-card transition-all hover:border-border/80">
-          <CardHeader className="p-5 pb-3 space-y-2.5">
+        <Card className="rounded-xl border border-border shadow-xs flex flex-col bg-card transition-all hover:border-border/80">
+          <CardHeader 
+            className="p-5 pb-3 space-y-2.5 cursor-pointer select-none"
+            onClick={() => toggleLevel(2)}
+            title="Cliquer pour afficher ou masquer les détails"
+          >
             <div className="flex items-center justify-between gap-2">
               <Badge variant="outline" className="text-xs font-normal">
                 Niveau 2 (30%)
@@ -401,8 +414,8 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
                 <div>
                   <div className="flex justify-between text-[11px] font-medium text-muted-foreground mb-1">
                     <span>Données structurées (Schema.org)</span>
-                    <span className="font-medium text-foreground">
-                      {l2Schema}% ({l2Schema >= 70 ? 'Complet' : l2Schema >= 30 ? 'Partiel' : 'Absent'})
+                    <span className={`font-medium ${l2Schema >= 70 ? 'text-emerald-500' : l2Schema > 0 ? 'text-amber-500' : 'text-destructive font-semibold'}`}>
+                      {l2Schema}% ({l2Schema >= 70 ? 'Complet' : l2Schema > 0 ? 'Partiel' : 'Absent'})
                     </span>
                   </div>
                   <Progress value={l2Schema} className="h-1.5 bg-muted" />
@@ -426,21 +439,35 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
               </div>
 
               <div className="w-full text-[11px] text-muted-foreground bg-muted/40 p-2.5 rounded-lg border border-border/60 mt-2">
-                <strong className="text-foreground">Diagnostic :</strong> {level2?.keyObservations?.[0] || 'Risque d\'hallucination ou de mauvaise interprétation des offres payantes par manque de JSON-LD explicite.'}
+                <strong className="text-foreground">Diagnostic :</strong> {level2?.keyObservations?.[0] || (l2Schema === 0 ? 'Données structurées Schema.org absentes. Risque critique d’hallucination des tarifs et caractéristiques.' : 'Risque d\'hallucination ou de mauvaise interprétation des offres payantes par manque de JSON-LD explicite.')}
               </div>
             </CardContent>
           ) : (
-            <CardContent className="p-5 pt-0 pb-2">
-              <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 bg-muted/30 px-2.5 py-1.5 rounded-lg border border-border/40">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <CardContent className="p-5 pt-0 pb-3">
+              <div className={`text-[11px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border ${
+                l2Schema >= 70 
+                  ? 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20' 
+                  : l2Schema > 0 
+                  ? 'text-amber-600 bg-amber-500/10 border-amber-500/20' 
+                  : 'text-rose-600 bg-rose-500/10 border-rose-500/20'
+              }`}>
+                {l2Schema >= 70 ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                ) : (
+                  <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${l2Schema > 0 ? 'text-amber-500' : 'text-rose-500'}`} />
+                )}
                 <span className="truncate">
-                  {l2Schema >= 70 ? 'Données structurées conformes' : 'Risque d\'hallucination tarifs · Balisage partiel'}
+                  {l2Schema >= 70 
+                    ? 'Données structurées conformes' 
+                    : l2Schema > 0 
+                    ? 'Risque d\'hallucination tarifs · Balisage partiel' 
+                    : 'Balisage Schema.org absent · Risque d\'hallucination'}
                 </span>
               </div>
             </CardContent>
           )}
 
-          <CardFooter className="p-4 pt-1 border-t border-border/50 mt-2">
+          <CardFooter className="p-4 pt-1 border-t border-border/50 mt-auto">
             <Button
               variant="ghost"
               size="sm"
@@ -454,8 +481,12 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
         </Card>
 
         {/* Niveau 3 : Être actionnable (M2M) */}
-        <Card className="rounded-xl border border-border shadow-xs flex flex-col justify-between bg-card transition-all hover:border-border/80">
-          <CardHeader className="p-5 pb-3 space-y-2.5">
+        <Card className="rounded-xl border border-border shadow-xs flex flex-col bg-card transition-all hover:border-border/80">
+          <CardHeader 
+            className="p-5 pb-3 space-y-2.5 cursor-pointer select-none"
+            onClick={() => toggleLevel(3)}
+            title="Cliquer pour afficher ou masquer les détails"
+          >
             <div className="flex items-center justify-between gap-2">
               <Badge variant="outline" className="text-xs font-normal">
                 Niveau 3 (30%)
@@ -502,7 +533,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
                       {l3LlmsTxt ? 'Détecté (100%)' : 'Non détecté'}
                     </span>
                   </div>
-                  <Progress value={l3LlmsTxt ? 100 : 15} className="h-1.5 bg-muted" />
+                  <Progress value={l3LlmsTxt ? 100 : 0} className="h-1.5 bg-muted" />
                 </div>
 
                 <div>
@@ -529,7 +560,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
               </div>
             </CardContent>
           ) : (
-            <CardContent className="p-5 pt-0 pb-2">
+            <CardContent className="p-5 pt-0 pb-3">
               <div className={`text-[11px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border ${l3LlmsTxt ? 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20' : 'text-destructive bg-destructive/10 border-destructive/20'}`}>
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">
@@ -539,7 +570,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
             </CardContent>
           )}
 
-          <CardFooter className="p-4 pt-1 border-t border-border/50 mt-2">
+          <CardFooter className="p-4 pt-1 border-t border-border/50 mt-auto">
             <Button
               variant="ghost"
               size="sm"
