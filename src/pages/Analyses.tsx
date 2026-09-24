@@ -48,6 +48,7 @@ import { useSelectedReport } from "@/contexts/SelectedReportContext";
 import { mapLLMOReportData } from "@/lib/llmo-mapper";
 import { ModelLogosCarousel } from "@/components/ModelLogosCarousel";
 import { cn } from "@/lib/utils";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 
 const Analyses = () => {
   usePageTitle("Analyses");
@@ -374,7 +375,7 @@ const Analyses = () => {
     const mappedData = mapLLMOReportData(report);
 
     return (
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto animate-in fade-in duration-200">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1700px] mx-auto animate-in fade-in duration-200 font-sans">
         <div className="flex items-center justify-between gap-4">
           <Button
             variant="ghost"
@@ -448,11 +449,11 @@ const Analyses = () => {
 
   // Vue Principale (Liste des analyses & stats)
   return (
-    <div className="min-h-screen bg-background pb-12">
+    <div className="min-h-screen bg-background pb-12 font-sans">
       {/* Hero Header Section */}
-      <div className="border-b border-border bg-card/60 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div className="space-y-2">
+      <div className="border-b border-border bg-card/60 backdrop-blur-sm px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-[1700px] mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="gap-1 px-2.5 py-0.5 text-xs font-semibold border-primary/20 bg-primary/5 text-primary">
                 <Brain className="h-3 w-3" />
@@ -462,12 +463,13 @@ const Analyses = () => {
                 {reports.length} audit{reports.length > 1 ? "s" : ""}
               </Badge>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Analyses & Audits GEO
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <span>Analyses & Audits GEO</span>
+              <InfoTooltip
+                title="Historique des Audits GEO"
+                content="Consultez l'historique complet de vos audits de visibilité générative, lancez de nouveaux scans multi-modèles et comparez vos performances."
+              />
             </h1>
-            <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-              Consultez l'historique de vos audits de visibilité générative, lancez de nouveaux scans multi-modèles et comparez vos performances.
-            </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
@@ -477,9 +479,9 @@ const Analyses = () => {
               onClick={() => refreshReports && refreshReports()}
               title="Actualiser les rapports"
               disabled={loading || isAnalyzing}
-              className="gap-2 border-border"
+              className="gap-2 border-border h-9 rounded-xl shadow-xs text-xs font-semibold"
             >
-              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+              <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
               <span>Actualiser</span>
             </Button>
 
@@ -487,10 +489,10 @@ const Analyses = () => {
               <DialogTrigger asChild>
                 <Button
                   size="sm"
-                  className="gap-2 font-semibold shadow-xs"
+                  className="gap-2 font-semibold shadow-xs h-9 rounded-xl text-xs"
                   disabled={isAnalyzing || isOptimizedAnalyzing}
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3.5 w-3.5" />
                   <span>Nouvelle analyse</span>
                 </Button>
               </DialogTrigger>
@@ -500,10 +502,10 @@ const Analyses = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div className="max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* KPI Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          <Card className="border-border shadow-xs hover:border-primary/40 transition-colors">
+          <Card className="border-border/70 rounded-xl bg-card shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Total Analyses
@@ -513,7 +515,7 @@ const Analyses = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold text-foreground">
+              <div className="text-2xl sm:text-3xl font-extrabold text-foreground font-mono">
                 {stats.totalReports}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -524,17 +526,17 @@ const Analyses = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-border shadow-xs hover:border-primary/40 transition-colors">
+          <Card className="border-border/70 rounded-xl bg-card shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Score GEO Moyen
               </CardTitle>
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <TrendingUp className="h-4 w-4" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold text-foreground">
+              <div className="text-2xl sm:text-3xl font-extrabold text-foreground font-mono">
                 {stats.avgScore != null ? `${stats.avgScore}/100` : "—"}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -543,17 +545,17 @@ const Analyses = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-border shadow-xs hover:border-primary/40 transition-colors">
+          <Card className="border-border/70 rounded-xl bg-card shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Domaines Uniques
               </CardTitle>
-              <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <Globe className="h-4 w-4" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold text-foreground">
+              <div className="text-2xl sm:text-3xl font-extrabold text-foreground font-mono">
                 {stats.uniqueDomains}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -562,17 +564,17 @@ const Analyses = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-border shadow-xs hover:border-primary/40 transition-colors">
+          <Card className="border-border/70 rounded-xl bg-card shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Moteur d'Audit
               </CardTitle>
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <Clock className="h-4 w-4" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl sm:text-3xl font-bold text-foreground">
+              <div className="text-2xl sm:text-3xl font-extrabold text-foreground font-mono">
                 9 IA
               </div>
               <p className="text-xs text-muted-foreground mt-1">

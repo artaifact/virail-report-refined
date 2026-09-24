@@ -30,8 +30,9 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
       <TooltipTrigger asChild>
         <button
           type="button"
+          onClick={(e) => e.stopPropagation()}
           className={cn(
-            'inline-flex items-center justify-center text-slate-400 hover:text-[#1A3AFF] transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1A3AFF] focus-visible:ring-offset-1 rounded-full shrink-0',
+            'inline-flex items-center justify-center text-muted-foreground hover:text-primary transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded-full shrink-0',
             className
           )}
           aria-label={`En savoir plus : ${title}`}
@@ -42,15 +43,13 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
       <TooltipContent
         side={side}
         sideOffset={8}
-        className="max-w-[280px] p-0 overflow-hidden rounded-2xl border border-slate-100 shadow-[0_8px_30px_rgba(15,23,42,0.12)] bg-white font-sans"
+        className="max-w-[280px] p-3 rounded-xl border border-border shadow-lg bg-popover text-popover-foreground font-sans z-50"
       >
-        <div className="px-4 pt-4 pb-2">
-          <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-[#1A3AFF]">
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold text-primary">
             {title}
           </p>
-        </div>
-        <div className="px-4 pb-4">
-          <p className="text-[13px] leading-relaxed text-slate-500">{description}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
         </div>
       </TooltipContent>
     </Tooltip>

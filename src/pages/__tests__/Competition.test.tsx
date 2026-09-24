@@ -148,7 +148,7 @@ describe('Competition', () => {
 
     renderWithRouter(<Competition />);
 
-    expect(screen.getByText('Aucune analyse disponible')).toBeInTheDocument();
+    expect(screen.getByLabelText("Chargement de l'analyse concurrentielle")).toBeInTheDocument();
   });
 
   it('should load analysis and render positioning when report is available', async () => {
@@ -192,7 +192,7 @@ describe('Competition', () => {
       expect(screen.getByText('Votre positionnement')).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/Evolution du score GEO sur 1 analyse/i)).toBeInTheDocument();
+    expect(screen.getByText(/[ÉE]volution du score GEO/i)).toBeInTheDocument();
   });
 
   it('should fallback to getCompetitorAnalysisById if fromReport returns null', async () => {

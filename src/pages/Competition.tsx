@@ -42,6 +42,8 @@ import { fr } from "date-fns/locale";
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { HELP } from '@/lib/help-content';
 import { CompetitionSkeletonLoader } from "@/components/competitive-analysis/CompetitionSkeletonLoader";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 // === UTILITAIRES ===
 function exportToCsvCompetition(filename: string, rows: string[][]): void {
@@ -297,6 +299,17 @@ const Competition = () => {
     return "bg-green-100 text-green-800";
   };
 
+  const domainName = useMemo(() => {
+    const rawUrl = currentAnalysis?.url || (reportData as any)?.report?.url || (reportData as any)?.url;
+    if (!rawUrl) return null;
+    try {
+      return new URL(rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`).hostname.replace('www.', '');
+    } catch {
+      return extractDomain(rawUrl);
+    }
+  }, [currentAnalysis, reportData]);
+  const isLoading = reportsLoading || reportLoading || isAnalysisLoading;
+
   const handleExportPdf = async () => {
     if (!reportData) return;
     setIsExportingPdf(true);
@@ -322,61 +335,75 @@ const Competition = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-3 md:p-6 lg:p-8">
-      <div className="w-full max-w-7xl mx-auto space-y-6">
-        {/* Bouton Télécharger le rapport (PDF) */}
-        <div className="flex justify-end">
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 w-full max-w-[1700px] mx-auto space-y-6 font-sans">
+      {/* Top Header Épuré */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
+          <span>Analyse Concurrentielle —</span>
+          {isLoading && !domainName ? (
+            <Skeleton className="h-7 w-36 rounded-lg inline-block" />
+          ) : (
+            <span className="text-primary">{domainName || 'Rapport'}</span>
+          )}
+          <InfoTooltip
+            title="Analyse Concurrentielle Multi-Modèles"
+            content="Mesurez votre visibilité et votre part de voix générative face à vos concurrents directs à travers les différents moteurs IA."
+          />
+        </h1>
+
+        <div className="flex items-center gap-2">
           <Button
             onClick={handleExportPdf}
             disabled={isExportingPdf || !reportData}
             variant="outline"
-            className="gap-2 border-border text-foreground hover:bg-muted text-xs font-semibold rounded-xl cursor-pointer disabled:opacity-50 shadow-xs"
+            size="sm"
+            className="gap-2 border-border text-foreground hover:bg-muted text-xs font-semibold rounded-xl cursor-pointer disabled:opacity-50 shadow-xs h-9 px-3.5"
           >
             {isExportingPdf ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
             ) : (
               <Download className="w-3.5 h-3.5 text-primary" />
             )}
-            <span>{isExportingPdf ? 'Génération PDF...' : 'Télécharger le rapport (PDF)'}</span>
+            <span>{isExportingPdf ? 'Génération...' : 'Télécharger le rapport (PDF)'}</span>
           </Button>
         </div>
+      </div>
 
-        <div className="space-y-6">
-
-            {/* Affichage des erreurs */}
-            {error && (
-              <Card className="border-border bg-card shadow-xs">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-foreground">Veuillez patienter</h3>
-                      <p className="text-muted-foreground text-xs mt-0.5">Votre analyse est en cours de finalisation. Les résultats vont s'afficher dès qu'ils sont prêts.</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* État de chargement - Skeleton Haute-Fidélité */}
-            {(reportsLoading || reportLoading || isAnalysisLoading || (!currentAnalysis && !error && !!latestReportId)) && (
-              <CompetitionSkeletonLoader />
-            )}
-
-            {/* État vide si aucun rapport */}
-            {!reportsLoading && !reportLoading && !isAnalysisLoading && !latestReportId && !error && (
-              <Card className="bg-card border-border shadow-xs rounded-2xl p-12 text-center">
-                <div className="max-w-md mx-auto space-y-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
-                    <Target className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-base font-semibold text-foreground">Aucune analyse concurrentielle disponible</h3>
-                  <p className="text-xs text-muted-foreground">Veuillez lancer une nouvelle analyse pour mesurer votre positionnement face à vos concurrents.</p>
+      <div className="space-y-6">
+        {/* Affichage des erreurs */}
+        {error && (
+          <Card className="border-border bg-card shadow-xs rounded-xl">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
                 </div>
-              </Card>
-            )}
+                <div>
+                  <h3 className="text-base font-semibold text-foreground">Veuillez patienter</h3>
+                  <p className="text-muted-foreground text-xs mt-0.5">Votre analyse est en cours de finalisation. Les résultats vont s'afficher dès qu'ils sont prêts.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* État de chargement - Skeleton Haute-Fidélité */}
+        {(reportsLoading || reportLoading || isAnalysisLoading || (!currentAnalysis && !error && !!latestReportId)) && (
+          <CompetitionSkeletonLoader />
+        )}
+
+        {/* État vide si aucun rapport */}
+        {!reportsLoading && !reportLoading && !isAnalysisLoading && !latestReportId && !error && (
+          <Card className="bg-card border-border/70 shadow-xs rounded-2xl p-12 text-center">
+            <div className="max-w-md mx-auto space-y-3">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
+                <Target className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-semibold text-foreground">Aucune analyse disponible</h3>
+              <p className="text-xs text-muted-foreground">Veuillez lancer une nouvelle analyse pour mesurer votre positionnement face à vos concurrents.</p>
+            </div>
+          </Card>
+        )}
 
             {/* Affichage complet de toutes les données */}
             {currentAnalysis && (
@@ -442,92 +469,76 @@ const Competition = () => {
                       const yMax = Math.min(100, midScore + halfRange);
 
                       return (
-                        <Card
-                          className="p-5 md:p-7"
-                          style={{
-                            borderRadius: '18px',
-                            background: '#ffffff',
-                            boxShadow: '0 4px 24px rgba(15,23,42,0.07)',
-                            border: '1px solid #f1f5f9',
-                          }}
-                        >
+                        <Card className="p-5 md:p-6 rounded-xl border border-border/70 bg-card shadow-xs">
                           {/* En-tete */}
                           <div className="flex items-start justify-between">
                             <div>
-                              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.4px', color: '#94a3b8', fontFamily: 'Inter, sans-serif' }}>
+                              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                                 Votre positionnement
                               </div>
-                              <div style={{ fontSize: 11, color: '#cbd5e1', marginTop: 2, fontFamily: 'Inter, sans-serif' }}>
-                                Evolution du score GEO sur {timeSeriesRaw.length} analyse{timeSeriesRaw.length > 1 ? 's' : ''}
+                              <div className="text-xs text-muted-foreground/80 mt-0.5">
+                                Évolution du score GEO sur {timeSeriesRaw.length} analyse{timeSeriesRaw.length > 1 ? 's' : ''}
                               </div>
                             </div>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <button type="button" className="rounded-full p-0.5 text-slate-300 hover:text-slate-500 focus-visible:outline-none" aria-label="Aide">
+                                <button type="button" className="rounded-full p-0.5 text-muted-foreground/60 hover:text-foreground focus-visible:outline-none" aria-label="Aide">
                                   <Info className="h-3.5 w-3.5" strokeWidth={2} />
                                 </button>
                               </TooltipTrigger>
                               <TooltipContent side="bottom" className="max-w-[260px] text-xs leading-snug">
-                                Evolution de votre score GEO dans le temps. Chaque point = une analyse.
+                                Évolution de votre score GEO dans le temps. Chaque point = une analyse.
                               </TooltipContent>
                             </Tooltip>
                           </div>
 
                           {/* Graphique evolution ou état 1re analyse */}
                           {timeSeriesRaw.length === 1 ? (
-                            <div style={{ width: '100%', marginTop: 8, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <div className="w-full mt-4 flex flex-col gap-3">
                               {/* Barre de score */}
-                              <div style={{ background: '#f8fafc', borderRadius: 12, padding: '16px 20px', border: '1px solid #f1f5f9' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'Inter, sans-serif', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Score GEO</span>
+                              <div className="bg-muted/40 rounded-xl p-4 border border-border/70">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Score GEO</span>
                                     <InfoTooltip {...HELP.scoreGeoGlobal} side="right" />
                                   </div>
-                                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1e40af', fontFamily: 'Inter, sans-serif' }}>{latest.score.toFixed(1)} / 100</span>
+                                  <span className="text-sm font-bold text-foreground font-mono">{latest.score.toFixed(1)} / 100</span>
                                 </div>
-                                <div style={{ height: 8, background: '#e2e8f0', borderRadius: 99, overflow: 'hidden' }}>
-                                  <div style={{ height: '100%', width: `${Math.min(100, latest.score)}%`, background: 'linear-gradient(90deg, #3b82f6, #1e40af)', borderRadius: 99, transition: 'width 0.6s ease' }} />
+                                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                  <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${Math.min(100, latest.score)}%` }} />
                                 </div>
                               </div>
                               {/* Message 1re analyse */}
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#eff6ff', borderRadius: 10, padding: '12px 16px', border: '1px solid #dbeafe' }}>
-                                <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v4M5 7.5v.5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                              <div className="flex items-center gap-3 p-3.5 rounded-xl border border-border/70 bg-muted/20 text-xs text-muted-foreground">
+                                <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                  <Info className="w-3.5 h-3.5" />
                                 </div>
                                 <div>
-                                  <div style={{ fontSize: 12, fontWeight: 600, color: '#1e40af', fontFamily: 'Inter, sans-serif', marginBottom: 2 }}>Première analyse enregistrée</div>
-                                  <div style={{ fontSize: 11, color: '#3b82f6', fontFamily: 'Inter, sans-serif', lineHeight: 1.5 }}>
-                                    Le graphique d'évolution s'affichera dès votre 2e analyse. Revenez après la prochaine.
+                                  <div className="font-semibold text-foreground">Première analyse enregistrée</div>
+                                  <div className="text-muted-foreground mt-0.5">
+                                    Le graphique d'évolution temporelle s'affichera dès votre 2e analyse.
                                   </div>
                                 </div>
                               </div>
                             </div>
                           ) : (
-                          <div style={{ width: '100%', height: 320 }}>
+                          <div className="w-full h-[280px] mt-4">
                             <ResponsiveContainer width="100%" height="100%">
-                              <LineChart data={timeSeriesRaw} margin={{ left: 8, right: 16, top: 10, bottom: 24 }}>
-                                <defs>
-                                  <linearGradient id="lineGlowBg" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.07} />
-                                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
-                                  </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f8fafc" vertical={false} />
+                              <LineChart data={timeSeriesRaw} margin={{ left: 4, right: 16, top: 10, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.5)" vertical={false} />
                                 <XAxis
                                   dataKey="label"
-                                  tick={{ fontSize: 11, fill: '#94a3b8', fontFamily: 'Inter, sans-serif' }}
+                                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                                   tickLine={false}
-                                  axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }}
-                                  label={{ value: 'Date', position: 'bottom', offset: 6, style: { fill: '#94a3b8', fontSize: 10 } }}
+                                  axisLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
                                 />
                                 <YAxis
                                   domain={[yMin, yMax]}
-                                  tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}
+                                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))', fontWeight: 600 }}
                                   tickFormatter={(v) => typeof v === 'number' ? v.toFixed(1) : String(v)}
                                   axisLine={false}
                                   tickLine={false}
-                                  width={46}
-                                  label={{ value: 'Score GEO', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8', fontSize: 10 } }}
+                                  width={42}
                                 />
                                 <RechartsTooltip
                                   content={({ active, payload }) => {
@@ -535,18 +546,18 @@ const Competition = () => {
                                     const d = payload[0].payload;
                                     const isLatest = d.idx === timeSeriesRaw.length - 1;
                                     return (
-                                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '7px 12px', boxShadow: '0 4px 16px rgba(15,23,42,0.10)', fontSize: 12, fontFamily: 'Inter, sans-serif' }}>
-                                        <div style={{ fontWeight: 700, color: isLatest ? '#1e40af' : '#64748b' }}>{d.labelFull}</div>
-                                        <div style={{ color: '#1e40af', fontSize: 16, fontWeight: 800, marginTop: 2 }}>{d.score.toFixed(1)}</div>
+                                      <div className="bg-popover border border-border text-popover-foreground rounded-xl p-2.5 shadow-md text-xs">
+                                        <div className="font-semibold text-muted-foreground">{d.labelFull}</div>
+                                        <div className="text-sm font-bold text-primary font-mono mt-0.5">{d.score.toFixed(1)} / 100</div>
                                       </div>
                                     );
                                   }}
-                                  cursor={{ stroke: '#dbeafe', strokeWidth: 1 }}
+                                  cursor={{ stroke: 'hsl(var(--primary)/0.3)', strokeWidth: 1 }}
                                 />
                                 <Line
                                   type="natural"
                                   dataKey="score"
-                                  stroke="#1e40af"
+                                  stroke="hsl(var(--primary))"
                                   strokeWidth={2}
                                   dot={(props: any) => {
                                     const { cx, cy, index } = props;
@@ -555,14 +566,14 @@ const Competition = () => {
                                       <circle
                                         key={'dot-' + index}
                                         cx={cx} cy={cy}
-                                        r={isLatest ? 6 : 3.5}
-                                        fill="#1e40af"
-                                        stroke="#ffffff"
-                                        strokeWidth={isLatest ? 2.5 : 1.5}
+                                        r={isLatest ? 5 : 3.5}
+                                        fill="hsl(var(--primary))"
+                                        stroke="hsl(var(--background))"
+                                        strokeWidth={isLatest ? 2 : 1.5}
                                       />
                                     );
                                   }}
-                                  activeDot={{ r: 5, fill: '#1e40af', stroke: '#fff', strokeWidth: 2 }}
+                                  activeDot={{ r: 5, fill: 'hsl(var(--primary))', stroke: 'hsl(var(--background))', strokeWidth: 2 }}
                                 />
                               </LineChart>
                             </ResponsiveContainer>
@@ -615,41 +626,59 @@ const Competition = () => {
                     const isTop3 = targetRank <= 3 && total >= 3;
 
                     return (
-                      <Card className="p-5 md:p-7" style={{ borderRadius: '18px', background: '#ffffff', boxShadow: '0 4px 24px rgba(15,23,42,0.07)', border: '1px solid #f1f5f9' }}>
+                      <Card className="p-5 md:p-6 rounded-xl border border-border/70 bg-card shadow-xs">
                         <div className="flex items-start justify-between">
                           <div>
-                            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.4px', color: '#94a3b8' }}>Votre positionnement</div>
-                            {analysisDateLabel && <div style={{ fontSize: 11, color: '#cbd5e1', marginTop: 2 }}>Donnees issues de l&apos;analyse du {analysisDateLabel}</div>}
+                            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Votre positionnement</div>
+                            {analysisDateLabel && <div className="text-xs text-muted-foreground/80 mt-0.5">Données issues de l'analyse du {analysisDateLabel}</div>}
                           </div>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <button type="button" className="rounded-full p-0.5 text-slate-300 hover:text-slate-500 focus-visible:outline-none" aria-label="Aide">
+                              <button type="button" className="rounded-full p-0.5 text-muted-foreground/60 hover:text-foreground focus-visible:outline-none" aria-label="Aide">
                                 <Info className="h-3.5 w-3.5" strokeWidth={2} />
                               </button>
                             </TooltipTrigger>
-                            <TooltipContent side="bottom" className="max-w-[260px] text-xs">Meilleurs scores a gauche.</TooltipContent>
+                            <TooltipContent side="bottom" className="max-w-[260px] text-xs">Meilleurs scores à gauche.</TooltipContent>
                           </Tooltip>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 14, marginBottom: 18 }}>
-                          <span style={{ fontSize: 38, fontWeight: 800, color: '#1e40af', letterSpacing: '-2px', lineHeight: 1 }}>{targetRank}</span>
-                          <span style={{ fontSize: 16, fontWeight: 500, color: '#93c5fd' }}>/ {total}</span>
-                          {isTop3 && <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: '#92400e', background: '#fef3c7', padding: '2px 7px', borderRadius: 4, marginLeft: 4 }}>Top 3</span>}
+                        <div className="flex items-baseline gap-2 mt-3 mb-4">
+                          <span className="text-3xl sm:text-4xl font-extrabold text-foreground font-mono tracking-tight leading-none">{targetRank}</span>
+                          <span className="text-sm font-medium text-muted-foreground font-mono">/ {total}</span>
+                          {isTop3 && (
+                            <Badge variant="outline" className="text-[10px] font-bold uppercase border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 ml-1">
+                              Top 3
+                            </Badge>
+                          )}
                         </div>
-                        <div style={{ width: '100%', height: 230 }}>
+                        <div className="w-full h-[220px]">
                           <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={curveData} margin={{ left: 12, right: 16, top: 10, bottom: 26 }}>
+                            <AreaChart data={curveData} margin={{ left: 4, right: 16, top: 10, bottom: 20 }}>
                               <defs>
-                                <linearGradient id="blueAreaFill2" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.08} />
-                                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                                <linearGradient id="primaryAreaFill" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.15} />
+                                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.01} />
                                 </linearGradient>
                               </defs>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                              {total > 1 && <ReferenceLine x={medianRankX} stroke="#e2e8f0" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: '50%', position: 'insideTopLeft', fill: '#cbd5e1', fontSize: 10, fontWeight: 600 }} />}
-                              <XAxis dataKey="rank" type="number" domain={[1, total]} ticks={rankTicks} tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0', strokeWidth: 1 }} tickFormatter={(v) => v === 1 ? '1er' : String(v)} label={{ value: 'Position', position: 'bottom', offset: 8, style: { fill: '#94a3b8', fontSize: 10 } }} />
-                              <YAxis domain={[yDomainMin, yDomainMax]} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} tickFormatter={(v) => typeof v === 'number' ? v.toFixed(1) : String(v)} axisLine={false} tickLine={false} width={48} label={{ value: 'Score', angle: -90, position: 'insideLeft', style: { fill: '#94a3b8', fontSize: 10 } }} />
-                              <RechartsTooltip content={({ active, payload }) => { if (!active || !payload?.[0]) return null; const d = payload[0].payload; const isMe = d.rank === targetRank; return (<div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '7px 12px', boxShadow: '0 4px 16px rgba(15,23,42,0.10)', fontSize: 12 }}><div style={{ fontWeight: 700, color: isMe ? '#1e40af' : '#64748b' }}>{isMe ? 'Vous' : '#' + d.rank}</div><div style={{ color: '#94a3b8', marginTop: 2 }}>{d.rank}/{total} - {d.score.toFixed(2)}</div></div>); }} cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }} />
-                              <Area type="monotone" dataKey="score" stroke="#1e40af" strokeWidth={2} fill="url(#blueAreaFill2)" dot={(props: any) => { const { cx, cy, payload } = props; const isTarget = payload.rank === targetRank; return <circle key={'dot-' + payload.rank} cx={cx} cy={cy} r={isTarget ? 6 : 3.5} fill="#1e40af" stroke="#ffffff" strokeWidth={isTarget ? 2.5 : 1.5} />; }} activeDot={false} />
+                              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.5)" vertical={false} />
+                              {total > 1 && <ReferenceLine x={medianRankX} stroke="hsl(var(--border))" strokeDasharray="5 4" strokeWidth={1.5} label={{ value: '50%', position: 'insideTopLeft', fill: 'hsl(var(--muted-foreground))', fontSize: 10, fontWeight: 600 }} />}
+                              <XAxis dataKey="rank" type="number" domain={[1, total]} ticks={rankTicks} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }} tickFormatter={(v) => v === 1 ? '1er' : String(v)} />
+                              <YAxis domain={[yDomainMin, yDomainMax]} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))', fontWeight: 600 }} tickFormatter={(v) => typeof v === 'number' ? v.toFixed(1) : String(v)} axisLine={false} tickLine={false} width={42} />
+                              <RechartsTooltip content={({ active, payload }) => {
+                                if (!active || !payload?.[0]) return null;
+                                const d = payload[0].payload;
+                                const isMe = d.rank === targetRank;
+                                return (
+                                  <div className="bg-popover border border-border text-popover-foreground rounded-xl p-2.5 shadow-md text-xs">
+                                    <div className="font-semibold text-muted-foreground">{isMe ? 'Votre site' : `#${d.rank}`}</div>
+                                    <div className="text-sm font-bold text-primary font-mono mt-0.5">{d.score.toFixed(2)} pts</div>
+                                  </div>
+                                );
+                              }} cursor={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }} />
+                              <Area type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#primaryAreaFill)" dot={(props: any) => {
+                                const { cx, cy, payload } = props;
+                                const isTarget = payload.rank === targetRank;
+                                return <circle key={'dot-' + payload.rank} cx={cx} cy={cy} r={isTarget ? 5 : 3} fill="hsl(var(--primary))" stroke="hsl(var(--background))" strokeWidth={isTarget ? 2 : 1} />;
+                              }} activeDot={false} />
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
@@ -735,23 +764,24 @@ const Competition = () => {
 
                     if (modelNames.length === 0) {
                       return (
-                        <Card className="bg-white border-gray-200 shadow-sm">
-                          <CardContent className="flex flex-col items-center justify-center py-8">
-                            <Users className="h-12 w-12 text-gray-400 mb-4" />
-                            <h3 className="font-semibold text-gray-900 mb-2">Aucun concurrent trouvé</h3>
-                            <p className="text-sm text-gray-600 text-center">
-                              Les concurrents seront affichés ici une fois l'analyse terminée.
-                            </p>
-                          </CardContent>
+                        <Card className="rounded-xl border border-border/70 bg-card p-6 shadow-xs text-center flex flex-col items-center justify-center">
+                          <Users className="h-10 w-10 text-muted-foreground/60 mb-3" />
+                          <h3 className="font-semibold text-foreground text-sm mb-1">Aucun concurrent trouvé</h3>
+                          <p className="text-xs text-muted-foreground max-w-sm">
+                            Les concurrents apparaîtront ici dès la finalisation de l'analyse.
+                          </p>
                         </Card>
                       );
                     }
 
                     return (
-                      <Card className="bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                        <div className="flex justify-end items-center mb-4">
+                      <Card className="rounded-xl border border-border/70 bg-card p-5 md:p-6 shadow-xs flex flex-col">
+                        <div className="flex items-center justify-between gap-3 mb-4 pb-2 border-b border-border/60">
+                          <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            {currentCompetitors.length} Concurrent{currentCompetitors.length > 1 ? 's' : ''} — {currentSelectedModel}
+                          </div>
                           <Select value={currentSelectedModel} onValueChange={setSelectedModel}>
-                            <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs border-gray-300 bg-white rounded-md px-2.5 py-1">
+                            <SelectTrigger className="w-auto min-w-[140px] sm:w-[170px] h-8 text-xs border-border bg-background rounded-lg px-2.5">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -769,27 +799,21 @@ const Competition = () => {
                           </Select>
                         </div>
                         
-                        <div>
-                          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3" style={{ letterSpacing: '1.2px' }}>
-                            {currentCompetitors.length} Concurrent{currentCompetitors.length > 1 ? 's' : ''} - {currentSelectedModel}
-                          </div>
-                          
-                          <div className="max-h-[500px] overflow-y-auto pr-2">
-                            {currentCompetitors.map((competitor: any, index: number) => {
-                              const rank = competitor.model_rank || (index + 1);
-                              const domain = extractDomain(competitor.url || competitor.primary_url || '');
-                              return (
-                                <div key={index} className="flex items-center gap-3 py-3 border-b border-gray-200 last:border-b-0 hover:bg-blue-50/30 transition-colors" style={{ borderBottom: index < currentCompetitors.length - 1 ? '1px solid #edf2f7' : 'none' }}>
-                                  <div className="text-base font-bold text-gray-400 min-w-[32px]" style={{ fontSize: '13px', fontWeight: 700 }}>{rank}</div>
-                                  <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt={domain} width={20} height={20} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                  <div className="flex-1">
-                                    <div className="font-semibold text-gray-900 mb-0.5" style={{ fontSize: '15px', fontWeight: 600 }}>{competitor.name || domain}</div>
-                                    <div className="text-gray-500" style={{ fontSize: '13px', color: '#94a3b8' }}>{domain}</div>
-                                  </div>
+                        <div className="flex-1 max-h-[380px] overflow-y-auto pr-1 space-y-1">
+                          {currentCompetitors.map((competitor: any, index: number) => {
+                            const rank = competitor.model_rank || (index + 1);
+                            const domain = extractDomain(competitor.url || competitor.primary_url || '');
+                            return (
+                              <div key={index} className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/40 transition-colors border-b border-border/40 last:border-b-0">
+                                <div className="text-xs font-bold text-muted-foreground font-mono min-w-[24px] text-center">{rank}</div>
+                                <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt={domain} width={18} height={18} className="rounded shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-foreground text-xs sm:text-sm truncate">{competitor.name || domain}</div>
+                                  <div className="text-[11px] text-muted-foreground font-mono truncate">{domain}</div>
                                 </div>
-                              );
-                            })}
-                          </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </Card>
                     );
@@ -1129,18 +1153,20 @@ const Competition = () => {
                     const hasMoreLegend = legendItems.length > LEGEND_INITIAL;
 
                     return (
-                      <Card className="w-full bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
-                        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-2 flex items-center justify-center gap-2" style={{ textAlign: 'center' }}>
-                          Matrice de Positionnement
-                          <InfoTooltip {...HELP.matricePositionnement} />
-                        </h3>
-                        {dataPoints.length > MAX_DISPLAY && (
-                          <p className="text-xs text-gray-400 mb-3" style={{ textAlign: 'center' }}>
-                            Top {MAX_DISPLAY} concurrents affichés sur {dataPoints.length}
-                          </p>
-                        )}
+                      <Card className="w-full rounded-xl border border-border/70 bg-card p-5 md:p-6 shadow-xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-2 border-b border-border/60">
+                          <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                            Matrice de Positionnement
+                            <InfoTooltip {...HELP.matricePositionnement} />
+                          </h3>
+                          {dataPoints.length > MAX_DISPLAY && (
+                            <span className="text-xs text-muted-foreground font-mono">
+                              Top {MAX_DISPLAY} concurrents affichés sur {dataPoints.length}
+                            </span>
+                          )}
+                        </div>
 
-                        <div style={{ position: 'relative' }}>
+                        <div className="relative">
                           <div
                             style={
                               isStarter
@@ -1149,17 +1175,18 @@ const Competition = () => {
                             }
                           >
                         {/* Legend with pagination */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 16, alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: 12, color: '#64748B' }}>Marques</span>
+                        <div className="flex flex-wrap gap-2 mb-4 items-center justify-center">
+                          <span className="text-xs text-muted-foreground font-medium mr-1">Marques :</span>
                           {visibleLegend.map(d => (
-                            <div
+                            <button
                               key={d.url}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 4, cursor: isStarter ? 'default' : 'pointer',
-                                padding: '2px 8px', borderRadius: 6,
-                                background: d.isTarget ? '#EEF2FF' : 'transparent',
-                                border: d.isTarget ? '1px solid #C7D2FE' : '1px solid transparent',
-                              }}
+                              type="button"
+                              className={cn(
+                                "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-colors",
+                                d.isTarget
+                                  ? "bg-primary/10 border border-primary/30 text-primary font-semibold"
+                                  : "bg-muted/40 hover:bg-muted text-muted-foreground border border-border/60 font-medium"
+                              )}
                               onClick={() => {
                                 if (isStarter) return;
                                 setSelectedGeoEntry({
@@ -1173,67 +1200,62 @@ const Competition = () => {
                               <img
                                 src={d.favicon_url}
                                 alt={d.name}
-                                style={{ width: 16, height: 16, borderRadius: 3 }}
+                                className="w-3.5 h-3.5 rounded shrink-0"
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                               />
-                              <span style={{ fontSize: 11, color: d.isTarget ? '#4F46E5' : '#475569', fontWeight: d.isTarget ? 600 : 400 }}>
-                                {d.name}
-                              </span>
+                              <span className="truncate max-w-[120px]">{d.name}</span>
                               {d.audited && (
-                                <span style={{ fontSize: 9, color: '#16A34A', fontWeight: 600 }} title="Audité">&#x2713;</span>
+                                <span className="text-[10px] text-emerald-500 font-bold ml-0.5" title="Audité">✓</span>
                               )}
-                            </div>
+                            </button>
                           ))}
                           {hasMoreLegend && (
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => setShowAllLegend(!showAllLegend)}
-                              style={{
-                                fontSize: 11, color: '#475569', background: '#F8FAFC', border: '1px solid #E2E8F0', cursor: 'pointer',
-                                padding: '4px 12px', fontWeight: 600, borderRadius: '6px', transition: 'all 0.15s',
-                              }}
-                              onMouseEnter={e => { e.currentTarget.style.background = '#F1F5F9'; }}
-                              onMouseLeave={e => { e.currentTarget.style.background = '#F8FAFC'; }}
+                              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
                             >
                               {showAllLegend ? 'Voir moins' : `+${legendItems.length - LEGEND_INITIAL} autres`}
-                            </button>
+                            </Button>
                           )}
                         </div>
 
                         {/* SVG Scatter Chart */}
-                        <div style={{ overflowX: 'auto', display: 'flex', justifyContent: 'center' }}>
+                        <div className="overflow-x-auto flex justify-center">
                           <svg viewBox={`0 0 ${chartW} ${chartH}`} style={{ width: '100%', maxWidth: chartW, height: 'auto' }}>
                             {/* Quadrant backgrounds */}
-                            <rect x={pad.left} y={pad.top} width={plotW} height={plotH} fill="#FAFBFC" />
+                            <rect x={pad.left} y={pad.top} width={plotW} height={plotH} fill="hsl(var(--muted)/0.25)" rx="8" />
 
                             {/* Quadrant labels */}
-                            <text x={pad.left + plotW * 0.25} y={pad.top + 22} textAnchor="middle" fontSize="14" fill="#6B7280" fontWeight="600">Niche Players</text>
-                            <text x={pad.left + plotW * 0.75} y={pad.top + 22} textAnchor="middle" fontSize="14" fill="#16A34A" fontWeight="600">Leaders</text>
-                            <text x={pad.left + plotW * 0.25} y={pad.top + plotH - 10} textAnchor="middle" fontSize="14" fill="#DC2626" fontWeight="600">Laggers</text>
-                            <text x={pad.left + plotW * 0.75} y={pad.top + plotH - 10} textAnchor="middle" fontSize="14" fill="#D97706" fontWeight="600">Controversial</text>
+                            <text x={pad.left + plotW * 0.25} y={pad.top + 22} textAnchor="middle" fontSize="13" fill="hsl(var(--muted-foreground))" fontWeight="600">Niche Players</text>
+                            <text x={pad.left + plotW * 0.75} y={pad.top + 22} textAnchor="middle" fontSize="13" fill="#16A34A" fontWeight="600">Leaders</text>
+                            <text x={pad.left + plotW * 0.25} y={pad.top + plotH - 10} textAnchor="middle" fontSize="13" fill="#DC2626" fontWeight="600">Laggers</text>
+                            <text x={pad.left + plotW * 0.75} y={pad.top + plotH - 10} textAnchor="middle" fontSize="13" fill="#D97706" fontWeight="600">Controversial</text>
 
                             {/* Grid lines */}
                             {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(v => (
                               <g key={`x-${v}`}>
-                                <line x1={xScale(v)} y1={pad.top} x2={xScale(v)} y2={pad.top + plotH} stroke="#E5E7EB" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "4 2"} />
-                                <text x={xScale(v)} y={pad.top + plotH + 20} textAnchor="middle" fontSize="11" fill="#9CA3AF">{v}%</text>
+                                <line x1={xScale(v)} y1={pad.top} x2={xScale(v)} y2={pad.top + plotH} stroke="hsl(var(--border)/0.6)" strokeWidth={0.5} strokeDasharray={v === 50 ? "0" : "4 2"} />
+                                <text x={xScale(v)} y={pad.top + plotH + 20} textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))">{v}%</text>
                               </g>
                             ))}
                             {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map(s => (
                               <g key={`y-${s}`}>
-                                <line x1={pad.left} y1={yScale(s)} x2={pad.left + plotW} y2={yScale(s)} stroke="#E5E7EB" strokeWidth={0.5} strokeDasharray={s === 0.5 ? "0" : "4 2"} />
-                                <text x={pad.left - 12} y={yScale(s) + 4} textAnchor="end" fontSize="11" fill="#9CA3AF">{s.toFixed(1)}</text>
+                                <line x1={pad.left} y1={yScale(s)} x2={pad.left + plotW} y2={yScale(s)} stroke="hsl(var(--border)/0.6)" strokeWidth={0.5} strokeDasharray={s === 0.5 ? "0" : "4 2"} />
+                                <text x={pad.left - 12} y={yScale(s) + 4} textAnchor="end" fontSize="11" fill="hsl(var(--muted-foreground))">{s.toFixed(1)}</text>
                               </g>
                             ))}
 
                             {/* Center cross */}
-                            <line x1={xScale(visibilityMid)} y1={pad.top} x2={xScale(visibilityMid)} y2={pad.top + plotH} stroke="#CBD5E1" strokeWidth={1} />
-                            <line x1={pad.left} y1={yScale(sentimentMid)} x2={pad.left + plotW} y2={yScale(sentimentMid)} stroke="#CBD5E1" strokeWidth={1} />
+                            <line x1={xScale(visibilityMid)} y1={pad.top} x2={xScale(visibilityMid)} y2={pad.top + plotH} stroke="hsl(var(--border))" strokeWidth={1} />
+                            <line x1={pad.left} y1={yScale(sentimentMid)} x2={pad.left + plotW} y2={yScale(sentimentMid)} stroke="hsl(var(--border))" strokeWidth={1} />
 
                             {/* Axis labels */}
-                            <text x={pad.left + plotW / 2} y={chartH - 10} textAnchor="middle" fontSize="13" fill="#6B7280" fontWeight="500">Visibility</text>
-                            <text x={18} y={pad.top + plotH / 2} textAnchor="middle" fontSize="13" fill="#6B7280" fontWeight="500" transform={`rotate(-90, 18, ${pad.top + plotH / 2})`}>Sentiment</text>
+                            <text x={pad.left + plotW / 2} y={chartH - 10} textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="500">Visibilité</text>
+                            <text x={18} y={pad.top + plotH / 2} textAnchor="middle" fontSize="12" fill="hsl(var(--muted-foreground))" fontWeight="500" transform={`rotate(-90, 18, ${pad.top + plotH / 2})`}>Sentiment</text>
 
-                            {/* Data points - render non-hovered first, hovered last so tooltip stays on top */}
+                            {/* Data points */}
                             {[...displayPoints].sort((a, b) => (a.url === hoveredMatricePoint ? 1 : 0) - (b.url === hoveredMatricePoint ? 1 : 0)).map((d, i) => {
                               const cx = xScale(d.visibility);
                               const cy = yScale(d.sentiment);
@@ -1243,7 +1265,6 @@ const Competition = () => {
                               const tooltipH = 130;
                               const tooltipX = cx + tooltipW + 20 > chartW ? cx - tooltipW - 10 : cx + 24;
                               const tooltipY = cy - tooltipH / 2 < 0 ? 4 : (cy + tooltipH / 2 > chartH ? chartH - tooltipH - 4 : cy - tooltipH / 2);
-
 
                               return (
                                 <g
@@ -1264,8 +1285,8 @@ const Competition = () => {
                                   <circle cx={cx} cy={cy} r={isHovered ? 28 : 26} fill="rgba(0,0,0,0.06)" />
                                   <circle
                                     cx={cx} cy={cy} r={isHovered ? 26 : 24}
-                                    fill={d.isTarget ? '#4F46E5' : '#fff'}
-                                    stroke={d.isTarget ? '#4F46E5' : d.audited ? '#22C55E' : '#E2E8F0'}
+                                    fill={d.isTarget ? 'hsl(var(--primary))' : 'hsl(var(--card))'}
+                                    stroke={d.isTarget ? 'hsl(var(--primary))' : d.audited ? '#22C55E' : 'hsl(var(--border))'}
                                     strokeWidth={isHovered ? 3 : 2}
                                     strokeDasharray={d.audited ? '0' : '4 2'}
                                   />
@@ -1276,21 +1297,18 @@ const Competition = () => {
                                   />
                                   {isHovered && (
                                     <foreignObject x={tooltipX} y={tooltipY} width={tooltipW} height={tooltipH} style={{ pointerEvents: 'none', overflow: 'visible' }}>
-                                      <div style={{
-                                        background: '#F8FAFC', color: '#1E293B', borderRadius: 10, padding: '12px 14px',
-                                        fontSize: 11, lineHeight: 1.5, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', border: '1px solid #E2E8F0',
-                                      }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                                          <span style={{ fontWeight: 700, fontSize: 13, color: '#1E293B' }}>{d.name}</span>
-                                          <span style={{ fontSize: 10, fontWeight: 600, color: quadrantInfo.color, background: '#F1F5F9', padding: '1px 6px', borderRadius: 4 }}>{quadrantInfo.label}</span>
-                                          {d.audited && <span style={{ fontSize: 9, color: '#16A34A', fontWeight: 600, background: '#F0FDF4', padding: '1px 4px', borderRadius: 3 }}>Audité</span>}
+                                      <div className="bg-popover text-popover-foreground border border-border shadow-xl rounded-xl p-3 text-xs leading-relaxed">
+                                        <div className="flex items-center gap-1.5 mb-1.5">
+                                          <span className="font-bold text-foreground text-xs">{d.name}</span>
+                                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-muted/60" style={{ color: quadrantInfo.color }}>{quadrantInfo.label}</span>
+                                          {d.audited && <span className="text-[9px] text-emerald-600 bg-emerald-500/10 px-1 py-0.5 rounded font-semibold">Audité</span>}
                                         </div>
-                                        <div style={{ fontSize: 11, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
+                                        <div className="text-[11px] text-muted-foreground mb-2 leading-tight">
                                           {quadrantInfo.desc}
                                         </div>
-                                        <div style={{ display: 'flex', gap: 12, fontSize: 11 }}>
-                                          <span><span style={{ color: '#64748B' }}>Visibility </span><span style={{ fontWeight: 600, color: '#1E293B' }}>{d.visibility}%</span></span>
-                                          <span><span style={{ color: '#64748B' }}>Sentiment </span><span style={{ fontWeight: 600, color: '#1E293B' }}>{(d.sentiment * 100).toFixed(0)}%</span></span>
+                                        <div className="flex gap-3 text-[11px] font-mono">
+                                          <span><span className="text-muted-foreground">Visibility </span><span className="font-semibold text-foreground">{d.visibility}%</span></span>
+                                          <span><span className="text-muted-foreground">Sentiment </span><span className="font-semibold text-foreground">{(d.sentiment * 100).toFixed(0)}%</span></span>
                                         </div>
                                       </div>
                                     </foreignObject>
@@ -1302,25 +1320,12 @@ const Competition = () => {
                         </div>
                           </div>
                           {isStarter && (
-                            <div
-                              style={{
-                                position: 'absolute',
-                                inset: 0,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: 'rgba(255,255,255,0.45)',
-                                borderRadius: 12,
-                                zIndex: 10,
-                                padding: 16,
-                              }}
-                            >
-                              <Lock size={32} style={{ color: '#6366F1', marginBottom: 12 }} />
-                              <p style={{ fontSize: 16, fontWeight: 600, color: '#1E293B', marginBottom: 4, textAlign: 'center' }}>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-xs rounded-xl z-10 p-4">
+                              <Lock className="w-8 h-8 text-primary mb-3" />
+                              <p className="text-sm font-semibold text-foreground mb-1 text-center">
                                 Contenu réservé aux plans supérieurs
                               </p>
-                              <p style={{ fontSize: 13, color: '#64748B', textAlign: 'center', maxWidth: 320 }}>
+                              <p className="text-xs text-muted-foreground text-center max-w-xs">
                                 Passez à un plan supérieur pour débloquer la matrice de positionnement
                               </p>
                             </div>
@@ -1364,30 +1369,32 @@ const Competition = () => {
                   const activeLabel = benchmarkView === 'raw_data' ? 'Score Benchmark' : 'Score GEO';
 
                   return (
-                    <Card className="w-full bg-white border-gray-200 shadow-sm p-4 md:p-7" style={{ borderRadius: '20px', boxShadow: '0 18px 35px rgba(15, 23, 42, 0.06)', border: '1px solid rgba(226, 232, 240, 0.9)' }}>
+                    <Card className="w-full rounded-xl border border-border/70 bg-card p-5 md:p-6 shadow-xs">
                         {/* Header */}
-                        <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
+                        <div className="flex flex-col sm:flex-row items-start justify-between mb-5 gap-4 pb-3 border-b border-border/60">
                           <div className="flex-1">
-                            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                            <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                               Analyse Benchmark
                               <InfoTooltip {...HELP.analyseBenchmark} />
                             </h3>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs text-muted-foreground mt-0.5">
                               {`Comparaison entre ${currentAnalysis.url || ''} et ${(activeTotal ?? 1) - 1} concurrent${(activeTotal ?? 1) - 1 > 1 ? 's' : ''} (${activeLabel})${activeRank ? `. Position du site cible : ${activeRank} sur ${activeTotal}` : ''}.`}
                             </p>
                           </div>
                           {activeRank && (
-                            <div className="text-right">
-                              <div className="text-2xl md:text-3xl font-bold text-gray-900">{activeRank}{getOrdinalSuffix(activeRank)}</div>
+                            <div className="text-right shrink-0">
+                              <div className="text-2xl sm:text-3xl font-extrabold text-foreground font-mono">{activeRank}<span className="text-sm font-semibold text-muted-foreground">{getOrdinalSuffix(activeRank)}</span></div>
                             </div>
                           )}
                         </div>
 
                         {/* Dropdown et tableau en mode paysage */}
                         <div className="w-full">
-                          <div className="flex justify-between items-center mb-4 gap-2">
-                            <button
+                          <div className="flex justify-between items-center mb-3 gap-2">
+                            <Button
                               type="button"
+                              variant="outline"
+                              size="sm"
                               onClick={() => {
                                 const rows: string[][] = [['Position', 'Marque', 'Domaine', 'Score']];
                                 classement.forEach((entry: any, idx: number) => {
@@ -1398,13 +1405,13 @@ const Competition = () => {
                                 });
                                 exportToCsvCompetition('benchmark-classement.csv', rows);
                               }}
-                              className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-1.5 transition-colors bg-white flex-shrink-0"
+                              className="gap-1.5 text-xs h-8 border-border"
                             >
-                              <Download size={13} />
-                              CSV
-                            </button>
+                              <Download size={13} className="text-muted-foreground" />
+                              <span>CSV</span>
+                            </Button>
                             <Select value={benchmarkView} onValueChange={(val) => setBenchmarkView(val as 'score' | 'raw_data')}>
-                              <SelectTrigger className="w-full sm:w-[200px] h-9 text-sm border-gray-300 bg-white">
+                              <SelectTrigger className="w-auto min-w-[150px] sm:w-[190px] h-8 text-xs border-border bg-background">
                                 <SelectValue placeholder="Score Benchmark" />
                               </SelectTrigger>
                               <SelectContent>
@@ -1419,14 +1426,14 @@ const Competition = () => {
                           {/* Table Header - Mode Paysage avec plus de colonnes - Pleine Largeur */}
                           <div className="w-full overflow-x-auto">
                             <div className="min-w-[500px]">
-                              <div className="grid grid-cols-[60px_2fr_1fr] gap-6 pb-3 border-b-2 border-gray-200 mb-3">
-                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Position</div>
-                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
-                                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Score</div>
+                              <div className="grid grid-cols-[50px_2fr_1fr] gap-4 pb-2 border-b border-border/80 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                                <div>Position</div>
+                                <div>Marque / Domaine</div>
+                                <div className="text-right">Score</div>
                               </div>
 
                               {/* Liste scrollable en mode paysage */}
-                              <div className="max-h-[600px] overflow-y-auto">
+                              <div className="max-h-[500px] overflow-y-auto pr-1 space-y-1">
                                 {classement.map((entry: any, idx: number) => {
                                   const entryDomain = extractDomain(entry.url);
                                   const competitor = (currentAnalysis as any).competitors?.find((c: any) => extractDomain(c.url) === entryDomain);
@@ -1439,25 +1446,31 @@ const Competition = () => {
                                     <div
                                       key={idx}
                                       onClick={() => !isYourSite && setSelectedCompetitorDetail({ name: brandName, domain, rank, score: entry.score || 0, url: entry.url })}
-                                      className={`grid grid-cols-[60px_2fr_1fr] gap-6 py-4 border-b border-gray-100 last:border-b-0 transition-colors items-center ${isYourSite ? 'bg-blue-50/50' : 'hover:bg-gray-50 cursor-pointer'}`}
+                                      className={cn(
+                                        "grid grid-cols-[50px_2fr_1fr] gap-4 py-2.5 px-2 border-b border-border/40 last:border-b-0 transition-colors items-center rounded-lg",
+                                        isYourSite ? "bg-primary/10 border-primary/20" : "hover:bg-muted/40 cursor-pointer"
+                                      )}
                                     >
                                       <div className="flex items-center">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${isYourSite ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                        <div className={cn(
+                                          "w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold font-mono",
+                                          isYourSite ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                        )}>
                                           {rank}
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-3 min-w-0">
-                                        <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt={domain} width={20} height={20} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`} alt={domain} width={18} height={18} className="rounded shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                         <div className="min-w-0">
-                                          <div className={`font-semibold text-sm ${isYourSite ? 'text-blue-600' : 'text-gray-900'}`}>
+                                          <div className={cn("font-semibold text-xs sm:text-sm truncate", isYourSite ? "text-primary" : "text-foreground")}>
                                             {brandName}
                                           </div>
-                                          <div className="text-xs text-gray-500 truncate">{domain}</div>
+                                          <div className="text-[11px] text-muted-foreground font-mono truncate">{domain}</div>
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-2">
-                                        <div className="text-base font-bold text-gray-900">{entry.score || 0}%</div>
-                                        {!isYourSite && <ChevronRight size={14} className="text-gray-300 flex-shrink-0" />}
+                                      <div className="flex items-center justify-end gap-2">
+                                        <div className="text-sm font-bold text-foreground font-mono">{entry.score || 0}%</div>
+                                        {!isYourSite && <ChevronRight size={14} className="text-muted-foreground/60 shrink-0" />}
                                       </div>
                                     </div>
                                   );
@@ -1473,7 +1486,7 @@ const Competition = () => {
                             const matBrands = materialityMatrix?.brands;
                             if (!matBrands || matBrands.length === 0) {
                               return (
-                                <div className="text-center text-gray-500 py-8">
+                                <div className="text-center text-muted-foreground text-xs py-8">
                                   Aucune donnée GEO disponible pour cette analyse.
                                 </div>
                               );
@@ -1498,18 +1511,18 @@ const Competition = () => {
 
                             const geoContent = (
                               <div className="w-full overflow-x-auto">
-                                <div className="min-w-[700px]">
-                                  <div className="grid grid-cols-[60px_2fr_repeat(4,80px)_100px] gap-4 pb-3 border-b-2 border-gray-200 mb-3">
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Position</div>
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marque / Domaine</div>
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Crédibilité<InfoTooltip {...HELP.credibiliteAutorite} side="top" /></div>
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Structure<InfoTooltip {...HELP.structureListabilite} side="top" /></div>
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Pertinence<InfoTooltip {...HELP.pertinenceContextuelle} side="top" /></div>
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center flex items-center justify-center gap-1">Technique<InfoTooltip {...HELP.compatibiliteTechnique} side="top" /></div>
-                                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">Total</div>
+                                <div className="min-w-[650px]">
+                                  <div className="grid grid-cols-[50px_2fr_repeat(4,75px)_80px] gap-3 pb-2 border-b border-border/80 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                                    <div>Position</div>
+                                    <div>Marque / Domaine</div>
+                                    <div className="text-center flex items-center justify-center gap-1">Crédibilité<InfoTooltip {...HELP.credibiliteAutorite} side="top" /></div>
+                                    <div className="text-center flex items-center justify-center gap-1">Structure<InfoTooltip {...HELP.structureListabilite} side="top" /></div>
+                                    <div className="text-center flex items-center justify-center gap-1">Pertinence<InfoTooltip {...HELP.pertinenceContextuelle} side="top" /></div>
+                                    <div className="text-center flex items-center justify-center gap-1">Technique<InfoTooltip {...HELP.compatibiliteTechnique} side="top" /></div>
+                                    <div className="text-center font-bold">Total</div>
                                   </div>
 
-                                  <div className="max-h-[600px] overflow-y-auto">
+                                  <div className="max-h-[500px] overflow-y-auto pr-1 space-y-1">
                                     {rawEntries.map((entry: any, idx: number) => {
                                       const isYourSite = entry.isTarget || false;
                                       const brandName = isYourSite ? 'Votre site' : (entry.brandName || entry.domain);
@@ -1517,7 +1530,11 @@ const Competition = () => {
                                       return (
                                         <div
                                           key={idx}
-                                          className={`grid grid-cols-[60px_2fr_repeat(4,80px)_100px] gap-4 py-4 border-b border-gray-100 last:border-b-0 transition-colors items-center ${isStarter ? '' : 'cursor-pointer hover:bg-gray-50'} ${isYourSite ? 'bg-blue-50/50' : ''}`}
+                                          className={cn(
+                                            "grid grid-cols-[50px_2fr_repeat(4,75px)_80px] gap-3 py-2.5 px-2 border-b border-border/40 last:border-b-0 transition-colors items-center rounded-lg",
+                                            isStarter ? "" : "cursor-pointer hover:bg-muted/40",
+                                            isYourSite ? "bg-primary/10 border-primary/20" : ""
+                                          )}
                                           onClick={() => {
                                             if (isStarter) return;
                                             setSelectedGeoEntry({ url: entry.url, domain: entry.domain, data: entry.fullData });
@@ -1525,34 +1542,27 @@ const Competition = () => {
                                           }}
                                         >
                                           <div className="flex items-center">
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${isYourSite ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                            <div className={cn(
+                                              "w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold font-mono",
+                                              isYourSite ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                            )}>
                                               {idx + 1}
                                             </div>
                                           </div>
-                                          <div className="flex items-center gap-3 min-w-0">
-                                            <img src={`https://www.google.com/s2/favicons?domain=${entry.domain}&sz=32`} alt={entry.domain} width={20} height={20} style={{ borderRadius: '4px', flexShrink: 0 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                          <div className="flex items-center gap-2.5 min-w-0">
+                                            <img src={`https://www.google.com/s2/favicons?domain=${entry.domain}&sz=32`} alt={entry.domain} width={18} height={18} className="rounded shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                                             <div className="min-w-0">
-                                              <div className={`font-semibold text-sm ${isYourSite ? 'text-blue-600' : 'text-gray-900'}`}>
+                                              <div className={cn("font-semibold text-xs sm:text-sm truncate", isYourSite ? "text-primary" : "text-foreground")}>
                                                 {brandName}
                                               </div>
-                                              <div className="text-xs text-gray-500 truncate">{entry.domain}</div>
+                                              <div className="text-[11px] text-muted-foreground font-mono truncate">{entry.domain}</div>
                                             </div>
                                           </div>
-                                          <div className="text-center">
-                                            <div className="text-sm font-semibold text-gray-900">{entry.credibility}</div>
-                                          </div>
-                                          <div className="text-center">
-                                            <div className="text-sm font-semibold text-gray-900">{entry.structure}</div>
-                                          </div>
-                                          <div className="text-center">
-                                            <div className="text-sm font-semibold text-gray-900">{entry.relevance}</div>
-                                          </div>
-                                          <div className="text-center">
-                                            <div className="text-sm font-semibold text-gray-900">{entry.technical}</div>
-                                          </div>
-                                          <div className="text-center">
-                                            <div className="text-base font-bold text-gray-900">{entry.totalScore}%</div>
-                                          </div>
+                                          <div className="text-center text-xs font-semibold text-muted-foreground font-mono">{entry.credibility}</div>
+                                          <div className="text-center text-xs font-semibold text-muted-foreground font-mono">{entry.structure}</div>
+                                          <div className="text-center text-xs font-semibold text-muted-foreground font-mono">{entry.relevance}</div>
+                                          <div className="text-center text-xs font-semibold text-muted-foreground font-mono">{entry.technical}</div>
+                                          <div className="text-center text-xs sm:text-sm font-bold text-foreground font-mono">{entry.totalScore}%</div>
                                         </div>
                                       );
                                     })}
@@ -1563,20 +1573,16 @@ const Competition = () => {
 
                             if (isStarter) {
                               return (
-                                <div style={{ position: 'relative' }}>
+                                <div className="relative">
                                   <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }}>
                                     {geoContent}
                                   </div>
-                                  <div style={{
-                                    position: 'absolute', inset: 0,
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                    background: 'rgba(255,255,255,0.4)', zIndex: 10, borderRadius: '12px'
-                                  }}>
-                                    <Lock size={28} style={{ color: '#6366F1', marginBottom: 10 }} />
-                                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#1E293B', marginBottom: 4 }}>
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/60 backdrop-blur-xs rounded-xl z-10 p-4">
+                                    <Lock className="w-7 h-7 text-primary mb-2.5" />
+                                    <p className="text-sm font-semibold text-foreground mb-1 text-center">
                                       Contenu réservé aux plans supérieurs
                                     </p>
-                                    <p style={{ fontSize: '13px', color: '#64748B' }}>
+                                    <p className="text-xs text-muted-foreground text-center">
                                       Passez à un plan supérieur pour accéder à l'analyse GEO
                                     </p>
                                   </div>
@@ -1692,21 +1698,21 @@ const Competition = () => {
                         <div className="space-y-6">
                           {/* Header */}
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                            <img src={`https://www.google.com/s2/favicons?domain=${selectedGeoEntry.domain}&sz=64`} alt={selectedGeoEntry.domain} width={40} height={40} style={{ borderRadius: '8px' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            <img src={`https://www.google.com/s2/favicons?domain=${selectedGeoEntry.domain}&sz=64`} alt={selectedGeoEntry.domain} width={40} height={40} className="rounded-lg shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             <div>
-                              <h2 className="text-lg md:text-xl font-bold text-gray-900">{brandName}</h2>
-                              <p className="text-sm text-gray-500">{selectedGeoEntry.domain}</p>
+                              <h2 className="text-lg md:text-xl font-bold text-foreground">{brandName}</h2>
+                              <p className="text-sm text-muted-foreground font-mono">{selectedGeoEntry.domain}</p>
                             </div>
                             <div className="sm:ml-auto text-left sm:text-right">
-                              <div className="text-2xl md:text-3xl font-bold text-gray-900">{d.total_score || 0}<span className="text-base md:text-lg text-gray-400">/100</span></div>
+                              <div className="text-2xl md:text-3xl font-extrabold text-foreground font-mono">{d.total_score || 0}<span className="text-base md:text-lg text-muted-foreground font-normal">/100</span></div>
                             </div>
                           </div>
 
                           {/* Quadrant */}
                           <div className="flex items-center gap-3 flex-wrap">
-                            <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ background: quadrant.color + '18', color: quadrant.color }}>{quadrant.label}</span>
+                            <Badge variant="outline" className="text-xs font-semibold px-3 py-1 rounded-full border-border/70" style={{ background: quadrant.color + '18', color: quadrant.color }}>{quadrant.label}</Badge>
                           </div>
-                          <p className="text-xs text-gray-500">{quadrant.desc}</p>
+                          <p className="text-xs text-muted-foreground">{quadrant.desc}</p>
 
                           {/* Categories */}
                           {categories.length > 0 && (
@@ -1716,10 +1722,10 @@ const Competition = () => {
                                 const scoreVal = Math.round(cat.score * 10) / 10;
                                 const barColor = scoreVal >= 18 ? '#10B981' : scoreVal >= 10 ? '#F59E0B' : '#EF4444';
                                 return (
-                                  <div key={catIdx} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                  <div key={catIdx} className="rounded-xl border border-border/70 bg-muted/20 p-4">
                                     <div className="flex items-center justify-between mb-3">
-                                      <span className="text-sm font-semibold text-gray-800">{cat.label}</span>
-                                      <span className="text-lg font-bold" style={{ color: barColor }}>
+                                      <span className="text-sm font-semibold text-foreground">{cat.label}</span>
+                                      <span className="text-lg font-bold font-mono" style={{ color: barColor }}>
                                         {scoreVal}
                                       </span>
                                     </div>
@@ -1730,11 +1736,11 @@ const Competition = () => {
                                           const percentage = Math.min((value / 5) * 100, 100);
                                           return (
                                             <div key={key} className="flex items-center gap-3">
-                                              <span className="text-xs text-gray-500 w-[100px] sm:w-[140px] shrink-0">{label}</span>
-                                              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                                <div className="h-full rounded-full bg-gray-900" style={{ width: `${percentage}%`, transition: 'width 0.5s ease' }} />
+                                              <span className="text-xs text-muted-foreground w-[100px] sm:w-[140px] shrink-0 truncate">{label}</span>
+                                              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                                                <div className="h-full rounded-full bg-primary" style={{ width: `${percentage}%`, transition: 'width 0.5s ease' }} />
                                               </div>
-                                              <span className="text-xs font-semibold text-gray-700 w-[28px] text-right">{value}</span>
+                                              <span className="text-xs font-semibold text-foreground font-mono w-[28px] text-right">{value}</span>
                                             </div>
                                           );
                                         })}
@@ -1746,14 +1752,13 @@ const Competition = () => {
                             </div>
                           )}
 
-
                           {/* Gaps */}
                           {gaps.length > 0 && (
                             <div>
-                              <h4 className="text-sm font-semibold text-gray-800 mb-2">Points faibles identifiés</h4>
+                              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Points faibles identifiés</h4>
                               <div className="flex flex-wrap gap-2">
                                 {gaps.map(g => (
-                                  <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-600 font-medium">
+                                  <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 font-medium">
                                     {gapLabels[g] || g.replace(/_/g, ' ')}
                                   </span>
                                 ))}
@@ -1765,26 +1770,21 @@ const Competition = () => {
                     })()}
                   </DialogContent>
                 </Dialog>
-
-
-
               </div>
             )}
-
         </div>
-      </div>
 
       {/* Modal fiche détail concurrent */}
       {selectedCompetitorDetail && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedCompetitorDetail(null)}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-background/80 backdrop-blur-xs" onClick={() => setSelectedCompetitorDetail(null)}>
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative"
+            className="bg-card border border-border/70 rounded-xl shadow-xl w-full max-w-md p-6 relative"
             onClick={e => e.stopPropagation()}
           >
             <button
               type="button"
               onClick={() => setSelectedCompetitorDetail(null)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors"
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors p-1"
             >
               <XIcon size={18} />
             </button>
@@ -1794,16 +1794,16 @@ const Competition = () => {
               <img
                 src={`https://www.google.com/s2/favicons?domain=${selectedCompetitorDetail.domain}&sz=64`}
                 alt={selectedCompetitorDetail.domain}
-                className="w-10 h-10 rounded-xl flex-shrink-0"
+                className="w-10 h-10 rounded-lg shrink-0"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
               <div>
-                <h2 className="text-base font-bold text-gray-900">{selectedCompetitorDetail.name}</h2>
+                <h2 className="text-base font-bold text-foreground">{selectedCompetitorDetail.name}</h2>
                 <a
                   href={selectedCompetitorDetail.url.startsWith('http') ? selectedCompetitorDetail.url : `https://${selectedCompetitorDetail.url}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                  className="text-xs text-primary hover:underline flex items-center gap-1 font-mono"
                 >
                   {selectedCompetitorDetail.domain}
                   <ExternalLink size={10} />
@@ -1813,25 +1813,25 @@ const Competition = () => {
 
             {/* Stats */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="p-3 bg-gray-50 rounded-xl text-center">
-                <div className="text-2xl font-extrabold text-indigo-600">{selectedCompetitorDetail.rank}<sup className="text-sm font-semibold text-gray-400">e</sup></div>
-                <div className="text-xs text-gray-500 mt-0.5">Position</div>
+              <div className="p-3 bg-muted/40 border border-border/50 rounded-xl text-center">
+                <div className="text-2xl font-extrabold text-foreground font-mono">{selectedCompetitorDetail.rank}<sup className="text-sm font-semibold text-muted-foreground">e</sup></div>
+                <div className="text-xs text-muted-foreground mt-0.5">Position</div>
               </div>
-              <div className="p-3 bg-gray-50 rounded-xl text-center">
-                <div className="text-2xl font-extrabold text-gray-900">{selectedCompetitorDetail.score}%</div>
-                <div className="text-xs text-gray-500 mt-0.5 flex items-center justify-center gap-1">Score GEO<InfoTooltip {...HELP.scoreGeoGlobal} side="top" /></div>
+              <div className="p-3 bg-muted/40 border border-border/50 rounded-xl text-center">
+                <div className="text-2xl font-extrabold text-foreground font-mono">{selectedCompetitorDetail.score}%</div>
+                <div className="text-xs text-muted-foreground mt-0.5 flex items-center justify-center gap-1">Score GEO<InfoTooltip {...HELP.scoreGeoGlobal} side="top" /></div>
               </div>
             </div>
 
             {/* Barre de score colorée */}
             <div className="mb-4">
-              <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+              <div className="flex justify-between text-xs text-muted-foreground mb-1.5 font-medium">
                 <span className="flex items-center gap-1">Score GEO<InfoTooltip {...HELP.scoreGeoGlobal} side="top" /></span>
                 <span style={{ color: selectedCompetitorDetail.score >= 70 ? '#10B981' : selectedCompetitorDetail.score >= 40 ? '#F97316' : '#EF4444' }}>
                   {selectedCompetitorDetail.score >= 70 ? 'Bon' : selectedCompetitorDetail.score >= 40 ? 'Moyen' : 'Faible'}
                 </span>
               </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{
@@ -1846,7 +1846,7 @@ const Competition = () => {
               href={selectedCompetitorDetail.url.startsWith('http') ? selectedCompetitorDetail.url : `https://${selectedCompetitorDetail.url}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-border/70 text-sm font-medium text-foreground hover:bg-muted/40 transition-colors shadow-xs"
             >
               Visiter le site
               <ExternalLink size={14} />

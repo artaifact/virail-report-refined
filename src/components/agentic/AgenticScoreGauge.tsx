@@ -1,6 +1,6 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 interface AgenticScoreGaugeProps {
   score: number;
@@ -13,108 +13,85 @@ interface AgenticScoreGaugeProps {
 export const AgenticScoreGauge: React.FC<AgenticScoreGaugeProps> = ({
   score,
   targetUrl,
-  auditId,
-  savedInDb,
   createdAt,
 }) => {
-  const circumference = 2 * Math.PI * 68; // r = 68
-  const offset = circumference - (Math.min(100, Math.max(0, score)) / 100) * circumference;
+  const r = 24;
+  const circumference = 2 * Math.PI * r; // ~150.8
+  const clampedScore = Math.min(100, Math.max(0, score));
+  const offset = circumference - (clampedScore / 100) * circumference;
 
-  let color = '#f43f5e'; // Rouge
-  let badgeVariant = 'destructive' as const;
-  let label = 'Non Conforme (Disqualification)';
-  let desc = 'Non découvrable ou inachetable par les agents autonomes. Risque d\'élimination silencieuse immédiate.';
+  let color = '#f43f5e'; // Rose
+  let label = 'Non Conforme';
+  let badgeStyle = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+  let desc =
+    "Non découvrable ou inachetable par les agents autonomes. Risque d'élimination silencieuse immédiate.";
   let Icon = AlertCircle;
 
-  if (score >= 80) {
+  if (clampedScore >= 80) {
     color = '#10b981'; // Vert
-    badgeVariant = 'default' as const;
-    label = 'Agentic Native';
+    label = 'Conforme';
+    badgeStyle = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
     desc = 'Architecture conforme : achetable, exécutable et recommandée par les agents autonomes.';
     Icon = ShieldCheck;
-  } else if (score >= 50) {
-    color = '#f59e0b'; // Jaune / Orange
-    badgeVariant = 'secondary' as const;
-    label = 'Agent-Friendly';
-    desc = 'Lisibilité partielle. Risque d\'arbitrage négatif sur critères stricts de tarification ou de paiement M2M.';
+  } else if (clampedScore >= 50) {
+    color = '#f59e0b'; // Ambre
+    label = 'Partiel';
+    badgeStyle = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+    desc =
+      "Lisibilité partielle. Risque d'arbitrage négatif sur les critères de tarification ou de paiement M2M.";
     Icon = CheckCircle2;
   }
 
   return (
-    <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-5 sm:p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm font-sans">
-      {/* Gauge SVG */}
-      <div className="relative w-36 h-36 flex-shrink-0 flex items-center justify-center">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
-          <circle
-            cx="80"
-            cy="80"
-            r="68"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="10"
-            className="text-slate-100 dark:text-slate-800"
-          />
-          <circle
-            cx="80"
-            cy="80"
-            r="68"
-            fill="none"
-            stroke={color}
-            strokeWidth="10"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            className="transition-all duration-1000 ease-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 font-mono">
-            {score}
+    <div className="flex items-center justify-between gap-4 p-4 sm:p-4.5 rounded-xl bg-card border border-border shadow-xs">
+      {/* Left: Balanced Circular Gauge + Title + InfoTooltip */}
+      <div className="flex items-center gap-3.5 min-w-0">
+        <div className="relative w-14 h-14 sm:w-15 sm:h-15 shrink-0 flex items-center justify-center">
+          <svg className="w-full h-full -rotate-90" viewBox="0 0 60 60">
+            <circle
+              cx="30"
+              cy="30"
+              r={r}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4.5"
+              className="text-muted/30"
+            />
+            <circle
+              cx="30"
+              cy="30"
+              r={r}
+              fill="none"
+              stroke={color}
+              strokeWidth="4.5"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              className="transition-all duration-700 ease-out"
+            />
+          </svg>
+          <span className="absolute inset-0 flex items-center justify-center font-mono font-bold text-base sm:text-lg text-foreground tracking-tight">
+            {clampedScore}
           </span>
-          <span className="text-[11px] text-slate-400 font-medium">/100</span>
+        </div>
+
+        <div className="flex items-center gap-2 truncate">
+          <span className="text-sm sm:text-base font-semibold text-foreground tracking-tight truncate">
+            Éligibilité Machine (M2M)
+          </span>
+          <InfoTooltip
+            title="Score Global d'Éligibilité Machine-to-Machine"
+            description={desc}
+          />
         </div>
       </div>
 
-      {/* Details & Alert */}
-      <div className="flex-1 space-y-2.5 text-center md:text-left">
-        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-          <Badge
-            variant={badgeVariant}
-            className="px-2.5 py-1 text-xs font-medium tracking-wide flex items-center gap-1.5 rounded-lg border"
-            style={{
-              backgroundColor: score >= 80 ? 'rgba(16, 185, 129, 0.1)' : score >= 50 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-              color: score >= 80 ? '#059669' : score >= 50 ? '#d97706' : '#e11d48',
-              borderColor: score >= 80 ? 'rgba(16, 185, 129, 0.25)' : score >= 50 ? 'rgba(245, 158, 11, 0.25)' : 'rgba(244, 63, 94, 0.25)',
-            }}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
-          </Badge>
-          <span className="text-xs font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700">
-            {targetUrl}
-          </span>
-          {createdAt && (
-            <span className="text-[11px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700">
-              {(() => {
-                try {
-                  const d = new Date(createdAt);
-                  return !isNaN(d.getTime())
-                    ? `Mis à jour le ${d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
-                    : 'Audit récent';
-                } catch {
-                  return 'Audit récent';
-                }
-              })()}
-            </span>
-          )}
-        </div>
-
-        <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
-          Score Global d'Éligibilité Machine-to-Machine
-        </h3>
-        <p className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
-          {desc}
-        </p>
+      {/* Right: Clean Status Badge */}
+      <div className="flex items-center gap-2 shrink-0">
+        <span className={`px-2.5 py-1 rounded-md text-xs font-medium border flex items-center gap-1.5 ${badgeStyle}`}>
+          <Icon className="w-3.5 h-3.5" />
+          <span>{label}</span>
+        </span>
       </div>
     </div>
   );

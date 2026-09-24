@@ -616,7 +616,7 @@ export function TopSection({
       description: "Compilation des données de citations, d'optimisations et de veille concurrentielle...",
     });
     try {
-      await generateFullReportPdf(reportData);
+      await generateFullReportPdf(reportData, null, { agenticScore });
       toast({
         title: 'Rapport PDF prêt',
         description: "L'aperçu et l'enregistrement PDF haute résolution ont été lancés.",

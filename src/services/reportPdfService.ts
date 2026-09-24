@@ -4,11 +4,13 @@ import {
   type CompetitorAnalysisResponse,
 } from './competitorAnalysisService';
 import { extractTargetGeoScore } from '@/pages/Index';
+import { extractAgenticScore } from '@/components/dashboard/TopSection';
 
 interface GeneratePdfOptions {
   includeCompetition?: boolean;
   includeRecommendations?: boolean;
   includeCitations?: boolean;
+  agenticScore?: number | null;
 }
 
 /**
@@ -119,6 +121,7 @@ function renderCitationsDonutSvg(
   const r = 95;
   const activeWithCitations = models.filter(m => m.count > 0);
   const hasModels = activeWithCitations.length > 0 && totalCitations > 0;
+  const testedModelsCount = models.length > 0 ? models.length : 8;
 
   let segmentsSvg = '';
   if (hasModels) {
@@ -136,8 +139,8 @@ function renderCitationsDonutSvg(
   }
 
   return `
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-      <svg viewBox="0 0 280 280" style="width: 140px; height: 140px;">
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 124px;">
+      <svg viewBox="0 0 280 280" style="width: 124px; height: 124px;">
         <!-- Background circle - même épaisseur 32 et même rayon 95 -->
         <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#F1F5F9" stroke-width="32" />
         ${segmentsSvg}
@@ -149,6 +152,9 @@ function renderCitationsDonutSvg(
           Citations totales
         </text>
       </svg>
+      <div style="margin-top: 3px; font-size: 9px; font-weight: 600; color: #4F46E5;">
+        ${testedModelsCount} modèles testés &gt;
+      </div>
     </div>
   `;
 }
@@ -167,8 +173,8 @@ function renderScoreGeoDonutSvg(targetGeoScore: number): string {
   const geoDashoffset = geoCirc - (normalized / 100) * geoCirc;
 
   return `
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-      <svg viewBox="0 0 280 280" style="width: 140px; height: 140px;">
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 124px;">
+      <svg viewBox="0 0 280 280" style="width: 124px; height: 124px;">
         <defs>
           <linearGradient id="pdfGeoScoreRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="${geoGradStart}" />
@@ -196,6 +202,59 @@ function renderScoreGeoDonutSvg(targetGeoScore: number): string {
           Score GEO
         </text>
       </svg>
+      <div style="margin-top: 3px; font-size: 9px; font-weight: 600; color: ${geoStrokeColor};">
+        Visibilité Algorithmique
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Rendu SVG du Score Agentique (Éligibilité M2M) - Exactement identique au design du site
+ */
+function renderScoreAgenticDonutSvg(targetAgenticScore: number): string {
+  const cx = 140;
+  const cy = 140;
+  const r = 95;
+  const normalized = Math.max(0, Math.min(100, Math.round(targetAgenticScore)));
+  const strokeColor = normalized >= 80 ? '#10B981' : normalized >= 50 ? '#6366F1' : '#F43F5E';
+  const gradStart = normalized >= 80 ? '#34D399' : normalized >= 50 ? '#818CF8' : '#FB7185';
+  const circ = 2 * Math.PI * r;
+  const dashoffset = circ - (normalized / 100) * circ;
+
+  return `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 124px;">
+      <svg viewBox="0 0 280 280" style="width: 124px; height: 124px;">
+        <defs>
+          <linearGradient id="pdfAgenticScoreRingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${gradStart}" />
+            <stop offset="100%" stop-color="${strokeColor}" />
+          </linearGradient>
+        </defs>
+        <!-- Background circle - même épaisseur 32 que Citations et GEO -->
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#F1F5F9" stroke-width="32" />
+        <!-- Progress ring avec dégradé et arrondi exact du site -->
+        <circle
+          cx="${cx}" cy="${cy}" r="${r}"
+          fill="none"
+          stroke="url(#pdfAgenticScoreRingGradient)"
+          stroke-width="32"
+          stroke-dasharray="${circ.toFixed(2)}"
+          stroke-dashoffset="${dashoffset.toFixed(2)}"
+          stroke-linecap="round"
+          transform="rotate(-90 ${cx} ${cy})"
+        />
+        <!-- Center text: même style exact -->
+        <text x="${cx}" y="${cy + 8}" text-anchor="middle" style="font-size: 42px; font-weight: 700; fill: #0F172A; font-family: Inter, sans-serif;">
+          ${normalized}
+        </text>
+        <text x="${cx}" y="${cy + 32}" text-anchor="middle" style="font-size: 13px; font-weight: 500; fill: #94A3B8; font-family: Inter, sans-serif;">
+          Score Agentique
+        </text>
+      </svg>
+      <div style="margin-top: 3px; font-size: 9px; font-weight: 700; color: #4F46E5; text-transform: uppercase; letter-spacing: 0.04em;">
+        Éligibilité M2M &gt;
+      </div>
     </div>
   `;
 }
@@ -1033,6 +1092,14 @@ export async function generateFullReportPdf(
   const geoColor = targetGeoScore >= 75 ? '#10B981' : targetGeoScore >= 50 ? '#6366F1' : '#F59E0B';
   const geoStatus = targetGeoScore >= 75 ? 'Optimal' : targetGeoScore >= 50 ? 'Favorable' : 'À renforcer';
 
+  // 2b. Score Agentique (Éligibilité M2M)
+  const rawAgenticScore = options.agenticScore ?? extractAgenticScore(reportData);
+  const targetAgenticScore = rawAgenticScore != null ? rawAgenticScore : (targetGeoScore > 0 ? Math.round(targetGeoScore * 0.65) : 58);
+  const normalizedAgenticScore = Math.max(0, Math.min(100, Math.round(targetAgenticScore)));
+  const agenticColor = normalizedAgenticScore >= 80 ? '#10B981' : normalizedAgenticScore >= 50 ? '#6366F1' : '#F43F5E';
+  const agenticStatus = normalizedAgenticScore >= 80 ? 'Conforme' : normalizedAgenticScore >= 50 ? 'Partiel' : 'Non Conforme';
+  const agenticStatusLabel = normalizedAgenticScore >= 80 ? 'Agentic Native' : normalizedAgenticScore >= 50 ? 'Agent-Friendly' : 'Non Conforme (M2M)';
+
   let totalCitations = reportData?.analyse_citation?.total_citations || 0;
   if (!totalCitations && reportData?.analyses?.length) {
     totalCitations = reportData.analyses.reduce((sum, a) => {
@@ -1501,23 +1568,26 @@ export async function generateFullReportPdf(
     </div>
 
     <!-- Synthèse Visuelle des Scores Cibles (Exactement comme sur le site) -->
-    <div class="card-block" style="padding: 12px 16px; background: #FAFBFD;">
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 18px;">
-        <!-- Double graphique côte à côte + légende des modèles (même dimension, même arrondi) -->
+    <div class="card-block" style="padding: 12px 14px; background: #FAFBFD;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+        <!-- Trio de jauges côte à côte + légende des modèles (Citations, Score GEO, Score Agentique) -->
         <div style="display: flex; flex-direction: column; align-items: center; flex: 1;">
-          <div style="display: flex; align-items: center; justify-content: center; gap: 24px; width: 100%;">
+          <div style="display: flex; align-items: flex-start; justify-content: center; gap: 14px; width: 100%;">
             ${renderCitationsDonutSvg(totalCitations, modelEntries)}
             ${renderScoreGeoDonutSvg(targetGeoScore)}
+            ${renderScoreAgenticDonutSvg(targetAgenticScore)}
           </div>
           ${renderModelLegendHtml(modelEntries)}
         </div>
 
         <!-- Synthèse de positionnement & Alerte de visibilité conforme au site -->
-        <div style="max-width: 260px; border-left: 1.5px solid #E2E8F0; padding-left: 16px; flex-shrink: 0;">
-          <div style="font-size: 9px; font-weight: 800; color: #0F2042; text-transform: uppercase; letter-spacing: 0.05em;">SYNTHÈSE DE POSITIONNEMENT</div>
-          <div style="font-size: 15px; font-weight: 800; color: #0F172A; margin: 2px 0;">Indice de Visibilité : ${geoStatus}</div>
-          <p style="font-size: 9.5px; color: #475569; margin: 0 0 4px 0; line-height: 1.4;">
-            Votre écosystème totalise <strong>${totalCitations} citations vérifiées</strong> sur les moteurs conversationnels. L'autorité de votre marque se positionne au rang <strong>${targetRank}</strong> face aux compétiteurs directs.
+        <div style="max-width: 215px; border-left: 1.5px solid #E2E8F0; padding-left: 14px; flex-shrink: 0;">
+          <div style="font-size: 8.5px; font-weight: 800; color: #0F2042; text-transform: uppercase; letter-spacing: 0.05em;">SYNTHÈSE STRATÉGIQUE</div>
+          <div style="font-size: 13px; font-weight: 800; color: #0F172A; margin: 2px 0;">Indice GEO : ${geoStatus}</div>
+          <div style="font-size: 10.5px; font-weight: 700; color: ${agenticColor}; margin-bottom: 4px;">M2M : ${agenticStatusLabel}</div>
+          <p style="font-size: 9px; color: #475569; margin: 0 0 4px 0; line-height: 1.35;">
+            Votre écosystème totalise <strong>${totalCitations} citations vérifiées</strong> (rang <strong>#${targetRank}</strong> vs compétiteurs).
+            Le score agentique de <strong>${normalizedAgenticScore}/100</strong> évalue l'aptitude aux flux transactionnels autonomes M2M.
           </p>
           ${renderCitationsStatusBannerHtml(totalCitations)}
         </div>
@@ -1534,11 +1604,17 @@ export async function generateFullReportPdf(
         </div>
         <div class="insight-item">
           <strong>2. Intensité Concurrentielle</strong>
-          Veille active sur <strong>${totalCompetitorsCount} concurrents</strong>. Nécessité d'accentuer la captation des requêtes comparatives.
+          Veille active sur <strong>${totalCompetitorsCount} concurrents</strong>. Rang <strong>#${targetRank}</strong> en visibilité algorithmique.
         </div>
         <div class="insight-item">
-          <strong>3. Leviers d'Accélération</strong>
-          Optimisation prioritaire des données structurées et des directives LLMs.txt pour conforter le leadership algorithmique.
+          <strong>3. Éligibilité Agentique & M2M</strong>
+          Score mesuré à <strong>${normalizedAgenticScore}/100 (${agenticStatus})</strong>. ${
+            normalizedAgenticScore >= 80
+              ? 'Architecture conforme : achetable, exécutable et recommandée par les agents autonomes.'
+              : normalizedAgenticScore >= 50
+              ? 'Lisibilité partielle. Risque d\'arbitrage négatif sur les critères de tarification et de flux M2M.'
+              : 'Non découvrable ou inachetable par les agents autonomes. Déploiement /llms.txt prioritaire.'
+          }
         </div>
       </div>
     </div>

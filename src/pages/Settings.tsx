@@ -49,6 +49,7 @@ import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { onboardingService } from "@/services/onboardingService";
 import { SettingsSkeletonLoader } from "@/components/settings/SettingsSkeletonLoader";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import {
   useAccountDashboard,
   useStripeInvoices,
@@ -398,8 +399,8 @@ const Settings = () => {
 
   if (isDashboardLoading) {
     return (
-      <div className="min-h-screen bg-background text-foreground pb-12">
-        <div className="max-w-6xl mx-auto px-4 py-6 md:px-6 md:py-8">
+      <div className="min-h-screen bg-background text-foreground pb-12 font-sans">
+        <div className="w-full max-w-[1700px] mx-auto p-4 sm:p-6 lg:p-8">
           <SettingsSkeletonLoader />
         </div>
       </div>
@@ -407,18 +408,22 @@ const Settings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-12">
-      <div className="max-w-6xl mx-auto px-4 py-6 md:px-6 md:py-8 space-y-6">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Paramètres du compte</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Gérez votre abonnement, vos informations de facturation et vos préférences.
-          </p>
+    <div className="min-h-screen bg-background text-foreground pb-12 font-sans">
+      <div className="w-full max-w-[1700px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Top Header Épuré */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <span>Paramètres du compte</span>
+            <InfoTooltip
+              title="Paramètres & Facturation"
+              content="Gérez votre profil utilisateur, vos informations d'entreprise et vos modalités de facturation."
+            />
+          </h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Informations personnelles */}
-          <Card className="border-border bg-card shadow-xs">
+          <Card className="border border-border/70 bg-card shadow-xs rounded-xl">
             <CardHeader className="pb-4">
               <CardTitle className="text-base font-semibold text-foreground">Informations personnelles</CardTitle>
             </CardHeader>

@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/apiService';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 const Pricing: React.FC = () => {
   usePageTitle('Tarifs');
@@ -16,34 +17,33 @@ const Pricing: React.FC = () => {
   const { toast } = useToast();
 
   const handlePlanSelected = (planId: string) => {
-    // Ici vous pouvez ajouter une logique supplémentaire si nécessaire
+    // Logique de sélection de plan
   };
 
   const handleErrorDismiss = () => {
     setPaymentError(null);
-    // resetError non disponible dans le contexte actuel
   };
 
   const handleErrorUpgrade = () => {
-    // Navigation vers les plans
     window.location.href = '/pricing';
   };
 
   return (
-    <div className="container mx-auto px-3 py-4 sm:px-4 md:py-8 min-h-screen bg-background text-foreground">
-      
-      {/* <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Plans et Tarifs
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 w-full max-w-[1700px] mx-auto space-y-6 font-sans">
+      {/* Top Header Épuré */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          <span>Abonnement & Formules</span>
+          <InfoTooltip
+            title="Formules & Souscriptions"
+            content="Choisissez la formule adaptée à vos besoins d'optimisation GEO et débloquez les fonctionnalités agentiques."
+          />
         </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Choisissez le plan qui correspond le mieux à vos besoins. Tous nos plans incluent un support client et des mises à jour régulières.
-        </p>
-      </div> */}
+      </div>
 
       {/* Gestionnaire d'erreurs */}
       {paymentError && (
-        <div className="bg-card border border-border rounded-xl shadow-sm p-4 mb-4">
+        <div className="bg-card border border-border/70 rounded-xl shadow-xs p-4 mb-4">
           <ErrorHandler
             error={paymentError}
             onDismiss={handleErrorDismiss}
@@ -53,68 +53,12 @@ const Pricing: React.FC = () => {
       )}
 
       {/* Sélecteur de plans */}
-      <div className="p-5">
+      <div className="w-full">
         <PlanSelector
           onPlanSelected={handlePlanSelected}
           showCurrentPlan={true}
         />
       </div>
-      
-
-      {/* Quotas d'usage */}
-      {/* <section className="mt-12 bg-card border border-border rounded-xl shadow-sm">
-        <div className="px-5 py-4 border-b border-border">
-          <h2 className="text-xl font-semibold text-foreground">Quotas d'usage</h2>
-          <p className="text-sm text-muted-foreground">Suivez votre consommation et anticipez les dépassements.</p>
-        </div>
-        <div className="p-5">
-          <UsageQuota 
-            showUpgradePrompt={true}
-            compact={false}
-          />
-        </div>
-      </section> */}
-
-      {/* Bouton de test d'activation */}
-      {/* <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <h3 className="text-lg font-semibold text-blue-800 mb-2">🧪 Test d'activation d'abonnement</h3>
-        <p className="text-sm text-blue-700 mb-3">
-          Testez l'activation manuelle d'un abonnement en statut "pending"
-        </p>
-        <Button 
-          variant="outline"
-          className="border-neutral-200 text-neutral-700 hover:bg-neutral-50"
-          onClick={async () => {
-            try {
-              const testSubscriptionId = 'sub_1e325deb_1756402111';
-              
-              toast({
-                title: "Test d'activation",
-                description: `Activation de l'abonnement ${testSubscriptionId}...`,
-              });
-              
-              await apiService.activateSubscription(testSubscriptionId);
-              
-              toast({
-                title: "✅ Activation réussie !",
-                description: "L'abonnement a été activé avec succès.",
-              });
-              
-              // Recharger les données
-              await loadPaymentData();
-              
-            } catch (error) {
-              toast({
-                title: "❌ Erreur d'activation",
-                description: error instanceof Error ? error.message : "Erreur inattendue",
-                variant: "destructive",
-              });
-            }
-          }}
-        >
-          🔧 Tester l'activation
-        </Button>
-      </div> */}
     </div>
   );
 };

@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import {
   Search,
@@ -20,6 +18,7 @@ import {
   Zap,
   Database,
   CheckCircle2,
+  HelpCircle,
 } from 'lucide-react';
 import { useReports, getLatestReportId } from '@/hooks/useReports';
 import { useSelectedReport } from '@/contexts/SelectedReportContext';
@@ -37,14 +36,9 @@ import { AgenticPillarsView } from '@/components/agentic/AgenticPillarsView';
 import { AgenticChannelsMatrix } from '@/components/agentic/AgenticChannelsMatrix';
 import { AgenticRemediationViewer } from '@/components/agentic/AgenticRemediationViewer';
 import { AgenticSkeletonLoader } from '@/components/agentic/AgenticSkeletonLoader';
-
-const PRESETS = [
-  { name: 'Stripe', url: 'https://stripe.com' },
-  { name: 'Tally', url: 'https://tally.so' },
-  { name: 'Resend', url: 'https://resend.com' },
-  { name: 'Cloudflare', url: 'https://cloudflare.com' },
-  { name: 'Shopify', url: 'https://shopify.com' },
-];
+import { AgenticMethodologyModal } from '@/components/agentic/AgenticMethodologyModal';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const CURATED_INTENTS = [
   { id: 'discover', label: 'Découverte & Positionnement', icon: Search, desc: "L'agent analyse l'offre principale et la clarté du positionnement." },
@@ -65,6 +59,15 @@ export default function AgenticCockpit() {
   const [result, setResult] = useState<AgenticScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const targetDomain = useMemo(() => {
+    if (!url) return '';
+    try {
+      return new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace(/^www\./, '');
+    } catch {
+      return url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+    }
+  }, [url]);
+
   // Agent Journeys live testing
   const [selectedIntent, setSelectedIntent] = useState<string>('discover');
   const [journeyLoading, setJourneyLoading] = useState<boolean>(false);
@@ -73,6 +76,9 @@ export default function AgenticCockpit() {
   // x402 live test
   const [x402Loading, setX402Loading] = useState<boolean>(false);
   const [x402Output, setX402Output] = useState<string | null>(null);
+
+  // Methodology modal
+  const [isMethodologyOpen, setIsMethodologyOpen] = useState<boolean>(false);
 
   // Résolution automatique de l'URL cible (param URL > rapport actif > dernier rapport > localStorage > fallback)
   useEffect(() => {
@@ -182,29 +188,32 @@ export default function AgenticCockpit() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
-      {/* Top Banner */}
-      <div className="rounded-2xl bg-card border border-border p-6 sm:p-8 shadow-xs">
-        <div className="max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted border border-border text-xs font-semibold text-foreground">
-            <Cpu className="w-3.5 h-3.5 text-primary" />
-            <span>Audit d'Éligibilité Machine & Protocoles Agentiques (M2M)</span>
-          </div>
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 w-full max-w-[1700px] mx-auto space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
+          <span>Éligibilité Agentique —</span>
+          <span className="text-primary">{targetDomain || 'Cockpit'}</span>
+          <InfoTooltip
+            title="Cockpit d'Éligibilité Agentique"
+            description="Audit de découvrabilité machine et d'éligibilité aux protocoles M2M (Claude Code, Cursor, Perplexity)."
+          />
+        </h1>
 
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            Cockpit d'Éligibilité & Distribution <span className="text-primary">Agentique</span>
-          </h1>
-
-          <p className="text-xs sm:text-[13.5px] text-muted-foreground leading-relaxed font-normal">
-            Auditez la découvrabilité et l'achetabilité machine de votre plateforme face aux agents autonomes (Claude Code, Cursor, Perplexity, agents d'achat).
-            Détectez les risques de <strong className="font-semibold text-foreground">disqualification silencieuse</strong> sur les 5 piliers et générez le pack de remédiation technique instantané.
-          </p>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsMethodologyOpen(true)}
+          className="self-start sm:self-center text-xs font-semibold gap-1.5 h-9 px-3.5 shrink-0 cursor-pointer text-foreground border-border hover:bg-muted rounded-xl shadow-xs"
+        >
+          <HelpCircle className="w-3.5 h-3.5 text-primary" />
+          <span>Barème & Méthodologie</span>
+        </Button>
       </div>
 
       {/* Control Card */}
       <Card className="rounded-xl border border-border bg-card shadow-xs">
-        <CardContent className="p-4 sm:p-5 space-y-3.5">
+        <CardContent className="p-3.5 sm:p-4">
           <form onSubmit={(e) => handleScan(e)} className="flex flex-col sm:flex-row gap-2.5">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -227,37 +236,6 @@ export default function AgenticCockpit() {
               {loading ? 'Audit en cours...' : "Lancer l'audit agentique"}
             </Button>
           </form>
-
-          {/* Quick Presets & Remediate Switch */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5 text-xs">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-muted-foreground text-xs font-medium">Exemples rapides :</span>
-              {PRESETS.map((p) => (
-                <button
-                  key={p.name}
-                  type="button"
-                  onClick={() => {
-                    setUrl(p.url);
-                    handleScan(undefined, p.url);
-                  }}
-                  className="px-2.5 py-1 rounded-lg border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors font-medium text-xs cursor-pointer"
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Switch
-                id="toggle-remediate"
-                checked={remediate}
-                onCheckedChange={setRemediate}
-              />
-              <Label htmlFor="toggle-remediate" className="text-xs text-muted-foreground cursor-pointer font-normal">
-                Générer le Pack de Remédiation
-              </Label>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
@@ -282,47 +260,83 @@ export default function AgenticCockpit() {
       {/* Skeleton Loading State */}
         {loading && <AgenticSkeletonLoader />}
 
-        {/* Results View */}
+        {/* Results View organized by Tabs for Cognitive Load Reduction */}
         {result && !loading && (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Gauge Summary */}
-            <AgenticScoreGauge
-              score={result.score}
-              targetUrl={result.target_url}
-              auditId={result.audit_id}
-              savedInDb={Boolean(result.saved_in_db || result.audit_id)}
-              createdAt={result.created_at}
-            />
-
-            {/* 5 Pillars */}
-            <div className="space-y-3">
-              <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                <Layers className="w-4 h-4 text-muted-foreground" />
-                Diagnostic Opérationnel sur les 5 Piliers d'Éligibilité
-              </h3>
-              <AgenticPillarsView pillars={result.pillars} />
+          <Tabs defaultValue="overview" className="w-full space-y-5 animate-in fade-in duration-300">
+            {/* Top Navigation Tabs */}
+            <div className="flex items-center justify-between gap-3 border-b border-border/60 pb-3">
+              <TabsList className="bg-muted/60 border border-border p-1 h-9 rounded-xl gap-1">
+                <TabsTrigger
+                  value="overview"
+                  className="text-xs font-semibold gap-1.5 rounded-lg px-3 py-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all cursor-pointer"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Vue d'ensemble & Diagnostic</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="journeys"
+                  className="text-xs font-semibold gap-1.5 rounded-lg px-3 py-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all cursor-pointer"
+                >
+                  <Workflow className="w-3.5 h-3.5" />
+                  <span>Banc d'Essai Parcours ({CURATED_INTENTS.length})</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="remediation"
+                  className="text-xs font-semibold gap-1.5 rounded-lg px-3 py-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all cursor-pointer"
+                >
+                  <FileCode2 className="w-3.5 h-3.5" />
+                  <span>Pack Remédiation & x402</span>
+                </TabsTrigger>
+              </TabsList>
             </div>
 
-            {/* 8 Channels Matrix */}
-            <div className="space-y-3">
-              <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                <Cpu className="w-4 h-4 text-muted-foreground" />
-                Matrice de Présence sur les 8 Canaux de Distribution Agentique
-              </h3>
-              <AgenticChannelsMatrix channelAudit={result.channel_audit} />
-            </div>
+            {/* TAB 1: Overview & Diagnostic */}
+            <TabsContent value="overview" className="space-y-6 mt-0">
+              {/* Gauge Summary */}
+              <AgenticScoreGauge
+                score={result.score}
+                targetUrl={result.target_url}
+                auditId={result.audit_id}
+                savedInDb={Boolean(result.saved_in_db || result.audit_id)}
+                createdAt={result.created_at}
+              />
 
-            {/* Agent Journey Replay Section */}
-            <div className="space-y-3">
+              {/* 5 Pillars */}
+              <div className="space-y-2.5">
+                <h3 className="text-xs sm:text-[13px] font-semibold text-foreground flex items-center gap-2 tracking-tight">
+                  <Layers className="w-4 h-4 text-muted-foreground" />
+                  <span>5 Piliers d'Éligibilité Machine (M2M)</span>
+                </h3>
+                <AgenticPillarsView pillars={result.pillars} />
+              </div>
+
+              {/* 8 Channels Matrix */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs sm:text-[13px] font-semibold text-foreground flex items-center gap-2 tracking-tight">
+                    <Cpu className="w-4 h-4 text-muted-foreground" />
+                    <span>8 Canaux de Distribution Agentique</span>
+                  </h3>
+                  <span className="text-xs font-mono font-medium text-muted-foreground">
+                    {Object.values(result.channel_audit || {}).filter(Boolean).length}/8 activés
+                  </span>
+                </div>
+                <AgenticChannelsMatrix channelAudit={result.channel_audit} />
+              </div>
+            </TabsContent>
+
+            {/* TAB 2: Agent Journeys Testing */}
+            <TabsContent value="journeys" className="space-y-4 mt-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                  <h3 className="text-xs sm:text-[13px] font-semibold text-foreground flex items-center gap-2 tracking-tight">
                     <Workflow className="w-4 h-4 text-muted-foreground" />
-                    Banc d'Essai de Parcours Réels d'Agents (Agent Journey Replay)
+                    <span>Banc d'Essai de Parcours Réels d'Agents (Agent Journey Replay)</span>
+                    <InfoTooltip
+                      title="Banc d'Essai de Parcours Réels d'Agents"
+                      description="Simulez et rejouez le raisonnement étape par étape d'un agent autonome face à 5 intentions critiques."
+                    />
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Simulez et rejouez le raisonnement étape par étape d'un agent autonome face à 5 intentions critiques.
-                  </p>
                 </div>
                 {journeyResult && (
                   <Button
@@ -349,8 +363,8 @@ export default function AgenticCockpit() {
                       onClick={() => setSelectedIntent(intent.id)}
                       className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                         isSelected
-                          ? 'border-slate-900 dark:border-slate-100 bg-muted/40 shadow-xs ring-1 ring-slate-900/10 dark:ring-slate-100/10'
-                          : 'border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                          ? 'border-foreground bg-muted/40 shadow-xs ring-1 ring-foreground/10'
+                          : 'border-border bg-card hover:bg-muted/50'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-1 mb-1.5">
@@ -363,10 +377,10 @@ export default function AgenticCockpit() {
                           </span>
                         )}
                       </div>
-                      <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                      <div className="text-xs font-semibold text-foreground truncate">
                         {intent.label}
                       </div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                      <div className="text-[10px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
                         {intent.desc}
                       </div>
                     </button>
@@ -376,15 +390,15 @@ export default function AgenticCockpit() {
 
               {/* Journey Loading / Results */}
               {journeyLoading ? (
-                <Card className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center space-y-3">
+                <Card className="rounded-xl border border-border bg-card p-8 text-center space-y-3">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-muted text-foreground animate-pulse mx-auto">
                     <Loader2 className="w-6 h-6 animate-spin" />
                   </div>
                   <div className="space-y-1">
-                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <div className="text-sm font-semibold text-foreground">
                       Simulation du parcours agentique en cours...
                     </div>
-                    <div className="text-xs text-slate-500 font-mono">
+                    <div className="text-xs text-muted-foreground font-mono">
                       Intention : {CURATED_INTENTS.find(i => i.id === selectedIntent)?.label}
                     </div>
                   </div>
@@ -402,13 +416,13 @@ export default function AgenticCockpit() {
                   intentTitle={CURATED_INTENTS.find(i => i.id === selectedIntent)?.label}
                 />
               ) : (
-                <Card className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-6 text-center">
+                <Card className="rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center">
                   <div className="max-w-md mx-auto space-y-2">
                     <Workflow className="w-6 h-6 text-muted-foreground mx-auto opacity-80" />
-                    <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    <div className="text-xs font-semibold text-foreground">
                       Visualisez en direct les étapes de raisonnement des agents
                     </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
                       Sélectionnez l'une des 5 intentions ci-dessus pour observer le cheminement de l'agent, ses appels d'outils et les points de friction éventuels.
                     </p>
                     <Button
@@ -421,50 +435,66 @@ export default function AgenticCockpit() {
                   </div>
                 </Card>
               )}
-            </div>
+            </TabsContent>
 
-            {/* Remediation Pack */}
-            <div className="space-y-3">
-              <h3 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                <FileCode2 className="w-4 h-4 text-muted-foreground" />
-                Pack de Remédiation Technique Clé en Main
-              </h3>
-              <AgenticRemediationViewer remediationPack={result.remediation_pack} />
-            </div>
-
-            {/* x402 Playground */}
-            <Card className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-6 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
-                <div>
-                  <h4 className="text-xs sm:text-[13px] font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                    <CreditCard className="w-4 h-4 text-muted-foreground" />
-                    Banc d'Essai du Handshake x402 (Micro-Paiements Machine Base USDC)
-                  </h4>
-                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
-                    Visualisez comment un agent autonome reçoit le challenge HTTP 402 et exécute son paiement M2M.
-                  </p>
+            {/* TAB 3: Remediation & x402 Settlement */}
+            <TabsContent value="remediation" className="space-y-6 mt-0">
+              {/* Remediation Pack */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs sm:text-[13px] font-semibold text-foreground flex items-center gap-2 tracking-tight">
+                    <FileCode2 className="w-4 h-4 text-muted-foreground" />
+                    <span>Pack de Remédiation Technique Clé en Main</span>
+                    <InfoTooltip
+                      title="Pack de Remédiation"
+                      description="Fichiers configurés et prêts au déploiement pour votre domaine"
+                    />
+                  </h3>
                 </div>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleTestX402}
-                  disabled={x402Loading}
-                  className="rounded-lg px-3 py-1.5 text-xs font-medium border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs transition-all gap-2 h-auto dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
-                >
-                  {x402Loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
-                  Tester le Handshake Live
-                </Button>
+                <AgenticRemediationViewer remediationPack={result.remediation_pack} />
               </div>
 
-              {x402Output && (
-                <pre className="bg-[#0b0f17] p-4 rounded-xl text-xs font-mono text-emerald-400 overflow-x-auto max-h-52 whitespace-pre-wrap">
-                  <code>{x402Output}</code>
-                </pre>
-              )}
-            </Card>
-          </div>
+              {/* x402 Playground */}
+              <Card className="rounded-xl border border-border bg-card shadow-xs p-5 sm:p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+                  <div>
+                    <h4 className="text-xs sm:text-[13px] font-semibold text-foreground flex items-center gap-2 tracking-tight">
+                      <CreditCard className="w-4 h-4 text-muted-foreground" />
+                      <span>Banc d'Essai du Handshake x402 (Micro-Paiements Machine Base USDC)</span>
+                      <InfoTooltip
+                        title="Banc d'Essai Handshake x402"
+                        description="Simulation du protocole HTTP 402 et exécution de règlement machine autonome."
+                      />
+                    </h4>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleTestX402}
+                    disabled={x402Loading}
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium border border-border bg-card hover:bg-muted text-foreground shadow-xs transition-all gap-2 h-auto"
+                  >
+                    {x402Loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                    Tester le Handshake Live
+                  </Button>
+                </div>
+
+                {x402Output && (
+                  <pre className="bg-[#0b0f17] p-4 rounded-xl text-xs font-mono text-emerald-400 overflow-x-auto max-h-52 whitespace-pre-wrap">
+                    <code>{x402Output}</code>
+                  </pre>
+                )}
+              </Card>
+            </TabsContent>
+          </Tabs>
         )}
+
+        {/* Global Methodology Modal */}
+        <AgenticMethodologyModal
+          isOpen={isMethodologyOpen}
+          onClose={() => setIsMethodologyOpen(false)}
+        />
       </div>
     );
   }

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useReports, useReport, getLatestReportId } from '@/hooks/useReports';
 import { generateFullReportPdf } from '@/services/reportPdfService';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 const Export = () => {
   usePageTitle('Export');
@@ -102,25 +103,29 @@ const Export = () => {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-4 sm:p-6 md:p-8 bg-background min-h-screen text-foreground">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Export & Partage</h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Exportez et partagez vos rapports d'optimisation GEO</p>
-        </div>
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 w-full max-w-[1700px] mx-auto space-y-6 font-sans">
+      {/* Top Header Épuré */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          <span>Export & Partage</span>
+          <InfoTooltip
+            title="Exportation de Rapports"
+            content="Téléchargez vos audits au format PDF haute fidélité ou configurez vos partages externes."
+          />
+        </h1>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Export PDF */}
-        <Card className="border border-border bg-card shadow-sm">
+        <Card className="border border-border/70 bg-card shadow-xs rounded-xl">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                <Download className="h-5 w-5" />
+                <Download className="h-4.5 w-4.5" />
               </div>
               <div>
-                <CardTitle className="text-lg">Export PDF</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-base font-bold">Export PDF</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
                   Téléchargez vos rapports au format PDF haute fidélité
                 </CardDescription>
               </div>
@@ -193,15 +198,15 @@ const Export = () => {
         </Card>
 
         {/* Partage par lien */}
-        <Card className="border border-border bg-card shadow-sm">
+        <Card className="border border-border/70 bg-card shadow-xs rounded-xl">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                <Share2 className="h-5 w-5" />
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <Share2 className="h-4.5 w-4.5" />
               </div>
               <div>
-                <CardTitle className="text-lg">Partage par lien</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-base font-bold">Partage par lien</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
                   Créez un lien sécurisé pour partager vos rapports en ligne
                 </CardDescription>
               </div>
@@ -209,7 +214,7 @@ const Export = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Durée de validité</Label>
+              <Label className="text-xs font-medium text-foreground">Durée de validité</Label>
               <Select defaultValue="7days">
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -225,11 +230,11 @@ const Export = () => {
 
             <div className="space-y-3 pt-1">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password-protected" className="text-sm cursor-pointer">Protégé par mot de passe</Label>
+                <Label htmlFor="password-protected" className="text-xs text-foreground cursor-pointer">Protégé par mot de passe</Label>
                 <Switch id="password-protected" />
               </div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="download-allowed" className="text-sm cursor-pointer">Autoriser le téléchargement</Label>
+                <Label htmlFor="download-allowed" className="text-xs text-foreground cursor-pointer">Autoriser le téléchargement</Label>
                 <Switch id="download-allowed" defaultChecked />
               </div>
             </div>
@@ -237,7 +242,7 @@ const Export = () => {
             <Button 
               onClick={handleGenerateLink}
               disabled={isGeneratingLink}
-              className="w-full mt-2"
+              className="w-full mt-2 shadow-xs"
             >
               {isGeneratingLink ? (
                 <>
@@ -250,13 +255,13 @@ const Export = () => {
             </Button>
 
             {shareableLink && (
-              <div className="space-y-2 p-3 bg-muted/50 rounded-lg border border-border">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Lien généré :</Label>
+              <div className="space-y-2 p-3 bg-muted/40 rounded-xl border border-border/70">
+                <Label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Lien généré :</Label>
                 <div className="flex gap-2">
                   <Input 
                     value={shareableLink} 
                     readOnly 
-                    className="text-sm font-mono bg-background"
+                    className="text-xs font-mono bg-background"
                   />
                   <Button 
                     size="icon" 
@@ -281,15 +286,15 @@ const Export = () => {
         </Card>
 
         {/* Envoi par email */}
-        <Card className="border border-border bg-card shadow-sm">
+        <Card className="border border-border/70 bg-card shadow-xs rounded-xl">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                <Mail className="h-5 w-5" />
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <Mail className="h-4.5 w-4.5" />
               </div>
               <div>
-                <CardTitle className="text-lg">Envoi par email</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-base font-bold">Envoi par email</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
                   Envoyez directement vos rapports à vos collaborateurs ou clients
                 </CardDescription>
               </div>
@@ -297,27 +302,29 @@ const Export = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email-recipients">Destinataires (séparés par des virgules)</Label>
+              <Label htmlFor="email-recipients" className="text-xs font-medium text-foreground">Destinataires (séparés par des virgules)</Label>
               <Input
                 id="email-recipients"
                 placeholder="email1@exemple.com, email2@exemple.com"
                 value={emailRecipients}
                 onChange={(e) => setEmailRecipients(e.target.value)}
+                className="text-xs"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email-subject">Objet du message</Label>
+              <Label htmlFor="email-subject" className="text-xs font-medium text-foreground">Objet du message</Label>
               <Input
                 id="email-subject"
                 defaultValue="Rapport d'analyse GEO - Viraill"
+                className="text-xs"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email-format">Format</Label>
+              <Label htmlFor="email-format" className="text-xs font-medium text-foreground">Format</Label>
               <Select defaultValue="pdf">
-                <SelectTrigger id="email-format" className="w-full">
+                <SelectTrigger id="email-format" className="w-full text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -330,7 +337,7 @@ const Export = () => {
 
             <Button 
               onClick={handleSendByEmail}
-              className="w-full"
+              className="w-full shadow-xs"
             >
               <Mail className="h-4 w-4 mr-2" />
               Envoyer par email
@@ -339,15 +346,15 @@ const Export = () => {
         </Card>
 
         {/* Rapports programmés */}
-        <Card className="border border-border bg-card shadow-sm">
+        <Card className="border border-border/70 bg-card shadow-xs rounded-xl">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
-                <Calendar className="h-5 w-5" />
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <Calendar className="h-4.5 w-4.5" />
               </div>
               <div>
-                <CardTitle className="text-lg">Rapports programmés</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-base font-bold">Rapports programmés</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
                   Automatisez la génération et l'envoi de vos rapports périodiques
                 </CardDescription>
               </div>
@@ -355,9 +362,9 @@ const Export = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Fréquence</Label>
+              <Label className="text-xs font-medium text-foreground">Fréquence</Label>
               <Select defaultValue="weekly">
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -370,27 +377,28 @@ const Export = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="auto-recipients">Destinataires automatiques</Label>
+              <Label htmlFor="auto-recipients" className="text-xs font-medium text-foreground">Destinataires automatiques</Label>
               <Input
                 id="auto-recipients"
                 placeholder="destinataire@entreprise.com"
+                className="text-xs"
               />
             </div>
 
             <div className="flex items-center justify-between pt-1">
-              <Label htmlFor="auto-enabled" className="text-sm cursor-pointer">Rapports automatiques activés</Label>
+              <Label htmlFor="auto-enabled" className="text-xs text-foreground cursor-pointer">Rapports automatiques activés</Label>
               <Switch id="auto-enabled" />
             </div>
 
-            <div className="p-3.5 bg-amber-500/10 rounded-lg border border-amber-500/20">
-              <p className="text-sm text-foreground">
-                <span className="font-semibold text-amber-700 dark:text-amber-400">Prochaine génération :</span> Lundi prochain à 09:00 (UTC)
+            <div className="p-3.5 bg-muted/40 rounded-xl border border-border/70">
+              <p className="text-xs text-foreground font-mono">
+                <span className="font-semibold text-primary">Prochaine génération :</span> Lundi prochain à 09:00 (UTC)
               </p>
             </div>
 
             <Button 
               variant="outline" 
-              className="w-full"
+              className="w-full shadow-xs"
             >
               Configurer la programmation
             </Button>

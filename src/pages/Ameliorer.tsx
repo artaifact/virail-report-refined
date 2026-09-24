@@ -35,7 +35,10 @@ import {
   X,
   FileDiff,
   GitPullRequest,
+  Activity,
+  Sparkles,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useReport, useReports, getLatestReportId } from '@/hooks/useReports';
 import { useSelectedReport } from '@/contexts/SelectedReportContext';
@@ -51,6 +54,7 @@ import { AgenticRemediationSection } from '@/components/agentic/AgenticRemediati
 import { generateFullRemediationPatch, createPullRequestPayload } from '@/services/remediationPatchService';
 import { HELP } from '@/lib/help-content';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { useToast } from '@/hooks/use-toast';
 import { AmeliorerSkeletonLoader } from '@/components/optimizer/AmeliorerSkeletonLoader';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -500,14 +504,14 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
   const hasSimulationData = !!(co || scores.length > 0 || coSchemasAdded.length > 0 || coEnrichments.length > 0 || coRecommendations.length > 0);
 
   const tabs = [
-    { id: 'overview' as const, label: 'Vue d\'ensemble', tooltip: HELP.overviewTab },
-    { id: 'schemas' as const, label: 'Schémas JSON-LD', has: !!schemaContent, tooltip: HELP.jsonLdSchemas },
-    { id: 'meta' as const, label: 'Balises Meta & Enrichissements', has: !!(metaTagsContent || openGraphContent || coEnrichments.length > 0), tooltip: HELP.metaTags },
-    { id: 'llms' as const, label: 'llms.txt', has: !!(llmsContent || llmsFullContent), tooltip: HELP.llmsTxt },
-    { id: 'robots' as const, label: 'robots.txt', has: !!robotsContent, tooltip: HELP.robotsTxt },
-    { id: 'htmldiff' as const, label: 'Comparaison HTML', has: !!optimizedHtmlContent, tooltip: HELP.htmlDiff },
-    { id: 'simulation' as const, label: 'Simulation', has: hasSimulationData, tooltip: HELP.aiSimulation, beta: true },
-    { id: 'agentic' as const, label: 'Protocoles Agentiques (M2M)', has: true, tooltip: "Spécifications OpenAPI 3.1, A2A, ARD, x402 et pack de remédiation machine" },
+    { id: 'overview' as const, label: 'Diagnostic & Piliers', icon: Activity, tooltip: HELP.overviewTab },
+    { id: 'schemas' as const, label: 'Schémas JSON-LD', icon: Code, has: !!schemaContent, tooltip: HELP.jsonLdSchemas },
+    { id: 'meta' as const, label: 'Balises Meta & Enrichissements', icon: Globe, has: !!(metaTagsContent || openGraphContent || coEnrichments.length > 0), tooltip: HELP.metaTags },
+    { id: 'llms' as const, label: 'llms.txt', icon: FileText, has: !!(llmsContent || llmsFullContent), tooltip: HELP.llmsTxt },
+    { id: 'robots' as const, label: 'robots.txt', icon: Shield, has: !!robotsContent, tooltip: HELP.robotsTxt },
+    { id: 'htmldiff' as const, label: 'Comparaison HTML', icon: FileCode, has: !!optimizedHtmlContent, tooltip: HELP.htmlDiff },
+    { id: 'simulation' as const, label: 'Simulation', icon: Sparkles, has: hasSimulationData, tooltip: HELP.aiSimulation, beta: true },
+    { id: 'agentic' as const, label: 'Protocoles Agentiques (M2M)', icon: Cpu, has: true, tooltip: "Spécifications OpenAPI 3.1, A2A, ARD, x402 et pack de remédiation machine" },
   ];
 
   // Composant réutilisable : carte fichier technique
@@ -580,28 +584,44 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
       {/* ═══ NAVIGATION ═══ */}
       <div className="overflow-x-auto pb-1 scrollbar-none">
         <Tabs value={activeOptTab} onValueChange={(val: any) => setActiveOptTab(val)} className="w-auto">
-          <TabsList className="bg-muted/80 p-1 rounded-xl border border-border/60 flex-nowrap h-auto gap-1">
+          <TabsList className="bg-muted/70 p-1 rounded-xl border border-border/70 flex-nowrap h-auto gap-1">
             {tabs.map((tab) => {
               const hasContent = tab.id === 'overview' || tab.has;
+              const isActive = activeOptTab === tab.id;
+              const TabIcon = tab.icon;
               return (
                 <Tooltip key={tab.id}>
                   <TooltipTrigger asChild>
                     <TabsTrigger
                       value={tab.id}
                       disabled={!hasContent}
-                      className="gap-1.5 px-3 sm:px-3.5 py-1.5 text-xs rounded-lg transition-all whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      className={cn(
+                        "relative flex items-center gap-2 px-3 sm:px-3.5 py-1.5 text-xs rounded-lg transition-all duration-150 whitespace-nowrap cursor-pointer select-none border font-medium",
+                        "disabled:opacity-40 disabled:cursor-not-allowed",
+                        isActive
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold hover:bg-primary/95 hover:text-primary-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
+                          : "border-transparent text-muted-foreground hover:text-foreground hover:bg-background/80 data-[state=inactive]:text-muted-foreground"
+                      )}
                     >
-                      {tab.id === 'agentic' && (
-                        <Cpu className="h-3.5 w-3.5 text-primary shrink-0" />
+                      {TabIcon && (
+                        <TabIcon className={cn("h-3.5 w-3.5 shrink-0 transition-colors", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
                       )}
                       <span>{tab.label}</span>
                       {(tab as any).beta && (
-                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                        <span className={cn(
+                          "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded transition-colors",
+                          isActive
+                            ? "bg-white/20 text-white"
+                            : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                        )}>
                           Beta
                         </span>
                       )}
                       {tab.id !== 'overview' && tab.has && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary/70 shrink-0" />
+                        <span className={cn(
+                          "w-1.5 h-1.5 rounded-full shrink-0 transition-colors",
+                          isActive ? "bg-white/90 ring-1 ring-white/30" : "bg-primary/70"
+                        )} />
                       )}
                     </TabsTrigger>
                   </TooltipTrigger>
@@ -641,126 +661,177 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
             />
           )}
 
-          {/* Recommandations */}
+          {/* Recommandations Prioritaires Épurées (1 ligne par recommandation, sans texte superflu) */}
           {coRecommendations.length > 0 && (
-            <div style={{ background: '#FFFFFF', borderRadius: '14px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
-              <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Recommandations</span>
+            <Card className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+                <span className="text-xs sm:text-[13px] font-semibold text-foreground">Recommandations Prioritaires</span>
+                <span className="text-[11px] text-muted-foreground">{coRecommendations.length} action{coRecommendations.length > 1 ? 's' : ''}</span>
               </div>
-              <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {coRecommendations.map((rec: any, i: number) => {
+              <div className="p-2 sm:p-2.5 flex flex-col gap-1.5">
+                {coRecommendations.slice(0, 3).map((rec: any, i: number) => {
                   const prioBadge = rec.priority === 'high'
-                    ? { label: 'Haute', bg: '#FEF2F2', color: '#B91C1C', border: '#FECACA' }
+                    ? { label: 'Haute', cls: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' }
                     : rec.priority === 'medium'
-                    ? { label: 'Moyenne', bg: '#FFF7ED', color: '#C2410C', border: '#FED7AA' }
-                    : { label: 'Basse', bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0' };
+                    ? { label: 'Moyenne', cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' }
+                    : { label: 'Basse', cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' };
                   return (
-                    <div key={i} style={{
-                      display: 'flex', alignItems: 'flex-start', gap: '10px',
-                      padding: '12px 14px', borderRadius: '10px', background: '#FAFAFC',
-                    }}>
-                      <span style={{
-                        flexShrink: 0, padding: '2px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: 600,
-                        color: prioBadge.color, background: prioBadge.bg, border: `1px solid ${prioBadge.border}`,
-                        textTransform: 'uppercase', letterSpacing: '0.3px',
-                      }}>
-                        {prioBadge.label}
-                      </span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '13px', fontWeight: 500, color: '#1E293B', lineHeight: '1.45' }}>{stripEmojis(rec.message)}</div>
-                        {rec.details && <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '3px', lineHeight: '1.45' }}>{stripEmojis(rec.details)}</div>}
+                    <div
+                      key={i}
+                      onClick={() => {
+                        const msg = (rec.message || '').toLowerCase();
+                        if (msg.includes('schema') || msg.includes('structure') || msg.includes('json-ld')) setActiveOptTab('schemas');
+                        else if (msg.includes('robot')) setActiveOptTab('robots');
+                        else if (msg.includes('llms') || msg.includes('txt')) setActiveOptTab('llms');
+                        else if (msg.includes('meta') || msg.includes('graph')) setActiveOptTab('meta');
+                      }}
+                      className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors border border-border/40 cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className={`shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold border uppercase tracking-wider ${prioBadge.cls}`}>
+                          {prioBadge.label}
+                        </span>
+                        <span className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                          {stripEmojis(rec.message)}
+                        </span>
                       </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </Card>
           )}
 
-          {/* Plan d'action */}
+          {/* Plan d'action Épuré */}
           {planAction.length > 0 && (
-            <div style={{ background: '#FFFFFF', borderRadius: '14px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
-              <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Plan d'action</span>
+            <Card className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border">
+                <span className="text-xs sm:text-[13px] font-semibold text-foreground">Plan d'action</span>
               </div>
-              <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {planAction.map((action, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'flex-start', gap: '10px',
-                    padding: '10px 14px', borderRadius: '10px', background: '#FAFAFC',
-                  }}>
-                    <span style={{
-                      width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
-                      background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '11px', fontWeight: 700, color: '#64748B',
-                    }}>{i + 1}</span>
-                    <span style={{ fontSize: '13px', color: '#334155', lineHeight: '1.5' }}>{action}</span>
+              <div className="p-2 sm:p-2.5 flex flex-col gap-1.5">
+                {planAction.slice(0, 3).map((action, i) => (
+                  <div key={i} className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-muted/20 border border-border/40 text-xs">
+                    <span className="w-4 h-4 rounded-full shrink-0 bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
+                      {i + 1}
+                    </span>
+                    <span className="text-xs text-foreground/90 truncate">{action}</span>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
 
-          {/* ═══ OPTIMISATION BULK DU SITE ═══ */}
+          {/* ═══ OPTIMISATION BULK DU SITE (Ultra-Épurée) ═══ */}
           {reportId && reportDomain && (
-            <div style={{ background: 'linear-gradient(135deg, #F5F3FF 0%, #EEF2FF 50%, #F0F9FF 100%)', borderRadius: '14px', border: '1.5px solid #C7D2FE', overflow: 'hidden', boxShadow: '0 4px 16px rgba(99, 102, 241, 0.1)' }}>
-              <div style={{ padding: '20px 24px', borderBottom: '1px solid #DDD6FE', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Layers size={20} style={{ color: '#334155' }} />
+            <Card className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
+              <div className="p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                {/* Gauche : Icône + Titre concis + Badge domaine */}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                    <span className="text-xs sm:text-[13px] font-semibold text-foreground">
+                      Crawl & Optimisation Globale
+                    </span>
+                    {reportDomainHostname && (
+                      <Badge variant="outline" className="text-[10px] font-mono font-normal text-muted-foreground px-1.5 py-0">
+                        {reportDomainHostname}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#312E81' }}>Optimiser le site complet</div>
-                  <div style={{ fontSize: '13px', color: '#6366F1', fontWeight: 500 }}>Optimiser toutes les pages de votre site</div>
-                  {reportDomainHostname && (
-                    <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
-                      Domaine crawlé : <span style={{ fontWeight: 600, color: '#334155' }}>{reportDomainHostname}</span>
-                      <span style={{ marginLeft: '6px', fontSize: '11px', color: '#94A3B8' }}>(celui du rapport)</span>
-                    </div>
-                  )}
-                </div>
+
+                {/* Droite : Sélecteurs épurés + Bouton direct */}
+                {!bulkJobId && !bulkProgress && (
+                  <div className="flex items-center gap-2 flex-wrap shrink-0">
+                    <select
+                      value={bulkMaxPages}
+                      onChange={(e) => setBulkMaxPages(Number(e.target.value))}
+                      disabled={bulkLoading}
+                      className="h-8 px-2.5 text-xs rounded-lg border border-border bg-muted/30 text-foreground font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value={10}>10 pages</option>
+                      <option value={50}>50 pages</option>
+                      <option value={100}>100 pages</option>
+                      <option value={250}>250 pages</option>
+                      <option value={500}>500 pages</option>
+                      <option value={1000}>1 000 pages</option>
+                    </select>
+
+                    <select
+                      value={bulkConcurrency}
+                      onChange={(e) => setBulkConcurrency(Number(e.target.value))}
+                      disabled={bulkLoading}
+                      className="h-8 px-2.5 text-xs rounded-lg border border-border bg-muted/30 text-foreground font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                        <option key={n} value={n}>{n} {n === 1 ? 'req // ' : 'req //'}</option>
+                      ))}
+                    </select>
+
+                    <Button
+                      size="sm"
+                      onClick={handleStartBulk}
+                      disabled={bulkLoading}
+                      className="h-8 px-3 text-xs gap-1.5 font-semibold"
+                    >
+                      {bulkLoading ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Lancement...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                          <span>Lancer l'optimisation</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Dernière analyse */}
               {bulkJobsHistory.length > 0 && (() => {
                 const job = bulkJobsHistory[0];
                 const isActive = bulkJobId === job.job_id;
-                const statusIcon = job.status === 'completed' ? <CheckCircle size={12} style={{ color: '#16A34A' }} />
-                  : job.status === 'failed' || job.status === 'cancelled' ? <XCircle size={12} style={{ color: '#DC2626' }} />
-                  : <Loader2 size={12} className="animate-spin" style={{ color: '#6366F1' }} />;
+                const statusIcon = job.status === 'completed' ? <CheckCircle size={12} className="text-emerald-500" />
+                  : job.status === 'failed' || job.status === 'cancelled' ? <XCircle size={12} className="text-rose-500" />
+                  : <Loader2 size={12} className="animate-spin text-primary" />;
                 let domain = job.domain_url;
                 try { domain = new URL(job.domain_url).hostname; } catch {}
                 const date = job.started_at ? new Date(job.started_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
                 return (
-                  <div style={{ padding: '10px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="px-4 py-2 border-t border-border/40 flex items-center justify-between text-xs bg-muted/10">
                     <button
                       onClick={() => handleLoadJob(job)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        padding: '6px 14px', borderRadius: '8px',
-                        border: isActive ? '1.5px solid #6366F1' : '1px solid #E2E8F0',
-                        background: isActive ? '#EEF2FF' : '#FFFFFF',
-                        cursor: 'pointer', transition: 'all 0.15s',
-                        fontSize: '12px', color: isActive ? '#4338CA' : '#64748B', fontWeight: isActive ? 600 : 500,
-                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-2.5 py-1 rounded-md border text-xs transition-all cursor-pointer font-medium",
+                        isActive
+                          ? "border-primary/50 bg-primary/10 text-primary font-semibold"
+                          : "border-border/60 bg-card text-muted-foreground hover:text-foreground"
+                      )}
                     >
                       {statusIcon}
                       <span>{domain}</span>
-                      <span style={{ color: '#CBD5E1' }}>|</span>
+                      <span className="text-muted-foreground/40">|</span>
                       <span>{job.pages_completed}/{job.pages_total}</span>
                       {job.avg_score != null && (
-                        <span style={{ fontWeight: 700, color: job.avg_score >= 70 ? '#16A34A' : job.avg_score >= 50 ? '#D97706' : '#DC2626' }}>{Math.round(job.avg_score)}</span>
+                        <span className={cn(
+                          "font-bold",
+                          job.avg_score >= 70 ? "text-emerald-500" : job.avg_score >= 50 ? "text-amber-500" : "text-rose-500"
+                        )}>
+                          {Math.round(job.avg_score)}
+                        </span>
                       )}
-                      {date && <span style={{ color: '#94A3B8', fontSize: '11px' }}>{date}</span>}
+                      {date && <span className="text-muted-foreground/60 text-[11px]">{date}</span>}
                     </button>
                     {bulkJobId && (
                       <button
                         onClick={() => { setBulkJobId(null); setBulkProgress(null); setBulkPages([]); setBulkResults(null); setBulkError(null); setBulkLoading(false); }}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '4px',
-                          padding: '6px 12px', borderRadius: '8px',
-                          border: '1px dashed #CBD5E1', background: '#FFFFFF',
-                          cursor: 'pointer', fontSize: '11px', color: '#64748B', fontWeight: 500,
-                        }}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded border border-dashed border-border/80 text-muted-foreground hover:text-foreground text-[11px] cursor-pointer"
                       >
                         <Plus size={11} /> Nouveau
                       </button>
@@ -769,94 +840,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                 );
               })()}
 
-              <div style={{ padding: '16px 20px' }}>
-                {!bulkJobId && !bulkProgress && (
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
-                    <div style={{ flex: '0 0 auto' }}>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>
-                        Nombre de pages
-                      </label>
-                      <select
-                        value={bulkMaxPages}
-                        onChange={(e) => setBulkMaxPages(Number(e.target.value))}
-                        disabled={bulkLoading}
-                        style={{
-                          padding: '8px 32px 8px 12px',
-                          borderRadius: '8px',
-                          border: '1px solid #E2E8F0',
-                          background: '#F8FAFC',
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          color: '#334155',
-                          cursor: 'pointer',
-                          appearance: 'none',
-                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                          backgroundRepeat: 'no-repeat',
-                          backgroundPosition: 'right 10px center',
-                        }}
-                      >
-                        <option value={10}>10 pages</option>
-                        <option value={50}>50 pages</option>
-                        <option value={100}>100 pages</option>
-                        <option value={250}>250 pages</option>
-                        <option value={500}>500 pages</option>
-                        <option value={1000}>1 000 pages</option>
-                        <option value={2500}>2 500 pages</option>
-                        <option value={5000}>5 000 pages</option>
-                      </select>
-                    </div>
-
-                    <div style={{ flex: '0 0 auto' }}>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#64748B', marginBottom: '6px' }}>
-                        Requêtes parallèles
-                      </label>
-                      <select
-                        value={bulkConcurrency}
-                        onChange={(e) => setBulkConcurrency(Number(e.target.value))}
-                        disabled={bulkLoading}
-                        style={{
-                          padding: '8px 32px 8px 12px',
-                          borderRadius: '8px',
-                          border: '1px solid #E2E8F0',
-                          background: '#F8FAFC',
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          color: '#334155',
-                          cursor: 'pointer',
-                          appearance: 'none',
-                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                          backgroundRepeat: 'no-repeat',
-                          backgroundPosition: 'right 10px center',
-                        }}
-                      >
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                          <option key={n} value={n}>{n} {n === 1 ? 'page' : 'pages'} en parallele</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div style={{ flex: '1 1 auto' }} />
-
-                    <button
-                      onClick={handleStartBulk}
-                      disabled={bulkLoading}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        padding: '9px 18px', borderRadius: '8px',
-                        border: '1px solid #E2E8F0', background: '#FFFFFF',
-                        color: bulkLoading ? '#94A3B8' : '#334155', fontSize: '13px', fontWeight: 600,
-                        cursor: bulkLoading ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      {bulkLoading ? (
-                        <><Loader2 size={14} className="animate-spin" /> Lancement...</>
-                      ) : (
-                        <><Play size={14} /> Lancer l'optimisation</>
-                      )}
-                    </button>
-                  </div>
-                )}
+              <div className="px-4 pb-3">
 
                 {bulkError && (
                   <div style={{ marginTop: '10px', padding: '10px 14px', borderRadius: '8px', background: '#FEF2F2', border: '1px solid #FECACA', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1086,7 +1070,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                   </div>
                 )}
               </div>
-            </div>
+            </Card>
           )}
 
           {/* Fichiers techniques disponibles */}
@@ -1782,28 +1766,21 @@ export default function Ameliorer() {
   }, [reportData]);
 
   return (
-    <div className="dashboard-container ux-dashboard font-sans" style={{ minHeight: '100vh', padding: '24px 20px' }}>
-      {/* Top Banner */}
-      <div className="top-section relative mb-6 p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-indigo-50 border border-indigo-200/60 text-xs font-semibold text-indigo-700 mb-2">
-              <Wand2 className="w-3.5 h-3.5" />
-              <span>OPTIMISATION TECHNIQUE & CONTENUS MACHINE</span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2 flex-wrap">
-              <span>Améliorer votre visibilité IA —</span>
-              {isLoading && !domainName ? (
-                <Skeleton className="h-7 w-36 rounded-lg inline-block" />
-              ) : (
-                <span className="text-[#1A3AFF]">{domainName || 'Rapport'}</span>
-              )}
-            </h1>
-            <p className="text-xs sm:text-[13px] text-slate-500 mt-1 font-normal">
-              Schémas JSON-LD, balises meta, documentation llms.txt, robots.txt et simulations d'agents pour maximiser vos citations.
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 lg:p-8 w-full max-w-[1700px] mx-auto space-y-6 font-sans">
+      {/* Top Header Épuré */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 flex-wrap">
+          <span>Améliorer votre visibilité IA —</span>
+          {isLoading && !domainName ? (
+            <Skeleton className="h-7 w-36 rounded-lg inline-block" />
+          ) : (
+            <span className="text-primary">{domainName || 'Rapport'}</span>
+          )}
+          <InfoTooltip
+            title="Optimisation Technique & Contenus Machine"
+            description="Schémas JSON-LD, balises meta, documentation llms.txt, robots.txt et protocoles machine pour maximiser vos citations."
+          />
+        </h1>
       </div>
 
       {/* Content */}
