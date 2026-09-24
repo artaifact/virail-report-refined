@@ -4,6 +4,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  TooltipProvider,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +27,8 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
   side = 'top',
 }) => {
   return (
-    <Tooltip>
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
       <TooltipTrigger asChild>
         <button
           type="button"
@@ -52,6 +54,7 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
           <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
         </div>
       </TooltipContent>
-    </Tooltip>
+      </Tooltip>
+    </TooltipProvider>
   );
 };

@@ -18,6 +18,8 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  Users,
+  Calendar,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -464,12 +466,15 @@ const Analyses = () => {
               </Badge>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <span>Analyses & Audits GEO</span>
+              <span>Analyses GEO</span>
               <InfoTooltip
                 title="Historique des Audits GEO"
                 content="Consultez l'historique complet de vos audits de visibilité générative, lancez de nouveaux scans multi-modèles et comparez vos performances."
               />
             </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              Analysez et optimisez vos contenus avec l'intelligence artificielle.
+            </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
@@ -493,7 +498,7 @@ const Analyses = () => {
                   disabled={isAnalyzing || isOptimizedAnalyzing}
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  <span>Nouvelle analyse</span>
+                  <span>Nouvelle Analyse</span>
                 </Button>
               </DialogTrigger>
             </Dialog>
@@ -508,7 +513,7 @@ const Analyses = () => {
           <Card className="border-border/70 rounded-xl bg-card shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Total Analyses
+                Analyses Total
               </CardTitle>
               <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <BarChart3 className="h-4 w-4" />
@@ -516,12 +521,10 @@ const Analyses = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl sm:text-3xl font-extrabold text-foreground font-mono">
-                {stats.totalReports}
+                {reports.length}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {stats.totalReports > 0
-                  ? `${stats.completedReports} complétée${stats.completedReports > 1 ? "s" : ""}`
-                  : "Aucune analyse"}
+                {reports.length > 0 ? `${reports.length} analyses` : "Aucune analyse"}
               </p>
             </CardContent>
           </Card>
@@ -529,7 +532,7 @@ const Analyses = () => {
           <Card className="border-border/70 rounded-xl bg-card shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Score GEO Moyen
+                Score Moyen
               </CardTitle>
               <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <TrendingUp className="h-4 w-4" />
@@ -537,10 +540,10 @@ const Analyses = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl sm:text-3xl font-extrabold text-foreground font-mono">
-                {stats.avgScore != null ? `${stats.avgScore}/100` : "—"}
+                {stats.avgScore != null ? `${stats.avgScore}%` : "0%"}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Moyenne des rapports évalués
+                {reports.length > 0 ? `${reports.length} analyses` : "Aucune analyse"}
               </p>
             </CardContent>
           </Card>
@@ -548,10 +551,10 @@ const Analyses = () => {
           <Card className="border-border/70 rounded-xl bg-card shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Domaines Uniques
+                Sites Analysés
               </CardTitle>
               <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                <Globe className="h-4 w-4" />
+                <Users className="h-4 w-4" />
               </div>
             </CardHeader>
             <CardContent>
@@ -559,7 +562,7 @@ const Analyses = () => {
                 {stats.uniqueDomains}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Sites distincts audités
+                {reports.length > 0 ? `${reports.length} analyses totales` : "Aucun site analysé"}
               </p>
             </CardContent>
           </Card>
@@ -567,18 +570,18 @@ const Analyses = () => {
           <Card className="border-border/70 rounded-xl bg-card shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Moteur d'Audit
+                Temps Moyen
               </CardTitle>
               <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                <Clock className="h-4 w-4" />
+                <Calendar className="h-4 w-4" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl sm:text-3xl font-extrabold text-foreground font-mono">
-                9 IA
+                95.4s
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                GPT-4o, Claude, Perplexity, etc.
+                -8.7% optimisation
               </p>
             </CardContent>
           </Card>
@@ -591,7 +594,7 @@ const Analyses = () => {
               <div>
                 <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                   <FileText className="h-4 w-4 text-primary" />
-                  Rapports récents
+                  Rapports Récents
                 </CardTitle>
                 <CardDescription className="text-xs text-muted-foreground mt-0.5">
                   Cliquez sur une ligne pour ouvrir le rapport d'audit détaillé
@@ -644,7 +647,7 @@ const Analyses = () => {
                   className="gap-2 font-semibold"
                 >
                   <Plus className="h-4 w-4" />
-                  Nouvelle analyse
+                  Première analyse
                 </Button>
               </div>
             ) : (
@@ -779,7 +782,7 @@ const Analyses = () => {
               </Label>
               <Input
                 id="url"
-                placeholder="ex: tally.so ou https://mon-site.fr"
+                placeholder="https://example.com"
                 value={newAnalysisUrl}
                 onChange={(e) => setNewAnalysisUrl(e.target.value)}
                 onBlur={() => {
@@ -860,7 +863,7 @@ const Analyses = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-semibold">
               <Zap className="h-4 w-4 text-primary" />
-              Optimisation LLMO
+              Analyse Optimisée
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Génère des optimisations techniques et sémantiques spécifiques pour ce site.

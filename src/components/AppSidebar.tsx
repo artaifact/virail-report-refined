@@ -201,8 +201,9 @@ export function AppSidebar() {
                 <span className="truncate font-semibold text-sidebar-foreground">
                   {domainName || "Viraill"}
                 </span>
-                <span className="truncate text-[11px] text-muted-foreground">
-                  Mes analyses ({reports.length})
+                <span className="truncate text-[11px] text-muted-foreground flex items-center gap-1">
+                  <span>Mes analyses</span>
+                  {reports.length > 0 && <span>({reports.length})</span>}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto size-4 text-muted-foreground/70" />
