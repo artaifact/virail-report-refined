@@ -39,51 +39,18 @@ jobs:
           retention-days: 7
 
   deploy:
-    name: Deploy to Server
+    name: Deploy to Fly.io
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     steps:
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Ensure target dir exists
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script: |
-            set -e
-            mkdir -p "${{ secrets.DEPLOY_PATH }}/dist"
-            rm -rf "${{ secrets.DEPLOY_PATH }}/dist/*"
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Upload dist to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          source: "dist/**"
-          target: "${{ secrets.DEPLOY_PATH }}/dist"
-          strip_components: 1
-          overwrite: true
-          rm: true
-          debug: false
-
-      - name: List remote dist (post-deploy)
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script: |
-            set -e
-            echo "Deployed to: ${{ secrets.DEPLOY_PATH }}/dist"
-            ls -lt "${{ secrets.DEPLOY_PATH }}/dist" | head
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
