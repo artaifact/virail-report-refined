@@ -136,10 +136,10 @@ export function AppSidebar() {
             badge: "M2M" as string | undefined,
           },
           {
-            title: "Market Intelligence",
+            title: "Market Intel",
             url: "/market-intelligence",
             icon: Radar,
-            badge: "Agents IA" as string | undefined,
+            badge: "IA" as string | undefined,
           },
         ],
       },
@@ -260,11 +260,11 @@ export function AppSidebar() {
                           onClick={handleNavigation}
                         >
                           <item.icon className={cn("size-4", isActive ? "text-primary" : "text-muted-foreground")} />
-                          <span className="truncate">{item.title}</span>
+                          <span className="truncate" title={item.url === "/market-intelligence" ? "Market Intelligence" : undefined}>{item.title}</span>
                           {item.badge && (
                             <Badge
                               variant="secondary"
-                              className="ml-auto text-[10px] font-semibold px-1.5 py-0 h-4 bg-primary/10 text-primary border-0"
+                              className="ml-auto shrink-0 whitespace-nowrap text-[10px] font-semibold px-1.5 py-0 h-4 bg-primary/10 text-primary border-0"
                             >
                               {item.badge}
                             </Badge>
