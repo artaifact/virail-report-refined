@@ -19,6 +19,7 @@ import {
   Database,
   CheckCircle2,
   HelpCircle,
+  TrendingUp,
 } from 'lucide-react';
 import { useReports, getLatestReportId } from '@/hooks/useReports';
 import { useSelectedReport } from '@/contexts/SelectedReportContext';
@@ -37,6 +38,7 @@ import { AgenticChannelsMatrix } from '@/components/agentic/AgenticChannelsMatri
 import { AgenticRemediationViewer } from '@/components/agentic/AgenticRemediationViewer';
 import { AgenticSkeletonLoader } from '@/components/agentic/AgenticSkeletonLoader';
 import { AgenticMethodologyModal } from '@/components/agentic/AgenticMethodologyModal';
+import { AgenticMarketIntelView } from '@/components/agentic/AgenticMarketIntelView';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
@@ -287,6 +289,13 @@ export default function AgenticCockpit() {
                   <FileCode2 className="w-3.5 h-3.5" />
                   <span>Pack Remédiation & x402</span>
                 </TabsTrigger>
+                <TabsTrigger
+                  value="market-intel"
+                  className="text-xs font-semibold gap-1.5 rounded-lg px-3 py-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all cursor-pointer"
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span>Benchmark Marché & Écosystème</span>
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -486,6 +495,11 @@ export default function AgenticCockpit() {
                   </pre>
                 )}
               </Card>
+            </TabsContent>
+
+            {/* TAB 4: Benchmark Marché & Écosystème */}
+            <TabsContent value="market-intel" className="space-y-6 mt-0">
+              <AgenticMarketIntelView targetDomain={targetDomain} />
             </TabsContent>
           </Tabs>
         )}

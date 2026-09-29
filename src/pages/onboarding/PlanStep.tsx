@@ -362,17 +362,35 @@ export function PlanStep() {
               <div className={cn("p-5 pb-4 text-center", isRecommended && "pt-8")}>
                 <span className="font-bold text-lg text-foreground">{plan.name}</span>
                 <div className="mt-2">
-                  <span className={cn(
-                    'text-3xl font-bold',
-                    isSelected ? 'text-primary' : 'text-foreground'
-                  )}>
-                    {formatPrice(plan.price)}
-                  </span>
-                  {plan.price > 0 && (
-                    <span className="text-sm text-muted-foreground">/mois</span>
-                  )}
-                  {plan.id === 'solo' && (
-                    <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mt-1">7 jours gratuits</div>
+                  {plan.id === 'solo' || plan.price === 89 ? (
+                    <div>
+                      <div className="flex items-baseline justify-center gap-1">
+                        <span className={cn(
+                          'text-3xl font-bold',
+                          isSelected ? 'text-primary' : 'text-foreground'
+                        )}>
+                          0€
+                        </span>
+                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                          pendant 7 jours
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 font-medium">
+                        Commence dans 7 jours à 89€/mois
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <span className={cn(
+                        'text-3xl font-bold',
+                        isSelected ? 'text-primary' : 'text-foreground'
+                      )}>
+                        {formatPrice(plan.price)}
+                      </span>
+                      {plan.price > 0 && (
+                        <span className="text-sm text-muted-foreground">/mois</span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -504,7 +522,7 @@ export function PlanStep() {
             </>
           ) : (
             <>
-              {selectedPlanId === 'free' ? 'Commencer gratuitement' : selectedPlanId === 'solo' ? 'Essayer 7 jours gratuits' : 'Souscrire maintenant'}
+              {selectedPlanId === 'free' ? 'Commencer gratuitement' : (selectedPlanId === 'solo' || plans.find(p => p.id === selectedPlanId)?.price === 89) ? 'Essayer 7 jours gratuits (0€)' : 'Souscrire maintenant'}
             </>
           )}
         </Button>
@@ -530,12 +548,19 @@ export function PlanStep() {
                   {plans.find(p => p.id === selectedPlanId)?.name}
                 </span>
                 <span className="font-bold text-primary">
-                  {formatPrice(plans.find(p => p.id === selectedPlanId)?.price || 0)}/mois
+                  {selectedPlanId === 'solo' || plans.find(p => p.id === selectedPlanId)?.price === 89
+                    ? "0€ aujourd'hui"
+                    : `${formatPrice(plans.find(p => p.id === selectedPlanId)?.price || 0)}/mois`}
                 </span>
               </div>
-              {selectedPlanId === 'solo' && (
-                <div className="mt-2 p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                  <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">7 jours d'essai gratuit — aucun débit immédiat</p>
+              {(selectedPlanId === 'solo' || plans.find(p => p.id === selectedPlanId)?.price === 89) && (
+                <div className="mt-2 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-center">
+                  <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    🎉 0€ pendant 7 jours — Commence dans 7 jours à 89€/mois
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Aucun débit immédiat. Annulable à tout moment pendant la période d'essai.
+                  </p>
                 </div>
               )}
               <p className="text-sm text-muted-foreground mt-2">

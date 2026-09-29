@@ -393,12 +393,30 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
             <CardHeader className="text-center pb-4">
               <CardTitle className="text-xl font-bold text-foreground">{plan.name}</CardTitle>
               <div className="mt-2 flex items-baseline justify-center gap-1 flex-wrap">
-                <span className="text-2xl font-bold text-foreground whitespace-nowrap">
-                  {formatPrice(plan.price)}
-                </span>
-                <span className="text-muted-foreground text-sm whitespace-nowrap">
-                  /{plan.interval}
-                </span>
+                {plan.id === 'solo' || plan.price === 89 ? (
+                  <div className="text-center">
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-2xl font-bold text-foreground whitespace-nowrap">
+                        0€
+                      </span>
+                      <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        pendant 7 jours
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5 font-medium">
+                      Commence dans 7 jours à 89€/mois
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-2xl font-bold text-foreground whitespace-nowrap">
+                      {formatPrice(plan.price)}
+                    </span>
+                    <span className="text-muted-foreground text-sm whitespace-nowrap">
+                      /{plan.interval}
+                    </span>
+                  </>
+                )}
               </div>
             </CardHeader>
             <CardContent className="flex flex-col h-full">
@@ -567,10 +585,10 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({
               {selectedPlanId === 'solo' && (
                 <div className="p-4 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
                   <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mb-1">
-                    7 jours d'essai gratuit
+                    🎉 0€ pendant 7 jours — Commence dans 7 jours à 89€/mois
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Aucun débit pendant l'essai. Annulez à tout moment.
+                    Aucun débit aujourd'hui. Annulez à tout moment pendant la période d'essai.
                   </p>
                 </div>
               )}
