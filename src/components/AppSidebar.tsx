@@ -30,6 +30,7 @@ import {
   Globe,
   Check,
   Search,
+  Radar,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { usePayment } from "@/contexts/PaymentContext";
@@ -134,6 +135,12 @@ export function AppSidebar() {
             icon: Cpu,
             badge: "M2M" as string | undefined,
           },
+          {
+            title: "Market Intelligence",
+            url: "/market-intelligence",
+            icon: Radar,
+            badge: "Agents IA" as string | undefined,
+          },
         ],
       },
       {
@@ -234,7 +241,7 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 )}
                 {group.items.map((item) => {
-                  const isActive = location.pathname === item.url;
+                  const isActive = location.pathname === item.url || (item.url !== "/" && location.pathname.startsWith(`${item.url}/`));
                   return (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton

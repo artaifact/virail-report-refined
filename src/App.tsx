@@ -34,6 +34,7 @@ import Diagnostic from "./pages/Diagnostic";
 import GlobalSearch from "./components/GlobalSearch";
 import OptimizationAgent from "./pages/OptimizationAgent";
 import AgenticCockpit from "./pages/AgenticCockpit";
+import MarketIntelligence from "./pages/MarketIntelligence";
 import ApiDemo from "./pages/ApiDemo";
 import TechnicalOptimization from "./pages/TechnicalOptimization";
 import TextualOptimization from "./pages/TextualOptimization";
@@ -103,6 +104,7 @@ function MainLayout() {
             <Route path="/competition" element={<Competition />} />
             <Route path="/ameliorer" element={<Ameliorer />} />
             <Route path="/agentic" element={<AgenticCockpit />} />
+            <Route path="/market-intelligence/*" element={<MarketIntelligence />} />
             <Route path="/sites-optimization" element={<SiteOptimization />} />
             <Route path="/optimisation/technique" element={<TechnicalOptimization />} />
             <Route path="/optimisation/textuelle" element={<TextualOptimization />} />
