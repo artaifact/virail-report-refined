@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Users, Shield, CheckCircle, XCircle, Calendar, Filter } from 'lucide-react';
+import { Search, Users, Shield, CheckCircle, XCircle, Calendar, Filter, Phone, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { AdminService } from '@/services/adminService';
 import { AdminUser, AdminUsersResponse, AdminUserStats, AdminUserFilters } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
@@ -25,6 +25,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ className, onUse
   const [perPage, setPerPage] = useState(20);
   const [filters, setFilters] = useState<AdminUserFilters>({});
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Vérifier les privilèges admin au chargement
   useEffect(() => {
@@ -112,6 +113,25 @@ export const UserManagement: React.FC<UserManagementProps> = ({ className, onUse
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      await AdminService.exportUsersToExcel(filters);
+      toast({
+        title: "Export réussi",
+        description: "Le fichier Excel des utilisateurs a été téléchargé avec succès.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erreur d'exportation",
+        description: error?.message || "Impossible d'exporter les utilisateurs en Excel",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -257,8 +277,27 @@ export const UserManagement: React.FC<UserManagementProps> = ({ className, onUse
 
       {/* Tableau des utilisateurs */}
       <Card>
-        <CardHeader>
-          <CardTitle>Liste des utilisateurs</CardTitle>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4">
+          <div>
+            <CardTitle>Liste des utilisateurs</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Consultez les coordonnées (emails, numéros de téléphone) et exportez la base
+            </p>
+          </div>
+          <Button
+            onClick={handleExportExcel}
+            disabled={isExporting}
+            variant="outline"
+            size="sm"
+            className="gap-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/30 font-medium text-xs shadow-xs"
+          >
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="h-4 w-4" />
+            )}
+            {isExporting ? "Exportation..." : "Exporter en Excel (.xlsx)"}
+          </Button>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -272,6 +311,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ className, onUse
                   <TableRow>
                     <TableHead>Utilisateur</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Téléphone</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Rôle</TableHead>
                     <TableHead>Créé le</TableHead>
@@ -287,6 +327,16 @@ export const UserManagement: React.FC<UserManagementProps> = ({ className, onUse
                     >
                       <TableCell className="font-medium">{user.username}</TableCell>
                       <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        {user.phone_number || user.phone ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-foreground bg-muted/60 px-2 py-0.5 rounded-md">
+                            <Phone className="h-3 w-3 text-muted-foreground shrink-0" />
+                            {user.phone_number || user.phone}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">Non renseigné</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={user.is_active ? "default" : "secondary"}>
                           {user.is_active ? "Actif" : "Inactif"}

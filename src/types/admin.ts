@@ -6,6 +6,8 @@ export interface AdminUser {
   id: number;
   username: string;
   email: string;
+  phone?: string | null;
+  phone_number?: string | null;
   is_active: boolean;
   is_verified: boolean;
   is_admin: boolean;

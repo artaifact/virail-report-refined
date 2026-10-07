@@ -4,6 +4,7 @@
  */
 
 import { AuthService } from './authService';
+import { User } from '@/types/auth';
 
 // Configuration
 // En développement, utiliser les chemins relatifs pour profiter du proxy Vite (port 8081)
@@ -304,6 +305,24 @@ class ApiService {
     return this.request('/auth/logout', {
       method: 'POST',
     });
+  }
+
+  /**
+   * Mettre à jour le profil utilisateur (nom, numéro de téléphone, etc.)
+   */
+  async updateProfile(data: {
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    phone_number?: string;
+  }): Promise<User> {
+    const user = await this.request<User>('/auth/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    AuthService.saveUser(user);
+    return user;
   }
 
   // ===== PLANS ET ABONNEMENTS =====

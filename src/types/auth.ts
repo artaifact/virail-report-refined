@@ -7,6 +7,8 @@ export interface RegisterRequest {
   email: string;
   username: string;
   password: string;
+  phone: string;
+  phone_number?: string;
 }
 
 export interface AuthResponse {
@@ -19,6 +21,8 @@ export interface User {
   id: string | number;
   email: string;
   username: string;
+  phone?: string | null;
+  phone_number?: string | null;
   avatar_url?: string;
   is_admin?: boolean;
   onboarding_completed?: boolean;

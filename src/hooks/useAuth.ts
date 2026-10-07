@@ -103,17 +103,21 @@ export function useAuth() {
       
       const response = await AuthService.register(userData);
       
-      setAuthState({
-        user: response.user,
-        isAuthenticated: true,
-        isLoading: false,
-      });
+      if (response && response.user && response.access_token && response.access_token !== 'httponly-cookie') {
+        setAuthState({
+          user: response.user,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      } else {
+        setAuthState(prev => ({ ...prev, isLoading: false }));
+      }
 
       toast({
         title: "Inscription réussie",
-        description: `Bienvenue ${response.user.username}!`,
+        description: response.message || `Bienvenue ${userData.username} ! Veuillez vérifier votre email pour activer votre compte.`,
         variant: "success" as any,
-        duration: 3000,
+        duration: 4000,
       });
 
       return response;
@@ -128,6 +132,28 @@ export function useAuth() {
         duration: 5000,
       });
       
+      throw error;
+    }
+  }, []);
+
+  const resendVerification = useCallback(async (email: string) => {
+    try {
+      const response = await AuthService.resendVerification(email);
+      toast({
+        title: "Email envoyé",
+        description: response.message,
+        variant: "success" as any,
+        duration: 4000,
+      });
+      return response;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erreur lors de l'envoi de l'email";
+      toast({
+        title: "Erreur",
+        description: message,
+        variant: "destructive",
+        duration: 5000,
+      });
       throw error;
     }
   }, []);
@@ -226,5 +252,6 @@ export function useAuth() {
     loginWithGoogle,
     handleGoogleCallback,
     updateUser,
+    resendVerification,
   };
 } 

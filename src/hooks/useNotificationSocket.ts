@@ -68,7 +68,8 @@ export function useNotificationSocket() {
         return;
       }
 
-      const wsUrl = `${getWsBaseUrl()}/api/v1/notifications/ws`;
+      const tokenParam = token && token !== 'httponly-cookie' ? `?token=${encodeURIComponent(token)}` : '';
+      const wsUrl = `${getWsBaseUrl()}/api/v1/notifications/ws${tokenParam}`;
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {

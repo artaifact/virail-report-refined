@@ -21,6 +21,7 @@ import {
   ChevronRight,
   DollarSign,
   Mail,
+  BookOpen,
 } from 'lucide-react';
 import {
   Select,

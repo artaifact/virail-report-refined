@@ -1,3 +1,4 @@
+import { AuthService } from "@/services/authService";
 // Couche d'adaptation entre le moteur Agentic Market Intelligence (écrit pour Next.js) et l'application virail
 // (Vite + React Router) : liens, navigation, chargement des données, appels API authentifiés par cookie.
 
@@ -25,7 +26,17 @@ export function notFound(): never {
 
 /** fetch vers l'API du moteur, avec le cookie de session de virail. */
 export function miFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(`${MI_API}${path}`, { credentials: "include", cache: "no-store", ...init });
+  const token = AuthService.getAccessToken?.() || localStorage.getItem("access_token") || localStorage.getItem("token");
+  const headers = new Headers(init.headers || {});
+  if (token && token !== "httponly-cookie" && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return fetch(`${MI_API}${path}`, {
+    credentials: "include",
+    cache: "no-store",
+    ...init,
+    headers,
+  });
 }
 
 // --- Liens et navigation ------------------------------------------------------------------------------------------
@@ -80,13 +91,37 @@ export interface Loaded<T> {
  * Charge les données d'une page. Elles sont rechargées quand `deps` change ou après `router.refresh()` ; les anciennes
  * restent affichées pendant le rechargement (pas de clignotement après une action).
  */
-export function useLoader<T>(load: () => Promise<T>, deps: unknown[]): Loaded<T> {
-  const [state, setState] = useState<Loaded<T>>({ data: null, error: null, notFound: false, loading: true });
+const SWR_CACHE = new Map<string, { data: unknown; ts: number }>();
+
+export function clearClientCache(): void {
+  SWR_CACHE.clear();
+}
+
+/**
+ * Charge les données d'une page avec cache mémoire SWR (Stale-While-Revalidate).
+ * - Si les données sont déjà en mémoire, elles s'affichent instantanément (0 ms) sans écran blanc.
+ * - Le rafraîchissement se fait en arrière-plan de manière totalement fluide.
+ */
+export function useLoader<T>(load: () => Promise<T>, deps: unknown[], customKey?: string): Loaded<T> {
+  const { pathname, search } = useLocation();
+  const cacheKey = customKey ? `${customKey}:${JSON.stringify(deps)}` : `${pathname}${search}:${JSON.stringify(deps)}`;
+  const cached = SWR_CACHE.get(cacheKey);
+  const initialData = cached ? (cached.data as T) : null;
+
+  const [state, setState] = useState<Loaded<T>>({
+    data: initialData,
+    error: null,
+    notFound: false,
+    loading: !initialData,
+  });
   const [tick, setTick] = useState(version);
   const latest = useRef(0);
 
   useEffect(() => {
-    const onRefresh = () => setTick(version);
+    const onRefresh = () => {
+      clearClientCache();
+      setTick((v) => v + 1);
+    };
     listeners.add(onRefresh);
     return () => void listeners.delete(onRefresh);
   }, []);
@@ -94,13 +129,22 @@ export function useLoader<T>(load: () => Promise<T>, deps: unknown[]): Loaded<T>
   const run = useCallback(load, deps); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const id = ++latest.current;
-    setState((s) => ({ ...s, loading: true }));
+    const entry = SWR_CACHE.get(cacheKey);
+    // Ne passer en loading que si on n'a absolument aucune donnée en cache
+    if (!entry) {
+      setState((s) => ({ ...s, loading: true }));
+    }
     run().then(
-      (data) => id === latest.current && setState({ data, error: null, notFound: false, loading: false }),
+      (data) => {
+        SWR_CACHE.set(cacheKey, { data, ts: Date.now() });
+        if (id === latest.current) {
+          setState({ data, error: null, notFound: false, loading: false });
+        }
+      },
       (error: Error) => id === latest.current &&
         setState({ data: null, error, notFound: error instanceof NotFoundError, loading: false }),
     );
-  }, [run, tick]);
+  }, [run, tick, cacheKey]);
 
   return state;
 }

@@ -4,21 +4,23 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, CheckCircle, Clock, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, Clock, Loader2, Phone, Mail, Send } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { RegisterRequest } from '@/types/auth';
+import { AuthService } from '@/services/authService';
 import { PasswordInput } from '@/components/PasswordInput';
 import { RateLimitBanner } from '@/components/RateLimitBanner';
 import { useRateLimit } from '@/hooks/useRateLimit';
 import { PasswordValidationResult } from '@/utils/passwordValidation';
 
 const registerSchema = z.object({
-  email: z.string().email('Veuillez entrer une adresse email valide (ex: nom@domaine.com)'),
+  email: z.string().email('Veuillez entrer une adresse email valide'),
   username: z.string().min(2, 'Le nom d\'utilisateur doit contenir au moins 2 caractères'),
+  phone: z.string().min(1, 'Le numéro de téléphone est obligatoire').min(6, 'Veuillez saisir un numéro de téléphone valide (au moins 6 caractères)').max(30, 'Numéro de téléphone trop long'),
   password: z.string().min(12, 'Le mot de passe doit contenir au moins 12 caractères'),
   confirmPassword: z.string().min(1, 'Veuillez confirmer votre mot de passe'),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -32,7 +34,10 @@ export default function Register() {
   usePageTitle('Inscription');
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [countdown, setCountdown] = useState(5);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [isResending, setIsResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(10);
   const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult | null>(null);
   const { register: registerUser, isLoading } = useAuthContext();
   const { rateLimitState, handleRateLimitError, isRateLimited } = useRateLimit();
@@ -43,6 +48,7 @@ export default function Register() {
     defaultValues: {
       email: '',
       username: '',
+      phone: '',
       password: '',
       confirmPassword: '',
     },
@@ -64,6 +70,20 @@ export default function Register() {
     }
   }, [countdown, showSuccessMessage, navigate]);
 
+  const handleResend = async () => {
+    if (!registeredEmail || isResending) return;
+    try {
+      setIsResending(true);
+      setResendStatus(null);
+      const res = await AuthService.resendVerification(registeredEmail);
+      setResendStatus(res.message || 'Email de confirmation renvoyé !');
+    } catch (err: any) {
+      setResendStatus(err?.message || "Erreur lors de l'envoi de l'email");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   const onSubmit = async (data: RegisterFormData) => {
     // Vérifier la validation du mot de passe
     if (passwordValidation && !passwordValidation.isValid) {
@@ -72,11 +92,12 @@ export default function Register() {
 
     try {
       const { confirmPassword, ...registerData } = data;
+      setRegisteredEmail(data.email);
       await registerUser(registerData);
 
       // Afficher le message de succès
       setShowSuccessMessage(true);
-      setCountdown(5);
+      setCountdown(10);
 
       // Réinitialiser le formulaire
       form.reset();
@@ -106,24 +127,63 @@ export default function Register() {
                 {showSuccessMessage ? (
                   <div className="space-y-6 text-center">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500/10 rounded-full mb-2">
-                      <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                      <Mail className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <h2 className="text-2xl font-bold tracking-tight text-foreground">Compte créé avec succès</h2>
-                    <p className="text-sm text-muted-foreground">Vérifiez votre email et cliquez sur le lien pour activer votre compte.</p>
-                    <div className="p-3 bg-muted/50 rounded-lg border border-border">
-                      <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
-                        <Clock className="h-4 w-4" />
-                        <span>
-                          Redirection vers la connexion dans {countdown} seconde{countdown > 1 ? 's' : ''}...
-                        </span>
+                    <h2 className="text-2xl font-bold tracking-tight text-foreground">Vérifiez votre boîte mail</h2>
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        Un email contenant un lien d'activation a été envoyé à :
+                      </p>
+                      <p className="text-sm font-semibold text-foreground bg-muted py-1.5 px-3 rounded-md inline-block">
+                        {registeredEmail}
+                      </p>
+                      <p className="text-xs text-muted-foreground pt-1">
+                        Veuillez cliquer sur ce lien dans les prochaines 24 heures pour activer votre compte.
+                      </p>
+                    </div>
+
+                    {resendStatus && (
+                      <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-xs text-primary font-medium">
+                        {resendStatus}
                       </div>
+                    )}
+
+                    <div className="space-y-2 pt-2">
+                      <Button
+                        type="button"
+                        onClick={() => navigate('/login', { replace: true })}
+                        className="w-full h-11"
+                      >
+                        Aller à la connexion
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleResend}
+                        disabled={isResending}
+                        className="w-full h-11 text-xs"
+                      >
+                        {isResending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Envoi en cours...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="h-3.5 w-3.5 mr-2" />
+                            Renvoyer l'email de confirmation
+                          </>
+                        )}
+                      </Button>
                     </div>
-                    <Button
-                      onClick={() => navigate('/login', { replace: true })}
-                      className="w-full h-11"
-                    >
-                      Aller à la page de connexion maintenant
-                    </Button>
+
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs pt-2">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>
+                        Redirection automatique vers la connexion dans {countdown}s...
+                      </span>
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -151,7 +211,7 @@ export default function Register() {
                               <FormControl>
                                 <Input
                                   type="email"
-                                  placeholder="vous@entreprise.com"
+                                  placeholder="vous@exemple.com"
                                   className="h-11"
                                   {...field}
                                 />
@@ -174,6 +234,28 @@ export default function Register() {
                                   type="text"
                                   placeholder="Votre nom d'utilisateur"
                                   className="h-11"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs font-semibold text-foreground">
+                                Numéro de téléphone <span className="text-destructive">*</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="tel"
+                                  placeholder="+33 6 12 34 56 78"
+                                  className="h-11"
+                                  required
                                   {...field}
                                 />
                               </FormControl>

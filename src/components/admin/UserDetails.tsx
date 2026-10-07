@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, User, Mail, Calendar, Shield, CheckCircle, XCircle, Activity, UserX, UserCheck, Trash2, Edit, Key, UserMinus, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Mail, Calendar, Shield, CheckCircle, XCircle, Activity, UserX, UserCheck, Trash2, Edit, Key, UserMinus, Loader2, Phone } from 'lucide-react';
 import { AdminService } from '@/services/adminService';
 import { AdminUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
@@ -324,6 +324,13 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ userId, onBack, classN
                   <p className="text-lg font-semibold flex items-center gap-2">
                     <Mail className="h-4 w-4" />
                     {user.email}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Numéro de téléphone</label>
+                  <p className="text-lg font-semibold flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    {user.phone_number || user.phone || <span className="text-sm text-muted-foreground italic font-normal">Non renseigné</span>}
                   </p>
                 </div>
                 <div>

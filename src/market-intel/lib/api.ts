@@ -2,7 +2,6 @@
 
 import { miFetch, NotFoundError } from "../compat";
 
-
 export type Level = "OBSERVED" | "DECLARED" | "ESTIMATED";
 
 export interface MarketSummary {
@@ -142,7 +141,7 @@ export interface Overview {
     added_capabilities_30d: number;
     new_entrants_30d: number;
   };
-  companies: { id: string; name: string; role: string; followed?: boolean; domain?: string | null; readiness: Readiness; visibility: Visibility; trend?: Trend; buzz?: Buzz }[];
+  companies: { id: string; name: string; role: string; followed?: boolean; domain?: string | null; readiness: Readiness; visibility: Visibility; trend?: Trend; buzz?: Buzz; data?: DataState }[];
   score_method?: { version: string; note: string };
   visibility_meta: VisibilityMeta;
   activity: MarketEvent[];
@@ -254,8 +253,16 @@ export interface Attention extends Buzz {
   measured_at: string;
 }
 
+/** Fiabilité d'une note : relevé incomplet (provisoire), données contradictoires (en vérification). */
+export interface DataState {
+  complete: boolean | null;
+  under_review: string[];
+}
+
 export interface CompanyProfile {
+  data?: DataState;
   attention: Attention | null;
+  marketing: Marketing | null;
   viewer: { followed: boolean; mine: boolean };
   company: { id: string; name: string; domain: string | null; description: string | null; website: string | null };
   market: { id: string; name: string };
@@ -297,14 +304,168 @@ export interface Health {
   web_search: string | null;
 }
 
-export async function api<T>(path: string): Promise<T> {
-  const res = await miFetch(path);
-  if (res.status === 404) {
-    // « Not Found » nu = route absente (backend pas à jour) ; un autre message = marché ou acteur inconnu
-    const detail = await res.json().then((b) => b?.detail, () => null);
-    if (detail && detail !== "Not Found") throw new NotFoundError();
-    throw new Error("le module Market Intelligence n'est pas disponible sur ce backend (404) : mettez-le à jour et redémarrez-le");
+const apiCache = new Map<string, { data: unknown; ts: number }>();
+const inFlightRequests = new Map<string, Promise<unknown>>();
+const API_CACHE_TTL = 90_000; // 90 secondes de cache en mémoire
+
+export function clearApiCache(): void {
+  apiCache.clear();
+  inFlightRequests.clear();
+}
+
+export async function api<T>(path: string, options?: { forceRefresh?: boolean }): Promise<T> {
+  const now = Date.now();
+  if (!options?.forceRefresh) {
+    const cached = apiCache.get(path);
+    if (cached && now - cached.ts < API_CACHE_TTL) {
+      return cached.data as T;
+    }
+    const inFlight = inFlightRequests.get(path);
+    if (inFlight) {
+      return inFlight as Promise<T>;
+    }
   }
-  if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
-  return res.json() as Promise<T>;
+
+  const promise = (async () => {
+    try {
+      const res = await miFetch(path);
+      if (res.status === 404) throw new NotFoundError();
+      if (!res.ok) throw new Error(`API ${path} → ${res.status}`);
+      const data = (await res.json()) as T;
+      apiCache.set(path, { data, ts: Date.now() });
+      return data;
+    } finally {
+      inFlightRequests.delete(path);
+    }
+  })();
+
+  inFlightRequests.set(path, promise);
+  return promise;
+}
+
+export const apiCached = api;
+
+
+/** Catalogues d'agents : plugins ChatGPT et connecteurs Claude, même hors des marchés suivis. */
+export interface CatalogStore {
+  store: string;
+  total: number;
+  with_mcp_url: number;
+  last_seen: string | null;
+  categories: { name: string; count: number }[];
+}
+
+export interface CatalogEvent {
+  type: "CATALOG_ADDED" | "CATALOG_REMOVED";
+  at: string;
+  store: string;
+  name: string;
+  category: string | null;
+}
+
+export interface CatalogOverview {
+  stores: CatalogStore[];
+  recent: CatalogEvent[];
+}
+
+export interface CatalogEntryRow {
+  id: number;
+  store: string;
+  name: string;
+  tagline: string | null;
+  developer: string | null;
+  category: string | null;
+  url: string | null;
+  website: string | null;
+  mcp_url: string | null;
+  capabilities: string[];
+  tools: number;
+  skills: number;
+  company_id: string | null;
+  added: string | null;
+  first_seen: string;
+}
+
+export interface CatalogCoverageRow {
+  market_id: string;
+  market: string;
+  measured: boolean;
+  tracked: number;
+  tracked_in_catalogs: number;
+  tracked_by_store: Record<string, number>;
+  neighbors: number;
+  neighbors_by_store: Record<string, number>;
+  sample: { store: string; name: string; developer: string | null }[];
+  /** apps qui servent le marché dans les stores d'agents (acteurs suivis compris), et le niveau qui en découle */
+  apps?: number;
+  apps_by_store?: Record<string, number>;
+  place?: { key: "libre" | "disputee" | "saturee"; label: string };
+  place_cuts?: [number, number];
+  method?: "ia" | "mots-clés";
+  leaders_absent?: { id: string; name: string; domain: string | null; score: number }[];
+  leaders_present?: { id: string; name: string; domain: string | null; score: number }[];
+}
+
+
+
+/** Plugins et connecteurs d'un marché : ceux des acteurs suivis, puis leurs voisins dans les annuaires. */
+export interface MarketCatalogEntry {
+  id: number;
+  kind: "tracked" | "neighbor";
+  store: string;
+  name: string;
+  tagline: string | null;
+  developer: string | null;
+  category: string | null;
+  url: string | null;
+  tools: number;
+  mcp_url: string | null;
+  company_id: string | null;
+  company: string | null;
+  added: string | null;
+}
+
+export interface MarketCatalog {
+  total: number;
+  tracked: number;
+  by_store: Record<string, number>;
+  entries: MarketCatalogEntry[];
+}
+
+/** Un relevé publicitaire d'une régie, avec son historique (un point par relevé). */
+export interface AdsReading {
+  day: string;
+  count: number;
+  approx: boolean;
+  advertisers: string[];
+  own_advertiser: boolean;
+  landing_match?: number | null;
+  history: { day: string; count: number }[];
+}
+
+/** Effort publicitaire d'un acteur : annonces qui pointent vers son domaine (Google Ads Transparency) ou qui le
+ *  mentionnent (bibliothèque publicitaire Meta). Une régie sans relevé est absente. */
+export interface Marketing {
+  google_ads?: AdsReading;
+  meta_ads?: AdsReading;
+  sources: { google_ads?: string; meta_ads?: string };
+}
+
+/** Qualité des données d'un marché : le maillon le plus faible décide du verdict. */
+export interface QualityCard {
+  market: string;
+  name: string;
+  tracked: number;
+  completeness: number | null;
+  actions_known: number | null;
+  golden: number | null;
+  golden_facts: number;
+  golden_wrong: { company: string; kind: string; expected: boolean; observed: boolean; source: string; note: string }[];
+  incomplete: string[];
+  without_actions: string[];
+  weakest: number | null;
+  verdict: "fiable" | "à consolider" | "non vérifié" | "fragile" | "non mesuré";
+  target: number;
+  /** évolution du maillon le plus faible sur 7 jours (null tant qu'il n'y a pas une semaine de mesures) */
+  trend?: number | null;
 }

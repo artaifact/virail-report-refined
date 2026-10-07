@@ -24,6 +24,8 @@ import {
   Info,
   Pencil,
   X,
+  Phone,
+  Save,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -65,6 +67,8 @@ interface UserProfile {
   email: string;
   username: string;
   id: number;
+  phone?: string | null;
+  phone_number?: string | null;
   is_active: boolean;
   is_verified: boolean;
   is_admin: boolean;
@@ -247,6 +251,8 @@ const Settings = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<StripeInvoice | null>(null);
   const [lastInvoiceId, setLastInvoiceId] = useState<string | undefined>();
   const [accountData, setAccountData] = useState<{
@@ -257,6 +263,8 @@ const Settings = () => {
     brand_url?: string;
     location_country?: string;
     location_country_code?: string;
+    phone?: string;
+    phone_number?: string;
     onboarding_step?: string;
   } | null>(null);
   const [isAccountDataLoading, setIsAccountDataLoading] = useState(true);
@@ -266,6 +274,7 @@ const Settings = () => {
   const [editBrandUrl, setEditBrandUrl] = useState("");
   const [editAgencyName, setEditAgencyName] = useState("");
   const [editAgencyUrl, setEditAgencyUrl] = useState("");
+  const [editPhoneNumber, setEditPhoneNumber] = useState("");
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [isEditingAccount, setIsEditingAccount] = useState(false);
 
@@ -290,6 +299,11 @@ const Settings = () => {
             setFirstName(profile.username);
           }
         }
+        if (profile.phone || profile.phone_number) {
+          const num = profile.phone || profile.phone_number || "";
+          setPhoneNumber(num);
+          setEditPhoneNumber(prev => prev || num);
+        }
       } catch (err) {
       }
     };
@@ -300,10 +314,16 @@ const Settings = () => {
     const loadAccountData = async () => {
       try {
         const apiBase = import.meta.env.DEV ? "" : (import.meta.env.VITE_API_BASE_URL || "https://api.viraill.com");
+        const accessToken = AuthService.getAccessToken();
+        const accountHeaders: Record<string, string> = {};
+        if (accessToken && accessToken !== "httponly-cookie") {
+          accountHeaders["Authorization"] = `Bearer ${accessToken}`;
+        }
         const [res, onboardingStatus] = await Promise.all([
           fetch(`${apiBase}/auth/user/onboarding/account-data`, {
             method: "GET",
             credentials: "include",
+            headers: accountHeaders,
           }),
           onboardingService.getOnboardingStatus().catch(() => null),
         ]);
@@ -320,6 +340,11 @@ const Settings = () => {
           setEditBrandUrl(data.brand_url || "");
           setEditAgencyName(data.agency_name || "");
           setEditAgencyUrl(data.agency_url || "");
+          if (data.phone_number || data.phone) {
+            const num = data.phone_number || data.phone || "";
+            setEditPhoneNumber(num);
+            setPhoneNumber(prev => prev || num);
+          }
         }
       } catch {
       } finally {
@@ -346,6 +371,41 @@ const Settings = () => {
     }
   };
 
+  const handleSaveProfile = async () => {
+    setIsSavingProfile(true);
+    try {
+      const trimmedPhone = phoneNumber.trim();
+      const updatedUser = await AuthService.updateProfile({
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        phone: trimmedPhone,
+        phone_number: trimmedPhone,
+      });
+
+      setUserProfile(prev => prev ? {
+        ...prev,
+        username: updatedUser.username || (firstName.trim() ? `${firstName.trim()} ${lastName.trim()}`.trim() : prev.username),
+        phone: updatedUser.phone || trimmedPhone,
+        phone_number: updatedUser.phone_number || trimmedPhone,
+      } : prev);
+
+      setEditPhoneNumber(trimmedPhone);
+      toast({
+        title: "Profil mis à jour",
+        description: "Vos informations personnelles ont été enregistrées avec succès.",
+      });
+    } catch (err: any) {
+      const msg = err instanceof Error ? err.message : "Impossible de mettre à jour le profil";
+      toast({
+        title: "Erreur",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   const handleSaveAccountData = async () => {
     if (!accountData) return;
     setIsSavingAccount(true);
@@ -354,6 +414,8 @@ const Settings = () => {
       const payload: Record<string, string> = {
         brand_name: editBrandName,
         brand_url: editBrandUrl,
+        phone_number: editPhoneNumber,
+        phone: editPhoneNumber,
       };
       if (accountData.account_type === "agency") {
         payload.agency_name = editAgencyName;
@@ -375,7 +437,10 @@ const Settings = () => {
         brand_url: editBrandUrl,
         agency_name: editAgencyName,
         agency_url: editAgencyUrl,
+        phone_number: editPhoneNumber,
+        phone: editPhoneNumber,
       } : prev);
+      setPhoneNumber(editPhoneNumber);
       setIsEditingAccount(false);
       toast({ title: "Informations mises à jour", description: "Vos informations ont été enregistrées." });
     } catch (err) {
@@ -391,6 +456,7 @@ const Settings = () => {
     setEditBrandUrl(accountData?.brand_url || "");
     setEditAgencyName(accountData?.agency_name || "");
     setEditAgencyUrl(accountData?.agency_url || "");
+    setEditPhoneNumber(accountData?.phone_number || accountData?.phone || phoneNumber || "");
     setIsEditingAccount(false);
   };
 
@@ -472,11 +538,45 @@ const Settings = () => {
                   />
                 </div>
 
+                <div className="space-y-1.5">
+                  <Label htmlFor="phoneNumber" className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                    Numéro de téléphone
+                  </Label>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => {
+                      setPhoneNumber(e.target.value);
+                      setEditPhoneNumber(e.target.value);
+                    }}
+                    placeholder="+33 6 12 34 56 78"
+                    className="text-sm"
+                  />
+                </div>
+
                 {dashboard?.member_since && (
                   <p className="text-xs text-muted-foreground pt-1">
                     Membre depuis {formatDate(dashboard.member_since)}
                   </p>
                 )}
+
+                <div className="pt-2">
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={isSavingProfile}
+                    size="sm"
+                    className="w-full sm:w-auto text-xs font-semibold gap-1.5"
+                  >
+                    {isSavingProfile ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Save className="h-3.5 w-3.5" />
+                    )}
+                    {isSavingProfile ? "Enregistrement..." : "Enregistrer les modifications"}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -742,6 +842,25 @@ const Settings = () => {
                         />
                       </div>
                     )}
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="accountPhone" className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                        Numéro de téléphone
+                      </Label>
+                      <Input
+                        id="accountPhone"
+                        type="tel"
+                        value={editPhoneNumber}
+                        onChange={(e) => {
+                          setEditPhoneNumber(e.target.value);
+                          setPhoneNumber(e.target.value);
+                        }}
+                        placeholder="+33 6 12 34 56 78"
+                        disabled={!isEditingAccount}
+                        className={!isEditingAccount ? "bg-muted/40 text-muted-foreground text-sm" : "text-sm"}
+                      />
+                    </div>
 
                     <div className="space-y-1.5">
                       <Label htmlFor="brandName" className="text-xs font-medium text-foreground">Marque</Label>

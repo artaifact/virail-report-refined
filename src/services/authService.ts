@@ -178,7 +178,7 @@ export class AuthService {
     return fetch(`${API_BASE_URL}/auth/login`, requestOptions);
   }
 
-  static async register(userData: RegisterRequest): Promise<AuthResponse> {
+  static async register(userData: RegisterRequest): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       credentials: 'include',
@@ -200,22 +200,47 @@ export class AuthService {
 
     const data = await response.json();
     
-    const user: User = {
-      id: String(userData.username),
-      email: userData.email,
-      username: userData.username
+    // Si des vrais tokens sont renvoyés (ex: auto-login ultérieur)
+    if (data.access_token && data.access_token !== 'httponly-cookie') {
+      const user: User = {
+        id: String(data.id || userData.username),
+        email: data.email || userData.email,
+        username: data.username || userData.username,
+        phone: data.phone || userData.phone,
+        phone_number: data.phone_number || userData.phone_number
+      };
+      this.saveTokens(data.access_token, data.refresh_token);
+      this.saveUser(user);
+    }
+    
+    return data;
+  }
+
+  /**
+   * Renvoyer un email de vérification
+   */
+  static async resendVerification(email: string): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(`${API_BASE_URL}/auth/resend-verification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const errorMsg =
+        (typeof data.detail === 'string' ? data.detail : null) ||
+        data.message ||
+        `Impossible de renvoyer l\'email (${response.status})`;
+      throw new Error(errorMsg);
+    }
+
+    return {
+      success: true,
+      message: data.message || 'Email de confirmation renvoyé avec succès.'
     };
-    
-    const authResponse: AuthResponse = {
-      access_token: data.access_token || 'httponly-cookie',
-      refresh_token: data.refresh_token || 'httponly-cookie',
-      user: user
-    };
-    
-    this.saveTokens(authResponse.access_token, authResponse.refresh_token);
-    this.saveUser(authResponse.user);
-    
-    return authResponse;
   }
 
   static async loginWithGoogle(): Promise<void> {
@@ -745,41 +770,87 @@ export class AuthService {
   }
 
   /**
-   * Récupère les données du profil utilisateur depuis le localStorage
+   * Récupère les données du profil utilisateur (tente /auth/me ou repli localStorage)
    */
   static async getUserProfile(): Promise<{
     email: string;
     username: string;
     id: number;
+    phone?: string | null;
+    phone_number?: string | null;
     is_active: boolean;
     is_verified: boolean;
     is_admin: boolean;
     created_at: string;
   }> {
     try {
-      
-      const userData = this.getUser();
+      let freshUser: User | null = null;
+      try {
+        const resp = await fetch(`${API_BASE_URL}/auth/me`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (resp.ok) {
+          freshUser = await resp.json();
+          if (freshUser) {
+            this.saveUser(freshUser);
+          }
+        }
+      } catch {}
+
+      const userData = freshUser || this.getUser();
       if (!userData) {
-        throw new Error('Données utilisateur non trouvées dans localStorage');
+        throw new Error("Données utilisateur non trouvées dans localStorage");
       }
 
-
-      // Mapper les données du localStorage vers le format attendu
+      // Mapper les données vers le format attendu
       const userProfile = {
-        email: userData.email || 'Non défini',
-        username: userData.username || 'Non défini',
+        email: userData.email || "Non défini",
+        username: userData.username || "Non défini",
         id: Number(userData.id) || 0,
+        phone: userData.phone || userData.phone_number || null,
+        phone_number: userData.phone_number || userData.phone || null,
         is_active: true, // Par défaut si authentifié
         is_verified: true, // Par défaut si authentifié
         is_admin: userData.is_admin || false,
         created_at: (userData as any).created_at || new Date().toISOString()
       };
 
-      
       return userProfile;
     } catch (error) {
       throw error;
     }
+  }
+
+  /**
+   * Met à jour le profil utilisateur (nom, téléphone, etc.)
+   */
+  static async updateProfile(data: {
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    phone_number?: string;
+  }): Promise<User> {
+    const accessToken = this.getAccessToken();
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken && accessToken !== "httponly-cookie" ? { "Authorization": `Bearer ${accessToken}` } : {}),
+      },
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => null);
+      throw new Error(err?.detail?.message || err?.detail || "Erreur lors de la mise à jour du profil");
+    }
+
+    const updatedUser: User = await response.json();
+    this.saveUser(updatedUser);
+    return updatedUser;
   }
 
   /**
@@ -796,6 +867,9 @@ export class AuthService {
     const data = await response.json().catch(() => ({}));
 
     if (response.ok) {
+      if (data.access_token && data.refresh_token) {
+        this.saveTokens(data.access_token, data.refresh_token);
+      }
       return { success: true, message: data.message || 'Email vérifié avec succès' };
     }
 

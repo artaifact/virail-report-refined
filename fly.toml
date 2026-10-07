@@ -1,4 +1,4 @@
-app = 'virail-app'
+app = 'virail-front-prod'
 primary_region = 'cdg'
 
 [build]

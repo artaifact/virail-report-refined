@@ -157,6 +157,47 @@ export class AdminService {
   }
 
   /**
+   * Exporte tous les utilisateurs en format Excel (.xlsx)
+   */
+  static async exportUsersToExcel(filters?: AdminUserFilters): Promise<void> {
+    const searchParams = new URLSearchParams();
+    if (filters) {
+      if (filters.is_active !== undefined) searchParams.append("is_active", filters.is_active.toString());
+      if (filters.is_admin !== undefined) searchParams.append("is_admin", filters.is_admin.toString());
+      if (filters.is_verified !== undefined) searchParams.append("is_verified", filters.is_verified.toString());
+      if (filters.approval_status) searchParams.append("approval_status", filters.approval_status);
+    }
+
+    const queryStr = searchParams.toString();
+    const endpoint = `/admin/users/export/excel${queryStr ? `?${queryStr}` : ""}`;
+    const accessToken = AuthService.getAccessToken();
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        ...(accessToken && accessToken !== "httponly-cookie" ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => null);
+      throw new Error(err?.detail || `Erreur d'exportation: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const now = new Date().toISOString().slice(0, 10);
+    a.download = `utilisateurs_virail_${now}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
+
+  /**
    * GET /admin/users/pending - Liste des utilisateurs en attente d'approbation
    */
   static async getPendingUsers(

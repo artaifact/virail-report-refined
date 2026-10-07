@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { AuthService } from '@/services/authService';
 import { LoginRequest } from '@/types/auth';
 import { RateLimitBanner } from '@/components/RateLimitBanner';
 import { useRateLimit } from '@/hooks/useRateLimit';
@@ -22,6 +23,9 @@ const loginSchema = z.object({
 export default function Login() {
   usePageTitle('Connexion');
   const [showPassword, setShowPassword] = useState(false);
+  const [unverifiedNotice, setUnverifiedNotice] = useState<string | null>(null);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
   const { login, isLoading } = useAuthContext();
   const { rateLimitState, handleRateLimitError, isRateLimited } = useRateLimit();
   const navigate = useNavigate();
@@ -40,17 +44,37 @@ export default function Login() {
 
   const onSubmit = async (data: LoginRequest) => {
     try {
+      setUnverifiedNotice(null);
+      setResendStatus(null);
       await login(data);
 
       // Petit délai pour permettre à l'état d'authentification de se propager
       setTimeout(() => {
         navigate(from, { replace: true });
       }, 100);
-    } catch (error) {
+    } catch (error: any) {
+      const msg = error?.message || '';
+      if (msg.includes('pas encore vérifiée') || msg.includes('vérifier votre boîte') || msg.includes('email non vérifié')) {
+        setUnverifiedNotice(data.username);
+      }
       // Gérer le rate limiting
       if (!handleRateLimitError(error)) {
         // L'erreur est déjà gérée dans le hook useAuth
       }
+    }
+  };
+
+  const handleResendForLogin = async () => {
+    if (!unverifiedNotice || isResending) return;
+    try {
+      setIsResending(true);
+      setResendStatus(null);
+      const res = await AuthService.resendVerification(unverifiedNotice);
+      setResendStatus(res.message || 'Email de confirmation renvoyé !');
+    } catch (err: any) {
+      setResendStatus(err?.message || "Erreur lors de l'envoi de l'email");
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -77,6 +101,47 @@ export default function Login() {
                     Accédez à votre tableau de bord Viraill
                   </p>
                 </div>
+
+                {unverifiedNotice && (
+                  <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left space-y-2">
+                    <div className="flex items-start gap-2.5">
+                      <Mail className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                          Compte en attente de vérification
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Votre adresse email n'a pas encore été validée. Cliquez ci-dessous pour recevoir un nouveau lien d'activation.
+                        </p>
+                      </div>
+                    </div>
+                    {resendStatus && (
+                      <p className="text-xs text-primary font-medium pt-1">
+                        {resendStatus}
+                      </p>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResendForLogin}
+                      disabled={isResending}
+                      className="w-full text-xs h-9 mt-2"
+                    >
+                      {isResending ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+                          Envoi...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-3.5 w-3.5 mr-1.5" />
+                          Renvoyer l'email d'activation
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
 
                 {/* Formulaire */}
                 <Form {...form}>

@@ -9,6 +9,7 @@ interface AuthContextType extends AuthState {
   loginWithGoogle: () => Promise<void>;
   handleGoogleCallback: () => Promise<any>;
   updateUser: (user: User) => void;
+  resendVerification?: (email: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
