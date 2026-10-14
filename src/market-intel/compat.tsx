@@ -87,6 +87,8 @@ export interface Loaded<T> {
   loading: boolean;
 }
 
+type KeyedLoaded<T> = Loaded<T> & { key: string };
+
 /**
  * Charge les données d'une page. Elles sont rechargées quand `deps` change ou après `router.refresh()` ; les anciennes
  * restent affichées pendant le rechargement (pas de clignotement après une action).
@@ -105,15 +107,14 @@ export function clearClientCache(): void {
 export function useLoader<T>(load: () => Promise<T>, deps: unknown[], customKey?: string): Loaded<T> {
   const { pathname, search } = useLocation();
   const cacheKey = customKey ? `${customKey}:${JSON.stringify(deps)}` : `${pathname}${search}:${JSON.stringify(deps)}`;
-  const cached = SWR_CACHE.get(cacheKey);
-  const initialData = cached ? (cached.data as T) : null;
-
-  const [state, setState] = useState<Loaded<T>>({
-    data: initialData,
-    error: null,
-    notFound: false,
-    loading: !initialData,
-  });
+  // l'état est rattaché à sa clé : en changeant de marché ou d'acteur, l'écran montre tout de suite les données en
+  // cache de la nouvelle clé, ou l'attente, au lieu de rester figé sur les données de la précédente
+  const fresh = (): KeyedLoaded<T> => {
+    const entry = SWR_CACHE.get(cacheKey);
+    return { key: cacheKey, data: entry ? (entry.data as T) : null, error: null, notFound: false, loading: !entry };
+  };
+  const [stored, setState] = useState<KeyedLoaded<T>>(fresh);
+  const state = stored.key === cacheKey ? stored : fresh();
   const [tick, setTick] = useState(version);
   const latest = useRef(0);
 
@@ -130,19 +131,22 @@ export function useLoader<T>(load: () => Promise<T>, deps: unknown[], customKey?
   useEffect(() => {
     const id = ++latest.current;
     const entry = SWR_CACHE.get(cacheKey);
-    // Ne passer en loading que si on n'a absolument aucune donnée en cache
+    // Ne passer en loading que si on n'a absolument aucune donnée en cache ; sur la même clé (après une action), les
+    // données affichées restent pendant le rechargement
     if (!entry) {
-      setState((s) => ({ ...s, loading: true }));
+      setState((s) => s.key === cacheKey
+        ? { ...s, loading: true }
+        : { key: cacheKey, data: null, error: null, notFound: false, loading: true });
     }
     run().then(
       (data) => {
         SWR_CACHE.set(cacheKey, { data, ts: Date.now() });
         if (id === latest.current) {
-          setState({ data, error: null, notFound: false, loading: false });
+          setState({ key: cacheKey, data, error: null, notFound: false, loading: false });
         }
       },
       (error: Error) => id === latest.current &&
-        setState({ data: null, error, notFound: error instanceof NotFoundError, loading: false }),
+        setState({ key: cacheKey, data: null, error, notFound: error instanceof NotFoundError, loading: false }),
     );
   }, [run, tick, cacheKey]);
 
