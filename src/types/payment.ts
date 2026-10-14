@@ -16,7 +16,7 @@ export interface Subscription {
   id: string;
   planId: string;
   userId: string;
-  status: 'active' | 'inactive' | 'cancelled' | 'pending';
+  status: 'active' | 'inactive' | 'cancelled' | 'pending' | 'trialing' | 'past_due' | 'unpaid';
   startDate: string;
   endDate: string;
   autoRenew: boolean;

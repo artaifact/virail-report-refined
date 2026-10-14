@@ -20,6 +20,7 @@ import {
   type MarketOntology,
   type Matrix,
   type Overview,
+  type MarketBundle,
 } from "../lib/api";
 import { buildGrid } from "../lib/grid";
 import { familyOf } from "../lib/families";
@@ -50,24 +51,37 @@ export default function MarketsHome() {
   const contentState = useLoader(async () => {
     if (!m) {
       const [land, cov] = await Promise.all([
-        api<LandscapeData>("/landscape"),
+        railState.data?.land || api<LandscapeData>("/landscape"),
         api<{ markets: CatalogCoverageRow[] }>("/catalog/coverage").catch(() => ({ markets: [] as CatalogCoverageRow[] })),
       ]);
       return { type: "landscape" as const, land, cov: cov.markets };
     } else {
-      const [o, matrix, onto, events, plugins, place] = await Promise.all([
-        api<Overview>(`/markets/${m}/overview`),
-        api<Matrix>(`/markets/${m}/matrix?provenance=official&include_api=false`),
-        api<MarketOntology>(`/markets/${m}/ontology`),
-        api<MarketEvent[]>(`/markets/${m}/events?include_baseline=false&limit=8`),
-        api<MarketCatalog>(`/markets/${m}/catalog`).catch(() => ({ total: 0, tracked: 0, by_store: {}, entries: [] }) as MarketCatalog),
-        api<{ markets: CatalogCoverageRow[] }>(`/catalog/coverage?market=${encodeURIComponent(m)}`)
-          .then((r) => r.markets[0])
-          .catch(() => undefined),
-      ]);
-      return { type: "market" as const, o, matrix, onto, events, plugins, place };
+      try {
+        const bundle = await api<MarketBundle>(`/markets/${m}/bundle`);
+        return {
+          type: "market" as const,
+          o: bundle.overview,
+          matrix: bundle.matrix,
+          onto: bundle.ontology,
+          events: bundle.events,
+          plugins: bundle.catalog,
+          place: bundle.place ?? undefined,
+        };
+      } catch {
+        const [o, matrix, onto, events, plugins, place] = await Promise.all([
+          api<Overview>(`/markets/${m}/overview`),
+          api<Matrix>(`/markets/${m}/matrix?provenance=official&include_api=false`),
+          api<MarketOntology>(`/markets/${m}/ontology`),
+          api<MarketEvent[]>(`/markets/${m}/events?include_baseline=false&limit=8`),
+          api<MarketCatalog>(`/markets/${m}/catalog`).catch(() => ({ total: 0, tracked: 0, by_store: {}, entries: [] }) as MarketCatalog),
+          api<{ markets: CatalogCoverageRow[] }>(`/catalog/coverage?market=${encodeURIComponent(m)}`)
+            .then((r) => r.markets[0])
+            .catch(() => undefined),
+        ]);
+        return { type: "market" as const, o, matrix, onto, events, plugins, place };
+      }
     }
-  }, [m], `content:${m || "landscape"}`);
+  }, [m, railState.data?.land], `content:${m || "landscape"}`);
 
   // Initial load : tant que le rail n'est pas prêt, on affiche le skeleton complet
   const railBlocked = guard(railState, "ws");

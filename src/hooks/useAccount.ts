@@ -18,7 +18,8 @@ export interface Subscription {
   plan_price: number;
   currency: string;
   interval: 'month' | 'year';
-  status: 'active' | 'inactive' | 'cancelled' | 'pending' | 'trialing';
+  status: 'active' | 'inactive' | 'cancelled' | 'pending' | 'trialing' | 'past_due' | 'unpaid';
+  is_past_due?: boolean;
   start_date: string;
   end_date: string;
   auto_renew: boolean;

@@ -12,6 +12,24 @@ import {
 const STORE_LABELS: Record<string, string> = { chatgpt: "ChatGPT", claude: "Claude", muse: "Muse" };
 const storeName = (s: string) => STORE_LABELS[s] ?? s;
 
+const decodeHtmlEntities = (str: string): string => {
+  if (!str) return "";
+  return str
+    .replace(/&#x27;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+};
+
+const normalizeCategory = (cat: string): string => {
+  if (!cat) return "";
+  const cleaned = decodeHtmlEntities(cat).trim();
+  // Normaliser la casse (titre propre sans doublons)
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+};
+
+
 export default function CatalogPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -42,7 +60,7 @@ export default function CatalogPage() {
   if (blocked) return blocked;
 
   const { overview, coverage, list } = state.data!;
-  const categories = [...new Set(overview.stores.flatMap((s) => s.categories.map((c) => c.name)))].sort();
+  const categories = [...new Set(overview.stores.flatMap((s) => s.categories.map((c) => normalizeCategory(c.name))))].filter(Boolean).sort((a, b) => a.localeCompare(b, 'fr'));
   const measured = coverage.markets.filter((m) => m.measured);
 
   const handleSearchSubmit = (e: React.FormEvent) => {

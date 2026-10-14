@@ -2,6 +2,16 @@ import { useState, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { apiService, Subscription, UsageLimitsResponse } from '@/services/apiService';
 
+// Cache module-level pour éviter les appels redondants entre composants simultanés (Chantier T5)
+let cachedPaymentData: {
+  plans: PaymentPlan[];
+  subscription: Subscription | null;
+  usage: UsageLimitsResponse | null;
+  timestamp: number;
+} | null = null;
+const CACHE_TTL_MS = 60_000; // 60 secondes
+let inFlightPromise: Promise<any> | null = null;
+
 export interface PaymentPlan {
   id: string;
   name: string;
@@ -28,9 +38,25 @@ export function usePayment() {
     }
 
     try {
-      if (isLoadingPaymentData) {
-        return; // éviter les appels concurrents
+      if (cachedPaymentData && (Date.now() - cachedPaymentData.timestamp < CACHE_TTL_MS)) {
+        setPlans(cachedPaymentData.plans);
+        setSubscription(cachedPaymentData.subscription);
+        setUsage(cachedPaymentData.usage);
+        setLoading(false);
+        return;
       }
+
+      if (inFlightPromise) {
+        await inFlightPromise;
+        if (cachedPaymentData) {
+          setPlans(cachedPaymentData.plans);
+          setSubscription(cachedPaymentData.subscription);
+          setUsage(cachedPaymentData.usage);
+        }
+        setLoading(false);
+        return;
+      }
+
       setIsLoadingPaymentData(true);
       setLoading(true);
       setError(null);
@@ -54,12 +80,20 @@ export function usePayment() {
       }
 
       // Charger l'utilisation
+      let fetchedUsage = null;
       try {
-        const usageData = await apiService.getUsageLimits();
-        setUsage(usageData);
+        fetchedUsage = await apiService.getUsageLimits();
+        setUsage(fetchedUsage);
       } catch (err) {
         setUsage(null);
       }
+
+      cachedPaymentData = {
+        plans: normalizedPlans,
+        subscription: subscriptionData?.subscription || null,
+        usage: fetchedUsage,
+        timestamp: Date.now(),
+      };
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');

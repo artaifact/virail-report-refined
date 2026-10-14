@@ -26,6 +26,8 @@ import {
   X,
   Phone,
   Save,
+  AlertTriangle,
+  Clock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -79,7 +81,9 @@ interface UserProfile {
 function SubscriptionStatusBadge({ status }: { status: string }) {
   const statusConfig: Record<string, { label: string; className: string }> = {
     active: { label: "Actif", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0 font-medium" },
-    trialing: { label: "Essai", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-0 font-medium" },
+    trialing: { label: "Essai gratuit", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-0 font-medium" },
+    past_due: { label: "Paiement rejeté", className: "bg-destructive/10 text-destructive border-0 font-medium" },
+    unpaid: { label: "Impayé", className: "bg-destructive/10 text-destructive border-0 font-medium" },
     cancelled: { label: "Annulé", className: "bg-destructive/10 text-destructive border-0 font-medium" },
     inactive: { label: "Inactif", className: "bg-muted text-muted-foreground border-0 font-medium" },
     pending: { label: "En attente", className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0 font-medium" },
@@ -593,6 +597,40 @@ const Settings = () => {
             <CardContent>
               {dashboard?.has_subscription && dashboard.subscription ? (
                 <div className="space-y-4">
+                  {/* Alerte paiement rejeté / restriction */}
+                  {(dashboard.subscription.status === 'past_due' || dashboard.subscription.status === 'unpaid' || dashboard.subscription.is_past_due) && (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-destructive/10 border border-destructive/20 rounded-xl text-xs text-destructive">
+                      <div className="flex items-start gap-2.5">
+                        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+                        <div>
+                          <p className="font-semibold text-destructive">Dernier prélèvement refusé — Accès restreint</p>
+                          <p className="text-muted-foreground mt-0.5">
+                            Votre carte a été refusée ou vos fonds sont insuffisants. Vos avantages sont suspendus. Veuillez régulariser votre moyen de paiement pour réactiver vos accès.
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handleOpenBillingPortal}
+                        size="sm"
+                        variant="destructive"
+                        className="shrink-0 text-xs h-7 font-semibold"
+                        disabled={billingPortal.isPending}
+                      >
+                        Régulariser sur Stripe
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Bannière essai gratuit en cours */}
+                  {dashboard.subscription.status === 'trialing' && (
+                    <div className="flex items-center gap-2.5 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-700 dark:text-amber-400">
+                      <Clock className="h-4 w-4 shrink-0" />
+                      <span>
+                        Vous êtes en <strong>période d'essai gratuit</strong>
+                        {dashboard.subscription.trial_end ? ` jusqu'au ${formatDate(dashboard.subscription.trial_end)}` : ''}.
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl border border-primary/20">
                     <Crown className="h-7 w-7 text-primary shrink-0" />
                     <div>

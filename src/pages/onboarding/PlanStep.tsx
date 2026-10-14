@@ -15,9 +15,10 @@ import { modelLogos } from '@/components/ModelLogosCarousel';
 // Configuration des modèles AI par plan (même config que PlanSelector)
 const AI_MODELS_CONFIG = [
   { level: 0, ids: ['free'], web: ['openai', 'perplexity', 'gemini'], api: [] },
-  { level: 1, ids: ['starter', 'standard'], web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'], api: [] },
-  { level: 2, ids: ['intermediaire', 'pro', 'premium'], web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'], api: ['openai', 'perplexity'] },
-  { level: 3, ids: ['advanced', 'enterprise'], web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'], api: ['openai', 'perplexity', 'claude'] },
+  { level: 1, ids: ['starter', 'solo', 'standard'], web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'], api: [] },
+  { level: 2, ids: ['intermediaire', 'intermédiaire'], web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'], api: ['openai', 'perplexity'] },
+  { level: 3, ids: ['pro', 'premium'], web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'], api: ['openai', 'perplexity', 'claude'] },
+  { level: 4, ids: ['advanced', 'enterprise', 'entreprise'], web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'], api: ['openai', 'perplexity', 'claude', 'mistral'] },
 ];
 
 function getAiModelsForPlan(planId: string, planIndex: number): { web: string[]; api: string[] } {

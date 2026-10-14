@@ -113,6 +113,9 @@ export function SubscriptionDetails({ subscriptionId, onBack, className = '' }: 
   const getStatusBadge = (status?: string) => {
     const statusConfig = {
       active: { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Actif', icon: CheckCircle },
+      trialing: { color: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Essai gratuit', icon: Clock },
+      past_due: { color: 'bg-rose-50 text-rose-700 border-rose-200', label: 'Paiement échoué', icon: AlertCircle },
+      unpaid: { color: 'bg-rose-50 text-rose-700 border-rose-200', label: 'Impayé', icon: XCircle },
       inactive: { color: 'bg-slate-50 text-slate-600 border-slate-200', label: 'Inactif', icon: XCircle },
       cancelled: { color: 'bg-rose-50 text-rose-700 border-rose-200', label: 'Annulé', icon: XCircle },
       pending: { color: 'bg-amber-50 text-amber-700 border-amber-200', label: 'En attente', icon: Clock },

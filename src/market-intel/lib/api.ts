@@ -296,6 +296,15 @@ export interface ReviewState {
   recent: { company: string; raw_label: string; predicted: string | null; verdict: string; corrected: string | null }[];
 }
 
+export interface MarketBundle {
+  overview: Overview;
+  matrix: Matrix;
+  ontology: MarketOntology;
+  events: MarketEvent[];
+  catalog: MarketCatalog;
+  place?: CatalogCoverageRow | null;
+}
+
 export interface Health {
   llm_providers: string[];
   llm_extraction: boolean;

@@ -22,22 +22,28 @@ const AI_MODELS_CONFIG = [
     api: [],
   },
   {
-    level: 1, // Starter
+    level: 1, // Starter (89 €)
     ids: ['solo', 'starter', 'standard'],
     web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'],
     api: [],
   },
   {
-    level: 2, // Intermédiaire / Pro
-    ids: ['intermediaire', 'pro', 'premium'],
+    level: 2, // Intermédiaire (590 €)
+    ids: ['intermediaire', 'intermédiaire', 'intermediate'],
     web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'],
     api: ['openai', 'perplexity'],
   },
   {
-    level: 3, // Avancé / Enterprise
-    ids: ['advanced', 'enterprise'],
+    level: 3, // Pro (1 190 €)
+    ids: ['pro', 'premium'],
     web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'],
     api: ['openai', 'perplexity', 'claude'],
+  },
+  {
+    level: 4, // Entreprise (2 990 €)
+    ids: ['advanced', 'enterprise', 'entreprise'],
+    web: ['openai', 'perplexity', 'gemini', 'claude', 'mistral', 'deepseek'],
+    api: ['openai', 'perplexity', 'claude', 'mistral'],
   },
 ];
 
