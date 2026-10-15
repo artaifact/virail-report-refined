@@ -1,4 +1,4 @@
-import { useRouter, miFetch } from "../compat";
+import { canEdit, useRouter, miFetch } from "../compat";
 import { useState } from "react";
 import type { Identity } from "../lib/api";
 
@@ -6,7 +6,7 @@ const lines = (v: FormDataEntryValue | null) => String(v ?? "").split(/[\n,]/).m
 
 // Identité technique d'une company : c'est elle qui permet aux collecteurs de la trouver
 // et de distinguer ses canaux officiels des canaux communautaires.
-export default function IdentityForm({ companyId, identity }: { companyId: string; identity: Identity }) {
+function IdentityFormEditor({ companyId, identity }: { companyId: string; identity: Identity }) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "saving" | "saved" | string>("idle");
 
@@ -82,4 +82,9 @@ export default function IdentityForm({ companyId, identity }: { companyId: strin
       </form>
     </details>
   );
+}
+
+/** Réservé aux administrateurs (l'API refuse sinon) : rien pour un client. */
+export default function IdentityForm(props: Parameters<typeof IdentityFormEditor>[0]) {
+  return canEdit() ? <IdentityFormEditor {...props} /> : null;
 }

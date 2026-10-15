@@ -1,8 +1,8 @@
-import { useRouter, miFetch } from "../compat";
+import { canEdit, useRouter, miFetch } from "../compat";
 import { useState } from "react";
 
 // Corrections manuelles d'un accès : officiel ou tiers, compté ou non pour le produit suivi.
-export default function ChannelOverride({ id, provenance, inScope, overridden }: {
+function ChannelOverrideEditor({ id, provenance, inScope, overridden }: {
   id: number; provenance: string; inScope: boolean; overridden: boolean;
 }) {
   const router = useRouter();
@@ -29,4 +29,9 @@ export default function ChannelOverride({ id, provenance, inScope, overridden }:
       )}
     </span>
   );
+}
+
+/** Réservé aux administrateurs (l'API refuse sinon) : rien pour un client. */
+export default function ChannelOverride(props: Parameters<typeof ChannelOverrideEditor>[0]) {
+  return canEdit() ? <ChannelOverrideEditor {...props} /> : null;
 }

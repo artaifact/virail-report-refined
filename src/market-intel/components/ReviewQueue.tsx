@@ -1,4 +1,4 @@
-import { useRouter, miFetch } from "../compat";
+import { canEdit, useRouter, miFetch } from "../compat";
 import { useState } from "react";
 import type { ReviewItem } from "../lib/api";
 import { capabilityFr, channelName, objectFr, VERB_FR } from "../lib/labels";
@@ -80,7 +80,7 @@ function ReviewCard({ item, marketId, objects, onDone }: {
   );
 }
 
-export default function ReviewQueue({ items, marketId, objects }: { items: ReviewItem[]; marketId: string; objects: string[] }) {
+function ReviewQueueEditor({ items, marketId, objects }: { items: ReviewItem[]; marketId: string; objects: string[] }) {
   const router = useRouter();
   const [done, setDone] = useState<Set<string>>(new Set());
   const left = items.filter((i) => !done.has(`${i.company_id}|${i.raw_label}`));
@@ -103,4 +103,9 @@ export default function ReviewQueue({ items, marketId, objects }: { items: Revie
       ))}
     </div>
   );
+}
+
+/** Réservé aux administrateurs (l'API refuse sinon) : rien pour un client. */
+export default function ReviewQueue(props: Parameters<typeof ReviewQueueEditor>[0]) {
+  return canEdit() ? <ReviewQueueEditor {...props} /> : <p className="quiet-note">Réservé aux administrateurs : les données du marché sont communes à tous les comptes.</p>;
 }

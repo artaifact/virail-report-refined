@@ -24,6 +24,18 @@ export function notFound(): never {
   throw new NotFoundError();
 }
 
+/** Les écritures du module (collecte, suivi, ontologie, relecture…) sont réservées aux administrateurs par l'API (403).
+ *  L'interface masque ce qu'un client ne peut pas faire. Simple affichage : l'API reste seule juge. Même source que la
+ *  barre latérale : l'utilisateur rafraîchi depuis /auth/me au chargement. */
+export function canEdit(): boolean {
+  try {
+    const user = AuthService.getUser?.() as { is_admin?: boolean; isAdmin?: boolean } | null;
+    return Boolean(user?.is_admin ?? user?.isAdmin);
+  } catch {
+    return false;
+  }
+}
+
 /** fetch vers l'API du moteur, avec le cookie de session de virail. */
 export function miFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const token = AuthService.getAccessToken?.() || localStorage.getItem("access_token") || localStorage.getItem("token");

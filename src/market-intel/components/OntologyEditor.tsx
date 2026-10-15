@@ -1,4 +1,4 @@
-import { useRouter, miFetch } from "../compat";
+import { canEdit, useRouter, miFetch } from "../compat";
 import { useMemo, useState } from "react";
 import type { MarketOntology } from "../lib/api";
 
@@ -59,7 +59,10 @@ export default function OntologyEditor({ data }: { data: MarketOntology }) {
     }
   }
 
+  const editable = canEdit();
   return (
+    <fieldset disabled={!editable} className="ontology-fieldset">
+    {!editable && <p className="quiet-note">Lecture seule : le vocabulaire est commun à tous les comptes, seuls les administrateurs le modifient.</p>}
     <div className="grid grid-2" style={{ alignItems: "start" }}>
       <section className="card">
         <div className="spread">
@@ -170,5 +173,6 @@ export default function OntologyEditor({ data }: { data: MarketOntology }) {
         </p>
       </section>
     </div>
+    </fieldset>
   );
 }
