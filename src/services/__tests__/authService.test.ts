@@ -138,15 +138,19 @@ describe('AuthService', () => {
 
       const result = await AuthService.register(userData);
 
+      // la réponse de l'API est renvoyée telle quelle ; l'utilisateur est enregistré à part (inscription avec
+      // vérification de l'e-mail : la session n'est ouverte que si de vrais jetons sont renvoyés)
       expect(result).toEqual({
         access_token: 'mock-token',
         refresh_token: 'mock-refresh',
-        user: {
-          id: 'newuser',
-          email: 'newuser@example.com',
-          username: 'newuser',
-        },
       });
+      const saved = localStorageMock.setItem.mock.calls.find(([, v]) => String(v).includes('"username":"newuser"'));
+      expect(saved).toBeDefined();
+      expect(JSON.parse(saved![1] as string)).toEqual(expect.objectContaining({
+        id: 'newuser',
+        email: 'newuser@example.com',
+        username: 'newuser',
+      }));
     });
 
     it('should handle registration error', async () => {
@@ -571,6 +575,9 @@ describe('AuthService', () => {
         is_active: true,
         is_verified: true,
         is_admin: false,
+        // champs du téléphone ajoutés au profil : absents du stockage local, donc null
+        phone: null,
+        phone_number: null,
         created_at: expect.any(String),
       });
     });

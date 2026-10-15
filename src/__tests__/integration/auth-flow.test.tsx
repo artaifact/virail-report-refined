@@ -152,13 +152,15 @@ describe('Auth Flow Integration', () => {
       const submitButton = await screen.findByRole('button', { name: /créer mon compte/i });
 
       const usernameInput = screen.getByPlaceholderText("Votre nom d'utilisateur");
-      const emailInput = screen.getByPlaceholderText('vous@entreprise.com');
+      const emailInput = screen.getByPlaceholderText('vous@exemple.com');
       const passwordInput = screen.getByPlaceholderText('Votre mot de passe');
       const confirmPasswordInput = screen.getByPlaceholderText('••••••••');
       const termsCheckbox = screen.getByRole('checkbox');
       
       await user.type(usernameInput, 'newuser');
       await user.type(emailInput, 'newuser@example.com');
+      // téléphone obligatoire : sans lui, zod n'évalue pas la concordance des mots de passe
+      await user.type(screen.getByPlaceholderText('+33 6 12 34 56 78'), '+33 6 12 34 56 78');
       await user.type(passwordInput, 'Password123!@#');
       await user.type(confirmPasswordInput, 'DifferentPassword!@#');
       await user.click(termsCheckbox);
@@ -178,7 +180,7 @@ describe('Auth Flow Integration', () => {
       const submitButton = await screen.findByRole('button', { name: /créer mon compte/i });
 
       const usernameInput = screen.getByPlaceholderText("Votre nom d'utilisateur");
-      const emailInput = screen.getByPlaceholderText('vous@entreprise.com');
+      const emailInput = screen.getByPlaceholderText('vous@exemple.com');
       const passwordInput = screen.getByPlaceholderText('Votre mot de passe');
       const confirmPasswordInput = screen.getByPlaceholderText('••••••••');
       const termsCheckbox = screen.getByRole('checkbox');

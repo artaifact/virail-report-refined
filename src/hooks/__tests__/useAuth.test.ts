@@ -258,7 +258,8 @@ describe('useAuth', () => {
       expect(result.current.isLoading).toBe(false);
       expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
         title: "Inscription réussie",
-        description: `Bienvenue ${mockResponse.user.username}!`,
+        // inscription avec vérification de l'e-mail : le message invite à activer le compte
+        description: `Bienvenue ${mockUserData.username} ! Veuillez vérifier votre email pour activer votre compte.`,
       }));
     });
 
