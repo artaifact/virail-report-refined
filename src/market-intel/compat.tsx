@@ -36,19 +36,50 @@ export function canEdit(): boolean {
   }
 }
 
-/** fetch vers l'API du moteur, avec le cookie de session de virail. */
-export function miFetch(path: string, init: RequestInit = {}): Promise<Response> {
+/** Délai maximal d'un appel : au-delà, l'appel échoue (message affiché) au lieu de tourner sans fin. */
+export const MI_TIMEOUT_MS = 60_000;
+
+// Un seul renouvellement de session à la fois : une page lance plusieurs appels en même temps, et des renouvellements
+// simultanés s'invalideraient l'un l'autre (le jeton de renouvellement change à chaque usage).
+let refreshing: Promise<string | null> | null = null;
+function refreshSession(): Promise<string | null> {
+  if (!refreshing) {
+    refreshing = Promise.resolve(AuthService.refreshAccessToken?.() ?? null).finally(() => { refreshing = null; });
+  }
+  return refreshing;
+}
+
+function send(path: string, init: RequestInit): Promise<Response> {
   const token = AuthService.getAccessToken?.() || localStorage.getItem("access_token") || localStorage.getItem("token");
   const headers = new Headers(init.headers || {});
   if (token && token !== "httponly-cookie" && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), MI_TIMEOUT_MS);
+  init.signal?.addEventListener("abort", () => controller.abort());
   return fetch(`${MI_API}${path}`, {
     credentials: "include",
     cache: "no-store",
     ...init,
     headers,
-  });
+    signal: controller.signal,
+  }).catch((e) => {
+    if (controller.signal.aborted && !init.signal?.aborted) {
+      throw new Error("Le serveur n'a pas répondu à temps. Réessayez dans un instant.");
+    }
+    throw e;
+  }).finally(() => clearTimeout(timer));
+}
+
+/** fetch vers l'API du moteur, avec la session de virail. Jeton d'accès expiré (401) : la session est renouvelée
+ *  une fois puis l'appel rejoué, comme AuthService.makeAuthenticatedRequest (avant : 401 jusqu'à ce qu'une autre page
+ *  de l'application renouvelle la session). */
+export async function miFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const res = await send(path, init);
+  if (res.status !== 401) return res;
+  const renewed = await refreshSession();
+  return renewed ? send(path, init) : res;
 }
 
 // --- Liens et navigation ------------------------------------------------------------------------------------------

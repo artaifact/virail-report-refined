@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AdminService } from '@/services/adminService';
 import { AdminSubscription, AdminSubscriptionsStats } from '@/types/admin';
+import { intervalLabel } from '@/utils/planInterval';
 import {
   CreditCard,
   Users,
@@ -300,7 +301,7 @@ export function SubscriptionManagement({ onSubscriptionSelect, className = '' }:
                         {formatPrice(subscription.plan?.price)}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {subscription.plan?.interval === 'month' ? '/mois' : '/an'}
+                        /{intervalLabel(subscription.plan?.interval)}
                       </div>
                     </div>
                   </div>

@@ -4,7 +4,7 @@ const APP_NAME = 'Viraill';
 
 /**
  * Met à jour le titre de l'onglet du navigateur.
- * Format : "Titre - Virail Studio"
+ * Format : "Titre - Viraill"
  */
 export function usePageTitle(title: string) {
   useEffect(() => {

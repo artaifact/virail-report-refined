@@ -26,6 +26,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "/competition": "Concurrentielle",
   "/ameliorer": "Améliorer",
   "/agentic": "Éligibilité Agentique",
+  "/market-intelligence": "Market Intelligence",
   "/sites-optimization": "Optimisation des sites",
   "/optimisation/technique": "Optimisation technique",
   "/optimisation/textuelle": "Optimisation textuelle",
@@ -70,7 +71,9 @@ export function AppHeader({ domainName }: AppHeaderProps) {
     );
   };
 
-  const domain = domainName || "Viraill";
+  // Market Intelligence couvre des marchés entiers, pas le domaine du rapport en cours : pas de « revolut.com > … »
+  const isMarketWide = location.pathname.startsWith("/market-intelligence");
+  const domain = (!isMarketWide && domainName) || "Viraill";
 
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border/60 bg-background/80 px-3 sm:px-4 backdrop-blur-md transition-all">

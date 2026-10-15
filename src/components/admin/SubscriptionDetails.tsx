@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
+import { intervalLabel } from '@/utils/planInterval';
 interface SubscriptionDetailsProps {
   subscriptionId: number;
   onBack: () => void;
@@ -245,7 +246,7 @@ export function SubscriptionDetails({ subscriptionId, onBack, className = '' }: 
                 <p className="text-foreground font-semibold text-lg">
                   {formatPrice(subscription.plan?.price)}
                   <span className="text-sm text-muted-foreground ml-1">
-                    {subscription.plan?.interval === 'month' ? '/mois' : '/an'}
+                    /{intervalLabel(subscription.plan?.interval)}
                   </span>
                 </p>
               </div>

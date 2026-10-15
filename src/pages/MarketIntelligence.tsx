@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link as RouterLink, Route, Routes, useLocation } from "react-router-dom";
 import { useSidebar } from "@/components/ui/sidebar";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import "@/market-intel/market-intel.css";
 import { Link } from "@/market-intel/compat";
 import { NotFoundView } from "@/market-intel/views";
@@ -24,6 +25,7 @@ import HelpPage from "@/market-intel/pages/HelpPage";
 export default function MarketIntelligence() {
   const { pathname } = useLocation();
   const { setOpen, open } = useSidebar();
+  usePageTitle("Market Intelligence");
 
   useEffect(() => {
     window.scrollTo(0, 0);

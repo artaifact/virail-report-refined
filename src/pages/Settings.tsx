@@ -54,6 +54,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { onboardingService } from "@/services/onboardingService";
 import { SettingsSkeletonLoader } from "@/components/settings/SettingsSkeletonLoader";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { intervalLabel } from '@/utils/planInterval';
 import {
   useAccountDashboard,
   useStripeInvoices,
@@ -637,7 +638,7 @@ const Settings = () => {
                       <p className="font-semibold text-foreground">{dashboard.subscription.plan_name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {formatCurrency(dashboard.subscription.plan_price, dashboard.subscription.currency)}
-                        /{dashboard.subscription.interval === "month" ? "mois" : "an"}
+                        /{intervalLabel(dashboard.subscription.interval)}
                       </p>
                     </div>
                   </div>
