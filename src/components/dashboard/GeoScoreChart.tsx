@@ -262,7 +262,9 @@ export function GeoScoreChart({ reportData }: GeoScoreChartProps) {
         {totalCitations >= 5 && isApiData && (
           <Alert className="bg-emerald-500/10 border-emerald-500/20 text-emerald-900 dark:text-emerald-200">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            <AlertTitle className="text-sm font-semibold">Excellente autorité perçue</AlertTitle>
+            {/* constat, pas un jugement : 5 citations ou plus ne disent rien du score ni du rang (recette : « Excellente
+                autorité perçue » à côté d'un score de 23, rang 18 sur 19) */}
+            <AlertTitle className="text-sm font-semibold">Présent dans les réponses des IA</AlertTitle>
             <AlertDescription className="text-xs leading-relaxed">
               Votre site enregistre <strong>{totalCitations} citations</strong> réparties sur vos moteurs cibles.
             </AlertDescription>
@@ -329,8 +331,9 @@ export function GeoScoreChart({ reportData }: GeoScoreChartProps) {
 
                   <TableCell className="py-3 text-right">
                     {item.citations === -1 ? (
-                      <Badge variant="outline" className="text-[10px] text-muted-foreground font-normal italic">
-                        Non analysé
+                      <Badge variant="outline" className="text-[10px] text-muted-foreground font-normal italic"
+                        title="Ce modèle n'a pas été interrogé dans l'analyse des citations (il peut l'être dans l'analyse concurrentielle)">
+                        Hors analyse des citations
                       </Badge>
                     ) : item.citations === 0 && isApiData ? (
                       <Badge variant="outline" className="text-[10px] text-amber-600 dark:text-amber-400 border-amber-500/20 bg-amber-500/10 font-medium">

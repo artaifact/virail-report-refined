@@ -67,6 +67,12 @@ export const AgenticPillarsView: React.FC<AgenticPillarsViewProps> = ({
                 <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
               </div>
 
+              {/* Score chiffré (avant : barre seule, sans valeur) */}
+              <div className="flex items-baseline justify-between text-xs">
+                <span className="text-muted-foreground font-mono">{pillar.score} / {pillar.max} pts</span>
+                <span className="font-semibold text-foreground font-mono">{pct}%</span>
+              </div>
+
               {/* Progress Bar */}
               <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
                 <div

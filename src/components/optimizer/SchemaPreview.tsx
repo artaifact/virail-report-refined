@@ -11,7 +11,7 @@ interface SchemaPreviewProps {
   title?: string;
 }
 
-export function SchemaPreview({ schemas, title = 'Donnees structurees' }: SchemaPreviewProps) {
+export function SchemaPreview({ schemas, title = 'Données structurées' }: SchemaPreviewProps) {
   const [collapsedIndices, setCollapsedIndices] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 

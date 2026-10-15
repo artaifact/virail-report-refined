@@ -1891,7 +1891,7 @@ const LLMODashboard = () => {
                                   if (k.includes('2_fichiers')) return { box: 'border-purple-200', header: 'hover:bg-muted/50', badge: 'bg-muted text-muted-foreground', week: 'Semaine 2', owner: 'Dev' };
                                   if (k.includes('3_html')) return { box: 'border-blue-200', header: 'hover:bg-muted/50', badge: 'bg-muted text-muted-foreground', week: 'Semaine 1', owner: 'Dev' };
                                   if (k.includes('4_validation')) return { box: 'border-green-200', header: 'hover:bg-muted/50', badge: 'bg-muted text-muted-foreground', week: 'Semaine 3-4', owner: 'Marketing' };
-                                  return { box: 'border-border', header: 'hover:bg-background', badge: 'bg-muted text-foreground', week: 'Semaine', owner: 'Equipe' };
+                                  return { box: 'border-border', header: 'hover:bg-background', badge: 'bg-muted text-foreground', week: 'Semaine', owner: 'Équipe' };
                                 };
                                 const cm = colorMap(key);
                                 return (

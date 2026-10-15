@@ -11,7 +11,7 @@ function getScoreColor(score: number): string {
 function getScoreLabel(score: number): string {
   if (score >= 80) return 'Excellent';
   if (score >= 60) return 'Bon';
-  if (score >= 40) return 'A ameliorer';
+  if (score >= 40) return 'À améliorer';
   return 'Faible';
 }
 

@@ -914,19 +914,19 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                       {bulkProgress.discovery.urls_found > 0 && (
                         <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#F8FAFC', textAlign: 'center' }}>
                           <div style={{ fontSize: '18px', fontWeight: 700, color: '#334155' }}>{bulkProgress.discovery.urls_found}</div>
-                          <div style={{ fontSize: '11px', color: '#94A3B8' }}>URLs trouvees</div>
+                          <div style={{ fontSize: '11px', color: '#94A3B8' }}>URLs trouvées</div>
                         </div>
                       )}
                       {bulkProgress.processing.completed > 0 && (
                         <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#F0FDF4', textAlign: 'center' }}>
                           <div style={{ fontSize: '18px', fontWeight: 700, color: '#16A34A' }}>{bulkProgress.processing.completed}</div>
-                          <div style={{ fontSize: '11px', color: '#94A3B8' }}>Optimisees</div>
+                          <div style={{ fontSize: '11px', color: '#94A3B8' }}>Optimisées</div>
                         </div>
                       )}
                       {bulkProgress.processing.failed > 0 && (
                         <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#FEF2F2', textAlign: 'center' }}>
                           <div style={{ fontSize: '18px', fontWeight: 700, color: '#DC2626' }}>{bulkProgress.processing.failed}</div>
-                          <div style={{ fontSize: '11px', color: '#94A3B8' }}>Echouees</div>
+                          <div style={{ fontSize: '11px', color: '#94A3B8' }}>Échouées</div>
                         </div>
                       )}
                       {bulkProgress.avg_score != null && (
@@ -940,7 +940,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
                           <div style={{ fontSize: '18px', fontWeight: 700, color: '#334155' }}>
                             {bulkProgress.elapsed_seconds < 60 ? `${Math.round(bulkProgress.elapsed_seconds)}s` : `${Math.floor(bulkProgress.elapsed_seconds / 60)}m${Math.round(bulkProgress.elapsed_seconds % 60)}s`}
                           </div>
-                          <div style={{ fontSize: '11px', color: '#94A3B8' }}>Duree</div>
+                          <div style={{ fontSize: '11px', color: '#94A3B8' }}>Durée</div>
                         </div>
                       )}
                     </div>
@@ -1086,8 +1086,8 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
           {/* Aucune donnee */}
           {!hasAnyData && (
             <div style={{ textAlign: 'center', padding: '40px 24px', color: '#94A3B8' }}>
-              <div style={{ fontSize: '14px', fontWeight: 500, color: '#64748B', marginBottom: '4px' }}>Aucune donnee d'optimisation disponible</div>
-              <div style={{ fontSize: '13px' }}>Les donnees seront disponibles une fois l'analyse terminee.</div>
+              <div style={{ fontSize: '14px', fontWeight: 500, color: '#64748B', marginBottom: '4px' }}>Aucune donnée d'optimisation disponible</div>
+              <div style={{ fontSize: '13px' }}>Les données seront disponibles une fois l'analyse terminée.</div>
             </div>
           )}
         </div>
@@ -1133,7 +1133,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <SchemaPreview schemas={parsedSchemas} title="Schema.org JSON-LD" />
             <FileCard
-              title="Telecharger le Schema.org complet"
+              title="Télécharger le Schema.org complet"
               description="Données structurées pour améliorer la compréhension de votre site par les crawlers IA"
               content={schemaContent}
               copyKey="schema"
@@ -1155,11 +1155,11 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
 
       {activeOptTab === 'meta' && (metaTagsContent || openGraphContent || coEnrichments.length > 0) && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Enrichissements appliques */}
+          {/* Enrichissements appliqués */}
           {coEnrichments.length > 0 && (
             <div style={{ background: '#FFFFFF', borderRadius: '14px', border: '1px solid #E8ECF1', overflow: 'hidden' }}>
               <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Enrichissements appliques</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>Enrichissements appliqués</span>
                 <span style={{ marginLeft: '8px', fontSize: '11px', color: '#94A3B8' }}>{coEnrichments.length} modification{coEnrichments.length > 1 ? 's' : ''}</span>
               </div>
               <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -1272,7 +1272,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
             ) : (
               <FileCard
                 title="HTML Optimise"
-                description="Version optimisee de votre page avec schemas et balises enrichies"
+                description="Version optimisée de votre page avec schémas et balises enrichies"
                 content={optimizedHtmlContent}
                 copyKey="htmlview"
                 filename="optimized.html"
@@ -1293,7 +1293,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
         <DialogContent style={{ maxWidth: 'min(1400px, calc(100vw - 300px))', width: 'calc(100vw - 300px)', maxHeight: 'calc(100vh - 40px)', height: 'calc(100vh - 40px)', borderRadius: '12px', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', marginLeft: 'auto', marginRight: '20px' }}>
           <DialogHeader style={{ padding: '20px 24px 12px', borderBottom: '1px solid #F1F5F9', flexShrink: 0 }}>
             <DialogTitle style={{ fontSize: '15px', fontWeight: 600, color: '#0F172A' }}>
-              Detail de la page
+              Détail de la page
             </DialogTitle>
             <DialogDescription style={{ fontSize: '12px', color: '#64748B', marginTop: '4px', wordBreak: 'break-all' }}>
               {selectedPageUrl}
@@ -1335,7 +1335,7 @@ function InfosDetailleesView({ reportData }: { reportData: FullReportData | null
             {!selectedPageLoading && !selectedPageRaw && selectedPageUrl && (
               <div style={{ textAlign: 'center', padding: '40px 0', color: '#94A3B8' }}>
                 <AlertCircle size={24} style={{ margin: '0 auto 8px', color: '#DC2626' }} />
-                <div style={{ fontSize: '13px' }}>Impossible de charger les donnees de cette page.</div>
+                <div style={{ fontSize: '13px' }}>Impossible de charger les données de cette page.</div>
               </div>
             )}
 

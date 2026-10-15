@@ -440,6 +440,7 @@ const Competition = () => {
                         return {
                           idx,
                           date: d,
+                          ts: d.getTime(),
                           score: Number(Number(r.metadata.score).toFixed(1)),
                           label: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
                           labelFull: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
@@ -526,8 +527,14 @@ const Competition = () => {
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={timeSeriesRaw} margin={{ left: 4, right: 16, top: 10, bottom: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.5)" vertical={false} />
+                                {/* échelle de temps : points espacés selon leur date (avant : espacement régulier de mars à
+                                    septembre, et sans année, d'où une chute qui paraissait brutale) */}
                                 <XAxis
-                                  dataKey="label"
+                                  dataKey="ts"
+                                  type="number"
+                                  scale="time"
+                                  domain={['dataMin', 'dataMax']}
+                                  tickFormatter={(ts: number) => new Date(ts).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: '2-digit' })}
                                   tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                                   tickLine={false}
                                   axisLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
