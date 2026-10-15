@@ -1,10 +1,10 @@
 "use client";
 
-import { miFetch, useRouter } from "../../compat";
+import { canEdit, miFetch, useRouter } from "../../compat";
 import { useState } from "react";
 
 /** Suivre l'éditeur d'un plugin : il devient un acteur du marché, avec sa note dès la première collecte. */
-export default function FollowButton({ entryId, marketId }: { entryId: number; marketId: string }) {
+function FollowButtonEditor({ entryId, marketId }: { entryId: number; marketId: string }) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
   const [reason, setReason] = useState<string | null>(null);
@@ -38,4 +38,9 @@ export default function FollowButton({ entryId, marketId }: { entryId: number; m
       {state === "busy" ? "…" : state === "done" ? "✓ Suivi" : state === "error" ? "Échec, réessayer" : "+ Suivre"}
     </button>
   );
+}
+
+/** Réservé aux administrateurs (l'API refuse sinon) : rien pour un client. */
+export default function FollowButton(props: Parameters<typeof FollowButtonEditor>[0]) {
+  return canEdit() ? <FollowButtonEditor {...props} /> : null;
 }

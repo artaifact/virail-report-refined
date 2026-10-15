@@ -3,7 +3,8 @@ import { MemoryRouter } from 'react-router-dom';
 import FollowButton from '../components/workspace/FollowButton';
 import GoldenQueue from '../components/GoldenQueue';
 
-jest.mock('@/services/authService', () => ({ AuthService: { getAccessToken: () => null } }));
+let mockUser: { is_admin?: boolean } | null = { is_admin: true };
+jest.mock('@/services/authService', () => ({ AuthService: { getAccessToken: () => null, getUser: () => mockUser } }));
 
 const reply = (status: number, body: unknown) =>
   Promise.resolve({ ok: status < 400, status, json: () => Promise.resolve(body) } as Response);
@@ -11,6 +12,7 @@ const reply = (status: number, body: unknown) =>
 describe("boutons d'écriture : API de virail et motif du refus", () => {
   const fetchMock = jest.fn();
   beforeEach(() => {
+    mockUser = { is_admin: true };
     fetchMock.mockReset();
     global.fetch = fetchMock as unknown as typeof fetch;
   });
@@ -34,5 +36,16 @@ describe("boutons d'écriture : API de virail et motif du refus", () => {
     fireEvent.click(screen.getByText(/Oui, c.est vrai/));
     await waitFor(() => expect(screen.getByText(/Réservé aux administrateurs/)).toBeInTheDocument());
     expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/market-intelligence/markets/crm-smb/golden');
+  });
+
+  it("rien pour un client : les écritures sont réservées aux administrateurs", () => {
+    mockUser = { is_admin: false };
+    const { container } = render(<MemoryRouter><FollowButton entryId={7} marketId="crm-smb" /></MemoryRouter>);
+    expect(container).toBeEmptyDOMElement();
+    const item = { company_id: 'hubspot', company: 'HubSpot', kind: 'mcp_official', claim: true,
+      question: 'Q ?', evidence: 'https://exemple.test', evidence_is_search: false };
+    render(<MemoryRouter><GoldenQueue items={[item]} marketId="crm-smb" facts={0} /></MemoryRouter>);
+    expect(screen.queryByText(/Oui, c.est vrai/)).toBeNull();
+    expect(screen.getByText(/Réservé aux administrateurs/)).toBeInTheDocument();
   });
 });

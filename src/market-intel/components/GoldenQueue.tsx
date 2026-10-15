@@ -1,6 +1,6 @@
 "use client";
 
-import { miFetch, useRouter } from "../compat";
+import { canEdit, miFetch, useRouter } from "../compat";
 import { useState } from "react";
 
 export type GoldenItem = {
@@ -49,7 +49,7 @@ function GoldenCard({ item, marketId, onDone }: { item: GoldenItem; marketId: st
   );
 }
 
-export default function GoldenQueue({ items, marketId, facts }: { items: GoldenItem[]; marketId: string; facts: number }) {
+function GoldenQueueEditor({ items, marketId, facts }: { items: GoldenItem[]; marketId: string; facts: number }) {
   const router = useRouter();
   const [left, setLeft] = useState(items);
   return (
@@ -64,4 +64,9 @@ export default function GoldenQueue({ items, marketId, facts }: { items: GoldenI
       )) : <p className="quiet-note">Plus rien à valider pour l&apos;instant.</p>}
     </section>
   );
+}
+
+/** Réservé aux administrateurs (l'API refuse sinon) : rien pour un client. */
+export default function GoldenQueue(props: Parameters<typeof GoldenQueueEditor>[0]) {
+  return canEdit() ? <GoldenQueueEditor {...props} /> : <p className="quiet-note">Réservé aux administrateurs : les données du marché sont communes à tous les comptes.</p>;
 }

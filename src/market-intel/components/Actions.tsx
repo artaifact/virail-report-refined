@@ -1,4 +1,4 @@
-import { useRouter, miFetch } from "../compat";
+import { canEdit, useRouter, miFetch } from "../compat";
 import { useState } from "react";
 
 async function post(path: string, body: unknown) {
@@ -21,7 +21,7 @@ async function errorText(res: Response): Promise<string> {
   }
 }
 
-export function CollectButton({ marketId }: { marketId: string }) {
+function CollectButtonEditor({ marketId }: { marketId: string }) {
   const [state, setState] = useState<"idle" | "sent" | "error">("idle");
   return (
     <button
@@ -42,7 +42,7 @@ export function CollectButton({ marketId }: { marketId: string }) {
   );
 }
 
-export function CandidateActions({ marketId, companyId, status = "pending" }: {
+function CandidateActionsEditor({ marketId, companyId, status = "pending" }: {
   marketId: string; companyId: string; status?: "pending" | "auto_added" | "auto_rejected";
 }) {
   const router = useRouter();
@@ -78,7 +78,7 @@ export function CandidateActions({ marketId, companyId, status = "pending" }: {
   );
 }
 
-export function CreateMarketForm({ templates }: { templates: { id: string; name: string; objects: Record<string, string[]> }[] }) {
+function CreateMarketFormEditor({ templates }: { templates: { id: string; name: string; objects: Record<string, string[]> }[] }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   return (
@@ -127,7 +127,7 @@ export function CreateMarketForm({ templates }: { templates: { id: string; name:
 }
 
 /** Suivre un acteur (intérêt personnel sans faire partie du marché) ou le déclarer comme son entreprise. */
-export function ViewerActions({ companyId, followed, mine }: { companyId: string; followed: boolean; mine: boolean }) {
+function ViewerActionsEditor({ companyId, followed, mine }: { companyId: string; followed: boolean; mine: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -158,4 +158,24 @@ export function ViewerActions({ companyId, followed, mine }: { companyId: string
       {failed && <span className="meta">échec, réessayez</span>}
     </span>
   );
+}
+
+/** Réservé aux administrateurs (l'API refuse sinon) : rien pour un client. */
+export function CollectButton(props: Parameters<typeof CollectButtonEditor>[0]) {
+  return canEdit() ? <CollectButtonEditor {...props} /> : null;
+}
+
+/** Réservé aux administrateurs (l'API refuse sinon) : rien pour un client. */
+export function CandidateActions(props: Parameters<typeof CandidateActionsEditor>[0]) {
+  return canEdit() ? <CandidateActionsEditor {...props} /> : null;
+}
+
+/** Réservé aux administrateurs (l'API refuse sinon) : rien pour un client. */
+export function CreateMarketForm(props: Parameters<typeof CreateMarketFormEditor>[0]) {
+  return canEdit() ? <CreateMarketFormEditor {...props} /> : null;
+}
+
+/** Réservé aux administrateurs (l'API refuse sinon) : rien pour un client. */
+export function ViewerActions(props: Parameters<typeof ViewerActionsEditor>[0]) {
+  return canEdit() ? <ViewerActionsEditor {...props} /> : null;
 }

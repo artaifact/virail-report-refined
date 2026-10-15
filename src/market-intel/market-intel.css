@@ -1885,3 +1885,6 @@
   flex: 1 1 auto !important;
   max-height: calc(88vh - 70px) !important;
 }
+
+/* éditeur d'ontologie en lecture seule pour les non-administrateurs : le fieldset ne change pas la mise en page */
+.mi .ontology-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
