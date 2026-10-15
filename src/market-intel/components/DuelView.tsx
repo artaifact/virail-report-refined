@@ -1,5 +1,4 @@
-import { Link, useLoader, NotFoundError } from "../compat";
-import { notFound } from "../compat";
+import { Link, useLoader, notFound } from "../compat";
 import { Fragment, Suspense } from "react";
 import { ActionGauge, countActions, GaugeLegend, SLOTS, type SlotState, slotOf, stronger } from "./ActionGauge";
 import { Logo, ScoreRing } from "./Fun";
@@ -25,22 +24,43 @@ const count = countActions;
 
 /** Duel de deux acteurs. `hrefFor(a, b)` fabrique les liens de changement d'adversaire : dans l'espace de travail
  *  ils restent dans le panneau latéral. */
-export async function DuelView({ id, a, b, embedded = false, hrefFor }: {
+export function DuelView({ id, a, b, embedded = false, hrefFor }: {
   id: string; a?: string; b?: string; embedded?: boolean; hrefFor?: (a: string, b: string) => string;
 }) {
-  const sp = { a, b };
+  const state = useLoader(async () => {
+    const o = await api<Overview>(`/markets/${id}/overview`);
+    const ranked = o.companies;
+    if (ranked.length < 2) notFound(); // un duel demande deux acteurs
+    const me = ranked.find((c) => c.role === "me") ?? ranked[0];
+    const aId = a ?? me.id;
+    const bId = b ?? (ranked.find((c) => c.id !== aId)?.id ?? aId);
+    if (!ranked.some((c) => c.id === aId) || !ranked.some((c) => c.id === bId)) notFound();
+    const [pa, pb] = await Promise.all([
+      api<CompanyProfile>(`/companies/${aId}?market=${id}`),
+      api<CompanyProfile>(`/companies/${bId}?market=${id}`),
+    ]);
+    return { o, pa, pb, aId, bId };
+  }, [id, a, b]);
+
+  if (state.loading) {
+    return (
+      <div className="mi-fade" style={{ display: "flex", flexDirection: "column", gap: 16, padding: embedded ? "16px 20px" : 0 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="card mi-shimmer" style={{ height: 120, borderRadius: 12 }} />
+          <div className="card mi-shimmer" style={{ height: 120, borderRadius: 12 }} />
+        </div>
+        <div className="card mi-shimmer" style={{ height: 260, borderRadius: 12 }} />
+      </div>
+    );
+  }
+
+  if (state.error || !state.data) {
+    return <div className="meta" style={{ padding: 20 }}>Données indisponibles</div>;
+  }
+
+  const { o, pa, pb, aId, bId } = state.data;
   const link = hrefFor ?? ((x: string, y: string) => `/markets/${id}/duel?a=${x}&b=${y}`);
-  const o = await api<Overview>(`/markets/${id}/overview`);
   const ranked = o.companies;
-  if (ranked.length < 2) notFound(); // un duel demande deux acteurs
-  const me = ranked.find((c) => c.role === "me") ?? ranked[0];
-  const aId = sp.a ?? me.id;
-  const bId = sp.b ?? (ranked.find((c) => c.id !== aId)?.id ?? aId);
-  if (!ranked.some((c) => c.id === aId) || !ranked.some((c) => c.id === bId)) notFound();
-  const [pa, pb] = await Promise.all([
-    api<CompanyProfile>(`/companies/${aId}?market=${id}`),
-    api<CompanyProfile>(`/companies/${bId}?market=${id}`),
-  ]);
   const A = ranked.find((c) => c.id === aId)!;
   const B = ranked.find((c) => c.id === bId)!;
   const sa = strips(pa.can_do.agent);

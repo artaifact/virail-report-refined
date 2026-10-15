@@ -59,10 +59,47 @@ export default function Rail({ markets, current, drawerOpen }: { markets: RailMa
 
   const families = [...new Set(markets.map((m) => m.family))];
   const currentFamily = markets.find((m) => m.id === current)?.family;
+  const currentMarket = markets.find((m) => m.id === current);
   const found = markets.filter((m) => m.name.toLowerCase().includes(query));
+
+  const handleSelect = () => {
+    if (auto) setPeek(false);
+  };
 
   return (
     <>
+      {/* Sélecteur de marché dédié mobile/tablette : remplace le bouton hamburger flottant qui chevauchait le titre */}
+      <div className="rail-mobile-bar">
+        <button
+          type="button"
+          className="rail-mobile-trigger"
+          onClick={toggle}
+          aria-expanded={!collapsed}
+          aria-label="Changer de marché"
+        >
+          <div className="rail-mobile-trigger-content">
+            <span className="rail-mobile-badge">Marché</span>
+            <strong className="rail-mobile-name">{currentMarket ? currentMarket.name : "Tous les marchés"}</strong>
+          </div>
+          <span className="rail-mobile-action">
+            <span className="rail-mobile-count">{markets.length} marchés</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </span>
+        </button>
+      </div>
+
+      {/* Fond obscurci (backdrop) pour fermer en touchant à l'extérieur sur mobile */}
+      {!collapsed && auto && (
+        <div
+          className="rail-backdrop"
+          onClick={() => setPeek(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Bouton de repli pour desktop */}
       <button
         type="button"
         className={`rail-toggle ${collapsed ? "" : "open"} ${!collapsed && auto ? "over" : ""}`}
@@ -85,8 +122,21 @@ export default function Rail({ markets, current, drawerOpen }: { markets: RailMa
       </button>
 
       <nav className={`rail ${collapsed ? "collapsed" : ""} ${!collapsed && auto ? "overlay" : ""}`} aria-label="Marchés" hidden={collapsed}>
+        {/* Entête du tiroir mobile */}
+        <div className="rail-mobile-header">
+          <span className="rail-mobile-title">Sélecteur de marché</span>
+          <button
+            type="button"
+            className="rail-close-btn"
+            onClick={() => setPeek(false)}
+            aria-label="Fermer la liste des marchés"
+          >
+            ✕
+          </button>
+        </div>
+
         <div className="rail-top">
-          <Link href="/" scroll={false} className={`rail-all-btn ${!current ? "on" : ""}`}>
+          <Link href="/" scroll={false} className={`rail-all-btn ${!current ? "on" : ""}`} onClick={handleSelect}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect width="7" height="7" x="3" y="3" rx="1.5" />
               <rect width="7" height="7" x="14" y="3" rx="1.5" />
@@ -119,13 +169,20 @@ export default function Rail({ markets, current, drawerOpen }: { markets: RailMa
         <div className="rail-list-wrap">
           {query ? (
             <ul className="rail-group-items">
-              {found.map(item)}
+              {found.map((m) => (
+                <li key={m.id}>
+                  <Link href={`/?m=${m.id}`} scroll={false} className={`rail-item ${m.id === current ? "on" : ""}`} onClick={handleSelect}>
+                    <i className={`rail-heat-dot heat-${m.tone}`} aria-hidden="true" />
+                    <span className="rail-item-name">{m.name}</span>
+                    {m.events > 0 && <span className="rail-item-badge" title={`${m.events} nouveautés ce mois`}>+{m.events}</span>}
+                  </Link>
+                </li>
+              ))}
               {!found.length && <li className="rail-empty">Aucun marché correspondant.</li>}
             </ul>
           ) : (
             families.map((family) => {
               const inFamily = markets.filter((m) => m.family === family);
-              const events = inFamily.reduce((n, m) => n + m.events, 0);
               return (
                 <details key={family} className="rail-group" open={family === currentFamily || undefined}>
                   <summary className="rail-group-head">
@@ -137,7 +194,17 @@ export default function Rail({ markets, current, drawerOpen }: { markets: RailMa
                     </div>
                     <span className="rail-group-count">{inFamily.length}</span>
                   </summary>
-                  <ul className="rail-group-items">{inFamily.map(item)}</ul>
+                  <ul className="rail-group-items">
+                    {inFamily.map((m) => (
+                      <li key={m.id}>
+                        <Link href={`/?m=${m.id}`} scroll={false} className={`rail-item ${m.id === current ? "on" : ""}`} onClick={handleSelect}>
+                          <i className={`rail-heat-dot heat-${m.tone}`} aria-hidden="true" />
+                          <span className="rail-item-name">{m.name}</span>
+                          {m.events > 0 && <span className="rail-item-badge" title={`${m.events} nouveautés ce mois`}>+{m.events}</span>}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
                 </details>
               );
             })

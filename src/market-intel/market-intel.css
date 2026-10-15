@@ -526,7 +526,7 @@
 @media (max-width: 1180px) { .ws-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 860px) {
   .ws { grid-template-columns: minmax(0, 1fr); }
-  .rail { position: static; height: auto; max-height: 180px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .rail:not(.overlay) { display: none; }
   .ws-main { padding: 16px 14px 48px; }
 }
 
@@ -771,6 +771,36 @@
   animation: mi-fade-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* --- Brand : texte long / court selon le breakpoint --- */
+.mi .brand-short { display: none; }
+.mi .brand-full { display: inline; }
+
+/* --- Hamburger button : masqué sur desktop --- */
+.mi .topbar-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.mi .topbar-burger:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+.mi .topbar-nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .mi .topbar-nav .nav-link {
   padding: 6px 14px;
   border-radius: 8px;
@@ -791,6 +821,21 @@
   background: var(--surface-2);
   font-weight: 650;
 }
+
+/* --- Backdrop pour le menu topbar mobile --- */
+.mi .topbar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.38);
+  z-index: 45;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* --- Sélecteur de marché mobile : masqué sur desktop --- */
+.mi .rail-mobile-bar { display: none; }
+.mi .rail-mobile-header { display: none; }
+.mi .rail-backdrop { display: none; }
 
 
 /* ==========================================================================
@@ -1805,10 +1850,9 @@
 
 .mi-modal-portal .mi-modal-header {
   display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 16px !important;
-  padding: 16px 24px !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  padding: 16px 22px !important;
   border-bottom: 1px solid var(--border, #e2e8f0) !important;
   background: var(--surface, #ffffff) !important;
   flex-shrink: 0 !important;
@@ -1819,10 +1863,20 @@
   border-color: #2e3440 !important;
 }
 
+.mi-modal-portal .mi-modal-top-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
 .mi-modal-portal .mi-modal-title-row {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
 }
 
 .mi-modal-portal .mi-modal-badge {
@@ -1834,6 +1888,7 @@
   background: var(--accent-soft, #eff6ff) !important;
   padding: 3px 8px !important;
   border-radius: 6px !important;
+  flex-shrink: 0 !important;
 }
 
 .mi-modal-portal .mi-modal-title {
@@ -1841,16 +1896,53 @@
   font-weight: 750 !important;
   letter-spacing: -0.01em !important;
   color: var(--text, #0f172a) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
 
 .dark .mi-modal-portal .mi-modal-title {
   color: #f8fafc !important;
 }
 
-.mi-modal-portal .mi-modal-controls {
+.mi-modal-portal .mi-modal-actions {
   display: flex !important;
   align-items: center !important;
-  gap: 12px !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.mi-modal-portal .mi-modal-sub-bar {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  padding-top: 10px !important;
+  border-top: 1px solid var(--border, #e2e8f0) !important;
+}
+
+.dark .mi-modal-portal .mi-modal-sub-bar {
+  border-color: #2e3440 !important;
+}
+
+.mi-modal-portal .mi-modal-sub-bar label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 550 !important;
+  color: var(--muted) !important;
+  width: 100% !important;
+}
+
+.mi-modal-portal .mi-modal-sub-bar select {
+  flex: 1 1 auto !important;
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
 }
 
 .mi-modal-portal .mi-modal-close {
@@ -1865,6 +1957,7 @@
   border: 1px solid var(--border, #e2e8f0) !important;
   text-decoration: none !important;
   transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
 }
 
 .mi-modal-portal .mi-modal-close:hover {
@@ -1888,3 +1981,653 @@
 
 /* éditeur d'ontologie en lecture seule pour les non-administrateurs : le fieldset ne change pas la mise en page */
 .mi .ontology-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+
+/* ============================================================================================
+   RESPONSIVE DESIGN — Market Intelligence
+   Breakpoints :  1024px (tablette), 768px (mobile paysage), 480px (mobile portrait)
+   ============================================================================================ */
+
+/* ---------- Tablette ≤ 1024px --------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  /* Workspace : passer à une seule colonne (rail au-dessus) */
+  .mi .ws { grid-template-columns: minmax(0, 1fr); }
+  .mi .ws:has(.rail.collapsed) .ws-main { padding-left: 28px; }
+  .mi .rail:not(.overlay) {
+    display: none;
+  }
+  .mi .rail.overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: min(340px, 88vw) !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    z-index: 100 !important;
+    background: var(--surface) !important;
+    box-shadow: 16px 0 40px rgba(0, 0, 0, 0.35) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+  }
+
+  /* Sidebar main+aside → stacked */
+  .mi .ws-grid { grid-template-columns: minmax(0, 1fr); }
+  .mi .ws-side { order: 2; }
+
+  /* KPI grid : 2 colonnes */
+  .mi .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Tables : autoriser le scroll horizontal */
+  .mi .board-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Position grid « Où se lancer » : empiler mini-carte et tuiles */
+  .mi .pos-layout { grid-template-columns: 1fr; }
+  .mi .pos-mini { max-width: 320px; }
+
+  /* Company header : laisser les éléments passer en wrap */
+  .mi .co-head { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "logo id" "foot foot"; }
+  .mi .co-score { grid-area: id; justify-self: end; }
+
+  /* Duel : colonne unique pour les duellistes */
+  .mi .duel-head { grid-template-columns: 1fr; gap: 12px; }
+  .mi .vs { text-align: center; }
+  .mi .duel-row { grid-template-columns: 1fr 120px 1fr; gap: 8px; }
+  .mi .duel-row .gauge { width: 100px; }
+
+  /* Modal / drawer : pleine largeur */
+  .mi-modal-portal .mi-modal-dialog { width: min(1180px, 96vw) !important; }
+  .mi-modal-portal.is-docked .mi-modal-dialog { width: min(680px, 94vw) !important; }
+}
+
+/* ---------- Mobile paysage ≤ 768px ---------------------------------------------------------- */
+@media (max-width: 768px) {
+  /* Topbar : hamburger menu + titre court */
+  .mi .topbar { padding: 10px 14px; gap: 10px; }
+  .mi .brand-full { display: none; }
+  .mi .brand-short { display: inline; }
+  .mi .brand { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; }
+  .mi .topbar-burger { display: flex; }
+
+  /* Nav : caché par défaut, dropdown vertical si ouvert */
+  .mi .topbar-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 14px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.12);
+    z-index: 50;
+  }
+  .mi .topbar-nav.topbar-nav--open { display: flex; }
+  .mi .topbar-nav .nav-link {
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 10px;
+    width: 100%;
+    display: block;
+  }
+  .mi .topbar-nav .nav-link.active {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+  }
+  .mi .nav-help {
+    font-size: 13px;
+    margin-left: 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+    width: 100%;
+    display: block;
+  }
+  .mi .topbar { position: relative; } /* anchor for dropdown */
+
+  /* Page wrapper : padding réduit */
+  .mi .ws-main { padding: 16px 14px 48px; gap: 16px; }
+  .mi .page { padding: 18px 14px 48px; gap: 20px; }
+
+  /* Heading plus compact */
+  .mi .landscape-h1 { font-size: 22px; }
+  .mi h1 { font-size: 24px; }
+  .mi .landscape-desc { font-size: 13.5px; }
+
+  /* KPI grid : 2 colonnes serrées */
+  .mi .kpi-grid { gap: 10px; }
+  .mi .kpi-card { padding: 12px 14px; }
+  .mi .kpi-val { font-size: 22px; }
+
+  /* Brief rows : empiler pill + desc */
+  .mi .ws-brief-row { flex-direction: column; gap: 6px; padding: 10px 12px; }
+  .mi .ws-brief-pill { align-self: flex-start; }
+
+  /* Board table : colonnes cachées sur mobile */
+  .mi .board-table .c-access { display: none; }
+  .mi .board-table th.c-subject,
+  .mi .board-table td.c-subject { min-width: 60px; padding-left: 4px; padding-right: 4px; font-size: 10px; }
+  .mi .board-table td:nth-child(2) { width: auto; max-width: 180px; }
+  .mi .who .meta { max-width: 160px; }
+
+  /* Landscape table */
+  .mi .markets-table th:nth-child(4),
+  .mi .markets-table td:nth-child(4),
+  .mi .markets-table th:nth-child(5),
+  .mi .markets-table td:nth-child(5) { display: none; }
+
+  /* Cards compactes */
+  .mi .ws-card { padding: 12px 14px; gap: 8px; }
+  .mi .card { padding: 14px 16px; }
+
+  /* Podium plus compact */
+  .mi .podium { grid-template-columns: 1fr 1.1fr 1fr; gap: 8px; }
+  .mi .podium .step { padding: 10px 6px; }
+  .mi .podium .name { font-size: 13px; }
+
+  /* Overview hero */
+  .mi .ov-hero { grid-template-columns: 1fr; }
+  .mi .ov-figs { border-left: 0; border-top: 1px solid var(--border); flex-direction: row; flex-wrap: wrap; }
+  .mi .ov-figs > div { min-width: 140px; }
+  .mi .ov-figs > div + div { border-top: 0; border-left: 1px solid var(--border); }
+
+  /* Company header : disposition compacte et harmonieuse (nom + note en haut, description, badges et actions) */
+  .mi .co-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "id score"
+      "desc desc"
+      "foot foot" !important;
+    column-gap: 12px !important;
+    row-gap: 8px !important;
+    padding: 16px !important;
+    align-items: start !important;
+  }
+  .mi .co-head > .logo { display: none !important; }
+  .mi .co-id {
+    grid-area: id !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+  }
+  .mi .co-name {
+    font-size: 21px !important;
+    font-weight: 750 !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+  }
+  .mi .co-desc {
+    grid-area: desc !important;
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    color: var(--muted) !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    margin-top: 2px !important;
+  }
+  .mi .co-score {
+    grid-area: score !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    flex-shrink: 0 !important;
+    min-width: 64px !important;
+  }
+  .mi .co-score svg {
+    width: 56px !important;
+    height: 56px !important;
+  }
+  .mi .co-score strong {
+    font-size: 18px !important;
+  }
+  .mi .co-level {
+    font-size: 9.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+  }
+  .mi .co-foot {
+    grid-area: foot !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--border) !important;
+    align-items: stretch !important;
+  }
+  /* Fix piège flex-basis 320px qui créait d'immenses espaces vides */
+  .mi .co-badges {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px 12px !important;
+    flex-wrap: wrap !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+  .mi .co-meter {
+    display: inline-flex !important;
+    gap: 3px !important;
+  }
+  .mi .co-meter i {
+    width: 14px !important;
+    height: 5px !important;
+  }
+  .mi .co-todo {
+    font-size: 11.5px !important;
+    color: var(--muted) !important;
+    line-height: 1.3 !important;
+    width: 100% !important;
+    margin: 2px 0 0 !important;
+  }
+  .mi .co-earned summary {
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: var(--accent-ink) !important;
+    cursor: pointer !important;
+  }
+  .mi .co-foot > .row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    margin-top: 2px !important;
+  }
+
+  /* Tableau d'actions : transformé en cartes lisibles sur mobile (fini le texte écrasé) */
+  .mi .companies-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+    border-collapse: separate !important;
+  }
+  .mi .companies-actions tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .mi .companies-actions tr {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 5px !important;
+    padding: 12px 14px !important;
+    background: var(--surface-2) !important;
+    border-radius: 10px !important;
+    border: 1px solid var(--border) !important;
+  }
+  .mi .companies-actions td {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+  .mi .companies-actions td:first-child {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    color: var(--text) !important;
+  }
+  .mi .companies-actions td:nth-child(2) {
+    margin: 2px 0 !important;
+  }
+  .mi .companies-actions td:last-child {
+    font-size: 12px !important;
+    color: var(--muted) !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Drawer pleine largeur */
+  .mi .drawer { width: 100vw; }
+  .mi .drawer-body { padding: 16px; }
+
+  /* Modale / Fiche acteur : adaptation mobile soignée */
+  .mi-modal-portal .mi-modal-dialog {
+    width: min(100vw, 96vw) !important;
+    border-radius: 16px !important;
+    margin: auto !important;
+  }
+  .mi-modal-portal .mi-modal-handle-bar {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 8px 0 2px !important;
+    background: var(--surface) !important;
+    border-radius: 16px 16px 0 0 !important;
+  }
+  .mi-modal-portal .mi-modal-handle {
+    width: 36px !important;
+    height: 4px !important;
+    border-radius: 999px !important;
+    background: var(--border-strong) !important;
+    opacity: 0.6 !important;
+  }
+  .mi-modal-portal .mi-modal-body {
+    padding: 14px 16px 28px !important;
+    max-height: calc(85vh - 100px) !important;
+  }
+  .mi-modal-portal.is-docked .mi-modal-dialog { width: 100vw !important; }
+
+  /* Cacher les boutons de mise en page réservés au grand écran (Très large & Volet) */
+  .mi .mi-modal-desktop-only,
+  .mi-modal-portal .mi-modal-desktop-only { display: none !important; }
+
+  /* Entête de la modale en 2 lignes ultra-propres */
+  .mi-modal-portal .mi-modal-header {
+    padding: 12px 14px 10px !important;
+    gap: 10px !important;
+  }
+  .mi-modal-portal .mi-modal-top-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+  }
+  .mi-modal-portal .mi-modal-title-row {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    gap: 8px !important;
+  }
+  .mi-modal-portal .mi-modal-title {
+    font-size: 16px !important;
+    font-weight: 750 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .mi-modal-portal .mi-modal-badge {
+    font-size: 10px !important;
+    padding: 2.5px 6px !important;
+    flex-shrink: 0 !important;
+  }
+  .mi-modal-portal .mi-modal-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+  .mi-modal-portal .mi-modal-btn-label {
+    display: none !important;
+  }
+  .mi-modal-peek-btn {
+    padding: 6px 8px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    justify-content: center !important;
+  }
+  .mi-modal-portal .mi-modal-close {
+    width: 32px !important;
+    height: 32px !important;
+    flex-shrink: 0 !important;
+  }
+  .mi-modal-portal .mi-modal-sub-bar {
+    padding-top: 8px !important;
+  }
+  .mi-modal-portal .mi-modal-sub-bar label {
+    font-size: 11.5px !important;
+    gap: 6px !important;
+  }
+  .mi-modal-portal .mi-modal-sub-bar select {
+    font-size: 12px !important;
+    padding: 4px 8px !important;
+  }
+
+  /* Attn grid : 2 colonnes */
+  .mi .attn-grid { grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); }
+
+  /* Facts strip : 2 colonnes */
+  .mi .facts-strip { grid-template-columns: repeat(2, 1fr); }
+  .mi .facts-strip > div { padding: 10px 14px; }
+
+  /* Market cards */
+  .mi .mk-grid { grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 10px; }
+  .mi .mk-card { padding: 14px 16px; gap: 12px; }
+
+  /* Entrants */
+  .mi .entrants { grid-template-columns: 1fr; }
+
+  /* Sélecteur de marché mobile : barre dédiée en haut de page */
+  .mi .rail-mobile-bar {
+    display: block;
+    margin-bottom: 12px;
+  }
+  .mi .rail-mobile-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 9px 13px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.15s ease;
+  }
+  .mi .rail-mobile-trigger:hover {
+    border-color: var(--accent);
+    background: var(--surface-2);
+  }
+  .mi .rail-mobile-trigger-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .mi .rail-mobile-badge {
+    font-size: 10px;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 2.5px 7px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .mi .rail-mobile-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mi .rail-mobile-action {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .mi .rail-mobile-count {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* Cacher définitivement le bouton hamburger flottant qui chevauchait le titre */
+  .mi .rail-toggle {
+    display: none !important;
+  }
+
+  /* Fond obscurci (backdrop) pour fermer le tiroir marché */
+  .mi .rail-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 90;
+  }
+
+  /* Tiroir mobile pour le sélecteur de marché */
+  .mi .rail.overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: min(340px, 88vw) !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    z-index: 100 !important;
+    background: var(--surface) !important;
+    box-shadow: 16px 0 40px rgba(0, 0, 0, 0.35) !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border: none !important;
+    overflow: hidden !important;
+  }
+  .mi .rail.overlay .rail-top {
+    padding: 12px 14px !important;
+    flex-shrink: 0 !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+  .mi .rail.overlay .rail-list-wrap {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    padding: 12px 14px 40px !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .mi .rail-mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .mi .rail-mobile-title {
+    font-size: 15px;
+    font-weight: 750;
+    color: var(--text);
+  }
+  .mi .rail-close-btn {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+  }
+}
+
+/* ---------- Mobile portrait ≤ 480px --------------------------------------------------------- */
+@media (max-width: 480px) {
+  /* Topbar encore plus compact */
+  .mi .topbar { padding: 8px 12px; gap: 8px; }
+  .mi .brand { font-size: 14px; }
+  .mi .topbar-burger { width: 32px; height: 32px; }
+  .mi .topbar-burger svg { width: 16px; height: 16px; }
+
+  /* Page spacing minimal */
+  .mi .ws-main { padding: 12px 10px 40px; gap: 14px; }
+  .mi .page { padding: 14px 10px 40px; gap: 16px; }
+
+  /* Headings encore plus petit */
+  .mi .landscape-h1 { font-size: 19px; }
+  .mi h1 { font-size: 21px; }
+  .mi h2 { font-size: 15px; }
+  .mi .landscape-desc { font-size: 13px; }
+  .mi .landscape-eyebrow { font-size: 10.5px; }
+
+  /* KPI grid : 1 colonne */
+  .mi .kpi-grid { grid-template-columns: 1fr; gap: 8px; }
+  .mi .kpi-card { flex-direction: row; align-items: center; gap: 10px; padding: 10px 14px; }
+  .mi .kpi-val { font-size: 20px; }
+  .mi .kpi-label { font-size: 10px; }
+  .mi .kpi-progress { display: none; }
+
+  /* Board : cacher les sujets, garder le minimum */
+  .mi .board-table th.c-subject,
+  .mi .board-table td.c-subject { display: none; }
+  .mi .board-table td:nth-child(2) { max-width: 140px; }
+  .mi .who .name { font-size: 13px; }
+  .mi .who .meta { max-width: 120px; font-size: 11px; }
+  .mi .board-table .c-score { width: 50px; min-width: 50px; }
+
+  /* Landscape table : juste le nom et le score */
+  .mi .markets-table th:nth-child(2),
+  .mi .markets-table td:nth-child(2) { display: none; }
+  .mi .market-name-link { font-size: 13px; }
+
+  /* Brief rows */
+  .mi .ws-brief-card { padding: 12px 14px; }
+  .mi .ws-brief-row { font-size: 12.5px; padding: 8px 10px; }
+  .mi .ws-brief-pill { font-size: 10px; padding: 2px 6px; }
+  .mi .ws-brief-title { font-size: 14px; }
+
+  /* Podium portrait : empiler */
+  .mi .podium { grid-template-columns: 1fr; gap: 8px; }
+  .mi .podium .step { flex-direction: row; gap: 10px; padding: 10px 12px; text-align: left; }
+  .mi .podium .step .medal { font-size: 16px; }
+  .mi .podium .step .name { font-size: 14px; }
+
+  /* Duel */
+  .mi .duel-row { grid-template-columns: 1fr; gap: 6px; text-align: center; }
+  .mi .duel-row .l { justify-content: center; }
+  .mi .duel-row .r { justify-content: center; }
+  .mi .duel-row .gauge { width: 100%; }
+  .mi .duel-side { padding: 12px; }
+
+  /* Company detail */
+  .mi .co-name { font-size: 18px; }
+  .mi .co-foot { flex-direction: column; align-items: flex-start; gap: 10px; }
+
+  /* Facts strip : 1 colonne */
+  .mi .facts-strip { grid-template-columns: 1fr; }
+
+  /* Cards */
+  .mi .mk-grid { grid-template-columns: 1fr; }
+  .mi .mk-card { padding: 12px 14px; }
+  .mi .mk-name { font-size: 16px; }
+
+  /* Hot row / cards : 1 colonne */
+  .mi .hot-row { grid-template-columns: 1fr; }
+
+  /* Counters */
+  .mi .counters { grid-template-columns: repeat(2, 1fr); }
+
+  /* Attn grid : 1 colonne */
+  .mi .attn-grid { grid-template-columns: 1fr; }
+
+  /* Insights */
+  .mi .insights { grid-template-columns: 1fr; }
+
+  /* Modal : bottom-sheet pleine largeur */
+  .mi-modal-portal .mi-modal-dialog { width: 100vw !important; max-height: 95vh !important; border-radius: 16px 16px 0 0 !important; margin: auto 0 0 0 !important; }
+  .mi-modal-portal .mi-modal-header { padding: 10px 12px 8px !important; gap: 8px !important; }
+  .mi-modal-portal .mi-modal-body { padding: 14px 12px !important; max-height: calc(95vh - 85px) !important; }
+  .mi-modal-portal .mi-modal-title { font-size: 15px !important; }
+  .mi-modal-portal .mi-modal-sub-bar select { font-size: 11.5px !important; padding: 4px 6px !important; }
+
+  /* Rail en mobile : overlay plein écran */
+  .mi .rail.overlay { width: 100vw !important; height: 100vh !important; max-height: 100vh !important; }
+}
+
+/* ---------- Helpers : scroll horizontal sûr partout ----------------------------------------- */
+.mi .board-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.mi .matrix-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }

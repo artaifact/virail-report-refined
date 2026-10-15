@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link as RouterLink, Route, Routes, useLocation } from "react-router-dom";
 import { useSidebar } from "@/components/ui/sidebar";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -25,10 +25,12 @@ import HelpPage from "@/market-intel/pages/HelpPage";
 export default function MarketIntelligence() {
   const { pathname } = useLocation();
   const { setOpen, open } = useSidebar();
+  const [menuOpen, setMenuOpen] = useState(false);
   usePageTitle("Market Intelligence");
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    setMenuOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -49,13 +51,46 @@ export default function MarketIntelligence() {
     <div className="mi">
       <header className="topbar">
         <RouterLink to="/market-intelligence" className="brand">
-          Agentic Market Intelligence
+          <span className="brand-full">Agentic Market Intelligence</span>
+          <span className="brand-short">AMI</span>
         </RouterLink>
-        <nav className="topbar-nav" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <Link href="/" className={`nav-link ${pathname === "/market-intelligence" || pathname === "/market-intelligence/" ? "active" : ""}`}>Marchés</Link>
-          <Link href="/catalog" className={`nav-link ${pathname.includes("/catalog") ? "active" : ""}`}>Catalogues</Link>
-          <Link href="/qualite" className={`nav-link ${pathname.includes("/qualite") ? "active" : ""}`}>Fiabilité</Link>
-          <Link href="/aide" className={`nav-help ${pathname.includes("/aide") ? "active" : ""}`}>Comment ça marche ?</Link>
+
+        <button
+          type="button"
+          className="topbar-burger"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-expanded={menuOpen}
+          aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            {menuOpen ? (
+              <>
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </>
+            ) : (
+              <>
+                <line x1="4" x2="20" y1="6" y2="6" />
+                <line x1="4" x2="20" y1="12" y2="12" />
+                <line x1="4" x2="20" y1="18" y2="18" />
+              </>
+            )}
+          </svg>
+        </button>
+
+        {menuOpen && (
+          <div
+            className="topbar-backdrop"
+            onClick={() => setMenuOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        <nav className={`topbar-nav ${menuOpen ? "topbar-nav--open" : ""}`}>
+          <Link href="/" className={`nav-link ${pathname === "/market-intelligence" || pathname === "/market-intelligence/" ? "active" : ""}`} onClick={() => setMenuOpen(false)}>Marchés</Link>
+          <Link href="/catalog" className={`nav-link ${pathname.includes("/catalog") ? "active" : ""}`} onClick={() => setMenuOpen(false)}>Catalogues</Link>
+          <Link href="/qualite" className={`nav-link ${pathname.includes("/qualite") ? "active" : ""}`} onClick={() => setMenuOpen(false)}>Fiabilité</Link>
+          <Link href="/aide" className={`nav-help ${pathname.includes("/aide") ? "active" : ""}`} onClick={() => setMenuOpen(false)}>Comment ça marche ?</Link>
         </nav>
       </header>
       <Routes>
@@ -76,3 +111,4 @@ export default function MarketIntelligence() {
     </div>
   );
 }
+
