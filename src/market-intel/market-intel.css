@@ -238,7 +238,7 @@
 .mi .logo { display: inline-grid; place-items: center; border-radius: 10px; color: #fff; font-weight: 700; flex: none; overflow: hidden; border: 1px solid var(--border); font-family: var(--display); background: var(--surface); }
 .mi .logo img { display: block; }
 .mi .ring { position: relative; display: inline-grid; place-items: center; flex: none; }
-.mi .ring svg { position: absolute; inset: 0; }
+.mi .ring svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .mi .ring-track { fill: none; stroke: var(--surface-2); stroke-width: 6; }
 .mi .ring-value { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dasharray .6s ease; }
 .mi .ring-good .ring-value { stroke: var(--good); }
@@ -2184,12 +2184,24 @@
     flex-shrink: 0 !important;
     min-width: 64px !important;
   }
-  .mi .co-score svg {
-    width: 56px !important;
-    height: 56px !important;
+  .mi .co-score .ring,
+  .mi .co-score .review-ring {
+    width: 64px !important;
+    height: 64px !important;
   }
-  .mi .co-score strong {
-    font-size: 18px !important;
+  .mi .co-score .ring svg {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+  }
+  .mi .co-score .ring-label {
+    font-size: 20px !important;
+    line-height: 1 !important;
+  }
+  .mi .co-score .review-ring {
+    font-size: 20px !important;
   }
   .mi .co-level {
     font-size: 9.5px !important;
