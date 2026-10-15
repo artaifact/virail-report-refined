@@ -1002,15 +1002,15 @@ export function SimulationTab({
       {/* ── ZONE 4 : Optimisations Appliquées (Regroupées & Épurées) ─────── */}
       {hasApplied && (
         <div className="space-y-3">
-          <SectionGroup label="Optimisations appliquées" count={schemasAdded.length + enrichments.length} />
+          <SectionGroup label="Optimisations simulées" count={schemasAdded.length + enrichments.length} />
 
           <CollapsibleSection
             id="optimizations-pack"
-            title={`Optimisations appliquées (${schemasAdded.length + enrichments.length})`}
-            subtitle="Schémas JSON-LD ajoutés et balises enrichies automatiquement"
+            title={`Optimisations simulées (${schemasAdded.length + enrichments.length})`}
+            subtitle="Ajoutées à la copie simulée de la page : rien n'est déployé sur le site tant que vous ne publiez pas le patch"
             badge={
               <Badge variant="outline" className="text-[10px] font-mono bg-indigo-500/10 text-indigo-600 border-indigo-500/20">
-                {schemasAdded.length + enrichments.length} déployées
+                {schemasAdded.length + enrichments.length} simulées
               </Badge>
             }
             icon={Sparkles}

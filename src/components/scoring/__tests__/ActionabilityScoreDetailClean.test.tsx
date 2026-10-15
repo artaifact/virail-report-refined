@@ -150,4 +150,22 @@ describe('ActionabilityScoreDetail Purification', () => {
     expect(screen.getByText('Injecter le balisage Schema.org JSON-LD (Product & FAQPage)')).toBeInTheDocument();
     expect(screen.getAllByText('Impact Fort (+15 pts)').length).toBeGreaterThanOrEqual(1);
   });
+
+  it('ne promet le Grade A que si score + gains estimés y mènent (recette : 22 + 15 + 8 = 45, pas 91)', () => {
+    renderComponent();  // score 47, deux correctifs à fort impact : 47 + 15 + 15 = 77
+    expect(screen.getByText('2 correctifs prioritaires : +30 pts estimés (≈ 77/100)')).toBeInTheDocument();
+    expect(screen.queryByText(/pour le Grade A/)).toBeNull();
+    expect(screen.queryByText(/Grade A possible/)).toBeNull();
+  });
+
+  it('annonce le Grade A quand il est atteignable', () => {
+    render(
+      <TooltipProvider>
+        <BrowserRouter>
+          <ActionabilityScoreDetail unified={{ ...mockUnified, overallScore: 70, grade: 'B' }} domain="peec.ai" />
+        </BrowserRouter>
+      </TooltipProvider>
+    );
+    expect(screen.getByText('2 correctifs prioritaires pour le Grade A (91/100)')).toBeInTheDocument();
+  });
 });

@@ -159,30 +159,33 @@ export const CausalImpactTimeline: React.FC<CausalImpactTimelineProps> = ({
     }
   }, [baseDate]);
 
+  // Scénarios PROJETÉS après l'audit (J+7, J+21, J+35, fin à J+56). Avant : datés 24 à 52 jours AVANT le rapport,
+  // comme des déploiements passés, alors qu'aucune optimisation n'avait été déployée (recette de production).
   const dateOpt1 = useMemo(() => {
-    const d = new Date(baseDate.getTime() - 24 * 24 * 3600 * 1000);
+    const d = new Date(baseDate.getTime() + 35 * 24 * 3600 * 1000);
     return d.toISOString().split('T')[0];
   }, [baseDate]);
 
   const dateOpt2 = useMemo(() => {
-    const d = new Date(baseDate.getTime() - 37 * 24 * 3600 * 1000);
+    const d = new Date(baseDate.getTime() + 21 * 24 * 3600 * 1000);
     return d.toISOString().split('T')[0];
   }, [baseDate]);
 
   const dateOpt3 = useMemo(() => {
-    const d = new Date(baseDate.getTime() - 52 * 24 * 3600 * 1000);
+    const d = new Date(baseDate.getTime() + 7 * 24 * 3600 * 1000);
     return d.toISOString().split('T')[0];
   }, [baseDate]);
 
   const dateNow = useMemo(() => {
-    return baseDate.toISOString().split('T')[0];
+    return new Date(baseDate.getTime() + 56 * 24 * 3600 * 1000).toISOString().split('T')[0];
   }, [baseDate]);
 
-  // Citations cohérentes ancrées sur le volume réel du rapport (ex: 41 citations)
-  const currentCit = currentCitations !== undefined && currentCitations > 0 ? currentCitations : 41;
-  const citMid = Math.max(1, currentCit - 17);
-  const citLow = Math.max(1, citMid - 11);
-  const citBase = Math.max(1, citLow - 12);
+  // Projection partant des citations RÉELLEMENT mesurées par le rapport (avant : 41 inventées à défaut, et un
+  // historique reconstruit vers le passé). Gains par scénario : ordres de grandeur, jamais une mesure.
+  const citBase = currentCitations !== undefined && currentCitations > 0 ? currentCitations : 0;
+  const citLow = citBase + 12;
+  const citMid = citLow + 11;
+  const currentCit = citMid + 17;
 
   // Historique de déploiements simulés pour les scénarios prédictifs
   const optimizations: DeployedOptimization[] = useMemo(() => [
@@ -627,6 +630,12 @@ export const CausalImpactTimeline: React.FC<CausalImpactTimelineProps> = ({
       {/* ─── VUE 2 : Projections ROI Causal (Scénarios Techniques) ───────── */}
       {viewMode === 'projections' && (
         <div className="space-y-5 animate-in fade-in duration-200">
+          <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs text-foreground">
+            <strong className="font-semibold">Projection illustrative.</strong> Aucune de ces optimisations n'a été
+            déployée ni mesurée : les écarts (citations, part de voix, succès agent) sont des ordres de grandeur à partir
+            des citations mesurées aujourd'hui, pas une attribution causale. La mesure réelle apparaîtra après un
+            déploiement et un nouvel audit.
+          </div>
           {/* Timeline selector tabs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {optimizations.map((opt) => {
@@ -646,7 +655,7 @@ export const CausalImpactTimeline: React.FC<CausalImpactTimelineProps> = ({
                   }`}
                 >
                   <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground mb-1 font-mono">
-                    <span>{opt.deployedAt}</span>
+                    <span>prévu le {opt.deployedAt}</span>
                     <span className="font-bold text-emerald-600 dark:text-emerald-400">
                       +{diffCitations} citations
                     </span>
@@ -706,8 +715,10 @@ export const CausalImpactTimeline: React.FC<CausalImpactTimelineProps> = ({
 
               {/* Narrative Explanation in 1 clean line */}
               <div className="p-3 rounded-lg bg-muted/30 border border-border/60 text-xs text-foreground">
-                <strong className="font-semibold">Attribution causale : </strong>
-                {analysis.narrativeExplanation}
+                <strong className="font-semibold">Projection : </strong>
+                si « {analysis.optimization.title} » est déployé, ordre de grandeur attendu : +{analysis.deltas.citationsLift}{' '}
+                citations et +{analysis.deltas.shareOfVoiceLiftPct}% de part de voix en {analysis.observationDays} jours
+                (non mesuré).
               </div>
             </CardContent>
           </Card>

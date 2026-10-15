@@ -27,6 +27,35 @@ interface ActionabilityScoreDetailProps {
   isModalView?: boolean;
 }
 
+// Correctifs génériques, quand l'analyse n'en propose pas encore
+const DEFAULT_FIXES = [
+  {
+    id: 'fix_llms_txt',
+    title: 'Déployer un fichier /llms.txt à la racine du domaine',
+    impact: 'high',
+    effort: 'low',
+    category: 'Agent-Readiness',
+  },
+  {
+    id: 'fix_schema_org',
+    title: 'Injecter le balisage Schema.org JSON-LD (Product & FAQPage)',
+    impact: 'high',
+    effort: 'low',
+    category: 'Sémantique',
+  },
+  {
+    id: 'fix_openapi',
+    title: 'Exposer le contrat machine OpenAPI 3.1 (/openapi.json)',
+    impact: 'medium',
+    effort: 'medium',
+    category: 'M2M & API',
+  },
+];
+
+// Gain estimé d'un correctif : mêmes estimations que son badge « Impact Fort (+15 pts) / Moyen (+8 pts) »
+const fixGain = (fix: { impact?: string }) => (fix.impact === 'high' || fix.impact === 'critical' ? 15 : 8);
+const GRADE_A = 91;
+
 export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> = ({
   unified,
   domain = 'tally.so',
@@ -44,9 +73,13 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
   const level2 = unified?.levels?.understood_and_preferred;
   const level3 = unified?.levels?.actionable_and_transacting;
 
-  // Calcul dynamique du gain potentiel pour atteindre le Grade A (91 pts)
-  const potentialGain = Math.max(8, 91 - overallScore);
-  const fixesCount = unified?.topFixes?.length || 3;
+  // Gain des correctifs affichés et score projeté. Avant : « Potentiel » = distance au Grade A (91 − score) et titre
+  // « correctifs pour le Grade A » même quand score + gains n'y mènent pas (recette : 22 + 15 + 8 = 45, pas 91)
+  const displayedFixes = unified?.topFixes && unified.topFixes.length > 0 ? unified.topFixes : DEFAULT_FIXES;
+  const potentialGain = displayedFixes.reduce((sum, fix) => sum + fixGain(fix), 0);
+  const projectedScore = Math.min(100, Math.round(overallScore) + potentialGain);
+  const reachesGradeA = projectedScore >= GRADE_A;
+  const fixesCount = displayedFixes.length;
 
   // Grade color helper
   const getGradeColor = (g: string) => {
@@ -147,7 +180,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
             <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/70 bg-muted/30 text-xs">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
               <span className="font-semibold text-foreground">Potentiel : +{potentialGain} pts</span>
-              <span className="text-muted-foreground">• Grade A possible</span>
+              <span className="text-muted-foreground">• {reachesGradeA ? "Grade A possible" : `≈ ${projectedScore}/100`}</span>
             </div>
 
             <Button
@@ -273,7 +306,9 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
               <TrendingUp className="w-4 h-4" />
             </div>
             <h3 className="text-sm sm:text-base font-semibold text-foreground">
-              {fixesCount} Correctifs Prioritaires pour le Grade A (91/100)
+              {reachesGradeA
+                ? `${fixesCount} correctifs prioritaires pour le Grade A (${GRADE_A}/100)`
+                : `${fixesCount} correctifs prioritaires : +${potentialGain} pts estimés (≈ ${projectedScore}/100)`}
             </h3>
           </div>
 
@@ -289,32 +324,7 @@ export const ActionabilityScoreDetail: React.FC<ActionabilityScoreDetailProps> =
         </div>
 
         <div className="space-y-2">
-          {(unified?.topFixes && unified.topFixes.length > 0
-            ? unified.topFixes
-            : [
-                {
-                  id: 'fix_llms_txt',
-                  title: 'Déployer un fichier /llms.txt à la racine du domaine',
-                  impact: 'high',
-                  effort: 'low',
-                  category: 'Agent-Readiness',
-                },
-                {
-                  id: 'fix_schema_org',
-                  title: 'Injecter le balisage Schema.org JSON-LD (Product & FAQPage)',
-                  impact: 'high',
-                  effort: 'low',
-                  category: 'Sémantique',
-                },
-                {
-                  id: 'fix_openapi',
-                  title: 'Exposer le contrat machine OpenAPI 3.1 (/openapi.json)',
-                  impact: 'medium',
-                  effort: 'medium',
-                  category: 'M2M & API',
-                },
-              ]
-          ).map((fix, idx) => (
+          {displayedFixes.map((fix, idx) => (
             <div
               key={fix.id || idx}
               onClick={() => navigate('/ameliorer')}

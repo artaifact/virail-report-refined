@@ -71,7 +71,7 @@ describe('SimulationTab Purification', () => {
   it('consolidates optimizations into a clean unified pack', () => {
     renderTab();
 
-    const optButton = screen.getByRole('button', { name: /Optimisations appliquées/i });
+    const optButton = screen.getByRole('button', { name: /Optimisations simulées/i });
     expect(optButton).toBeInTheDocument();
     fireEvent.click(optButton);
 
