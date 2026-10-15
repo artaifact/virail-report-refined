@@ -133,11 +133,27 @@ class ApiService {
     this.timeout = API_TIMEOUT;
   }
 
+  // Lectures en cours, par adresse : plusieurs composants qui demandent la même ressource au même moment partagent
+  // une seule requête (recette : subscriptions/current ×3, llmo/reports ×2 à chaque page)
+  private inflight = new Map<string, Promise<unknown>>();
+
   /**
    * Méthode générique pour faire des requêtes API avec gestion d'erreurs
    */
-  private async request<T = any>(
-    endpoint: string, 
+  private request<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const method = (options.method || 'GET').toUpperCase();
+    if (method !== 'GET' || options.body) {
+      return this.send<T>(endpoint, options);
+    }
+    const pending = this.inflight.get(endpoint);
+    if (pending) return pending as Promise<T>;
+    const promise = this.send<T>(endpoint, options).finally(() => this.inflight.delete(endpoint));
+    this.inflight.set(endpoint, promise);
+    return promise;
+  }
+
+  private async send<T = any>(
+    endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
     const isAnalysis = ANALYSIS_ENDPOINTS.some(p => endpoint.includes(p));
