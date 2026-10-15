@@ -87,7 +87,7 @@ export const JourneyReplay: React.FC<JourneyReplayProps> = ({
           {getVerdictBadge()}
           <span className="text-xs text-muted-foreground font-mono flex items-center gap-1 font-medium">
             <Clock size={12} />
-            {journey.durationMs ? `${(journey.durationMs / 1000).toFixed(1)}s` : '1.4s'}
+            {journey.durationMs ? `${(journey.durationMs / 1000).toFixed(1)}s` : '—'}
           </span>
         </div>
       </div>
