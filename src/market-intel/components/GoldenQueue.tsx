@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "../compat";
+import { miFetch, useRouter } from "../compat";
 import { useState } from "react";
 
 export type GoldenItem = {
@@ -17,13 +17,15 @@ function GoldenCard({ item, marketId, onDone }: { item: GoldenItem; marketId: st
     setError(null);
     try {
       // « vrai à la source » : l'affirmation de la plateforme est juste si elle disait oui, fausse si elle disait non
-      const res = await fetch(`/api/markets/${marketId}/golden`, {
+      // miFetch : préfixe /api/v1/market-intelligence de virail et jeton de session (fetch nu visait l'API autonome)
+      const res = await miFetch(`/markets/${marketId}/golden`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ company_id: item.company_id, kind: item.kind, claim: item.claim, verdict: isTrue === item.claim,
           source: item.evidence_is_search ? null : item.evidence }),
       });
-      if (!res.ok) throw new Error(`Erreur ${res.status}`);
+      if (!res.ok) throw new Error(await res.json().then((b) => (typeof b.detail === "string" ? b.detail : `Erreur ${res.status}`),
+        () => `Erreur ${res.status}`));
       onDone();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
