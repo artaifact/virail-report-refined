@@ -1,4 +1,5 @@
 // Service utilisant l'authentification par cookies comme les autres services
+import { deduplicateCompetitors } from '@/utils/entityNormalizer';
 
 // Interfaces basées sur votre nouvelle API
 export interface CompetitorAnalysisRequest {
@@ -528,7 +529,7 @@ export const mapApiResponseToCompetitorAnalysisResponse = (apiData: any): Compet
 /**
  * Récupérer une analyse concurrentielle par ID
  */
-export const getCompetitorAnalysisById = async (analysisId: number): Promise<CompetitorAnalysisResponse> => {
+const fetchCompetitorAnalysisById = async (analysisId: number): Promise<CompetitorAnalysisResponse> => {
   const API_BASE_URL = getApiBaseUrl();
   
   try {
@@ -712,7 +713,7 @@ export interface LLMOReportResponse {
 /**
  * Récupérer les données d'analyse concurrentielle depuis /llmo/reports/{id}
  */
-export const getCompetitorAnalysisFromReport = async (reportId: string | number): Promise<CompetitorAnalysisResponse | null> => {
+const fetchCompetitorAnalysisFromReport = async (reportId: string | number): Promise<CompetitorAnalysisResponse | null> => {
   const API_BASE_URL = getApiBaseUrl();
 
   try {
@@ -983,3 +984,29 @@ export const listCompetitorAnalysesFromReports = async (): Promise<CompetitorAna
     throw error;
   }
 };
+
+/**
+ * Concurrents prêts à afficher, quel que soit le format de la réponse : le site analysé n'apparaît pas dans sa propre
+ * liste, les commentaires du LLM entre parenthèses et les URL brutes disparaissent des noms, et une même marque
+ * (casse, domaine, ancien nom) n'apparaît qu'une fois. Recette de production : « Revolut (si le site est en cours de
+ * maintenance…) » listé parmi ses concurrents, chaque nom affiché deux fois, wise.com et transferwise.com séparés.
+ */
+export const cleanCompetitorAnalysis = <T extends CompetitorAnalysisResponse | null>(analysis: T): T => {
+  if (!analysis) return analysis;
+  const client = analysis.url;
+  return {
+    ...analysis,
+    consolidated_competitors: deduplicateCompetitors(analysis.consolidated_competitors || [], client),
+    competitors: analysis.competitors ? deduplicateCompetitors(analysis.competitors, client) : analysis.competitors,
+    models_analysis: (analysis.models_analysis || []).map((model) => ({
+      ...model,
+      competitors: deduplicateCompetitors(model.competitors || [], client),
+    })),
+  };
+};
+
+export const getCompetitorAnalysisById = async (analysisId: number): Promise<CompetitorAnalysisResponse> =>
+  cleanCompetitorAnalysis(await fetchCompetitorAnalysisById(analysisId));
+
+export const getCompetitorAnalysisFromReport = async (reportId: string | number): Promise<CompetitorAnalysisResponse | null> =>
+  cleanCompetitorAnalysis(await fetchCompetitorAnalysisFromReport(reportId));

@@ -83,3 +83,24 @@ describe('entityNormalizer', () => {
     });
   });
 });
+
+describe('recette de production : concurrents de revolut.com', () => {
+  const raw = [
+    { name: 'Revolut (si le site est en cours de maintenance, mais concurrent indirect à lui-même)', score: 50 },
+    { name: 'PayPal (pour les transferts internationaux)', url: 'https://www.paypal.com', score: 70 },
+    { name: 'paypal', url: 'paypal.com', score: 60 },
+    { name: 'https://www.wise.com', score: 65 },
+    { name: 'TransferWise', url: 'https://transferwise.com', score: 40 },
+    { name: 'Curve', url: 'https://www.curve.com', score: 30 },
+    { name: 'Curve', url: 'https://curve.group', score: 20 },
+  ];
+  const result = deduplicateCompetitors(raw, 'https://www.revolut.com');
+  const names = result.map((c) => c.name).sort();
+
+  it('le site n’apparaît pas dans sa propre liste, même avec un commentaire du LLM', () => {
+    expect(names.some((n) => /revolut/i.test(n || ''))).toBe(false);
+  });
+  it('commentaires, URL brutes et doublons de casse ou de domaine disparaissent', () => {
+    expect(names).toEqual(['Curve', 'PayPal', 'Wise']);
+  });
+});
